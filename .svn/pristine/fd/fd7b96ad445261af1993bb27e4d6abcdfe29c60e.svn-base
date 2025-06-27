@@ -1,0 +1,32 @@
+package com.minwon.service;
+
+import java.util.List;
+
+import com.minwon.vo.ArchiveVO;
+import com.minwon.vo.NoticeFileVO;
+import com.minwon.vo.NoticeVO;
+import com.minwon.vo.SearchVO;
+
+public interface NoticeService {
+	public List<NoticeVO> getAllList(SearchVO searchVO) throws Exception;
+
+	public void insertNotice(NoticeVO noticeVO) throws Exception;
+
+	public void countUp(Integer noticeId) throws Exception;
+
+	public NoticeVO getNotice(Integer noticeId) throws Exception;
+
+	public int getAllListCnt(SearchVO searchVO) throws Exception;
+
+	public void insertNoticeFile(NoticeFileVO noticeFileVO) throws Exception;
+
+	public List<NoticeFileVO> getNoticeFiles(Integer noticeId) throws Exception;
+
+	public void deleteNoticeFiles(Integer noticeId) throws Exception;
+
+	public void deleteNotice(Integer noticeId) throws Exception;
+
+	public void updateNotice(NoticeVO noticeVO) throws Exception;
+
+	public List<NoticeVO> getRecentList() throws Exception;
+}

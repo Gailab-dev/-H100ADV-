@@ -1,0 +1,105 @@
+package com.minwon.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.minwon.service.DepartmentService;
+import com.minwon.vo.DepartmentVO;
+
+
+@RestController
+public class DepartmentController {
+	@Autowired
+	DepartmentService departmentService;
+	
+	//조직도 검색
+	@RequestMapping(value="/departmentList.do", method=RequestMethod.POST)
+	public List<DepartmentVO> hello() throws Exception {
+		return departmentService.selectDepartmentList();
+	}
+	
+	@RequestMapping(value="/departmentListDepth2.do", method=RequestMethod.GET)
+	public List<String> departmentListDepth2(@RequestParam Map<String, Object> param) throws Exception {
+		String departmentName = (String) param.get("depth1Name");
+		return departmentService.departmentListDepth2(departmentName);
+	}
+	
+	@RequestMapping(value="/departmentListDepth3.do", method=RequestMethod.GET)
+	public List<String> departmentListDepth3(@RequestParam Map<String, Object> param) throws Exception {
+		String departmentName = (String) param.get("depth2Name");
+		return departmentService.departmentListDepth3(departmentName);
+	}
+	
+	//조직도 선택
+	@RequestMapping(value="/departmentList_Select.do", method=RequestMethod.GET)
+	public List<DepartmentVO> hello_select(@RequestParam Map<String, Object> param) throws Exception {
+		System.out.println((String) param.get("depth"));
+		int dp_depth = Integer.parseInt((String) param.get("depth"))-1;
+		//return departmentService.selectDepartmentList();
+		return departmentService.selectDepartmentDepth(dp_depth);
+	}
+	
+	//조직도 등록
+	@RequestMapping(value="/departmentInsert.do", method=RequestMethod.GET)
+	public String helloInsert(@RequestParam Map<String, Object> param) throws Exception {
+		DepartmentVO vo = new DepartmentVO();
+		vo.setDp_name((String) param.get("dp_name"));
+		vo.setDp_depth(Integer.parseInt((String) param.get("dp_depth")));
+		vo.setDp_pid(Integer.parseInt((String) param.get("dp_pid")));
+		vo.setDp_rank(Integer.parseInt((String) param.get("dp_rank")));
+		
+		departmentService.insertDepartment(vo);
+		
+		return "OK";
+	}
+	
+	//조직도 업데이트
+	@RequestMapping(value="/departmentUpdate.do", method=RequestMethod.GET)
+	public String helloUpdate(@RequestParam Map<String, Object> param) throws Exception {
+		
+		DepartmentVO vo = new DepartmentVO();
+		vo.setDp_id(Integer.parseInt((String) param.get("dp_id")));
+		vo.setDp_name((String) param.get("dp_name"));
+		vo.setDp_depth(Integer.parseInt((String) param.get("dp_depth")));
+		vo.setDp_pid(Integer.parseInt((String) param.get("dp_pid")));
+		vo.setDp_rank(Integer.parseInt((String) param.get("dp_rank")));
+		
+		departmentService.updateDepartment(vo);
+		
+		return "OK";
+		
+	}
+	
+	//조직도 삭제
+	@RequestMapping(value="/departmentDelete.do", method=RequestMethod.GET)
+		public String helloDelete(@RequestParam Map<String, Object> param) throws Exception {
+			
+		//삭제 순서
+		//1. 하위 조직이 있는 지 확인 (있으면(>0) 불가)
+		// select count(*) FROM department WHERE dp_pid={내가 지울려는 부서_id}
+		//2. 조직에 붙어있는 사용자 있는 지확인(있으면(>0) 불가)
+		// select count(*) FROM user WHERE dp_id={내가 지울려는 부서_id}
+		//3. 그후 삭제
+		int dp_id = Integer.parseInt((String) param.get("dp_id"));
+		
+		int subDepartmentsCount = departmentService.getSubDepartmentsCount(dp_id);
+		int departmentUsersCount = departmentService.getDepartmentUsersCount(dp_id);
+		
+		if (subDepartmentsCount > 0) {
+			return "NOTOK";
+		}
+		
+		if (departmentUsersCount > 0) {
+			return "NOTOK";
+		}
+		
+		departmentService.deleteDepartment(dp_id);
+		return "OK";
+	}
+}

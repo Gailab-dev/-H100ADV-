@@ -1,0 +1,122 @@
+package com.minwon.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.minwon.service.CryptoAriaService;
+import com.minwon.service.ExcelService;
+import com.minwon.service.UserService;
+import com.minwon.vo.UserVO;
+
+@RestController
+public class UserController {
+	@Autowired
+	UserService userService;
+	
+	@Autowired
+	CryptoAriaService cryptoAriaService;
+	
+	@Autowired
+	ExcelService excelService;
+	
+	@RequestMapping(value = "/deptUserList.do", method = RequestMethod.GET)
+	public void getDeptUserList(HttpServletResponse response) throws Exception {
+		excelService.createUserExcel(response, userService.getDeptUserList());
+	}
+
+	//사용자 정보 가져오기
+	@RequestMapping(value = "/userList.do", method = RequestMethod.POST)
+	public List<UserVO> hello() throws Exception {
+		return userService.selectUserList();
+	}
+	
+	//사용자 정보 가져오기
+	@RequestMapping(value = "/userPartList.do", method = RequestMethod.GET)
+	public List<UserVO> hello_partUser(@RequestParam Map<String, Object> param) throws Exception {
+		//System.out.println((String) param.get("ps_id"));
+		int ps_id = Integer.parseInt((String) param.get("ps_id"));
+		return userService.selectPartUserList(ps_id);
+	}
+	
+	// 사용자 이름으로 사용자 정보 가져오기
+	@RequestMapping(value = "/userNameList.do", method = RequestMethod.GET)
+	public List<Map<String, Object>> getUserInfoByName(@RequestParam Map<String, Object> param) throws Exception {
+		String u_name = (String) param.get("u_name");
+		return userService.getUserInfoByName(u_name);
+	}
+
+	@RequestMapping(value = "/userView.do", method = RequestMethod.GET)
+	public UserVO hello_selectone(@RequestParam Map<String, Object> param) throws Exception {
+		int u_id = Integer.parseInt((String) param.get("u_id"));
+		return userService.selectUser(u_id);
+	}
+	
+	@RequestMapping(value = "/userFind.do", method = RequestMethod.GET)
+	public UserVO userFind(@RequestParam Map<String, Object> param) throws Exception {
+		String u_login_id = (String) param.get("u_login_id");
+		return userService.selectUserFind(u_login_id);
+	}
+
+	// 사용자 등록  (별도가입절차 있음) //사용안함
+	@RequestMapping(value = "/userInsert.do", method = RequestMethod.GET)
+	public String helloInsert(@RequestParam Map<String, Object> param) throws Exception {
+		/*
+		 * UserVO vo = new UserVO(); vo.setPs_name((String) param.get("u_name"));
+		 * vo.setPs_rank(Integer.parseInt((String) param.get("u_rank")));
+		 * 
+		 * 
+		 * userService.insertUser(vo);
+		 */
+		return "OK";
+	}
+
+	// 사용자 수정
+	@RequestMapping(value = "/userUpdate.do", method = RequestMethod.GET)
+	public String helloUpdate(@RequestParam Map<String, Object> param) throws Exception {
+		
+		  UserVO vo = new UserVO(); 
+		  vo.setU_id(Integer.parseInt((String) param.get("u_id")));
+		  vo.setU_name((String) param.get("u_name"));
+		  vo.setU_login_id((String) param.get("u_login_id"));
+		  vo.setU_login_pwd(cryptoAriaService.encryptData((String) param.get("u_login_pwd")));
+		  vo.setU_email((String) param.get("u_email"));
+		  vo.setU_admin_num((String) param.get("u_admin_num"));
+		  vo.setDp_id(Integer.parseInt((String) param.get("dp_id")));
+		  vo.setPs_id(Integer.parseInt((String) param.get("ps_id")));
+		  vo.setU_grade(Integer.parseInt((String) param.get("u_grade")));
+		  
+		  userService.updateUser(vo);
+		 
+		return "OK";
+	}
+
+	// 사용자 삭제
+	@RequestMapping(value = "/userDelete.do", method = RequestMethod.GET)
+	public String helloDelete(@RequestParam Map<String, Object> param) throws Exception {
+		// 삭제 순서 (되도록이면 이전후 패스워드 변경을 권함)
+		// 1. 내가 관련된 등록전 문서(엑셀저장,임시저장) 관련 민원 삭제  (민원댓글, 민원 이미지,-> 민원 )
+		// Delete from COMPLAINT_SETTLE WHERE c_id in (select c_id from COMPLAINT where u_id={삭제자 ID} and c_notificated in (-1,1));
+		// Delete from COMPLAINT_IMAGE WHERE c_id in (select c_id from COMPLAINT where u_id={삭제자 ID} and c_notificated in (-1,1));
+		// Delete from COMPLAINT_REPLY WHERE c_id in (select c_id from COMPLAINT where u_id={삭제자 ID} and c_notificated in (-1,1));
+		// Delete from COMPLAINT_FILE WHERE c_id in (select c_id from COMPLAINT where u_id={삭제자 ID} and c_notificated in (-1,1));
+		// Delete from COMPLAINT where u_id={삭제자 ID} and c_notificated in (-1,1);
+		// 2. 사용자 삭제
+		// Delete from 'user' where u_id= {"삭제할 ID"} 
+		int u_id= Integer.parseInt((String) param.get("u_id"));
+		userService.deleteComplaintSettles(u_id);
+		userService.deleteComplaintImages(u_id);
+		userService.deleteComplaintReplies(u_id);
+		userService.deleteComplaintFiles(u_id);
+		userService.deleteComplaints(u_id);
+		userService.deleteUser(u_id);
+		return "OK";
+	}
+}

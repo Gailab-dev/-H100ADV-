@@ -1,0 +1,13 @@
+package com.minwon.dao;
+
+import javax.servlet.http.HttpSession;
+
+import com.minwon.vo.LoginVO;
+
+public interface LoginDAO {
+	public boolean loginCheck(LoginVO vo);
+	
+	public LoginVO viewMember(LoginVO vo);
+	
+	public void logout(HttpSession session);
+}

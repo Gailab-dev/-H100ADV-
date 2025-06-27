@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd http://www.springframework.org/schema/context 
+    http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+	<bean id="passwordEncoder" class="org.egovframe.rte.fdl.cryptography.EgovPasswordEncoder">
+		<property name="algorithm" value="SHA-256" /><!-- default : SHA-256 -->
+		<property name="hashedPassword" value="OFEE5cPfCmi0FEFZCIVIak4LmoGcWuCjlbYZqDSnG44=" />
+	</bean>
+
+    <bean id="ARIACryptoService" class="org.egovframe.rte.fdl.cryptography.impl.EgovARIACryptoServiceImpl">
+        <property name="passwordEncoder" ref="passwordEncoder" />
+        <property name="blockSize" value="1024" /><!-- default : 1024 -->
+    </bean>
+
+    <bean id="digestService" class="org.egovframe.rte.fdl.cryptography.impl.EgovDigestServiceImpl">
+        <property name="algorithm" value="SHA-256" /><!-- default : SHA-256 -->
+        <property name="plainDigest" value="false" /><!-- default : false -->
+    </bean>
+
+</beans>

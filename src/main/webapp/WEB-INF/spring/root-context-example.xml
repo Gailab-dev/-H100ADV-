@@ -1,0 +1,52 @@
+<!-- 
+	위 설정 파일은 예시입니다.
+	예시를 참고해 자신의 로컬 환경에 맞는 실제 root-context.xml 파일을 생성하시기 바랍니다.
+ -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="dataSource"
+		class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName"
+			value="org.mariadb.jdbc.Driver" />
+		
+		<!-- 
+		<property name="url" value="jdbc:mariadb://102.6.1.118:3307/minwon" />
+		 -->
+		
+		<property name="url"
+			value="jdbc:mariadb://%%yourMariaDBURL%%" />
+		
+		<property name="username" value="%%yourID%%" />
+		<!-- local -->
+		<property name="password" value="%%yourPassword%%" />
+		
+		<!-- 
+		service
+		<property name="password" value="g1u5s1w4n7d~!@#" />
+		 -->
+		
+	</bean>
+
+	<bean id="sqlSessionFactory"
+		class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation"
+			value="classpath:/mybatis-config.xml" />
+		<property name="mapperLocations"
+			value="classpath:mappers/**/*Mapper.xml" />
+	</bean>
+
+	<bean id="sqlSession"
+		class="org.mybatis.spring.SqlSessionTemplate"
+		destroy-method="clearCache">
+		<constructor-arg name="sqlSessionFactory"
+			ref="sqlSessionFactory" />
+	</bean>
+
+</beans>

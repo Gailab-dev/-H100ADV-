@@ -1,0 +1,13 @@
+package com.minwon.service;
+
+import javax.servlet.http.HttpSession;
+
+import com.minwon.vo.LoginVO;
+
+public interface LoginService {
+	public boolean loginCheck(LoginVO vo, HttpSession session);
+	
+	public LoginVO viewMember(LoginVO vo);
+	
+	public void logout(HttpSession session);
+}

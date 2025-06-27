@@ -1,0 +1,73 @@
+package com.minwon.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.NoticeDAO;
+import com.minwon.service.NoticeService;
+import com.minwon.vo.NoticeFileVO;
+import com.minwon.vo.NoticeVO;
+import com.minwon.vo.SearchVO;
+
+@Service
+public class NoticeServiceImpl implements NoticeService {
+	@Autowired
+	NoticeDAO noticeDAO;
+	
+	@Override
+	public List<NoticeVO> getAllList(SearchVO searchVO) throws Exception {
+		return noticeDAO.getAllList(searchVO);
+	}
+
+	@Override
+	public void insertNotice(NoticeVO noticeVO) throws Exception {
+		noticeDAO.insertNotice(noticeVO);
+	}
+
+	@Override
+	public void countUp(Integer noticeId) throws Exception {
+		noticeDAO.countUp(noticeId);
+	}
+
+	@Override
+	public NoticeVO getNotice(Integer noticeId) throws Exception {
+		return noticeDAO.getNotice(noticeId);
+	}
+
+	@Override
+	public int getAllListCnt(SearchVO searchVO) throws Exception {
+		return noticeDAO.getAllListCnt(searchVO);
+	}
+
+	@Override
+	public void insertNoticeFile(NoticeFileVO noticeFileVO) throws Exception {
+		noticeDAO.insertNoticeFile(noticeFileVO);
+	}
+
+	@Override
+	public List<NoticeFileVO> getNoticeFiles(Integer noticeId) throws Exception {
+		return noticeDAO.getNoticeFiles(noticeId);
+	}
+
+	@Override
+	public void deleteNoticeFiles(Integer noticeId) throws Exception {
+		noticeDAO.deleteNoticeFiles(noticeId);
+	}
+
+	@Override
+	public void deleteNotice(Integer noticeId) throws Exception {
+		noticeDAO.deleteNotice(noticeId);
+	}
+
+	@Override
+	public void updateNotice(NoticeVO noticeVO) throws Exception {
+		noticeDAO.updateNotice(noticeVO);
+	}
+
+	@Override
+	public List<NoticeVO> getRecentList() throws Exception {
+		return noticeDAO.getRecentList();
+	}
+}

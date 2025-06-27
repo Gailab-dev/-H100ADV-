@@ -1,0 +1,57 @@
+package com.minwon.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.PositionDAO;
+import com.minwon.service.PositionService;
+import com.minwon.vo.PositionVO;
+@Service
+public class PositionServiceImpl implements PositionService {
+	@Autowired
+	PositionDAO PositionDAO;
+
+	@Override
+	public List<PositionVO> selectPositionList() throws Exception {
+		
+		return PositionDAO.selectPositionList();
+	}
+
+	@Override
+	public void insertPosition(PositionVO vo) throws Exception {
+		PositionDAO.insertPosition(vo);
+	}
+	
+	@Override
+	public void updatePosition(PositionVO vo) throws Exception{
+		PositionDAO.updatePosition(vo);
+	};
+	
+	@Override
+	public void deletePosition(int ps_id) throws Exception{
+		PositionDAO.deletePosition(ps_id);
+	};
+	
+	@Override
+	public PositionVO selectPosition(int ps_id) throws Exception{
+		return PositionDAO.selectPosition(ps_id);
+	}
+
+	@Override
+	public int getPositionUsersCount(int ps_id) throws Exception {
+		return PositionDAO.getPositionUsersCount(ps_id);
+	}
+
+	@Override
+	public List<String> getAllPositions() throws Exception {
+		return PositionDAO.getAllPositions();
+	}
+
+	@Override
+	public String getPositionName(String ps_name) throws Exception {
+		return PositionDAO.getPositionName(ps_name);
+	};
+
+}

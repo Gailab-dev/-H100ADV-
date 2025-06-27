@@ -1,0 +1,78 @@
+package com.minwon.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.SearchDAO;
+import com.minwon.service.SearchService;
+import com.minwon.vo.ComplaintVO;
+import com.minwon.vo.SearchVO;
+
+@Service
+public class SearchServiceImpl implements SearchService {
+	@Autowired
+	SearchDAO searchDAO;
+
+	@Override
+	public List<ComplaintVO> getList1(SearchVO searchVO) throws Exception {
+		return searchDAO.getList1(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList2(SearchVO searchVO) throws Exception {
+		return searchDAO.getList2(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList3(SearchVO searchVO) throws Exception {
+		return searchDAO.getList3(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList4(SearchVO searchVO) throws Exception {
+		return searchDAO.getList4(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList5(SearchVO searchVO) throws Exception {
+		return searchDAO.getList5(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList6(SearchVO searchVO) throws Exception {
+		return searchDAO.getList6(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList7(SearchVO searchVO) throws Exception {
+		return searchDAO.getList7(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList8(SearchVO searchVO) throws Exception {
+		return searchDAO.getList8(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList9(SearchVO searchVO) throws Exception {
+		return searchDAO.getList9(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList10(SearchVO searchVO) throws Exception {
+		return searchDAO.getList10(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList11(SearchVO searchVO) throws Exception {
+		return searchDAO.getList11(searchVO);
+	}
+
+	@Override
+	public List<ComplaintVO> getList12(SearchVO searchVO) throws Exception {
+		return searchDAO.getList12(searchVO);
+	}
+
+}

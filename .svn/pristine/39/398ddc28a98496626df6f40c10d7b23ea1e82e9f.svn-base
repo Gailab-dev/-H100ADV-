@@ -1,0 +1,73 @@
+package com.minwon.dao.impl;
+
+import java.util.List;
+
+import org.apache.ibatis.session.SqlSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.minwon.dao.NoticeDAO;
+import com.minwon.vo.NoticeFileVO;
+import com.minwon.vo.NoticeVO;
+import com.minwon.vo.SearchVO;
+
+@Repository
+public class NoticeDAOImpl implements NoticeDAO {
+	@Autowired
+	SqlSession sqlSession;
+	
+	@Override
+	public List<NoticeVO> getAllList(SearchVO searchVO) throws Exception {
+		return sqlSession.selectList("notice.getAllList", searchVO);
+	}
+
+	@Override
+	public void insertNotice(NoticeVO noticeVO) throws Exception {
+		sqlSession.insert("notice.insertNotice", noticeVO);
+	}
+
+	@Override
+	public void countUp(Integer noticeId) throws Exception {
+		sqlSession.update("notice.countUp", noticeId);
+	}
+
+	@Override
+	public NoticeVO getNotice(Integer noticeId) throws Exception {
+		return sqlSession.selectOne("notice.getNotice", noticeId);
+	}
+
+	@Override
+	public int getAllListCnt(SearchVO searchVO) throws Exception {
+		return sqlSession.selectOne("notice.getAllListCnt", searchVO);
+	}
+
+	@Override
+	public void insertNoticeFile(NoticeFileVO noticeFileVO) throws Exception {
+		sqlSession.insert("notice.insertNoticeFile", noticeFileVO);
+	}
+
+	@Override
+	public List<NoticeFileVO> getNoticeFiles(Integer noticeId) throws Exception {
+		return sqlSession.selectList("notice.getNoticeFiles", noticeId);
+	}
+
+	@Override
+	public void deleteNoticeFiles(Integer noticeId) throws Exception {
+		sqlSession.delete("notice.deleteNoticeFiles", noticeId);
+	}
+
+	@Override
+	public void deleteNotice(Integer noticeId) throws Exception {
+		sqlSession.delete("notice.deleteNotice", noticeId);
+	}
+
+	@Override
+	public void updateNotice(NoticeVO noticeVO) throws Exception {
+		sqlSession.update("notice.updateNotice", noticeVO);
+	}
+
+	@Override
+	public List<NoticeVO> getRecentList() throws Exception {
+		return sqlSession.selectList("notice.getRecentList");
+	}
+}

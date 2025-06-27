@@ -1,0 +1,735 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="search">
+	<resultMap type="com.minwon.vo.ComplaintVO" id="complaintMap">
+		<id property="cId" column="c_id" />
+		<result property="uId" column="u_id" />
+		<result property="dpId" column="dp_id" />
+		<result property="dpName" column="dp_name" />
+		<result property="dpId01" column="dp_id_01" />
+		<result property="dpName01" column="dp_name_01" />
+		<result property="dpId02" column="dp_id_02" />
+		<result property="dpName02" column="dp_name_02" />
+		<result property="dpId03" column="dp_id_03" />
+		<result property="dpName03" column="dp_name_03" />
+		<result property="dpId04" column="dp_id_04" />
+		<result property="dpName04" column="dp_name_04" />
+		<result property="dpId05" column="dp_id_05" />
+		<result property="dpId06" column="dp_id_06" />
+		<result property="cTitle" column="c_title" />
+		<result property="cWriteDate" column="c_writedate" />
+		<result property="cWriteDateCount" column="c_writedate_count" />
+		<result property="cAddress" column="c_address" />
+		<result property="cDistrict" column="c_district" />
+		<result property="cPetitioner" column="c_petitioner" />
+		<result property="cPetitionerPhone" column="c_petitioner_phone" />
+		<result property="cPetitionerAddress" column="c_petitioner_address" />
+		<result property="cPetitionerSpecific" column="c_petitioner_specific" />
+		<result property="cReceiptDate" column="c_receipt_date" />
+		<result property="cReceiptWay" column="c_receipt_way" />
+		<result property="cRaiseDate" column="c_raise_date" />
+		<result property="cRaiseCount" column="c_raise_count" />
+		<result property="cDepartment" column="c_department" />
+		<result property="cOfficer01" column="c_officer1" />
+		<result property="cOfficer02" column="c_officer2" />
+		<result property="cOfficer03" column="c_officer3" />
+		<result property="cKeyPoint" column="c_keypoint" />
+		<result property="cContent" column="c_content" />
+		<result property="cPlan" column="c_plan" />
+		<result property="cComplete" column="c_complete" />
+		<result property="cDeadline" column="c_deadline" />
+		<result property="cNotificated"  column="c_notificated" />
+		<result property="cSatisfiction" column="c_satisfiction" />
+		<result property="cClient" column="c_client" />
+		<result property="cReference" column="c_reference" />
+		<result property="cCount" column="c_count" />
+		<result property="cReplyCount" column="c_reply_count" />
+		<result property="cSeparationType" column="c_separation_type" />
+		<result property="cProcessClass" column="c_process_class" />
+	</resultMap>
+	
+	<select id="getList1" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+		    AND c_notificated IN (2, 9)
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='도로교통'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+        
+	</select>
+	
+	<select id="getList2" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='보행환경'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList3" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='생활안전'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList4" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='주차환경'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList5" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='빈집관리'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList6" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='하수정비'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList7" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='청소환경'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList8" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='공원관리'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList9" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='체육시설'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList10" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='보건복지'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList11" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='문화경제'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+	
+	<select id="getList12" resultMap="complaintMap">
+		WITH recursive cte AS
+		(
+			SELECT dp_id, dp_pid FROM department WHERE dp_id=#{dpId}
+			UNION ALL
+			SELECT a.dp_id, a.dp_pid from department as a
+			INNER JOIN cte AS b
+			ON b.dp_id = a.dp_pid
+		)
+		SELECT c_id, c_writedate, c_district, c_content, c_title, c_notificated
+		FROM complaint 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			AND (dp_id IN (SELECT dp_id FROM cte) or dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte) or dp_id_05 IN (SELECT dp_id FROM cte) or dp_id_06 IN (SELECT dp_id FROM cte))
+			AND c_notificated IN (2, 9)
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND c_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND c_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='petitioner' and keyword != null and keyword != '' ">
+				AND c_petitioner like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='officer' and keyword != null and keyword != '' ">
+				AND c_officer3 like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='serial' and keyword != null and keyword != '' ">
+				AND c_writedate_count like CONCAT('%', #{keyword}, '%') 
+			</if>	
+			<if test="searchType=='district' and keyword != null and keyword != '' ">
+				AND c_district like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='department' and keyword != null and keyword != '' ">
+				AND (dp_id_01 IN (SELECT dp_id FROM cte) or dp_id_02 IN (SELECT dp_id FROM cte) or dp_id_03 IN (SELECT dp_id FROM cte) or dp_id_04 IN (SELECT dp_id FROM cte))
+			</if>
+			<if test="searchType=='separation' and keyword != null and keyword != '' ">
+				AND c_separation_type like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='process' and keyword != null and keyword != '' ">
+				AND c_process_class like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="startDate != null and startDate != ''">
+				<![CDATA[
+				AND c_receipt_date >= #{startDate}
+				]]>
+			</if>
+			<if test="endDate != null and endDate != ''">
+				<![CDATA[
+				AND c_receipt_date < DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+				]]>
+			</if>
+			AND c_separation_type='기타'
+		</trim> 
+		ORDER BY c_id DESC
+        LIMIT 3
+	</select>
+</mapper>

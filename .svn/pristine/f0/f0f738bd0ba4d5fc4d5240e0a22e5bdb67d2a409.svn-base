@@ -1,0 +1,633 @@
+package com.minwon.controller;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.gpki.gpkiapi.cert.X509Certificate;
+import com.gpki.servlet.GPKIHttpServletRequest;
+import com.gpki.servlet.GPKIHttpServletResponse;
+import com.minwon.service.AllService;
+import com.minwon.service.CryptoAriaService;
+import com.minwon.service.DepartmentService;
+import com.minwon.service.MainLoginService;
+import com.minwon.service.MainService;
+import com.minwon.service.PositionService;
+import com.minwon.vo.ComplaintVO;
+import com.minwon.vo.IpLogVO;
+import com.minwon.vo.MainLoginVO;
+import com.minwon.vo.SearchVO;
+import com.minwon.vo.MemberVO;
+import com.minwon.vo.UserVO;
+
+@Controller
+@RequestMapping("/main/*")
+public class MainLoginController {
+	private static final Logger logger = LoggerFactory.getLogger(MainLoginController.class);
+	
+	@Autowired
+	MainLoginService mainLoginService;
+	
+	@Autowired
+	MainService mainService;
+	
+	@Autowired
+	PositionService positionService;
+	
+	@Autowired
+	AllService allService;
+	
+	@Autowired
+	DepartmentService departmentService;
+	
+	@Autowired
+	CryptoAriaService cryptoAriaService;
+	
+	@RequestMapping("memberRequest.do")
+	public ModelAndView memberRequest() throws Exception {
+		ModelAndView mav = new ModelAndView();
+		// List<String> allDepartments = mainService.getAllDepartments();
+		List<String> allPositions = positionService.getAllPositions();
+		List<String> departmentListDepth1 = departmentService.departmentListDepth1();
+		mav.setViewName("main/member_request");
+		mav.addObject("allDepartments", departmentListDepth1);
+		mav.addObject("allPositions", allPositions);
+		return mav;
+	}
+	
+	@RequestMapping("findId.do")
+	public String findId() throws Exception {
+		return "main/find_id";
+	}
+	
+	@RequestMapping(value="checkId.do", method=RequestMethod.POST)
+	@ResponseBody
+	public String checkId(@RequestParam("member_id") String id) throws Exception {
+		String result = "N";
+		int flag = mainLoginService.checkId(id);
+		if (flag == 1) result = "Y";
+		return result;
+	}
+	
+	@RequestMapping("login.do")
+	public String login() {
+		return "main/login";
+	}
+	
+	@RequestMapping("main.do")
+	public ModelAndView main(HttpServletRequest request) throws Exception {
+		HttpSession session = request.getSession();
+		Date now = new Date();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMdd");
+		String today = dateFormat.format(now);
+		SearchVO searchVO = new SearchVO();
+		searchVO.setKeyword(null);
+		searchVO.setSearchType(null);
+		searchVO.setDpId((int) session.getAttribute("userDpId"));
+		searchVO.setuId((int) session.getAttribute("userId"));
+		System.out.println("유저 부서 아이디 " + (int) session.getAttribute("userDpId"));
+		int cooperateComplaintsCount;
+		int reviewingComplaintsCount;
+		List<ComplaintVO> recentCompletedComplaints;
+		List<ComplaintVO> recentNonCompletedComplaints;
+		List<ComplaintVO> recentReviewingComplaints;
+		List<ComplaintVO> recentCooperateComplaints;
+		
+		int impossibleComplaintsCount;
+		int processingComplaintsCount;
+		int finishedComplaintsCount;
+		List<Map<String, Object>> getGroupedDistrict;
+		List<Map<String, Object>> getGroupedDistrictSum;
+		List<Map<String, Object>> getGroupedSeparationType;
+		List<Map<String, Object>> getGroupedSeparationTypeSum;
+		List<Map<String, Object>> getGroupedDepartment;
+		List<Map<String, Object>> getGroupedDepartmentSum;
+		
+		
+		boolean isCertificateRegistered = mainLoginService.isCertificateRegistered((int) session.getAttribute("userId"));
+		int tempComplaintsCount = mainService.tempComplaintsCount((int) session.getAttribute("userId"));
+		if ((int) session.getAttribute("userGrade") != 9) {
+			cooperateComplaintsCount = mainService.cooperateComplaintsCount((int) session.getAttribute("userDpId"));
+			reviewingComplaintsCount = mainService.reviewingComplaintsCount((int) session.getAttribute("userDpId"));
+			recentCompletedComplaints = mainService.getRecentCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			recentNonCompletedComplaints = mainService.getRecentNonCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			recentReviewingComplaints = mainService.getRecentReviewingComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			recentCooperateComplaints = mainService.getRecentCooperateComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			finishedComplaintsCount = mainService.finishedComplaintsCount((int) session.getAttribute("userDpId"));
+			impossibleComplaintsCount = mainService.impossibleComplaintsCount((int) session.getAttribute("userDpId"));
+			processingComplaintsCount = mainService.processingComplaintsCount((int) session.getAttribute("userDpId"));
+			getGroupedDistrict = mainLoginService.getGroupedDistrict((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedDistrictSum = mainLoginService.getGroupedDistrictSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedSeparationType = mainLoginService.getGroupedSeparationType((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedSeparationTypeSum = mainLoginService.getGroupedSeparationTypeSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedDepartment = mainLoginService.getGroupedDepartment((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedDepartmentSum = mainLoginService.getGroupedDepartmentSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+		} else {
+			cooperateComplaintsCount = allService.cooperateComplaintsCount();
+			reviewingComplaintsCount = allService.reviewingComplaintsCount();
+			recentCompletedComplaints = allService.getRecentCompletedComplaints();
+			recentNonCompletedComplaints = allService.getRecentNonCompletedComplaints();
+			recentReviewingComplaints = allService.getRecentReveiwingComplaints();
+			recentCooperateComplaints = allService.getRecentCooperateComplaints();
+			finishedComplaintsCount = allService.finishedComplaintsCount();
+			impossibleComplaintsCount = allService.impossibleComplaintsCount();
+			processingComplaintsCount = allService.processingComplaintsCount();
+			getGroupedDistrict = allService.getGroupedDistrict();
+			getGroupedDistrictSum = allService.getGroupedDistrictSum();
+			getGroupedSeparationType = allService.getGroupedSeparationType();
+			getGroupedSeparationTypeSum = allService.getGroupedSeparationTypeSum();
+			getGroupedDepartment = allService.getGroupedDepartment();
+			getGroupedDepartmentSum = allService.getGroupedDepartmentSum();
+		}
+		
+		List<String> minwonType = new ArrayList<String>(Arrays.asList("도로교통", "보행환경", "생활안전", "주차환경", "빈집관리", "하수정비", "청소환경", "공원관리", "체육시설", "보건복지", "문화경제", "기타"));
+		List<String> districts = new ArrayList<String>(Arrays.asList("충장동", "동명동", "계림1동", "계림2동", "산수1동", "산수2동", "지산1동", "지산2동", "서남동", "학동", "학운동", "지원1동", "지원2동", "기타"));
+		List<String> departments1 = new ArrayList<String>(Arrays.asList("기획예산실", "주민안전담당관", "홍보미디어실", "청렴감사관", "인문도시정책과", "문화예술체육과", "지속가능관광과", "인구청년정책과", "복지정책과", "통합돌봄과", "노인장애인복지과", "양성평등아동과", "일자리경제과", "기후환경과", "자원순환과"));
+		List<String> departments2 = new ArrayList<String>(Arrays.asList("푸른도시과", "도시공간계획과", "주거정책과", "건설과", "건축과", "보행교통정책과", "마을자치과", "행정지원과", "회계과", "세무1과", "세무2과", "민원토지과", "건강정책과", "보건사업과", "위생과", "기타"));
+		List<String> departments = new ArrayList<String>();
+		departments.addAll(departments1);
+		departments.addAll(departments2);
+		System.out.println(getGroupedDistrict);
+		System.out.println(getGroupedSeparationType);
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/main");
+		mav.addObject("cooperateComplaintsCount", cooperateComplaintsCount);
+		mav.addObject("reviewingComplaintsCount", reviewingComplaintsCount);
+		mav.addObject("recentCompletedComplaints", recentCompletedComplaints);
+		mav.addObject("recentNonCompletedComplaints", recentNonCompletedComplaints);
+		mav.addObject("recentReviewingComplaints", recentReviewingComplaints);
+		mav.addObject("recentCooperateComplaints", recentCooperateComplaints);
+		mav.addObject("finishedComplaintsCount", finishedComplaintsCount);
+		mav.addObject("impossibleComplaintsCount", impossibleComplaintsCount);
+		mav.addObject("tempComplaintsCount", tempComplaintsCount);
+		mav.addObject("processingComplaintsCount", processingComplaintsCount);
+		mav.addObject("getGroupedDistrict", getGroupedDistrict);
+		mav.addObject("getGroupedDistrictSum", getGroupedDistrictSum);
+		mav.addObject("getGroupedSeparationType", getGroupedSeparationType);
+		mav.addObject("getGroupedSeparationTypeSum", getGroupedSeparationTypeSum);
+		mav.addObject("getGroupedDepartment", getGroupedDepartment);
+		mav.addObject("getGroupedDepartmentSum", getGroupedDepartmentSum);
+		mav.addObject("districts", districts);
+		mav.addObject("minwonType", minwonType);
+		mav.addObject("departments1", departments1);
+		mav.addObject("departments2", departments2);
+		mav.addObject("departments", departments);
+		mav.addObject("today", today);
+		mav.addObject("isRegistered", isCertificateRegistered);
+		return mav;
+	}
+	
+	@RequestMapping("loginCheck.do")
+	public ModelAndView loginCheck(@ModelAttribute MainLoginVO vo, HttpSession session, HttpServletRequest request) throws Exception {
+		vo.setUserLoginPwd(cryptoAriaService.encryptData(vo.getUserLoginPwd()));
+		boolean result = mainLoginService.loginCheck(vo, session);	
+		Date now = new Date();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMdd");
+		String today = dateFormat.format(now);
+		ModelAndView mav = new ModelAndView();
+		int cooperateComplaintsCount;
+		int reviewingComplaintsCount;
+		List<ComplaintVO> recentCompletedComplaints;
+		List<ComplaintVO> recentNonCompletedComplaints;
+		List<ComplaintVO> recentReviewingComplaints;
+		List<ComplaintVO> recentCooperateComplaints;
+		int finishedComplaintsCount;
+		int impossibleComplaintsCount;
+		int processingComplaintsCount;
+		List<Map<String, Object>> getGroupedDistrict;
+		List<Map<String, Object>> getGroupedDistrictSum;
+		List<Map<String, Object>> getGroupedSeparationType;
+		List<Map<String, Object>> getGroupedSeparationTypeSum;
+		List<Map<String, Object>> getGroupedDepartment;
+		List<Map<String, Object>> getGroupedDepartmentSum;
+		System.out.println("유저 부서 아이디 " + (int) session.getAttribute("userDpId"));
+		
+		if (result == true) {
+			boolean isCertificateRegistered = mainLoginService.isCertificateRegistered((int) session.getAttribute("userId"));
+			int tempComplaintsCount = mainService.tempComplaintsCount((int) session.getAttribute("userId"));
+			SearchVO searchVO = new SearchVO();
+			searchVO.setKeyword(null);
+			searchVO.setSearchType(null);
+			searchVO.setDpId((int) session.getAttribute("userDpId"));
+			searchVO.setuId((int) session.getAttribute("userId"));
+			if ((int) session.getAttribute("userGrade") != 9) {
+				cooperateComplaintsCount = mainService.cooperateComplaintsCount((int) session.getAttribute("userDpId"));
+				reviewingComplaintsCount = mainService.reviewingComplaintsCount((int) session.getAttribute("userDpId"));
+				recentCompletedComplaints = mainService.getRecentCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				recentNonCompletedComplaints = mainService.getRecentNonCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				recentReviewingComplaints = mainService.getRecentReviewingComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				recentCooperateComplaints = mainService.getRecentCooperateComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				finishedComplaintsCount = mainService.finishedComplaintsCount((int) session.getAttribute("userDpId"));
+				impossibleComplaintsCount = mainService.impossibleComplaintsCount((int) session.getAttribute("userDpId"));
+				processingComplaintsCount = mainService.processingComplaintsCount((int) session.getAttribute("userDpId"));
+				getGroupedDistrict = mainLoginService.getGroupedDistrict((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedDistrictSum = mainLoginService.getGroupedDistrictSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedSeparationType = mainLoginService.getGroupedSeparationType((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedSeparationTypeSum = mainLoginService.getGroupedSeparationTypeSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedDepartment = mainLoginService.getGroupedDepartment((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedDepartmentSum = mainLoginService.getGroupedDepartmentSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			} else {
+				cooperateComplaintsCount = allService.cooperateComplaintsCount();
+				reviewingComplaintsCount = allService.reviewingComplaintsCount();
+				recentCompletedComplaints = allService.getRecentCompletedComplaints();
+				recentNonCompletedComplaints = allService.getRecentNonCompletedComplaints();
+				recentReviewingComplaints = allService.getRecentReveiwingComplaints();
+				recentCooperateComplaints = allService.getRecentCooperateComplaints();
+				finishedComplaintsCount = allService.finishedComplaintsCount();
+				impossibleComplaintsCount = allService.impossibleComplaintsCount();
+				processingComplaintsCount = allService.processingComplaintsCount();
+				getGroupedDistrict = allService.getGroupedDistrict();
+				getGroupedDistrictSum = allService.getGroupedDistrictSum();
+				getGroupedSeparationType = allService.getGroupedSeparationType();
+				getGroupedSeparationTypeSum = allService.getGroupedSeparationTypeSum();
+				getGroupedDepartment = allService.getGroupedDepartment();
+				getGroupedDepartmentSum = allService.getGroupedDepartmentSum();
+			}
+			List<String> districts = new ArrayList<String>(Arrays.asList("충장동", "동명동", "계림1동", "계림2동", "산수1동", "산수2동", "지산1동", "지산2동", "서남동", "학동", "학운동", "지원1동", "지원2동", "기타"));
+			List<String> minwonType = new ArrayList<String>(Arrays.asList("도로교통", "보행환경", "생활안전", "주차환경", "빈집관리", "하수정비", "청소환경", "공원관리", "체육시설", "보건복지", "문화경제", "기타"));
+			List<String> departments1 = new ArrayList<String>(Arrays.asList("기획예산실", "주민안전담당관", "홍보미디어실", "청렴감사관", "인문도시정책과", "문화예술체육과", "지속가능관광과", "인구청년정책과", "복지정책과", "통합돌봄과", "노인장애인복지과", "양성평등아동과", "일자리경제과", "기후환경과", "자원순환과"));
+			List<String> departments2 = new ArrayList<String>(Arrays.asList("푸른도시과", "도시공간계획과", "주거정책과", "건설과", "건축과", "보행교통정책과", "마을자치과", "행정지원과", "회계과", "세무1과", "세무2과", "민원토지과", "건강정책과", "보건사업과", "위생과", "기타"));
+			List<String> departments = new ArrayList<String>();
+			departments.addAll(departments1);
+			departments.addAll(departments2);
+			System.out.println(getGroupedDistrict);
+			System.out.println(getGroupedSeparationType);
+			String loginIp = request.getRemoteAddr();
+			System.out.println(loginIp);
+			IpLogVO ipLogVO = new IpLogVO();
+			ipLogVO.setuName(session.getAttribute("userName").toString());
+			ipLogVO.setDpName(mainService.getDepartment((int) session.getAttribute("userDpId")));
+			ipLogVO.setIlIp(loginIp);
+			mainService.insertIpLog(ipLogVO);
+			mav.setViewName("main/main");
+			mav.addObject("msg", "success");
+			mav.addObject("cooperateComplaintsCount", cooperateComplaintsCount);
+			mav.addObject("reviewingComplaintsCount", reviewingComplaintsCount);
+			mav.addObject("recentCompletedComplaints", recentCompletedComplaints);
+			mav.addObject("recentNonCompletedComplaints", recentNonCompletedComplaints);
+			mav.addObject("recentReviewingComplaints", recentReviewingComplaints);
+			mav.addObject("recentCooperateComplaints", recentCooperateComplaints);
+			mav.addObject("finishedComplaintsCount", finishedComplaintsCount);
+			mav.addObject("impossibleComplaintsCount", impossibleComplaintsCount);
+			mav.addObject("tempComplaintsCount", tempComplaintsCount);
+			mav.addObject("processingComplaintsCount", processingComplaintsCount);
+			mav.addObject("getGroupedDistrict", getGroupedDistrict);
+			mav.addObject("getGroupedDistrictSum", getGroupedDistrictSum);
+			mav.addObject("getGroupedSeparationType", getGroupedSeparationType);
+			mav.addObject("getGroupedSeparationTypeSum", getGroupedSeparationTypeSum);
+			mav.addObject("getGroupedDepartment", getGroupedDepartment);
+			mav.addObject("getGroupedDepartmentSum", getGroupedDepartmentSum);
+			mav.addObject("districts", districts);
+			mav.addObject("minwonType", minwonType);
+			mav.addObject("departments1", departments1);
+			mav.addObject("departments2", departments2);
+			mav.addObject("departments", departments);
+			mav.addObject("today", today);
+			mav.addObject("isRegistered", isCertificateRegistered);
+		} else {
+			mav.setViewName("main/login");
+			mav.addObject("msg", "failure");
+		}
+		return mav;
+	}
+	
+	@RequestMapping("certificateLoginCheck.do")
+	public String certificateLoginCheck(HttpSession session, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+			
+		GPKIHttpServletRequest gpkirequest   = new GPKIHttpServletRequest(request);
+		GPKIHttpServletResponse gpkiresponse = new GPKIHttpServletResponse(response); 
+		
+		gpkiresponse.setRequest(gpkirequest);
+		String challenge = gpkiresponse.getChallenge();
+		String sessionid = gpkirequest.getSession().getId();
+		String url = javax.servlet.http.HttpUtils.getRequestURL(request).toString();
+		session.setAttribute("currentpage",url);
+		UserVO result = null;
+		
+		X509Certificate cert = gpkirequest.getSignerCert();
+		String dn = cert.getSubjectDN();
+		System.out.println(cert);
+		
+		result = mainLoginService.certificateLoginCheck(dn, session);
+		
+		Date now = new Date();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMdd");
+		String today = dateFormat.format(now);
+		
+		if (result == null) {
+			mainLoginService.logout(session);
+			model.addAttribute("msg", "fail");
+			return "main/index";
+		}
+		
+		session.setAttribute("userId", result.getU_id());
+		session.setAttribute("userDpId", result.getDp_id());
+		session.setAttribute("userLoginId", result.getU_login_id());
+		session.setAttribute("userName", result.getU_name());
+		session.setAttribute("userGrade", result.getU_grade());
+		System.out.println(result);
+		
+		int cooperateComplaintsCount;
+		int reviewingComplaintsCount;
+		List<ComplaintVO> recentCompletedComplaints;
+		List<ComplaintVO> recentNonCompletedComplaints;
+		List<ComplaintVO> recentReviewingComplaints;
+		List<ComplaintVO> recentCooperateComplaints;
+		int finishedComplaintsCount;
+		int impossibleComplaintsCount;
+		int processingComplaintsCount;
+		List<Map<String, Object>> getGroupedDistrict;
+		List<Map<String, Object>> getGroupedDistrictSum;
+		List<Map<String, Object>> getGroupedSeparationType;
+		List<Map<String, Object>> getGroupedSeparationTypeSum;
+		List<Map<String, Object>> getGroupedDepartment;
+		List<Map<String, Object>> getGroupedDepartmentSum;
+		
+		if (result != null) {
+			int tempComplaintsCount = mainService.tempComplaintsCount((int) session.getAttribute("userId"));
+			SearchVO searchVO = new SearchVO();
+			searchVO.setKeyword(null);
+			searchVO.setSearchType(null);
+			searchVO.setDpId((int) session.getAttribute("userDpId"));
+			searchVO.setuId((int) session.getAttribute("userId"));
+			if ((int) session.getAttribute("userGrade") != 9) {
+				cooperateComplaintsCount = mainService.cooperateComplaintsCount((int) session.getAttribute("userDpId"));
+				reviewingComplaintsCount = mainService.reviewingComplaintsCount((int) session.getAttribute("userDpId"));
+				recentCompletedComplaints = mainService.getRecentCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				recentNonCompletedComplaints = mainService.getRecentNonCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				recentReviewingComplaints = mainService.getRecentReviewingComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				recentCooperateComplaints = mainService.getRecentCooperateComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				finishedComplaintsCount = mainService.getChargeOfComplaintsCnt((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				impossibleComplaintsCount = mainService.impossibleComplaintsCount((int) session.getAttribute("userDpId"));
+				processingComplaintsCount = mainService.processingComplaintsCount((int) session.getAttribute("userDpId"));
+				getGroupedDistrict = mainLoginService.getGroupedDistrict((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedDistrictSum = mainLoginService.getGroupedDistrictSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedSeparationType = mainLoginService.getGroupedSeparationType((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedSeparationTypeSum = mainLoginService.getGroupedSeparationTypeSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedDepartment = mainLoginService.getGroupedDepartment((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+				getGroupedDepartmentSum = mainLoginService.getGroupedDepartmentSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			} else {
+				cooperateComplaintsCount = allService.cooperateComplaintsCount();
+				reviewingComplaintsCount = allService.getProcessListCnt(searchVO);
+				recentCompletedComplaints = allService.getRecentCompletedComplaints();
+				recentNonCompletedComplaints = allService.getRecentNonCompletedComplaints();
+				recentReviewingComplaints = allService.getRecentReveiwingComplaints();
+				recentCooperateComplaints = allService.getRecentCooperateComplaints();
+				finishedComplaintsCount = allService.getChargeOfComplaintsCnt();
+				impossibleComplaintsCount = allService.impossibleComplaintsCount();
+				processingComplaintsCount = allService.processingComplaintsCount();
+				getGroupedDistrict = allService.getGroupedDistrict();
+				getGroupedDistrictSum = allService.getGroupedDistrictSum();
+				getGroupedSeparationType = allService.getGroupedSeparationType();
+				getGroupedSeparationTypeSum = allService.getGroupedSeparationTypeSum();
+				getGroupedDepartment = allService.getGroupedDepartment();
+				getGroupedDepartmentSum = allService.getGroupedDepartmentSum();
+			}
+			List<String> districts = new ArrayList<String>(Arrays.asList("충장동", "동명동", "계림1동", "계림2동", "산수1동", "산수2동", "지산1동", "지산2동", "서남동", "학동", "학운동", "지원1동", "지원2동", "기타"));
+			List<String> minwonType = new ArrayList<String>(Arrays.asList("도로교통", "보행환경", "생활안전", "주차환경", "빈집관리", "하수정비", "청소환경", "공원관리", "체육시설", "보건복지", "문화경제", "기타"));
+			List<String> departments1 = new ArrayList<String>(Arrays.asList("기획예산실", "주민안전담당관", "홍보미디어실", "청렴감사관", "인문도시정책과", "문화예술체육과", "지속가능관광과", "인구청년정책과", "복지정책과", "통합돌봄과", "노인장애인복지과", "양성평등아동과", "일자리경제과", "기후환경과", "자원순환과"));
+			List<String> departments2 = new ArrayList<String>(Arrays.asList("푸른도시과", "도시공간계획과", "주거정책과", "건설과", "건축과", "보행교통정책과", "마을자치과", "행정지원과", "회계과", "세무1과", "세무2과", "민원토지과", "건강정책과", "보건사업과", "위생과", "기타"));
+			List<String> departments = new ArrayList<String>();
+			departments.addAll(departments1);
+			departments.addAll(departments2);
+			String loginIp = request.getRemoteAddr();
+			System.out.println(loginIp);
+			IpLogVO ipLogVO = new IpLogVO();
+			ipLogVO.setuName(session.getAttribute("userName").toString());
+			ipLogVO.setDpName(mainService.getDepartment((int) session.getAttribute("userDpId")));
+			ipLogVO.setIlIp(loginIp);
+			mainService.insertIpLog(ipLogVO);
+			model.addAttribute("msg", "success");
+			model.addAttribute("cooperateComplaintsCount", cooperateComplaintsCount);
+			model.addAttribute("reviewingComplaintsCount", reviewingComplaintsCount);
+			model.addAttribute("recentCompletedComplaints", recentCompletedComplaints);
+			model.addAttribute("recentNonCompletedComplaints", recentNonCompletedComplaints);
+			model.addAttribute("recentReviewingComplaints", recentReviewingComplaints);
+			model.addAttribute("recentCooperateComplaints", recentCooperateComplaints);
+			model.addAttribute("finishedComplaintsCount", finishedComplaintsCount);
+			model.addAttribute("impossibleComplaintsCount", impossibleComplaintsCount);
+			model.addAttribute("tempComplaintsCount", tempComplaintsCount);
+			model.addAttribute("processingComplaintsCount", processingComplaintsCount);
+			model.addAttribute("getGroupedDistrict", getGroupedDistrict);
+			model.addAttribute("getGroupedDistrictSum", getGroupedDistrictSum);
+			model.addAttribute("getGroupedSeparationType", getGroupedSeparationType);
+			model.addAttribute("getGroupedSeparationTypeSum", getGroupedSeparationTypeSum);
+			model.addAttribute("getGroupedDepartment", getGroupedDepartment);
+			model.addAttribute("getGroupedDepartmentSum", getGroupedDepartmentSum);
+			model.addAttribute("districts", districts);
+			model.addAttribute("minwonType", minwonType);
+			model.addAttribute("departments1", departments1);
+			model.addAttribute("departments2", departments2);
+			model.addAttribute("departments", departments);
+			model.addAttribute("today", today);
+			model.addAttribute("isRegistered", true);
+			return "main/main";
+		} 
+		
+		return "main/login";
+	} 
+	
+	@RequestMapping("certFindId.do")
+	public String certFindId(HttpSession session, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+		
+		GPKIHttpServletRequest gpkirequest   = new GPKIHttpServletRequest(request);
+		GPKIHttpServletResponse gpkiresponse = new GPKIHttpServletResponse(response); 
+		
+		gpkiresponse.setRequest(gpkirequest);
+		String challenge = gpkiresponse.getChallenge();
+		String sessionid = gpkirequest.getSession().getId();
+		String url = javax.servlet.http.HttpUtils.getRequestURL(request).toString();
+		session.setAttribute("currentpage",url);
+		
+		X509Certificate cert = gpkirequest.getSignerCert();
+		String dn = cert.getSubjectDN();
+		System.out.println(dn);
+		
+		
+		String result = mainLoginService.findId(dn);
+
+		if (result != null) {
+			model.addAttribute("result", result);
+			return "main/find_id_result";
+		} else {
+			model.addAttribute("msg", "fail");
+			return "main/login";
+		}
+	}
+	
+	@RequestMapping("changePassword.do")
+	public String changePassword(HttpSession session, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+		UserVO vo = new UserVO();
+		
+		GPKIHttpServletRequest gpkirequest   = new GPKIHttpServletRequest(request);
+		GPKIHttpServletResponse gpkiresponse = new GPKIHttpServletResponse(response); 
+		
+		gpkiresponse.setRequest(gpkirequest);
+		String challenge = gpkiresponse.getChallenge();
+		String sessionid = gpkirequest.getSession().getId();
+		String url = javax.servlet.http.HttpUtils.getRequestURL(request).toString();
+		session.setAttribute("currentpage",url);
+		
+		X509Certificate cert = gpkirequest.getSignerCert();
+		String dn = cert.getSubjectDN();
+		String password = cryptoAriaService.encryptData(gpkirequest.getParameter("password"));
+		vo.setU_gpki_dn(dn);
+		vo.setU_login_pwd(password);
+		
+		mainLoginService.changePassword(vo);
+		model.addAttribute("result", "비밀번호가 변경되었습니다.");
+		return "main/find_id_result";
+	}
+	
+	@RequestMapping("certificateRequest.do")
+	public ModelAndView certificateRequest() {
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/certificate_request");
+		return mav;
+	}
+	
+	@RequestMapping("registerCertificate.do")
+	public ModelAndView registerCertificate(HttpSession session, HttpServletRequest request, HttpServletResponse response, ModelMap model) throws Exception {
+		UserVO vo = new UserVO();
+		
+		GPKIHttpServletRequest gpkirequest   = new GPKIHttpServletRequest(request);
+		GPKIHttpServletResponse gpkiresponse = new GPKIHttpServletResponse(response); 
+		
+		gpkiresponse.setRequest(gpkirequest);
+		String challenge = gpkiresponse.getChallenge();
+		String sessionid = gpkirequest.getSession().getId();
+		String url = javax.servlet.http.HttpUtils.getRequestURL(request).toString();
+		session.setAttribute("currentpage",url);
+		
+		X509Certificate cert = gpkirequest.getSignerCert();
+		String dn = cert.getSubjectDN();
+		vo.setU_id((int) session.getAttribute("userId"));
+		vo.setU_gpki_dn(dn);
+		
+		mainLoginService.registerCertificate(vo);
+		model.addAttribute("result", "공인인증서가 등록되었습니다.");
+		Date now = new Date();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyMMdd");
+		String today = dateFormat.format(now);
+		SearchVO searchVO = new SearchVO();
+		searchVO.setKeyword(null);
+		searchVO.setSearchType(null);
+		searchVO.setDpId((int) session.getAttribute("userDpId"));
+		searchVO.setuId((int) session.getAttribute("userId"));
+		
+		int cooperateComplaintsCount;
+		int reviewingComplaintsCount;
+		List<ComplaintVO> recentCompletedComplaints;
+		List<ComplaintVO> recentNonCompletedComplaints;
+		List<ComplaintVO> recentReviewingComplaints;
+		List<ComplaintVO> recentCooperateComplaints;
+		int finishedComplaintsCount;
+		int impossibleComplaintsCount;
+		int processingComplaintsCount;
+		List<Map<String, Object>> getGroupedDistrict;
+		List<Map<String, Object>> getGroupedDistrictSum;
+		List<Map<String, Object>> getGroupedSeparationType;
+		List<Map<String, Object>> getGroupedSeparationTypeSum;
+		List<Map<String, Object>> getGroupedDepartment;
+		List<Map<String, Object>> getGroupedDepartmentSum;
+		
+		boolean isCertificateRegistered = mainLoginService.isCertificateRegistered((int) session.getAttribute("userId"));
+		int tempComplaintsCount = mainService.tempComplaintsCount((int) session.getAttribute("userId"));
+		if ((int) session.getAttribute("userGrade") != 9) {
+			cooperateComplaintsCount = mainService.cooperateComplaintsCount((int) session.getAttribute("userDpId"));
+			reviewingComplaintsCount = mainService.reviewingComplaintsCount((int) session.getAttribute("userDpId"));
+			recentCompletedComplaints = mainService.getRecentCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			recentNonCompletedComplaints = mainService.getRecentNonCompletedComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			recentReviewingComplaints = mainService.getRecentReviewingComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			recentCooperateComplaints = mainService.getRecentCooperateComplaints((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			finishedComplaintsCount = mainService.getChargeOfComplaintsCnt((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			impossibleComplaintsCount = mainService.impossibleComplaintsCount((int) session.getAttribute("userDpId"));
+			processingComplaintsCount = mainService.processingComplaintsCount((int) session.getAttribute("userDpId"));
+			getGroupedDistrict = mainLoginService.getGroupedDistrict((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedDistrictSum = mainLoginService.getGroupedDistrictSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedSeparationType = mainLoginService.getGroupedSeparationType((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedSeparationTypeSum = mainLoginService.getGroupedSeparationTypeSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedDepartment = mainLoginService.getGroupedDepartment((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+			getGroupedDepartmentSum = mainLoginService.getGroupedDepartmentSum((int) session.getAttribute("userDpId"), (int) session.getAttribute("userId"));
+		} else {
+			cooperateComplaintsCount = allService.cooperateComplaintsCount();
+			reviewingComplaintsCount = allService.getProcessListCnt(searchVO);
+			recentCompletedComplaints = allService.getRecentCompletedComplaints();
+			recentNonCompletedComplaints = allService.getRecentNonCompletedComplaints();
+			recentReviewingComplaints = allService.getRecentReveiwingComplaints();
+			recentCooperateComplaints = allService.getRecentCooperateComplaints();
+			finishedComplaintsCount = allService.getChargeOfComplaintsCnt();
+			impossibleComplaintsCount = allService.impossibleComplaintsCount();
+			processingComplaintsCount = allService.processingComplaintsCount();
+			getGroupedDistrict = allService.getGroupedDistrict();
+			getGroupedDistrictSum = allService.getGroupedDistrictSum();
+			getGroupedSeparationType = allService.getGroupedSeparationType();
+			getGroupedSeparationTypeSum = allService.getGroupedSeparationTypeSum();
+			getGroupedDepartment = allService.getGroupedDepartment();
+			getGroupedDepartmentSum = allService.getGroupedDepartmentSum();
+		}
+		List<String> minwonType = new ArrayList<String>(Arrays.asList("도로교통", "보행환경", "생활안전", "주차환경", "빈집관리", "하수정비", "청소환경", "공원관리", "체육시설", "보건복지", "문화경제", "기타"));
+		List<String> districts = new ArrayList<String>(Arrays.asList("충장동", "동명동", "계림1동", "계림2동", "산수1동", "산수2동", "지산1동", "지산2동", "서남동", "학동", "학운동", "지원1동", "지원2동", "기타"));
+		List<String> departments1 = new ArrayList<String>(Arrays.asList("기획예산실", "주민안전담당관", "홍보미디어실", "청렴감사관", "인문도시정책과", "문화예술체육과", "지속가능관광과", "인구청년정책과", "복지정책과", "통합돌봄과", "노인장애인복지과", "양성평등아동과", "일자리경제과", "기후환경과", "자원순환과"));
+		List<String> departments2 = new ArrayList<String>(Arrays.asList("푸른도시과", "도시공간계획과", "주거정책과", "건설과", "건축과", "보행교통정책과", "마을자치과", "행정지원과", "회계과", "세무1과", "세무2과", "민원토지과", "건강정책과", "보건사업과", "위생과", "기타"));
+		List<String> departments = new ArrayList<String>();
+		departments.addAll(departments1);
+		departments.addAll(departments2);
+		System.out.println(getGroupedDistrict);
+		System.out.println(getGroupedSeparationType);
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/main");
+		mav.addObject("cooperateComplaintsCount", cooperateComplaintsCount);
+		mav.addObject("reviewingComplaintsCount", reviewingComplaintsCount);
+		mav.addObject("recentCompletedComplaints", recentCompletedComplaints);
+		mav.addObject("recentNonCompletedComplaints", recentNonCompletedComplaints);
+		mav.addObject("recentReviewingComplaints", recentReviewingComplaints);
+		mav.addObject("recentCooperateComplaints", recentCooperateComplaints);
+		mav.addObject("finishedComplaintsCount", finishedComplaintsCount);
+		mav.addObject("impossibleComplaintsCount", impossibleComplaintsCount);
+		mav.addObject("tempComplaintsCount", tempComplaintsCount);
+		mav.addObject("processingComplaintsCount", processingComplaintsCount);
+		mav.addObject("getGroupedDistrict", getGroupedDistrict);
+		mav.addObject("getGroupedDistrictSum", getGroupedDistrictSum);
+		mav.addObject("getGroupedSeparationType", getGroupedSeparationType);
+		mav.addObject("getGroupedSeparationTypeSum", getGroupedSeparationTypeSum);
+		mav.addObject("getGroupedDepartment", getGroupedDepartment);
+		mav.addObject("getGroupedDepartmentSum", getGroupedDepartmentSum);
+		mav.addObject("districts", districts);
+		mav.addObject("minwonType", minwonType);
+		mav.addObject("departments1", departments1);
+		mav.addObject("departments2", departments2);
+		mav.addObject("departments", departments);
+		mav.addObject("today", today);
+		mav.addObject("isRegistered", isCertificateRegistered);
+		return mav;
+	}
+	
+	@RequestMapping("logout.do")
+	public ModelAndView logout(HttpSession session) {
+		mainLoginService.logout(session);
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/login");
+		mav.addObject("msg", "logout");
+		return mav;
+	}
+}

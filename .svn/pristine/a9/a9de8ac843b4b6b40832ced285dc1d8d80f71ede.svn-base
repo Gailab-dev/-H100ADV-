@@ -1,0 +1,33 @@
+package com.minwon.service;
+
+import java.util.List;
+
+import com.minwon.vo.ComplaintVO;
+import com.minwon.vo.SearchVO;
+
+public interface SearchService {
+
+	public List<ComplaintVO> getList1(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList2(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList3(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList4(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList5(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList6(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList7(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList8(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList9(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList10(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList11(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintVO> getList12(SearchVO searchVO) throws Exception;
+}

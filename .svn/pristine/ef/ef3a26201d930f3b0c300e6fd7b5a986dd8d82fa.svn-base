@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="department">
+	<select id="viewDepartmentList"
+		resultType="com.minwon.vo.DepartmentVO">
+		SELECT
+		dp_id,
+		dp_name,
+		dp_depth,
+		dp_pid,
+		dp_rank
+		FROM department order by dp_rank, dp_depth, dp_id
+	</select>
+
+	<insert id="insertDepartment"
+		parameterType="com.minwon.vo.DepartmentVO">
+		INSERT INTO department(dp_name, dp_depth, dp_pid,
+		dp_rank) VALUES (#{dp_name}, #{dp_depth}, #{dp_pid}, #{dp_rank})
+	</insert>
+	<update id="updateDepartment"
+		parameterType="com.minwon.vo.DepartmentVO">
+		UPDATE department
+		SET
+		dp_name=#{dp_name},
+		dp_depth=#{dp_depth},
+		dp_pid=#{dp_pid},
+		dp_rank=#{dp_rank}
+		WHERE
+		dp_id=#{dp_id}
+	</update>
+	<delete id="deleteDepartment" parameterType="int" >
+		DELETE FROM department WHERE dp_id=#{dp_id}
+	</delete>
+	
+	<select id="selectDepartment" parameterType="int" resultType="com.minwon.vo.DepartmentVO">
+		SELECT dp_id, dp_name, dp_depth, dp_pid, dp_rank
+		FROM department WHERE dp_id=#{dp_id}
+	</select>
+	
+	<select id="selectDepartmentDepth" parameterType="int" resultType="com.minwon.vo.DepartmentVO">
+		SELECT dp_id, dp_name, dp_depth, dp_pid, dp_rank
+		FROM department WHERE dp_depth=#{dp_depth}
+	</select>
+	
+	<select id="deleteCheckDepartment" parameterType="int" resultType="Integer">
+		SELECT dp_id, dp_name, dp_depth, dp_pid, dp_rank
+		FROM department WHERE dp_pid=#{dp_pid}
+	</select>
+	
+	<select id="getSubDepartmentsCount" resultType="Integer">
+		SELECT COUNT(*)
+		FROM department 
+		WHERE dp_pid=#{dp_id}
+	</select>
+	
+	<select id="getDepartmentUsersCount" resultType="Integer">
+		SELECT COUNT(*)
+		FROM user 
+		WHERE dp_id=#{dp_id}
+	</select>
+	
+	<select id="departmentListDepth1" resultType="String">
+		SELECT dp_name
+		FROM department
+		WHERE dp_depth=1
+	</select>
+	
+	<select id="departmentListDepth2" parameterType="String" resultType="String">
+		SELECT dp_name
+		FROM department
+		WHERE dp_depth=2 AND dp_pid=(SELECT dp_id FROM department WHERE dp_name=#{departmentName})
+		ORDER BY dp_rank, dp_id
+	</select>
+	
+	<select id="departmentListDepth3" parameterType="String" resultType="String">
+		SELECT dp_name
+		FROM department
+		WHERE dp_depth=3 AND dp_pid=(SELECT dp_id FROM department WHERE dp_name=#{departmentName})
+		ORDER BY dp_rank, dp_id
+	</select>
+</mapper>

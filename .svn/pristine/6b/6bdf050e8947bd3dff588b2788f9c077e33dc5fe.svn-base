@@ -1,0 +1,52 @@
+package com.minwon.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.MemberDAO;
+import com.minwon.service.MemberService;
+import com.minwon.vo.MemberVO;
+
+@Service
+public class MemberServiceImpl implements MemberService {
+	@Autowired
+	MemberDAO memberDAO;
+
+	@Override
+	public List<MemberVO> selectMemberList() throws Exception {
+		return memberDAO.selectMemberList();
+	}
+
+	@Override
+	public MemberVO selectMember(int u_id) throws Exception {
+		return memberDAO.selectMember(u_id);
+	}
+
+	@Override
+	public void insertMember(MemberVO vo) throws Exception {
+		memberDAO.insertMember(vo);
+	}
+
+	@Override
+	public void deleteTempMember(int id) throws Exception {
+		memberDAO.deleteTempMember(id);
+	}
+
+	@Override
+	public void requestMember(MemberVO vo) throws Exception {
+		memberDAO.requestMember(vo);
+	}
+
+	@Override
+	public int getDpId(String department) throws Exception {
+		return memberDAO.getDpId(department);
+	}
+
+	@Override
+	public int getPsId(String position) throws Exception {
+		return memberDAO.getPsId(position);
+	}
+
+}

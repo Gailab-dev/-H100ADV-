@@ -1,0 +1,253 @@
+/* 기본설정 */
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+input,
+textarea,
+select {
+  font-family: "Nanum Gothic", sans-serif;
+  color: #333;
+  font-weight: normal;
+}
+
+a,
+p,
+.btn,
+.alert,
+.custom-select,
+.form-control {
+  font-size: 0.825rem;
+}
+
+a{
+  color: #0066b3;
+}
+.page-item.active .page-link{
+  background-color: #0066b3;
+  border-color: #0066b3;
+}
+.page-link{
+  color: #0066b3;
+}
+
+.sidebar-heading{
+  color: #999;
+}
+
+
+.feather {
+  width: 16px;
+  height: 16px;
+  vertical-align: text-bottom;
+}
+.bd-placeholder-img {
+  font-size: 1.125rem;
+  text-anchor: middle;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .bd-placeholder-img-lg {
+    font-size: 3.5rem;
+  }
+}
+
+/*
+ * Sidebar
+ */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100; /* Behind the navbar */
+  padding: 48px 0 0; /* Height of navbar */
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 767.98px) {
+  .sidebar {
+    top: 2rem;
+  }
+}
+
+.sidebar-sticky {
+  position: relative;
+  top: 0;
+  height: calc(100vh - 48px);
+  padding-top: 0.5rem;
+  overflow-x: hidden;
+  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+}
+
+@supports ((position: -webkit-sticky) or (position: sticky)) {
+  .sidebar-sticky {
+    position: -webkit-sticky;
+    position: sticky;
+  }
+}
+
+.sidebar {
+  padding: 66px 0 0;
+}
+.sidebar .nav-link {
+  font-weight: 400;
+  color: #333;
+}
+
+.sidebar .nav-link .feather {
+  margin-right: 4px;
+  color: #999;
+}
+
+.sidebar .nav-link.active {
+  background-color: #0066b3;
+  color: #fff;
+}
+
+.sidebar .nav-link:hover .feather,
+.sidebar .nav-link.active .feather {
+  color: inherit;
+}
+
+.sidebar-heading {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.btn-bule-outline {
+  border: 1px solid #0066b3;
+  background-color: transparent;
+  color: #0066b3;
+}
+.btn-bule-outline.on,
+.btn-bule-outline:hover {
+  background-color: #0066b3;
+  border: 1px solid #0066b3;
+  color: #fff;
+}
+
+.btn-bule {
+  background-color: #0066b3;
+  border: 1px solid #0066b3;
+  color: #fff;
+}
+.btn-secondary.active .btn-bule.active,
+.btn-bule:hover {
+  background-color: #055089;
+  border: 1px solid #055089;
+  color: #fff;
+}
+.show > .btn-secondary.dropdown-toggle {
+  background-color: #055089;
+  border: 1px solid #055089;
+}
+
+.date-picker-wapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-bottom: 0.5rem;
+}
+.date-picker-wapper input {
+  width: 40%;
+}
+/*
+ * Navbar
+ */
+.navbar {
+  z-index: 1000;
+}
+.navbar-brand {
+  padding-top: 0.5rem;
+  padding-bottom: 0.75rem;
+  font-size: 1rem;
+  background-color: #fff;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
+}
+
+.navbar .navbar-toggler {
+  top: 4rem;
+  right: 1rem;
+  border-color: 0;
+}
+
+.navbar .form-control {
+  padding: 0.75rem 1rem;
+  border-width: 0;
+  border-radius: 0;
+}
+
+.form-control-dark {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.form-control-dark:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
+}
+/* 로그인 */
+.login-page {
+  width: 100%;
+  min-height: 100vh;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+}
+.login-form {
+  max-width: 900px;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+.login-form > img {
+  border-top: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  border-left: 1px solid #dee2e6;
+}
+/*
+ * main
+ */
+
+/* 리스트 */
+.list-group-item {
+  padding: 0.5rem 0.75rem;
+}
+.list-group-item.active {
+  background-color: white;
+  color: #333;
+  border-color: #0066b3;
+}
+
+/* 테이블 */
+td,
+th {
+  font-size: 0.825rem;
+}
+.table thead th {
+  border-bottom: 2px solid #0066b3;
+}
+/* 모바일 버전 */
+@media (max-width: 768px) {
+
+  .login-form img {
+    display: none;
+  }
+}

@@ -1,0 +1,69 @@
+package com.minwon.dao.impl;
+
+import java.util.List;
+
+import org.apache.ibatis.session.SqlSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.minwon.dao.ArchiveDAO;
+import com.minwon.vo.ArchiveFileVO;
+import com.minwon.vo.ArchiveVO;
+import com.minwon.vo.SearchVO;
+
+@Repository
+public class ArchiveDAOImpl implements ArchiveDAO {
+	@Autowired
+	SqlSession sqlSession;
+
+	@Override
+	public List<ArchiveVO> getAllList(SearchVO searchVO) throws Exception {
+		return sqlSession.selectList("archive.getAllList", searchVO);
+	}
+
+	@Override
+	public void insertArchive(ArchiveVO archiveVO) throws Exception {
+		sqlSession.insert("archive.insertArchive", archiveVO);
+	}
+
+	@Override
+	public void countUp(Integer archiveId) throws Exception {
+		sqlSession.update("archive.countUp", archiveId);
+	}
+
+	@Override
+	public ArchiveVO getArchive(Integer archiveId) throws Exception {
+		return sqlSession.selectOne("archive.getArchive", archiveId);
+	}
+
+	@Override
+	public int getAllListCnt(SearchVO searchVO) throws Exception {
+		return sqlSession.selectOne("archive.getAllListCnt", searchVO);
+	}
+
+	@Override
+	public void insertArchiveFile(ArchiveFileVO archiveFileVO) throws Exception {
+		sqlSession.insert("archive.insertArchiveFile", archiveFileVO);
+	}
+
+	@Override
+	public List<ArchiveFileVO> getArchiveFiles(Integer archiveId) throws Exception {
+		return sqlSession.selectList("archive.getArchiveFiles", archiveId);
+	}
+
+	@Override
+	public void deleteArchiveFiles(Integer archiveId) throws Exception {
+		sqlSession.delete("archive.deleteArchiveFiles", archiveId);
+	}
+
+	@Override
+	public void deleteArchive(Integer archiveId) throws Exception {
+		sqlSession.delete("archive.deleteArchive", archiveId);
+	}
+
+	@Override
+	public void updateArchive(ArchiveVO archiveVO) throws Exception {
+		sqlSession.update("archive.updateArchive", archiveVO);
+	}
+
+}

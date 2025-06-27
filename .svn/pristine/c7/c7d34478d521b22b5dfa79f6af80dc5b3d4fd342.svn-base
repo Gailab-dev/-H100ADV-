@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="user">
+	<select id="getDeptUserList" resultType="map">
+		select dp.dp_depth,
+		d3name, d2name, d1name, u_login_id, u_name, u_email from user as u
+		left outer JOIN
+		(
+		SELECT d1.dp_id, d3name, d2name, d1.dp_name AS d1name, d1.dp_depth FROM
+		department AS d1
+		left outer JOIN
+		(SELECT d2.dp_id, d2.dp_name AS d2name, d3.dp_name AS d3name from department
+		AS d2
+		LEFT OUTER JOIN
+		department AS d3
+		ON d2.dp_pid=d3.dp_id)
+		AS d4
+		ON d1.dp_pid= d4.dp_id
+		)
+		AS dp
+		on u.dp_id=dp.dp_id
+	</select>
+	<select id="viewUserList" resultType="com.minwon.vo.UserVO">
+		SELECT u_id, u_name, dp_id,
+		ps_id, u_grade, u_login_id, u_login_pwd, u_email, u_admin_num
+		FROM
+		`user`
+	</select>
+	<select id="viewPartUserList" parameterType="int"
+		resultType="com.minwon.vo.UserVO">
+		SELECT u_id, u_name, dp_id,
+		ps_id, u_grade, u_login_id,
+		u_login_pwd, u_email, u_admin_num
+		FROM `user` where dp_id = #{dp_id}
+	</select>
+
+	<insert id="insertUser" parameterType="com.minwon.vo.UserVO">
+		INSERT INTO `user`
+		(
+		u_name, dp_id, ps_id, u_grade, u_login_id, u_login_pwd, u_email,
+		u_admin_num)
+		VALUES (#{u_name}, #{dp_id}, #{ps_id}, #{u_grade},
+		#{u_login_id}, #{u_login_pwd}, #{u_email}, #{u_admin_num})
+	</insert>
+	<update id="updateUser" parameterType="com.minwon.vo.UserVO">
+		UPDATE `user`
+		SET
+		u_name=#{u_name},
+		dp_id=#{dp_id},
+		ps_id=#{ps_id},
+		u_grade=#{u_grade},
+		u_login_id=#{u_login_id},
+		u_login_pwd=#{u_login_pwd},
+		u_email=#{u_email},
+		u_admin_num=#{u_admin_num}
+		WHERE u_id=#{u_id}
+	</update>
+	<delete id="deleteUser" parameterType="int">
+		DELETE FROM `user`
+		WHERE
+		u_id=#{u_id}
+	</delete>
+
+	<select id="selectUser" parameterType="int"
+		resultType="com.minwon.vo.UserVO">
+		SELECT u_id, u_name, dp_id, ps_id, u_grade, u_login_id,
+		u_login_pwd, u_email, u_admin_num
+		FROM `user` WHERE u_id=#{u_id}
+	</select>
+
+	<select id="selectUserFind" parameterType="String"
+		resultType="com.minwon.vo.UserVO">
+		SELECT *
+		FROM `user` WHERE u_login_id=#{u_login_id}
+	</select>
+
+	<select id="countUserPart" parameterType="int"
+		resultType="Integer">
+		SELECT count(*) FROM `user` WHERE dp_id = #{dp_id}
+	</select>
+
+	<select id="countUserPosition" parameterType="int"
+		resultType="Integer">
+		SELECT count(*) FROM `user` WHERE ps_id = #{ps_id}
+	</select>
+
+	<delete id="deleteComplaintSettles" parameterType="int">
+		Delete from
+		complaint_settle
+		WHERE c_id in (select c_id from complaint where u_id=#{u_id} and
+		c_notificated in (-1,1));
+	</delete>
+
+	<delete id="deleteComplaintImages" parameterType="int">
+		Delete from
+		complaint_image
+		WHERE c_id in (select c_id from complaint where u_id=#{u_id} and
+		c_notificated in (-1,1));
+	</delete>
+
+	<delete id="deleteComplaintReplies" parameterType="int">
+		Delete from
+		complaint_reply
+		WHERE c_id in (select c_id from complaint where
+		u_id=#{u_id} and c_notificated in (-1,1));
+	</delete>
+
+	<delete id="deleteComplaintFiles" parameterType="int">
+		Delete from
+		complaint_file
+		WHERE c_id in (select c_id from complaint where
+		u_id=#{u_id} and c_notificated in (-1,1));
+	</delete>
+
+	<delete id="deleteComplaints" parameterType="int">
+		Delete from
+		complaint
+		WHERE u_id=#{u_id} and c_notificated in (-1,1)
+	</delete>
+	
+	<select id="getUserInfoByName" parameterType="String" resultType="map">
+		SELECT u_id, u_name, 
+		(select dp_name from department where user.dp_id = department.dp_id) AS dp_name, 
+		(select ps_name from position where user.ps_id = position.ps_id) AS ps_name 
+		FROM user WHERE u_name = #{u_name};
+	</select>
+</mapper>

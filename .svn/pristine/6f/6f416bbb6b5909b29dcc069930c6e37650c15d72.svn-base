@@ -1,0 +1,356 @@
+package com.minwon.service.impl;
+
+import java.util.HashMap;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.MainDAO;
+import com.minwon.dao.MainLoginDAO;
+import com.minwon.service.MainService;
+import com.minwon.vo.ComplaintFileVO;
+import com.minwon.vo.ComplaintImageVO;
+import com.minwon.vo.ComplaintReplyVO;
+import com.minwon.vo.ComplaintSettleVO;
+import com.minwon.vo.ComplaintVO;
+import com.minwon.vo.IpLogVO;
+import com.minwon.vo.MemberVO;
+import com.minwon.vo.SearchVO;
+
+@Service
+public class MainServiceImpl implements MainService {
+	@Autowired
+	MainDAO mainDAO;
+	
+	@Override
+	public List<ComplaintVO> getRecentCompletedComplaints(int dpId, int uId) throws Exception {
+		return mainDAO.getRecentCompletedComplaints(dpId, uId);
+	}
+	
+	@Override
+	public List<ComplaintVO> getRecentNonCompletedComplaints(int dpId, int uId) throws Exception {
+		return mainDAO.getRecentNonCompletedComplaints(dpId, uId);
+	}
+	
+	@Override
+	public int getChargeOfComplaintsCnt(int dpId, int uId) throws Exception {
+		return mainDAO.getChargeOfComplaintsCnt(dpId, uId);
+	}
+
+	@Override
+	public int getRelatedComplaintsCnt(int dpId, int uId) throws Exception {
+		return mainDAO.getRelatedComplaintsCnt(dpId, uId);
+	}
+	
+	@Override
+	public List<ComplaintVO> getRecentCompletedReplies(int dpId) throws Exception {
+		return mainDAO.getRecentCompletedReplies(dpId);
+	}
+
+	@Override
+	public List<ComplaintVO> getRecentNotCompletedReplies(int dpId) throws Exception {
+		return mainDAO.getRecentNotCompletedReplies(dpId);
+	}
+
+	@Override
+	public String getDepartment(int dpId) throws Exception {
+		return mainDAO.getDepartment(dpId);
+	}
+
+	@Override
+	public List<String> getRelatedDepartments() throws Exception {
+		return mainDAO.getRelatedDepartments();
+	}
+
+	@Override
+	public void insertComplaint(ComplaintVO vo) {
+		mainDAO.insertComplaint(vo);
+	}
+
+	@Override
+	public List<ComplaintVO> getTempComplaints(int uId) throws Exception {
+		return mainDAO.getTempComplaints(uId);
+	}
+
+	@Override
+	public ComplaintVO getComplaint(int cId) throws Exception {
+		return mainDAO.getComplaint(cId);
+	}
+
+	@Override
+	public Integer tempComplaintsCount(int uId) throws Exception {
+		return mainDAO.tempComplaintsCount(uId);
+	}
+
+	@Override
+	public void updateTempComplaint(ComplaintVO vo) throws Exception {
+		mainDAO.updateTempComplaint(vo);
+	}
+
+	@Override
+	public void processComplaint(int cId) throws Exception {
+		mainDAO.processComplaint(cId);
+	}
+
+	@Override
+	public void deleteComplaint(int cId) throws Exception {
+		mainDAO.deleteComplaint(cId);
+	}
+
+	@Override
+	public List<ComplaintVO> getProcessList(SearchVO searchVO) throws Exception {
+		return mainDAO.getProcessList(searchVO);
+	}
+	
+	@Override
+	public int getProcessListCnt(SearchVO searchVO) throws Exception {
+		return mainDAO.getProcessListCnt(searchVO);
+	}
+
+	@Override
+	public void updateProcessComplaint(ComplaintVO vo) throws Exception {
+		mainDAO.updateProcessComplaint(vo);
+	}
+
+	@Override
+	public void insertComplaintSettle(ComplaintSettleVO vo) throws Exception {
+		mainDAO.insertComplaintSettle(vo);
+	}
+
+	@Override
+	public List<ComplaintSettleVO> getComplaintSettles(int cId) throws Exception {
+		return mainDAO.getComplaintSettles(cId);
+	}
+
+	@Override
+	public void insertComplaintImage(HashMap<String, Object> param) throws Exception {
+		mainDAO.insertComplaintImage(param);
+	}
+
+	@Override
+	public ComplaintVO getTempComplaint(int cId) throws Exception {
+		return mainDAO.getTempComplaint(cId);
+	}
+
+	@Override
+	public void insertComplaintReply(ComplaintReplyVO vo) throws Exception {
+		mainDAO.insertComplaintReply(vo);
+	}
+
+	@Override
+	public List<ComplaintReplyVO> getComplaintReplies(int cId) throws Exception {
+		return mainDAO.getComplaintReplies(cId);
+	}
+
+	@Override
+	public void completeComplaint(int cId) throws Exception {
+		mainDAO.completeComplaint(cId);
+	}
+
+	@Override
+	public List<ComplaintVO> getCompletedList(SearchVO searchVO) throws Exception {
+		return mainDAO.getCompletedList(searchVO);
+	}
+	
+	@Override
+	public int getCompletedListCnt(SearchVO searchVO) throws Exception {
+		return mainDAO.getCompletedListCnt(searchVO);
+	}
+
+	@Override
+	public List<ComplaintImageVO> getComplaintImages(int cId) throws Exception {
+		return mainDAO.getComplaintImages(cId);
+	}
+
+	@Override
+	public void insertComplaintExcel(ComplaintVO data) throws Exception {
+		mainDAO.insertComplaintExcel(data);
+	}
+
+	@Override
+	public List<ComplaintVO> getComplaintsExcel(int uId) throws Exception {
+		return mainDAO.getComplaintsExcel(uId);
+	}
+
+	@Override
+	public List<ComplaintReplyVO> getAllComplaintReplies(SearchVO searchVO) throws Exception {
+		return mainDAO.getAllComplaintReplies(searchVO);
+	}
+
+	@Override
+	public void insertIpLog(IpLogVO ipLogVO) throws Exception {
+		mainDAO.insertIpLog(ipLogVO);
+	}
+
+	@Override
+	public int getAllComplaintRepliesCnt(SearchVO searchVO) throws Exception {
+		return mainDAO.getAllComplaintRepliesCnt(searchVO);
+	}
+
+	@Override
+	public void deleteExcelComplaint(int cId) throws Exception {
+		mainDAO.deleteExcelComplaint(cId);
+	}
+
+	@Override
+	public void processExcelComplaint(int cId) throws Exception {
+		mainDAO.processExcelComplaint(cId);
+	}
+
+	@Override
+	public String getDepartmentBoss(int dpId) throws Exception {
+		return mainDAO.getDepartmentBoss(dpId);
+	}
+
+	@Override
+	public String getParentDepartmentBoss(int dpId) throws Exception {
+		return mainDAO.getParentDepartmentBoss(dpId);
+	}
+
+	@Override
+	public List<String> getAllDepartments() throws Exception {
+		return mainDAO.getAllDepartments();
+	}
+
+	@Override
+	public void updateSeparationType(ComplaintVO vo) throws Exception {
+		mainDAO.updateSeparationType(vo);
+	}
+
+	@Override
+	public void insertComplaintFile(ComplaintFileVO vo) throws Exception {
+		mainDAO.insertComplaintFile(vo);
+	}
+
+	@Override
+	public List<ComplaintFileVO> getComplaintFiles(Integer complaintId) throws Exception {
+		return mainDAO.getComplaintFiles(complaintId);
+	}
+
+	@Override
+	public int todayComplaintsCount(int dpId) throws Exception {
+		return mainDAO.todayComplaintsCount(dpId);
+	}
+
+	@Override
+	public void registerComplaint(ComplaintVO vo) throws Exception {
+		mainDAO.registerComplaint(vo);
+	}
+
+	@Override
+	public int processComplaintCnt(int dpId) throws Exception {
+		return mainDAO.processComplaintCnt(dpId);
+	}
+
+	@Override
+	public int processCompletedComplaintCnt(int dpId) throws Exception {
+		return mainDAO.processCompletedComplaintCnt(dpId);
+	}
+
+	@Override
+	public int getDpId(String dpId) throws Exception {
+		return mainDAO.getDpId(dpId);
+	}
+
+	@Override
+	public int getPsId(String psId) throws Exception {
+		// TODO Auto-generated method stub
+		return mainDAO.getPsId(psId);
+	}
+
+	@Override
+	public void requestMember(MemberVO vo) throws Exception {
+		mainDAO.requestMember(vo);
+	}
+
+	@Override
+	public int getAllListCnt(SearchVO searchVO) throws Exception {
+		return mainDAO.getAllListCnt(searchVO);
+	}
+
+	@Override
+	public int allComplaintCnt(int dpId) throws Exception {
+		return mainDAO.allComplaintCnt(dpId);
+	}
+
+	@Override
+	public List<ComplaintVO> getAllList(SearchVO searchVO) throws Exception {
+		return mainDAO.getAllList(searchVO);
+	}
+
+	@Override
+	public void updateSettle(ComplaintSettleVO vo) throws Exception {
+		mainDAO.updateSettle(vo);
+	}
+
+	@Override
+	public void deleteSettle(int id) throws Exception {
+		mainDAO.deleteSettle(id);
+	}
+
+	@Override
+	public void deleteImage(int id) throws Exception {
+		mainDAO.deleteImage(id);
+	}
+
+	@Override
+	public void deleteFile(int id) throws Exception {
+		mainDAO.deleteFile(id);
+	}
+
+	@Override
+	public void deleteReply(int id) throws Exception {
+		mainDAO.deleteReply(id);
+	}
+
+	@Override
+	public void updatePlan(ComplaintVO vo) throws Exception {
+		mainDAO.updatePlan(vo);
+	}
+
+	@Override
+	public void changeProcessClass(ComplaintVO vo) throws Exception {
+		mainDAO.changeProcessClass(vo);
+	}
+
+	@Override
+	public int processingComplaintsCount(int dpId) throws Exception {
+		return mainDAO.processingComplaintsCount(dpId);
+	}
+
+	@Override
+	public int finishedComplaintsCount(int dpId) throws Exception {
+		return mainDAO.finishedComplaintsCount(dpId);
+	}
+
+	@Override
+	public int reviewingComplaintsCount(int dpId) throws Exception {
+		return mainDAO.reviewingComplaintsCount(dpId);
+	}
+
+	@Override
+	public int cooperateComplaintsCount(int dpId) throws Exception {
+		return mainDAO.cooperateComplaintsCount(dpId);
+	}
+
+	@Override
+	public int impossibleComplaintsCount(int dpId) throws Exception {
+		return mainDAO.impossibleComplaintsCount(dpId);
+	}
+
+	@Override
+	public List<ComplaintVO> getRecentReviewingComplaints(int dpId, int uId) throws Exception {
+		return mainDAO.getRecentReviewingComplaints(dpId, uId);
+	}
+
+	@Override
+	public List<ComplaintVO> getRecentCooperateComplaints(int dpId, int uId) throws Exception {
+		return mainDAO.getRecentCooperateComplaints(dpId, uId);
+	}
+
+	@Override
+	public List<String> getRelatedDepartments2() throws Exception {
+		return mainDAO.getRelatedDepartments2();
+	}
+}

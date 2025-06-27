@@ -1,0 +1,23 @@
+package com.minwon.dao;
+
+import java.util.List;
+
+import com.minwon.vo.MemberVO;
+
+public interface MemberDAO {
+
+	public List<MemberVO> selectMemberList() throws Exception;
+
+	public MemberVO selectMember(int u_id) throws Exception;
+
+	public void insertMember(MemberVO vo) throws Exception;
+
+	public void deleteTempMember(int id) throws Exception;
+
+	public void requestMember(MemberVO vo) throws Exception;
+
+	public int getDpId(String department) throws Exception;
+
+	public int getPsId(String position) throws Exception;
+
+}

@@ -1,0 +1,170 @@
+package com.minwon.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.ibatis.sqlmap.engine.type.SimpleDateFormatter;
+import com.minwon.service.MainService;
+import com.minwon.service.NoticeService;
+import com.minwon.vo.MemberVO;
+import com.minwon.vo.NoticeFileVO;
+import com.minwon.vo.NoticeVO;
+import com.minwon.vo.SearchVO;
+
+@Controller
+@RequestMapping("/main/*")
+public class NoticeController {
+	@Autowired
+	NoticeService noticeService;
+	
+	@Autowired
+	MainService mainService;
+	
+	@RequestMapping("mw_notice_board.do")
+	public ModelAndView minwonNoticeBoard(HttpServletRequest request
+			,@RequestParam(required=false,defaultValue="1")int page
+            ,@RequestParam(required=false,defaultValue="1")int range
+            ,@RequestParam(required=false,defaultValue="title")String searchType
+            ,@RequestParam(required=false)String keyword
+            ,@ModelAttribute("search")SearchVO searchVO) throws Exception {
+		HttpSession session = request.getSession();
+		searchVO.setSearchType(searchType);
+		searchVO.setKeyword(keyword);
+		searchVO.setDpId((int) session.getAttribute("userDpId"));
+		List<NoticeVO> recentNoticeList = noticeService.getRecentList();
+		for (int i = 0; i < recentNoticeList.size(); i++) {
+			Date now = recentNoticeList.get(i).getN_writedate();
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			String formattedDate = format.format(now);
+			recentNoticeList.get(i).setDate(formattedDate);
+		}
+		List<NoticeVO> noticeList = noticeService.getAllList(searchVO); 
+		int allListCnt = noticeService.getAllListCnt(searchVO);
+		for (int i = 0; i < noticeList.size(); i++) {
+			Date now = noticeList.get(i).getN_writedate();
+			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			String formattedDate = format.format(now);
+			noticeList.get(i).setDate(formattedDate);
+		}
+		searchVO.pageInfo(page, range, allListCnt);
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/mw_notice_board");
+		mav.addObject("recentNoticeList", recentNoticeList);
+		mav.addObject("noticeList", noticeList);
+		mav.addObject("pagination", searchVO);
+		return mav;
+	}
+	
+	@RequestMapping("mw_notice_view.do")
+	public ModelAndView minwonNoticeView(@RequestParam(required=false, value="id") Integer noticeId) throws Exception {
+		noticeService.countUp(noticeId);
+		NoticeVO notice = noticeService.getNotice(noticeId);
+		List<NoticeFileVO> noticeFiles = noticeService.getNoticeFiles(noticeId);
+		Date now = notice.getN_writedate();
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		notice.setDate(format.format(now));
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/mw_notice_view");
+		mav.addObject("notice", notice);
+		mav.addObject("noticeFiles", noticeFiles);
+		return mav;
+	}
+	
+	@RequestMapping("mw_notice_insert.do")
+	public ModelAndView minwonNoticeInsert() throws Exception {
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/mw_notice_insert");
+		return mav;
+	}
+	
+	@RequestMapping("mw_notice_update.do")
+	public ModelAndView minwonNoticeUpdate(@RequestParam(required=false, value="id") Integer noticeId) throws Exception {
+		NoticeVO notice = noticeService.getNotice(noticeId);
+		List<NoticeFileVO> noticeFiles = noticeService.getNoticeFiles(noticeId);
+		ModelAndView mav = new ModelAndView();
+		mav.setViewName("main/mw_notice_update");
+		mav.addObject("notice", notice);
+		mav.addObject("noticeFiles", noticeFiles);
+		return mav;
+	}
+	
+	@RequestMapping("insert_notice.do")
+	public String insertNotice(HttpServletRequest request, MultipartHttpServletRequest mRequest) throws Exception {
+		HttpSession session = request.getSession();
+		List<MultipartFile> multiFileList = mRequest.getFiles("n_files");
+		NoticeVO noticeVO = new NoticeVO();
+		noticeVO.setN_title(request.getParameter("n_title"));
+		noticeVO.setN_content(request.getParameter("n_content"));
+		noticeVO.setDp_id((int) session.getAttribute("userDpId"));
+		noticeVO.setDp_name(mainService.getDepartment((int) session.getAttribute("userDpId")));
+		noticeVO.setU_id((int) session.getAttribute("userId"));
+		noticeVO.setU_name(session.getAttribute("userName").toString());
+		if (request.getParameter("n_importance") != null) {
+			noticeVO.setN_importance(1);
+		} else {
+			noticeVO.setN_importance(0);
+		}
+		noticeService.insertNotice(noticeVO);
+		
+		for (MultipartFile mf : multiFileList) {
+			if (mf != null && !mf.isEmpty()) {
+				String saveDir = "/home/upload/notice_files/";
+				NoticeFileVO noticeFileVO = new NoticeFileVO();
+				String originalFileName = mf.getOriginalFilename();
+				String savedFile = saveDir + originalFileName;
+				try {
+					mf.transferTo(new File(savedFile));
+				} catch (IllegalStateException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				noticeFileVO.setNf_file_name(originalFileName);
+				noticeFileVO.setU_id((int) session.getAttribute("userId"));
+				noticeService.insertNoticeFile(noticeFileVO);
+			}
+		}
+		return "redirect:/main/mw_notice_board.do";
+	}
+	
+	@RequestMapping("update_notice.do")
+	public String updateNotice(HttpServletRequest request) throws Exception {
+		System.out.println(request.getParameter("n_importance"));
+		NoticeVO vo = new NoticeVO();
+		vo.setN_id(Integer.parseInt(request.getParameter("n_id")));
+		vo.setN_title((String) request.getParameter("n_title"));
+		vo.setN_content((String) request.getParameter("n_content"));
+		if (request.getParameter("n_importance") != null) {
+			vo.setN_importance(1);
+		} else {
+			vo.setN_importance(0);
+		}
+		noticeService.updateNotice(vo);
+		return "redirect:/main/mw_notice_view.do?id=" + vo.getN_id();
+	}
+	
+	@RequestMapping(value="delete_notice.do", method = RequestMethod.GET)
+	public String deleteNotice(@RequestParam(required=false, value="id") Integer noticeId) throws Exception {
+		noticeService.deleteNoticeFiles(noticeId);
+		noticeService.deleteNotice(noticeId);
+		
+		return "redirect:/main/mw_notice_board.do";
+	}
+}

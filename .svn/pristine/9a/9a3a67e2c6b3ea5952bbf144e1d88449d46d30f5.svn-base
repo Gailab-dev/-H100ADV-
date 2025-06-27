@@ -1,0 +1,45 @@
+package com.minwon.dao;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import com.minwon.vo.LoginVO;
+import com.minwon.vo.MainLoginVO;
+import com.minwon.vo.MemberVO;
+import com.minwon.vo.UserVO;
+
+public interface MainLoginDAO {
+	public boolean loginCheck(MainLoginVO vo);
+	
+	public MainLoginVO viewMember(MainLoginVO vo);
+	
+	public void logout(HttpSession session);
+
+	public int checkId(String id) throws Exception;
+
+	public UserVO certificateLoginCheck(String dn) throws Exception;
+
+	public String findId(String dn) throws Exception;
+
+	public void memberRequest(MemberVO user2vo) throws Exception;
+
+	public List<Map<String, Object>> getGroupedDistrict(int dpId, int uId) throws Exception;
+
+	public List<Map<String, Object>> getGroupedSeparationType(int dpId, int uId) throws Exception;
+
+	public void changePassword(UserVO vo) throws Exception;
+
+	public boolean isCertificagteRegistered(int id) throws Exception;
+
+	public void registerCertificate(UserVO vo) throws Exception;
+
+	public List<Map<String, Object>> getGroupedSeparationTypeSum(int dpId, int uId) throws Exception;
+
+	public List<Map<String, Object>> getGroupedDistrictSum(int dpId, int uId) throws Exception;
+
+	public List<Map<String, Object>> getGroupedDepartment(int dpId, int uId) throws Exception;
+
+	public List<Map<String, Object>> getGroupedDepartmentSum(int dpId, int uId) throws Exception;
+}

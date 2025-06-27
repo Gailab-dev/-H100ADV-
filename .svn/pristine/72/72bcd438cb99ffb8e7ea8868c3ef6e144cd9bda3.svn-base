@@ -1,0 +1,21 @@
+package com.minwon.dao;
+
+import java.util.List;
+
+import com.minwon.vo.DepartmentVO;
+
+public interface DepartmentDAO {
+	public List<DepartmentVO> selectDepartmentList() throws Exception;
+	public List<DepartmentVO> selectDepartmentDepth(int dp_depth) throws Exception;
+	
+	public void insertDepartment(DepartmentVO vo) throws Exception;
+	public void updateDepartment(DepartmentVO vo) throws Exception;
+	public void deleteDepartment(int dp_id) throws Exception;
+	public DepartmentVO selectDepartment(int dp_id) throws Exception;
+	public Integer deleteCheckDepartment(int dp_pid) throws Exception;
+	public int getSubDepartmentsCount(int dp_id) throws Exception;
+	public int getDepartmentUsersCount(int dp_id) throws Exception;
+	public List<String> departmentListDepth1() throws Exception;
+	public List<String> departmentListDepth2(String departmentName) throws Exception;
+	public List<String> departmentListDepth3(String departmentName) throws Exception;
+}

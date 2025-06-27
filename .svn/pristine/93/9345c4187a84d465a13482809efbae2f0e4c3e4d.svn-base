@@ -1,0 +1,14 @@
+package com.minwon.service;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletResponse;
+
+import com.minwon.vo.ComplaintVO;
+
+public interface ExcelService {
+	public void createExcel(HttpServletResponse response, List<ComplaintVO> complaintList) throws Exception;
+	
+	public void createUserExcel(HttpServletResponse response, List<Map<String, Object>> userDeptList) throws Exception;
+}

@@ -1,0 +1,123 @@
+package com.minwon.controller;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.minwon.service.AllService;
+import com.minwon.service.ExcelService;
+import com.minwon.service.MainService;
+import com.minwon.vo.ComplaintVO;
+import com.minwon.vo.SearchVO;
+
+@Controller
+@RequestMapping("/main/*")
+public class ExcelController {
+	@Autowired
+	MainService mainService;
+	
+	@Autowired
+	AllService allService;
+	
+	@Autowired
+	ExcelService excelService;
+	
+	@RequestMapping(value="excel_process.do")
+	public void downloadExcel(HttpServletResponse response
+			,HttpServletRequest request
+            ,@RequestParam(required=false,defaultValue="title")String searchType
+            ,@RequestParam(required=false)String keyword
+            ,@RequestParam(required=false)String startDate
+            ,@RequestParam(required=false)String endDate
+            ,@ModelAttribute("search")SearchVO searchVO) throws Exception {
+		HttpSession session = request.getSession();
+		ModelAndView mav = new ModelAndView();
+		
+		searchVO.setSearchType(searchType);
+		searchVO.setKeyword(keyword);
+		searchVO.setListSize(1000);
+		searchVO.setStartDate(startDate);
+		searchVO.setEndDate(endDate);
+		int processComplaintList;
+		int complaintCnt;
+		if ((int) session.getAttribute("userGrade") != 9) {
+			searchVO.setDpId((int) session.getAttribute("userDpId"));
+			processComplaintList = mainService.getProcessListCnt(searchVO);
+			complaintCnt = mainService.processComplaintCnt((int) session.getAttribute("userDpId"));
+		} else {
+			searchVO.setDpId(1);
+			processComplaintList = allService.getProcessListCnt(searchVO);
+			complaintCnt = allService.processComplaintCnt();
+		}
+		
+		excelService.createExcel(response, mainService.getProcessList(searchVO));
+	}
+	
+	@RequestMapping(value="excel_completed.do")
+	public void downloadCompletedExcel(HttpServletResponse response
+			,HttpServletRequest request
+            ,@RequestParam(required=false,defaultValue="title")String searchType
+            ,@RequestParam(required=false)String keyword
+            ,@RequestParam(required=false)String startDate
+            ,@RequestParam(required=false)String endDate
+            ,@ModelAttribute("search")SearchVO searchVO) throws Exception {
+		
+		HttpSession session = request.getSession();
+		ModelAndView mav = new ModelAndView();
+		searchVO.setSearchType(searchType);
+		searchVO.setKeyword(keyword);
+		searchVO.setListSize(1000);
+		searchVO.setStartDate(startDate);
+		searchVO.setEndDate(endDate);
+		int completeComplaintList;
+		int complaintCnt;
+		if ((int) session.getAttribute("userGrade") != 9) {
+			searchVO.setDpId((int) session.getAttribute("userDpId"));
+			completeComplaintList = mainService.getCompletedListCnt(searchVO);
+			complaintCnt = mainService.processCompletedComplaintCnt((int) session.getAttribute("userDpId"));
+		} else {
+			searchVO.setDpId(1);
+			completeComplaintList = allService.getCompletedListCnt(searchVO);
+			complaintCnt = allService.processComplaintCnt();
+		}
+		excelService.createExcel(response, mainService.getCompletedList(searchVO));
+	}
+	
+	@RequestMapping(value="excel_all.do")
+	public void downloadAllExcel(HttpServletResponse response
+			,HttpServletRequest request
+            ,@RequestParam(required=false,defaultValue="title")String searchType
+            ,@RequestParam(required=false)String keyword
+            ,@ModelAttribute("search")SearchVO searchVO) throws Exception {
+		
+		HttpSession session = request.getSession();
+		ModelAndView mav = new ModelAndView();
+		searchVO.setSearchType(searchType);
+		searchVO.setKeyword(keyword);
+		searchVO.setListSize(1000);
+		
+		if ((int) session.getAttribute("userGrade") != 9) {
+			searchVO.setDpId((int) session.getAttribute("userDpId"));
+		} else {
+			searchVO.setDpId(1);
+		}
+		int allComplaintList = mainService.getAllListCnt(searchVO);
+		int allComplaintCnt = mainService.allComplaintCnt((int) session.getAttribute("userDpId"));
+		
+		excelService.createExcel(response, mainService.getAllList(searchVO));
+	}
+}

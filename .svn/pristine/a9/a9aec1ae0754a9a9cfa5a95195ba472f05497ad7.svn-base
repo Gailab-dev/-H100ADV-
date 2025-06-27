@@ -1,0 +1,147 @@
+package com.minwon.dao;
+
+import java.util.HashMap;
+import java.util.List;
+
+import com.minwon.vo.ComplaintFileVO;
+import com.minwon.vo.ComplaintImageVO;
+import com.minwon.vo.ComplaintReplyVO;
+import com.minwon.vo.ComplaintSettleVO;
+import com.minwon.vo.ComplaintVO;
+import com.minwon.vo.IpLogVO;
+import com.minwon.vo.MemberVO;
+import com.minwon.vo.SearchVO;
+
+public interface MainDAO {
+	public List<ComplaintVO> getRecentCompletedComplaints(int dpId, int uId) throws Exception;
+	
+	public List<ComplaintVO> getRecentNonCompletedComplaints(int dpId, int uId) throws Exception;
+	
+	public int getChargeOfComplaintsCnt(int dpId, int uId) throws Exception;
+	
+	public int getRelatedComplaintsCnt(int dpId, int uId) throws Exception;
+	
+	public List<ComplaintVO> getRecentCompletedReplies(int dpId) throws Exception;
+
+	public List<ComplaintVO> getRecentNotCompletedReplies(int dpId) throws Exception;
+	
+	public String getDepartment(int dpId) throws Exception;
+	
+	public List<String> getRelatedDepartments() throws Exception;
+
+	public void insertComplaint(ComplaintVO vo);
+
+	public List<ComplaintVO> getTempComplaints(int uId) throws Exception;
+
+	public ComplaintVO getComplaint(int cId) throws Exception;
+
+	public Integer tempComplaintsCount(int uId) throws Exception;
+
+	public void updateTempComplaint(ComplaintVO vo) throws Exception;
+
+	public void processComplaint(int cId) throws Exception;
+
+	public void deleteComplaint(int cId) throws Exception;
+
+	public List<ComplaintVO> getProcessList(SearchVO searchVO);
+	
+	public int getProcessListCnt(SearchVO searchVO) throws Exception;
+
+	public void updateProcessComplaint(ComplaintVO vo) throws Exception;
+
+	public void insertComplaintSettle(ComplaintSettleVO vo) throws Exception;
+
+	public List<ComplaintSettleVO> getComplaintSettles(int cId) throws Exception;
+
+	public void insertComplaintImage(HashMap<String, Object> param) throws Exception;
+
+	public ComplaintVO getTempComplaint(int cId) throws Exception;
+
+	public void insertComplaintReply(ComplaintReplyVO vo) throws Exception;
+
+	public List<ComplaintReplyVO> getComplaintReplies(int cId) throws Exception;
+
+	public void completeComplaint(int cId) throws Exception;
+
+	public List<ComplaintVO> getCompletedList(SearchVO searchVO) throws Exception;
+	
+	public int getCompletedListCnt(SearchVO searchVO) throws Exception;
+
+	public List<ComplaintImageVO> getComplaintImages(int cId) throws Exception;
+
+	public void insertComplaintExcel(ComplaintVO data) throws Exception;
+
+	public List<ComplaintVO> getComplaintsExcel(int uId) throws Exception;
+
+	public List<ComplaintReplyVO> getAllComplaintReplies(SearchVO searchVO) throws Exception;
+
+	public void insertIpLog(IpLogVO ipLogVO) throws Exception;
+
+	public int getAllComplaintRepliesCnt(SearchVO searchVO) throws Exception;
+
+	public void deleteExcelComplaint(int cId) throws Exception;
+
+	public void processExcelComplaint(int cId) throws Exception;
+
+	public String getDepartmentBoss(int dpId) throws Exception;
+
+	public String getParentDepartmentBoss(int dpId) throws Exception;
+
+	public List<String> getAllDepartments() throws Exception;
+
+	public void updateSeparationType(ComplaintVO vo) throws Exception;
+
+	public void insertComplaintFile(ComplaintFileVO vo) throws Exception;
+
+	public List<ComplaintFileVO> getComplaintFiles(Integer complaintId) throws Exception;
+
+	public int todayComplaintsCount(int dpId) throws Exception;
+
+	public void registerComplaint(ComplaintVO vo) throws Exception;
+
+	public int processComplaintCnt(int dpId) throws Exception;
+
+	public int processCompletedComplaintCnt(int dpId) throws Exception;
+
+	public int getDpId(String dpId) throws Exception;
+
+	public int getPsId(String psId) throws Exception;
+
+	public void requestMember(MemberVO vo) throws Exception;
+
+	public int getAllListCnt(SearchVO searchVO) throws Exception;
+
+	public int allComplaintCnt(int dpId) throws Exception;
+
+	public List<ComplaintVO> getAllList(SearchVO searchVO) throws Exception;
+
+	public void updateSettle(ComplaintSettleVO vo) throws Exception;
+
+	public void deleteSettle(int id) throws Exception;
+
+	public void deleteImage(int id) throws Exception;
+
+	public void deleteFile(int id) throws Exception;
+
+	public void deleteReply(int id) throws Exception;
+
+	public void updatePlan(ComplaintVO vo) throws Exception;
+
+	public void changeProcessClass(ComplaintVO vo) throws Exception;
+
+	public int processingComplaintsCount(int dpId) throws Exception;
+
+	public int finishedComplaintsCount(int dpId) throws Exception;
+
+	public int reviewingComplaintsCount(int dpId) throws Exception;
+
+	public int cooperateComplaintsCount(int dpId) throws Exception;
+
+	public int impossibleComplaintsCount(int dpId) throws Exception;
+
+	public List<ComplaintVO> getRecentReviewingComplaints(int dpId, int uId) throws Exception;
+
+	public List<ComplaintVO> getRecentCooperateComplaints(int dpId, int uId) throws Exception;
+
+	public List<String> getRelatedDepartments2() throws Exception;
+}

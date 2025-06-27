@@ -1,0 +1,29 @@
+package com.minwon.dao;
+
+import java.util.List;
+
+import com.minwon.vo.ArchiveFileVO;
+import com.minwon.vo.ArchiveVO;
+import com.minwon.vo.SearchVO;
+
+public interface ArchiveDAO {
+	public List<ArchiveVO> getAllList(SearchVO searchVO) throws Exception;
+
+	public void insertArchive(ArchiveVO archiveVO) throws Exception;
+
+	public void countUp(Integer archiveId) throws Exception;
+
+	public ArchiveVO getArchive(Integer archiveId) throws Exception;
+
+	public int getAllListCnt(SearchVO searchVO) throws Exception;
+
+	public void insertArchiveFile(ArchiveFileVO archiveFileVO) throws Exception;
+
+	public List<ArchiveFileVO> getArchiveFiles(Integer archiveId) throws Exception;
+
+	public void deleteArchiveFiles(Integer archiveId) throws Exception;
+
+	public void deleteArchive(Integer archiveId) throws Exception;
+
+	public void updateArchive(ArchiveVO archiveVO) throws Exception;
+}

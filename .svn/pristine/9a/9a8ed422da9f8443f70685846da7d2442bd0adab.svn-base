@@ -1,0 +1,68 @@
+package com.minwon.dao.impl;
+
+import java.util.List;
+
+import org.apache.ibatis.session.SqlSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.minwon.dao.DepartmentDAO;
+import com.minwon.vo.DepartmentVO;
+
+@Repository
+public class DepartmentDAOImpl implements DepartmentDAO {
+	@Autowired
+	SqlSession sqlSession;
+	
+
+	@Override
+	public List<DepartmentVO> selectDepartmentList() throws Exception {
+		return sqlSession.selectList("department.viewDepartmentList");
+	}
+	@Override
+	public List<DepartmentVO> selectDepartmentDepth(int dp_depth) throws Exception {
+		return sqlSession.selectList("department.selectDepartmentDepth", dp_depth);
+	}
+
+	@Override
+	public void insertDepartment(DepartmentVO vo) throws Exception {
+		sqlSession.insert("department.insertDepartment", vo);
+	}
+	@Override
+	public void updateDepartment(DepartmentVO vo) throws Exception {
+		sqlSession.update("department.updateDepartment", vo);
+	}
+	@Override
+	public void deleteDepartment(int dp_id) throws Exception {
+		sqlSession.delete("department.deleteDepartment", dp_id);
+	}
+	@Override
+	public DepartmentVO selectDepartment(int dp_id) throws Exception {
+		return sqlSession.selectOne("department.selectDepartment", dp_id);
+	}
+	@Override
+	public Integer deleteCheckDepartment(int dp_pid) throws Exception {
+		return sqlSession.selectOne("department.deleteCheckDepartment", dp_pid);
+	}
+	@Override
+	public int getSubDepartmentsCount(int dp_id) throws Exception {
+		return sqlSession.selectOne("department.getSubDepartmentsCount", dp_id);
+	}
+	@Override
+	public int getDepartmentUsersCount(int dp_id) throws Exception {
+		return sqlSession.selectOne("department.getDepartmentUsersCount", dp_id);
+	}
+	@Override
+	public List<String> departmentListDepth1() throws Exception {
+		return sqlSession.selectList("department.departmentListDepth1");
+	}
+	@Override
+	public List<String> departmentListDepth2(String departmentName) throws Exception {
+		return sqlSession.selectList("department.departmentListDepth2", departmentName);
+	}
+	@Override
+	public List<String> departmentListDepth3(String departmentName) throws Exception {
+		return sqlSession.selectList("department.departmentListDepth3", departmentName);
+	}
+
+}

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="archive">
+	<select id="getAllList" resultType="com.minwon.vo.ArchiveVO">
+		SELECT * FROM archive 
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND a_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND a_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='writer' and keyword != null and keyword != '' ">
+			    AND u_name like CONCAT('%', #{keyword}, '%') 
+			</if>
+		</trim>
+		order by a_id desc;
+	</select>
+	
+	<select id="getAllListCnt" parameterType="com.minwon.vo.SearchVO" resultType="int">
+		SELECT count(*)
+		FROM archive
+		<trim prefix="WHERE" prefixOverrides="AND|OR">
+			<if test="searchType=='title' and keyword != null and keyword != '' ">
+				AND a_title like CONCAT('%', #{keyword}, '%')
+			</if>
+			<if test="searchType=='content' and keyword != null and keyword != '' ">
+			    AND a_content like CONCAT('%', #{keyword}, '%') 
+			</if>
+			<if test="searchType=='writer' and keyword != null and keyword != '' ">
+			    AND u_name like CONCAT('%', #{keyword}, '%') 
+			</if>
+		</trim>
+	</select>
+	
+	<insert id="insertArchive" parameterType="com.minwon.vo.ArchiveVO">
+		INSERT INTO archive (a_title, a_content, dp_id, dp_name, u_id, u_name, a_writedate, a_count)
+		VALUES (#{a_title}, #{a_content}, #{dp_id}, #{dp_name}, #{u_id}, #{u_name}, now(), 0)
+	</insert>
+	
+	<insert id="insertArchiveFile" parameterType="com.minwon.vo.ArchiveFileVO">
+		INSERT INTO archive_file (a_id, u_id, af_file_name)
+		VALUES ((SELECT AUTO_INCREMENT-1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = "minwon" AND TABLE_NAME = "archive"), #{u_id}, #{af_file_name})
+	</insert>
+	
+	<update id="updateArchive" parameterType="com.minwon.vo.ArchiveVO">
+		UPDATE archive SET a_title=#{a_title}, a_content=#{a_content}
+		WHERE a_id=#{a_id}
+	</update>
+	
+	<select id="getArchive" parameterType="Integer" resultType="com.minwon.vo.ArchiveVO">
+		SELECT * FROM archive
+		WHERE a_id=#{archiveId}
+	</select>
+	
+	<select id="getArchiveFiles" parameterType="Integer" resultType="com.minwon.vo.ArchiveFileVO">
+		SELECT * FROM archive_file
+		WHERE a_id=#{archiveId}
+	</select>
+	
+	<delete id="deleteArchiveFiles" parameterType="int">
+		DELETE FROM archive_file
+		WHERE a_id=#{archive_id}
+	</delete>
+	
+	<delete id="deleteArchive" parameterType="int">
+		DELETE FROM archive
+		WHERE a_id=#{a_id}
+	</delete>
+	
+	<update id="countUp">
+		UPDATE archive SET a_count = a_count + 1
+		WHERE a_id=#{archiveId}
+	</update>
+</mapper>

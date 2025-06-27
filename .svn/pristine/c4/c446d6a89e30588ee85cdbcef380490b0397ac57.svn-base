@@ -1,0 +1,99 @@
+package com.minwon.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.UserDAO;
+import com.minwon.service.CryptoAriaService;
+import com.minwon.service.UserService;
+import com.minwon.vo.UserVO;
+
+@Service
+public class UserServiceImpl implements UserService {
+	@Autowired
+	UserDAO UserDAO;
+	
+	@Autowired
+	CryptoAriaService cryptoAriaService;
+
+	@Override
+	public List<UserVO> selectUserList() throws Exception {
+		
+		return UserDAO.selectUserList();
+	}
+	@Override
+	public List<UserVO> selectPartUserList(int dp_id) throws Exception {
+		
+		return UserDAO.selectPartUserList(dp_id);
+	}
+
+	@Override
+	public void insertUser(UserVO vo) throws Exception {
+		UserDAO.insertUser(vo);
+	}
+	
+	@Override
+	public void updateUser(UserVO vo) throws Exception{
+		UserDAO.updateUser(vo);
+	};
+	
+	@Override
+	public void deleteUser(int u_id) throws Exception{
+		UserDAO.deleteUser(u_id);
+	};
+	@Override
+	public UserVO selectUser(int ps_id) throws Exception{
+		UserVO result = UserDAO.selectUser(ps_id);
+		String password = cryptoAriaService.decryptData(result.getU_login_pwd());
+		System.out.println(password);
+		result.setU_login_pwd(password);
+		return result;
+	};
+	
+	@Override
+	public Integer countUserPart(int dp_id) throws Exception{
+		return UserDAO.countUserPart(dp_id);
+	};
+	@Override
+	public Integer countUserPosition(int ps_id) throws Exception{
+		return UserDAO.countUserPosition(ps_id);
+	}
+	@Override
+	public void deleteComplaintSettles(int u_id) throws Exception {
+		UserDAO.deleteComplaintSettles(u_id);
+	}
+	@Override
+	public void deleteComplaintImages(int u_id) throws Exception {
+		UserDAO.deleteComplaintImages(u_id);
+	}
+	@Override
+	public void deleteComplaintReplies(int u_id) throws Exception {
+		UserDAO.deleteComplaintReplies(u_id);
+	}
+	@Override
+	public void deleteComplaintFiles(int u_id) throws Exception {
+		UserDAO.deleteComplaintFiles(u_id);
+	}
+	@Override
+	public void deleteComplaints(int u_id) throws Exception {
+		UserDAO.deleteComplaints(u_id);
+	}
+	@Override
+	public UserVO selectUserFind(String u_login_id) throws Exception {
+		return UserDAO.selectUserFind(u_login_id);
+	}
+	@Override
+	public List<Map<String, Object>> getDeptUserList() throws Exception {
+		return UserDAO.getDeptUserList();
+	}
+	
+	@Override
+	public List<Map<String, Object>> getUserInfoByName(String u_name) throws Exception {
+		System.out.println("Service단 파라미터 " + u_name);
+		return UserDAO.getUserInfoByName(u_name);
+	};
+
+}

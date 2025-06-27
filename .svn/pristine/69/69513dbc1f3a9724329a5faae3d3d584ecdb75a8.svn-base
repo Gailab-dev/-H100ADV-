@@ -1,0 +1,7 @@
+package com.minwon.service;
+
+public interface CryptoAriaService {
+	public String encryptData(String plainText);
+	
+	public String decryptData(String encodeText);
+}

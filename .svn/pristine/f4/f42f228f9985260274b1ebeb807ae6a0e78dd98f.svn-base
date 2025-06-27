@@ -1,0 +1,128 @@
+package com.minwon.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.DepartmentDAO;
+import com.minwon.dao.MainDAO;
+import com.minwon.dao.MainLoginDAO;
+import com.minwon.service.MainLoginService;
+import com.minwon.vo.DepartmentVO;
+import com.minwon.vo.MainLoginVO;
+import com.minwon.vo.MemberVO;
+import com.minwon.vo.UserVO;
+
+@Service
+public class MainLoginServiceImpl implements MainLoginService {
+	@Autowired
+	MainLoginDAO mainLoginDAO;
+	
+	@Autowired
+	MainDAO mainDAO;
+	
+	@Autowired
+	DepartmentDAO departmentDAO;
+
+	@Override
+	public boolean loginCheck(MainLoginVO vo, HttpSession session) throws Exception {
+		boolean result = mainLoginDAO.loginCheck(vo);
+		if (result) {
+			MainLoginVO vo2 = viewMember(vo);
+			DepartmentVO department = departmentDAO.selectDepartment((int) vo2.getDpId());
+			int dpDepth = department.getDp_depth();
+			int dpPid = department.getDp_pid();
+			int dpId = (dpDepth == 3) ? dpPid : vo2.getDpId();
+			session.setAttribute("userId", vo2.getuId());
+			session.setAttribute("userDpId", dpId);
+			session.setAttribute("userLoginId", vo2.getUserLoginId());
+			session.setAttribute("userName", vo2.getUserName());
+			session.setAttribute("userGrade", vo2.getUserGrade());
+			session.setAttribute("userDepartment", mainDAO.getDepartment(vo2.getDpId()));
+			session.setAttribute("userAdminNum", vo2.getUserAdminNum());
+			System.out.println("사용자 등급" + vo2.getUserGrade());
+		}
+		return result;
+	}
+
+	@Override
+	public MainLoginVO viewMember(MainLoginVO vo) {
+		return mainLoginDAO.viewMember(vo);
+	}
+
+	@Override
+	public void logout(HttpSession session) {
+		session.invalidate();
+	}
+
+	@Override
+	public int checkId(String id) throws Exception {
+		return mainLoginDAO.checkId(id);
+	}
+
+	@Override
+	public UserVO certificateLoginCheck(String dn, HttpSession session) throws Exception {
+		return mainLoginDAO.certificateLoginCheck(dn);
+	}
+
+	@Override
+	public String findId(String dn) throws Exception {
+		return mainLoginDAO.findId(dn);
+	}
+
+	@Override
+	public void memberRequest(MemberVO user2vo) throws Exception {
+		mainLoginDAO.memberRequest(user2vo);
+	}
+
+	@Override
+	public List<Map<String, Object>> getGroupedDistrict(int dpId, int uId) throws Exception {
+		return mainLoginDAO.getGroupedDistrict(dpId, uId);
+	}
+
+	@Override
+	public List<Map<String, Object>> getGroupedSeparationType(int dpId, int uId) throws Exception {
+		return mainLoginDAO.getGroupedSeparationType(dpId, uId);
+	}
+
+	@Override
+	public void changePassword(UserVO vo) throws Exception {
+		mainLoginDAO.changePassword(vo);
+	}
+
+	@Override
+	public boolean isCertificateRegistered(int id) throws Exception {
+		boolean result = mainLoginDAO.isCertificagteRegistered(id);
+		return result;
+	}
+
+	@Override
+	public void registerCertificate(UserVO vo) throws Exception {
+		mainLoginDAO.registerCertificate(vo);
+	}
+
+	@Override
+	public List<Map<String, Object>> getGroupedSeparationTypeSum(int dpId, int uId) throws Exception {
+		return mainLoginDAO.getGroupedSeparationTypeSum(dpId, uId);
+	}
+
+	@Override
+	public List<Map<String, Object>> getGroupedDistrictSum(int dpId, int uId) throws Exception {
+		return mainLoginDAO.getGroupedDistrictSum(dpId, uId);
+	}
+
+	@Override
+	public List<Map<String, Object>> getGroupedDepartment(int dpId, int uId) throws Exception {
+		return mainLoginDAO.getGroupedDepartment(dpId, uId);
+	}
+
+	@Override
+	public List<Map<String, Object>> getGroupedDepartmentSum(int dpId, int uId) throws Exception {
+		return mainLoginDAO.getGroupedDepartmentSum(dpId, uId);
+	}
+
+}

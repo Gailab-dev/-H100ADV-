@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="admin">
+	<resultMap type="com.minwon.vo.ComplaintVO" id="complaintMap">
+		<id property="cId" column="c_id" />
+		<result property="uId" column="u_id" />
+		<result property="dpId" column="dp_id" />
+		<result property="dpName" column="dp_name" />
+		<result property="dpId01" column="dp_id_01" />
+		<result property="dpName01" column="dp_name_01" />
+		<result property="dpId02" column="dp_id_02" />
+		<result property="dpName02" column="dp_name_02" />
+		<result property="dpId03" column="dp_id_03" />
+		<result property="dpName03" column="dp_name_03" />
+		<result property="dpId04" column="dp_id_04" />
+		<result property="dpName04" column="dp_name_04" />
+		<result property="dpId05" column="dp_id_05" />
+		<result property="dpId06" column="dp_id_06" />
+		<result property="cTitle" column="c_title" />
+		<result property="cWriteDate" column="c_writedate" />
+		<result property="cWriteDateCount" column="c_writedate_count" />
+		<result property="cAddress" column="c_address" />
+		<result property="cDistrict" column="c_district" />
+		<result property="cPetitioner" column="c_petitioner" />
+		<result property="cPetitionerPhone" column="c_petitioner_phone" />
+		<result property="cPetitionerAddress" column="c_petitioner_address" />
+		<result property="cPetitionerSpecific" column="c_petitioner_specific" />
+		<result property="cReceiptDate" column="c_receipt_date" />
+		<result property="cReceiptWay" column="c_receipt_way" />
+		<result property="cRaiseDate" column="c_raise_date" />
+		<result property="cRaiseCount" column="c_raise_count" />
+		<result property="cDepartment" column="c_department" />
+		<result property="cOfficer01" column="c_officer1" />
+		<result property="cOfficer02" column="c_officer2" />
+		<result property="cOfficer03" column="c_officer3" />
+		<result property="cKeyPoint" column="c_keypoint" />
+		<result property="cContent" column="c_content" />
+		<result property="cPlan" column="c_plan" />
+		<result property="cComplete" column="c_complete" />
+		<result property="cDeadline" column="c_deadline" />
+		<result property="cNotificated"  column="c_notificated" />
+		<result property="cSatisfiction" column="c_satisfiction" />
+		<result property="cClient" column="c_client" />
+		<result property="cReference" column="c_reference" />
+		<result property="cCount" column="c_count" />
+		<result property="cReplyCount" column="c_reply_count" />
+	</resultMap>
+	
+	<resultMap type="com.minwon.vo.ComplaintImageVO" id="complaintImageMap">
+		<result property="cId" column="c_id" />
+		<result property="uId" column="u_id" />
+		<result property="dpName" column="dp_name" />
+		<result property="psName" column="ps_name" />
+		<result property="uName" column="u_name" />
+		<result property="ciDate" column="ci_date" />
+		<result property="ciContent" column="ci_content" />
+		<result property="ciImage" column="ci_image" />
+	</resultMap>
+	
+	<resultMap type="com.minwon.vo.IpLogVO" id="ipLogMap">
+		<id property="ilId" column="il_id" />
+		<result property="uName" column="u_name" />
+		<result property="dpName" column="dp_name" />
+		<result property="ilIp" column="il_ip" />
+		<result property="ilLoginTime" column="il_login_time" />
+	</resultMap>
+	
+	<select id="viewAllComplaints" resultMap="complaintMap">
+		SELECT * FROM complaint
+		<where>
+			AND c_notificated IN (1,2,9)
+            <if test="searchType=='title' and keyword != null and keyword !=''">
+                AND c_title like CONCAT('%',#{keyword},'%')
+            </if>
+            <if test="searchType=='content' and keyword != null and keyword !=''">
+                AND c_content like CONCAT('%',#{keyword},'%')
+            </if>
+            <if test="searchType=='petitioner' and keyword != null and keyword !=''">
+                AND c_petitioner like CONCAT('%',#{keyword},'%')
+            </if>
+            <if test="searchType=='department' and keyword != null and keyword !=''">
+                AND c_department like CONCAT('%',#{keyword},'%')
+            </if>
+            <if test="searchType=='serial' and keyword != null and keyword !=''">
+                AND c_writedate_count like CONCAT('%',#{keyword},'%')
+            </if>
+        </where>
+        ORDER BY c_id DESC
+        LIMIT #{startList}, #{listSize}
+	</select>
+	
+	<select id="viewAllComplaintsCnt" resultType="Integer">
+		SELECT count(*) as listCnt
+        FROM complaint
+        <where>
+        	AND c_notificated IN (1,2,9)
+	            <if test="keyword != null and keyword != ''">
+	                <if test="searchType=='title' and keyword != null and keyword !=''">
+	                AND c_title like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='content' and keyword != null and keyword !=''">
+	                AND c_content like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='petitioner' and keyword != null and keyword !=''">
+	                AND c_petitioner like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='department' and keyword != null and keyword !=''">
+	                AND c_department like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='serial' and keyword != null and keyword !=''">
+	                AND c_writedate_count like CONCAT('%',#{keyword},'%')
+	            </if>
+            </if>
+        </where>
+	</select>
+	
+	<select id="tempDeletedComplaints" resultMap="complaintMap">
+		SELECT * FROM complaint
+		<where>
+        	AND c_notificated = -99
+	            <if test="keyword != null and keyword != ''">
+	                <if test="searchType=='title' and keyword != null and keyword !=''">
+	                AND c_title like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='content' and keyword != null and keyword !=''">
+	                AND c_content like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='petitioner' and keyword != null and keyword !=''">
+	                AND c_petitioner like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='department' and keyword != null and keyword !=''">
+	                AND c_department like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='serial' and keyword != null and keyword !=''">
+	                AND c_writedate_count like CONCAT('%',#{keyword},'%')
+	            </if>
+            </if>
+        </where>
+        ORDER BY c_id DESC
+        LIMIT #{startList}, #{listSize}
+	</select>
+	
+	<select id="viewTempDeletedComplaintsCnt" resultType="Integer">
+		SELECT count(*) as listCnt
+        FROM complaint
+        <where>
+        	AND c_notificated = -99
+	            <if test="keyword != null and keyword != ''">
+	                <if test="searchType=='title' and keyword != null and keyword !=''">
+	                AND c_title like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='content' and keyword != null and keyword !=''">
+	                AND c_content like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='petitioner' and keyword != null and keyword !=''">
+	                AND c_petitioner like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='department' and keyword != null and keyword !=''">
+	                AND c_department like CONCAT('%',#{keyword},'%')
+	            </if>
+	            <if test="searchType=='serial' and keyword != null and keyword !=''">
+	                AND c_writedate_count like CONCAT('%',#{keyword},'%')
+	            </if>
+            </if>
+        </where>
+        ORDER BY c_id DESC
+        LIMIT #{startList}, #{listSize}
+	</select>
+	
+	<select id="viewComplaint" resultMap="complaintMap">
+		SELECT * FROM complaint WHERE c_id=#{cId}
+	</select>
+	
+	<select id="getIpLogList" resultMap="ipLogMap">
+		SELECT * FROM ip_log
+		<where>
+            <if test="searchType=='uName' and keyword != null and keyword !=''">
+                AND u_name like CONCAT('%',#{keyword},'%')
+            </if>
+            <if test="searchType=='dpName' and keyword != null and keyword !=''">
+                AND dp_name like CONCAT('%',#{keyword},'%')
+            </if>
+            <if test="searchType=='ilIp' and keyword != null and keyword !=''">
+                AND il_ip like CONCAT('%',#{keyword},'%')
+            </if>
+        </where>
+        ORDER BY il_id DESC
+        LIMIT #{startList}, #{listSize}
+	</select>
+	
+	<select id="getIpLogListCount" resultType="Integer">
+		SELECT count(*) as listCnt
+        FROM ip_log
+        <where>
+            <if test="keyword != null and keyword != ''">
+                <if test="searchType=='uName'">
+                    AND u_name like CONCAT('%',#{keyword},'%')
+                </if>
+                <if test="searchType=='dpName'">
+                    AND dp_name like CONCAT('%',#{keyword},'%')
+                </if>
+                <if test="searchType=='ilIp'">
+                    AND ilIp like CONCAT('%',#{keyword},'%')
+                </if>
+            </if>
+        </where>
+	</select>
+	
+	<update id="toImsiComplaint">
+		UPDATE complaint
+		SET c_notificated = 1
+		WHERE c_id=#{complaintId}
+	</update>
+	
+	<update id="toNonCompleteComplaint">
+		UPDATE complaint
+		SET c_notificated = 2
+		WHERE c_id=#{complaintId}
+	</update>
+	
+	<update id="toCompleteComplaint">
+		UPDATE complaint
+		SET c_notificated = 9
+		WHERE c_id=#{complaintId}
+	</update>
+	
+	<update id="tempDeleteComplaint">
+		UPDATE complaint
+		SET c_notificated = -99
+		WHERE c_id=#{complaintId}
+	</update>
+	
+	<update id="changePassword">
+		UPDATE manager
+		SET mg_login_pwd=#{password}
+		WHERE mg_login_id='admin'
+	</update>
+	
+	<update id="initPassword">
+		UPDATE manager
+		SET mg_login_pwd=#{password}
+		WHERE mg_login_id='admin'
+	</update>
+	
+	<update id="restoreMinwon">
+		UPDATE complaint
+		SET c_notificated = 1
+		WHERE c_id=#{id}
+	</update>
+</mapper>

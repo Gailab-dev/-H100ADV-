@@ -1,0 +1,72 @@
+package com.minwon.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.minwon.service.CryptoAriaService;
+import com.minwon.service.MemberService;
+import com.minwon.service.UserService;
+import com.minwon.vo.ComplaintVO;
+import com.minwon.vo.MemberVO;
+import com.minwon.vo.PositionVO;
+import com.minwon.vo.UserVO;
+
+@RestController
+public class MemberController {
+	@Autowired
+	MemberService memberService;
+	
+	@Autowired
+	CryptoAriaService cryptoAriaService;
+	
+	//사용자 정보 가져오기
+	@RequestMapping(value = "/memberList.do", method = RequestMethod.POST)
+	public List<MemberVO> hello() throws Exception {
+		return memberService.selectMemberList();
+	}
+	
+	@RequestMapping(value = "/memberView.do", method = RequestMethod.GET)
+	public MemberVO hello_selectone(@RequestParam Map<String, Object> param) throws Exception {
+		int u_id = Integer.parseInt((String) param.get("u_id"));
+		return memberService.selectMember(u_id);
+	}
+	
+	@RequestMapping(value = "/memberInsert.do", method = RequestMethod.GET)
+	public void memberRegister(@RequestParam Map<String, Object> param) throws Exception {
+		MemberVO vo = new MemberVO(); 
+		int uGrade;
+		int psId = Integer.parseInt((String) param.get("ps_id"));
+		if (psId == 1 || psId == 2) uGrade = 9;
+		else if (psId == 3) uGrade = 3;
+		else if (psId == 4) uGrade = 2;
+		else uGrade = 1;
+	    vo.setU_name((String) param.get("u_name"));
+	    vo.setU_login_id((String) param.get("u_login_id"));
+	    vo.setU_login_pwd((String) param.get("u_login_pwd"));
+	    vo.setU_email((String) param.get("u_email"));
+	    vo.setU_admin_num((String) param.get("u_admin_num"));
+	    vo.setU_grade(uGrade);
+	    vo.setDp_id(Integer.parseInt((String) param.get("dp_id")));
+	    vo.setPs_id(Integer.parseInt((String) param.get("ps_id")));
+		memberService.insertMember(vo);
+		memberService.deleteTempMember(Integer.parseInt((String) param.get("u_id")));
+	}
+	
+	@RequestMapping(value = "/memberDelete.do", method = RequestMethod.GET)
+	public String memberDelete(@RequestParam Map<String, Object> param) throws Exception {
+		int id = Integer.parseInt((String) param.get("u_id")); 
+		
+		memberService.deleteTempMember(id);
+		return "OK";
+	}
+}

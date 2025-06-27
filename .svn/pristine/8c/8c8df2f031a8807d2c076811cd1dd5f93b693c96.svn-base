@@ -1,0 +1,69 @@
+package com.minwon.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.minwon.dao.ArchiveDAO;
+import com.minwon.service.ArchiveService;
+import com.minwon.vo.ArchiveFileVO;
+import com.minwon.vo.ArchiveVO;
+import com.minwon.vo.SearchVO;
+
+@Service
+public class ArchiveServiceImpl implements ArchiveService {
+	@Autowired
+	ArchiveDAO archiveDAO;
+
+	@Override
+	public List<ArchiveVO> getAllList(SearchVO searchVO) throws Exception {
+		return archiveDAO.getAllList(searchVO);
+	}
+
+	@Override
+	public void insertArchive(ArchiveVO archiveVO) throws Exception {
+		archiveDAO.insertArchive(archiveVO);
+	}
+
+	@Override
+	public void countUp(Integer archiveId) throws Exception {
+		archiveDAO.countUp(archiveId);
+	}
+
+	@Override
+	public ArchiveVO getArchive(Integer archiveId) throws Exception {
+		return archiveDAO.getArchive(archiveId);
+	}
+
+	@Override
+	public int getAllListCnt(SearchVO searchVO) throws Exception {
+		return archiveDAO.getAllListCnt(searchVO);
+	}
+
+	@Override
+	public void insertArchiveFile(ArchiveFileVO archiveFileVO) throws Exception {
+		archiveDAO.insertArchiveFile(archiveFileVO);
+	}
+
+	@Override
+	public List<ArchiveFileVO> getArchiveFiles(Integer archiveId) throws Exception {
+		return archiveDAO.getArchiveFiles(archiveId);
+	}
+
+	@Override
+	public void deleteArchiveFiles(Integer archiveId) throws Exception {
+		archiveDAO.deleteArchiveFiles(archiveId);
+	}
+
+	@Override
+	public void deleteArchive(Integer archiveId) throws Exception {
+		archiveDAO.deleteArchive(archiveId);
+	}
+
+	@Override
+	public void updateArchive(ArchiveVO archiveVO) throws Exception {
+		archiveDAO.updateArchive(archiveVO);
+	}
+
+}
