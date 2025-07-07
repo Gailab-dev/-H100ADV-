@@ -4,6 +4,7 @@ import  org.egovframe.rte.fdl.cryptography.EgovCryptoService;
 import org.egovframe.rte.fdl.cryptography.EgovPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 
+// 테스트 페이지
 public class Encryption {
 	@Autowired
 	private static EgovCryptoService egovCryptoService;

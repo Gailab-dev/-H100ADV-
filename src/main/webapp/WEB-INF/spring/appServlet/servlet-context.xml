@@ -12,17 +12,40 @@
 	<resources mapping="/resources/**" location="/resources/" />
 	<resources mapping="/gpkisecureweb/**" location="/gpkisecureweb/" />
 	
-	<context:component-scan base-package="com.minwon.*">
+	<!-- bean 사용을 위한 component-scan 경로 -->
+	<context:component-scan base-package="com.disabled.*">
 		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
 	</context:component-scan>
+	
 	
 	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
 		<beans:property name="maxUploadSize" value="51200000" />
 		<beans:property name="defaultEncoding" value="utf-8" />
 	</beans:bean>
 	
+	<!-- TilesConfigurer: tiles 설정파일 위치 지정 -->
+	<beans:bean id="tilesConfigurer"
+	      class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+	    <beans:property name="definitions">
+	        <beans:list>
+	            <beans:value>/WEB-INF/config/tiles/tiles-config.xml</beans:value>
+	        </beans:list>
+	    </beans:property>  
+	    <beans:property name="checkRefresh" value="true"/>
+	</beans:bean>
+
+	<!-- ViewResolver: Tiles를 ViewResolver로 설정 -->
+	<!-- 모든 .jsp는 tiles-config.xml 파일에 정의되어 있어야 함 -->
+	<beans:bean class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+	    <beans:property name="order" value="1"/>
+	    <beans:property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView"/>
+	</beans:bean>
+	
+	<!-- jsp 경로 -->
+	<!-- tiles-config.xml 파일에 정의되지 않은 .jsp 파일은 해당 bean에서 처리함 -->
 	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="order" value="2"/>
 		<beans:property name="prefix" value="/WEB-INF/views/" />
-		<beans:property name="suffix" value=".jsp" /> 
+		<beans:property name="suffix" value=".jsp" />	 
 	</beans:bean>
 </beans:beans>

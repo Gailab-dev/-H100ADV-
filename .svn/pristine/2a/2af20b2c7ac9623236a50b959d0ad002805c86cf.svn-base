@@ -1,4 +1,0 @@
-#default (SHA-256)
-crypto.password.algorithm=SHA-256
-#password = hshi
-crypto.hashed.password=OFEE5cPfCmi0FEFZCIVIak4LmoGcWuCjlbYZqDSnG44=

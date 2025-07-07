@@ -3,7 +3,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 	
-
+	<!-- spring 설정 파일 위치 -->
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
@@ -16,11 +16,12 @@
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
 	
-	 
+	<!-- welcome file 위치 --> 
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
 	 
+	 <!--  에러 페이지 위치 -->
 	<error-page>
         <error-code>500</error-code>
         <location>/WEB-INF/views/error.jsp</location>
@@ -36,6 +37,7 @@
         <location>/WEB-INF/views/error.jsp</location>
  	</error-page> 
  	
+ 	<!-- servlet context 설정 파일 위치 -->
 	<servlet>
 		<servlet-name>appServlet</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -51,6 +53,7 @@
 		<url-pattern>/</url-pattern>
 	</servlet-mapping>
 	
+	<!--  인코딩 설정 -->
 	<filter>
 		<filter-name>encodingFilter</filter-name>
 		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
@@ -75,6 +78,30 @@
         <filter-name>HTMLTagFilter</filter-name>
         <url-pattern>*.do</url-pattern>
     </filter-mapping>
+	
+	<!-- cors filter 등록 -->
+	<!-- 추후 운영시에는 device ip만 허용할 수 있도록 정책 변경 필요 -->
+	<!-- tomcat 내장 필터임으로 다른 was 사용시 .java 파일로 filter 구현체 직접 구현 필요. -->
+	<filter>
+	    <filter-name>CorsFilter</filter-name>
+	    <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
+	    <init-param>
+	        <param-name>cors.allowed.origins</param-name>
+	        <param-value>*</param-value> <!-- 또는 http://localhost:3000 등 -->
+	    </init-param>
+	    <init-param>
+	        <param-name>cors.allowed.methods</param-name>
+	        <param-value>GET,POST,HEAD,OPTIONS,PUT,DELETE</param-value>
+	    </init-param>
+	    <init-param>
+	        <param-name>cors.allowed.headers</param-name>
+	        <param-value>*</param-value>
+	    </init-param>
+	</filter>
+	<filter-mapping>
+	    <filter-name>CorsFilter</filter-name>
+	    <url-pattern>/*</url-pattern>
+	</filter-mapping>
 	
 	<session-config>
 		<session-timeout>60</session-timeout>

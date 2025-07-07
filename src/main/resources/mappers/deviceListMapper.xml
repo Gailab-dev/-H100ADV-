@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.disabled.mapper.DeviceListMapper">
+	<select id="getDeviceInfo" resultType="map">
+		SELECT dv_id, dv_name, dv_addr
+		FROM tbl_device
+		ORDER BY dv_addr DESC,dv_name DESC		
+	</select>
+
+	<select id="getDvIpByDvId" parameterType="int" resultType="String">
+		SELECT dv_ip
+		FROM tbl_device
+		WHERE dv_id = #{dvId}	
+	</select>
+
+</mapper>

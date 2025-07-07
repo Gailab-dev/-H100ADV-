@@ -15,7 +15,7 @@
 		 -->
 		
 		<property name="url"
-			value="jdbc:mariadb://192.168.0.15:3307/g_eye_parking" />
+			value="jdbc:mariadb://192.168.0.15:3307/able_park" />
 		
 		<property name="username" value="root" />
 		<!-- local -->
@@ -27,16 +27,21 @@
 		 -->
 		
 	</bean>
-
+	
+	<!-- mybatis 설정파일 위치, mapper.xml 파일 위치 -->
 	<bean id="sqlSessionFactory"
 		class="org.mybatis.spring.SqlSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
 		<property name="configLocation"
 			value="classpath:/mybatis-config.xml" />
 		<property name="mapperLocations"
-			value="classpath:mappers/**/*Mapper.xml" />
+			value="classpath:mappers/*Mapper.xml" />
 	</bean>
-
+	
+	<!-- mapper annotation 사용을 위한 맵퍼 스캔 설정 
+	<mybatis-spring:scan base-package="com.disabled.mapper"/>
+	-->
+	
 	<bean id="sqlSession"
 		class="org.mybatis.spring.SqlSessionTemplate"
 		destroy-method="clearCache">
@@ -44,7 +49,9 @@
 			ref="sqlSessionFactory" />
 	</bean>
 	
+	<!-- @Mapper 어노테이션 스캔  -->
 	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-    	<property name="basePackage" value="com.minwon.dao" />
+    	<property name="basePackage" value="com.disabled.mapper" />
 	</bean>
+	
 </beans>
