@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.disabled.mapper.StatsMapper">
+	<select id="getEventByMonth" parameterType="map" resultType="map">
+		SELECT st_date, st_cnt
+		FROM tbl_statistics
+		GROUP BY st_date
+		ORDER BY st_date 
+		limit 5	
+	</select>
+	
+	<select id="getAllEvent" resultType="map">
+		SELECT st_date, st_cnt
+		FROM tbl_statistics
+		GROUP BY st_date
+		ORDER BY st_date 
+		limit 5	
+	</select>
+
+</mapper>
