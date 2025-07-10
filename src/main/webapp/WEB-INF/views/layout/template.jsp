@@ -21,10 +21,13 @@
 	<tiles:insertAttribute name="header"/>
 </head>
 <body>
-	<tiles:insertAttribute name="left"/>
-	<tiles:insertAttribute name="body"/>
-	<footer>
-		<tiles:insertAttribute name="footer"/>
-	</footer>
+	<div>
+		<tiles:insertAttribute name="left"/>
+		<tiles:insertAttribute name="body"/>
+		<footer>
+			<tiles:insertAttribute name="footer"/>
+		</footer>
+	</div>
+
 </body>		
 </html>

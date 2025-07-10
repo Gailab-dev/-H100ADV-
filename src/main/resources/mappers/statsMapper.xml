@@ -1,21 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!-- 통계 화면 SQL문 -->
 <mapper namespace="com.disabled.mapper.StatsMapper">
+
+	<!-- 조건에 따른 월별 이벤트 발생 수(최대 24개, 1년) -->
 	<select id="getEventByMonth" parameterType="map" resultType="map">
-		SELECT st_date, st_cnt
+		SELECT st_date, st_cd, st_cnt 
 		FROM tbl_statistics
-		GROUP BY st_date
-		ORDER BY st_date 
-		limit 5	
+		GROUP BY st_date, st_cd
+		HAVING st_cd IN(1,2)
+		ORDER BY st_date desc
+		LIMIT 24;
 	</select>
 	
+	<!-- 조건이 없는 모든 이벤트 발생 수(최대 24개, 1년) -->
 	<select id="getAllEvent" resultType="map">
-		SELECT st_date, st_cnt
+		SELECT st_date, st_cd, st_cnt 
 		FROM tbl_statistics
-		GROUP BY st_date
-		ORDER BY st_date 
-		limit 5	
+		GROUP BY st_date, st_cd
+		HAVING st_cd IN(1,2)
+		ORDER BY st_date desc
+		LIMIT 24;
 	</select>
 
 </mapper>

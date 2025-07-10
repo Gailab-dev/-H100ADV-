@@ -23,7 +23,7 @@ public class StatsServiceImpl implements StatsService{
 	StatsMapper statsMapper;
 	
 	@Override
-	public void loginCheck(String id, String pwd) {
+	public Integer loginCheck(String id, String pwd) {
 		// TODO Auto-generated method stub
 		
 		int cnt = 0;
@@ -34,10 +34,13 @@ public class StatsServiceImpl implements StatsService{
 			
 			if(cnt != 1) {
 				throw new LogException("로그인 실패");
-			};
+			}else {
+				return 1;
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			// TODO: handle exception
+			return -1;
 		} 
 	}
 	

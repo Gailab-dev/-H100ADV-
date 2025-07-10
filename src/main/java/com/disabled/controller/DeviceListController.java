@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
@@ -95,6 +96,7 @@ public class DeviceListController {
 			// deviceId를 통해 deviceIp 조회
 			String dvIp = deviceListService.getDvIpByDvID( Integer.parseInt(req.getParameter("id")));
 			
+			//deviceIp를 url로 한 실시간 데이터 스트리밍
 			apiService.forwardStream(req, res, dvIp);
 				
 		} catch (Exception e) {

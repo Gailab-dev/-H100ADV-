@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!-- 로그인, 회원가입 기능의 SQL 문이 작성된 -->
 <mapper namespace="com.disabled.mapper.LoginMapper">
+	
+	<!-- id와 pw값을 비교하여 둘 다 같은 경우, 해당 column의 수를 리턴 -->
 	<select id="cntUsrByIdAndPwd" resultType="int">
 		SELECT COUNT(*) 
 		FROM tbl_user

@@ -7,8 +7,8 @@
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
-		/WEB-INF/spring/root-context.xml
-		/WEB-INF/spring/ariacrypto-context.xml
+		/WEB-INF/spring/root-context.xml  <!-- 최상위 설정 파일 위치 -->
+		/WEB-INF/spring/ariacrypto-context.xml <!-- 암호화 설정 파일 위치 -->
 		</param-value>
 	</context-param>
 	
@@ -16,7 +16,10 @@
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
 	
-	<!-- welcome file 위치 --> 
+	<!-- 
+		프로젝트 실행 시 welcome file 
+		/WEB-INF/index.jsp
+	--> 
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
@@ -37,7 +40,7 @@
         <location>/WEB-INF/views/error.jsp</location>
  	</error-page> 
  	
- 	<!-- servlet context 설정 파일 위치 -->
+ 	<!-- servlet context 설정 -->
 	<servlet>
 		<servlet-name>appServlet</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -47,7 +50,6 @@
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
-	
 	<servlet-mapping>
 		<servlet-name>appServlet</servlet-name>
 		<url-pattern>/</url-pattern>
@@ -81,7 +83,7 @@
 	
 	<!-- cors filter 등록 -->
 	<!-- 추후 운영시에는 device ip만 허용할 수 있도록 정책 변경 필요 -->
-	<!-- tomcat 내장 필터임으로 다른 was 사용시 .java 파일로 filter 구현체 직접 구현 필요. -->
+	<!-- tomcat 내장 필터임으로 톰켓이 아닌 다른 was 사용시 .java 파일로 filter 구현체 직접 구현 필요. -->
 	<filter>
 	    <filter-name>CorsFilter</filter-name>
 	    <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>

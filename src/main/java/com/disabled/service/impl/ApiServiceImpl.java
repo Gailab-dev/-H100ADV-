@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import com.disabled.service.ApiService;
 
+// 공통 api 모듈
 @Service
 public class ApiServiceImpl implements ApiService{
 	
@@ -32,20 +33,20 @@ public class ApiServiceImpl implements ApiService{
 		System.out.println(dvIp);
 		
 		// 디바이스Url
-		String targetUrl = "http://" + dvIp +":8087/control";
+		String targetUrl = "http://" + dvIp +":8087/video";
 		// connection 객체
 		HttpURLConnection conn = null;
 		// 인코딩 할 명령어
 		String encodeCommand = "";
 		
 		try {
-			// 인코딩 설정
-			encodeCommand = URLEncoder.encode(req.getParameter("command"), "UTF-8");
+			// 1. 인코딩 설정
+			encodeCommand = URLEncoder.encode(req.getParameter("type"), "UTF-8");
 			
-			// connection pool 생성
+			// 2. connection pool 생성
 			conn = createPostConnection(targetUrl, encodeCommand);
 			
-			// output Stream
+			// 3. output Stream
 			copyResponse(conn, res);
 			
 		} catch (UnsupportedEncodingException e) {
@@ -73,7 +74,7 @@ public class ApiServiceImpl implements ApiService{
 		
 		try {
 			
-			// url 생성
+			// url 객체 생성
 			url = new URL(targetUrl);
 			
 			// connection pool 생성
@@ -108,20 +109,25 @@ public class ApiServiceImpl implements ApiService{
 		// TODO Auto-generated method stub
 		
 		try {
+			//1. connection pool의 respose code와 contentType 설정값 설정
 			res.setStatus(conn.getResponseCode());
 			res.setContentType(conn.getContentType());
 			
+			// 2. connetion pool 객체가 연결되어 있는 동안 outputStream 객체 실행하여 데이터 수신
 	        try (InputStream inputStream = conn.getInputStream();
                 OutputStream outputStream = res.getOutputStream()) {
-
+	           	
                byte[] buffer = new byte[BUFFER_SIZE];
                int bytesRead;
+               
+               // outpusStream 객체에 받은 데이터 저장
                while ((bytesRead = inputStream.read(buffer)) != -1) {
                    outputStream.write(buffer, 0, bytesRead);
                }
                
                System.out.println("outputStream flush");
                
+               // 받은 데이터를 실시간 스트리밍
                outputStream.flush();
             }
 		} catch (IOException e) {

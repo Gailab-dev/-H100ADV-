@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!-- 장비 리스트 화면 SQL -->
 <mapper namespace="com.disabled.mapper.DeviceListMapper">
+	
+	<!-- 디바이스 정보 -->
 	<select id="getDeviceInfo" resultType="map">
 		SELECT dv_id, dv_name, dv_addr
 		FROM tbl_device
 		ORDER BY dv_addr DESC,dv_name DESC		
 	</select>
-
+	
+	<!-- 선택한 디바이스의 ip값에 따른 ip값 ㄱㅎ -->
 	<select id="getDvIpByDvId" parameterType="int" resultType="String">
 		SELECT dv_ip
 		FROM tbl_device

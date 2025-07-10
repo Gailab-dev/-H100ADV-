@@ -71,15 +71,15 @@
 		function sendCommand(command) {
 			
 			const params = new URLSearchParams();
-			params.append('command',command);
+			params.append('type',command);
 			params.append('id',1);
 			
 	    	fetch('/gov-disabled-web-gs/deviceList/sendCommand', {
 	      		method: 'POST',
 	      		headers: {
-	        		'Content-Type': 'application/x-www-form-urlencoded'
+	        		'Content-Type': 'application/json'
 	      		},
-	      		body: params.toString()
+	      		body: JSON.parse(params);
 	    		})
 	    	.then(response => {
 	      		if (!response.ok) throw new Error('요청 실패');
