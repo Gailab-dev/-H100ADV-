@@ -77,9 +77,9 @@
 	    	fetch('/gov-disabled-web-gs/deviceList/sendCommand', {
 	      		method: 'POST',
 	      		headers: {
-	        		'Content-Type': 'application/json'
+	        		'Content-Type': 'application/x-www-form-urlencoded'
 	      		},
-	      		body: JSON.parse(params);
+	      		body: params.toString()
 	    		})
 	    	.then(response => {
 	      		if (!response.ok) throw new Error('요청 실패');

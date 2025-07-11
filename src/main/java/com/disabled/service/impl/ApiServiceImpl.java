@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -82,9 +83,11 @@ public class ApiServiceImpl implements ApiService{
 	        conn.setRequestMethod("POST");
 	        conn.setDoOutput(true);
 	        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+	        System.out.println("create connection pool");
 	        
 	        // 실시간 스트리밍 결과 받기
 	        try(OutputStream os = conn.getOutputStream()){
+	        	System.out.println("outputStream ready");
 	        	os.write(body.getBytes(StandardCharsets.UTF_8));
 	        }
 	        
@@ -106,10 +109,9 @@ public class ApiServiceImpl implements ApiService{
 	 */
 	@Override
 	public void copyResponse(HttpURLConnection conn, HttpServletResponse res) {
-		// TODO Auto-generated method stub
 		
 		try {
-			//1. connection pool의 respose code와 contentType 설정값 설정
+			// 1. connection pool의 respose code와 contentType 설정값 설정
 			res.setStatus(conn.getResponseCode());
 			res.setContentType(conn.getContentType());
 			
@@ -120,19 +122,33 @@ public class ApiServiceImpl implements ApiService{
                byte[] buffer = new byte[BUFFER_SIZE];
                int bytesRead;
                
-               // outpusStream 객체에 받은 데이터 저장
+               // 3. outpusStream 객체에 받은 데이터 저장
                while ((bytesRead = inputStream.read(buffer)) != -1) {
                    outputStream.write(buffer, 0, bytesRead);
                }
                
                System.out.println("outputStream flush");
                
-               // 받은 데이터를 실시간 스트리밍
+               // 4. 받은 데이터를 실시간 스트리밍
                outputStream.flush();
             }
 		} catch (IOException e) {
 			System.out.println("response 에러");
 			e.printStackTrace();
+		}
+		
+	}
+	
+	/*
+	 * 송신 데이터 타입이 json객체일 때 실시간 영상 스트리밍
+	 */
+	@Override
+	public void forwardStreamToJSON(HashMap<String, Object> json, String dvIp) {
+		
+		try {
+			
+		} catch (Exception e) {
+			// TODO: handle exception
 		}
 		
 	}
