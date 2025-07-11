@@ -4,7 +4,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>login</title>
+<title>로그인</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css">
 </head>
@@ -61,23 +61,17 @@
 	}
 </script>
 <body>
-    <header class="login-header"></header>
+	<h3> 메인 화면_담향</h3>
 
-    <main class="login-body">
-        <div class="login-container">
-            <h3 class="login-title">로그인</h3>
 
-            <p id="showview"></p>
+	<p id="showview"></p>
+	
+	<input id="id" type="text" placeholder="ID를 입력해주세요"></input>
+	<input id="pwd" type="password" placeholder="PW를 입력해주세요"></input>
+	
+	<button onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)"> 로그인 </button>
+		
+	
 
-            <input id="id" class="login-input" type="text" placeholder="아이디를 입력해주세요">
-            <input id="pwd" class="login-input" type="password" placeholder="비밀번호를 입력해주세요">
-
-            <button class="login-button" onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
-                로그인
-            </button>
-        </div>
-    </main>
-
-    <footer class="login-footer"></footer>
 </body>
 </html>

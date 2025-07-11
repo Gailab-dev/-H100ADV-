@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -134,6 +135,15 @@ public class ApiServiceImpl implements ApiService{
 			System.out.println("response 에러");
 			e.printStackTrace();
 		}
+		
+	}
+	
+	/*
+	 * 송신 데이터 타입이 json객체일 때 실시간 영상 스트리밍
+	 */
+	@Override
+	public void forwardStreamToJSON(HashMap<String, Object> json, String dvIp) {
+		// TODO Auto-generated method stub
 		
 	}
 }

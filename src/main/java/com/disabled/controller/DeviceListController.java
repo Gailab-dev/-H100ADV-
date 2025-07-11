@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -105,6 +106,16 @@ public class DeviceListController {
 		}
 		
 		
+	}
+	
+	/*
+	 * json 파일로 송신시 inputStream을 이용한 on-device 장비와 실시간 스트리밍
+	 */
+	private void sendCommandToJSON(@RequestBody HashMap<String, Object> json) {
+		
+		String dvIp = deviceListService.getDvIpByDvID( Integer.parseInt(json.get("id").toString()));
+		
+		apiService.forwardStreamToJSON(json,dvIp);
 	}
 		
 	
