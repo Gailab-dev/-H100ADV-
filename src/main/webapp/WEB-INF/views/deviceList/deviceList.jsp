@@ -78,7 +78,7 @@
 	        });
 	    }
 	
-	    // ✅ 아코디언 기능: 정상작동하도록 유지
+	    // 아코디언 기능: 정상작동하도록 유지
 	    document.addEventListener('DOMContentLoaded', () => {
 	        const accordions = document.getElementsByClassName("accordion");
 	        for (let acc of accordions) {
@@ -93,41 +93,48 @@
 </head>
 <body>
     <header class="header">
-        <h2>GAILAB</h2>
+        <div class="logo">GAILAB</div>
+        <div class="user">ghskim</div>
     </header>
-
-    <div class="container">
-        <nav class="navi">
-            <h3>디바이스 리스트</h3>
-            <c:forEach var="addr" items="${deviceList}">
-                <button class="accordion">${addr.key}</button>
-                <div class="accordion-content">
-                    <ul>
-                        <c:forEach var="device" items="${addr.value}">
-                            <li data-dvid="${device.dv_id}">${device.dv_name}</li>
-                        </c:forEach>
-                    </ul>
+ <div class="container">
+        <aside class="sidebar">
+            <ul class="menu">
+                <li><a href="#">홈</a></li>
+                <li><a href="#">디바이스 리스트</a></li>
+                <li><a href="#">불법주차 리스트</a></li>
+                <li><a href="#">통계</a></li>
+            </ul>
+        </aside>
+        <div class="content">
+            <nav class="device-navi">
+                <h3>디바이스 리스트</h3>
+                <c:forEach var="addr" items="${deviceList}">
+                    <button class="accordion">${addr.key}</button>
+                    <div class="accordion-content">
+                        <ul>
+                            <c:forEach var="device" items="${addr.value}">
+                                <li data-dvid="${device.dv_id}">${device.dv_name}</li>
+                            </c:forEach>
+                        </ul>
+                    </div>
+                </c:forEach>
+            </nav>
+            <main class="main">
+                <h1>실시간 영상</h1>
+                <video id="video" width="720" controls autoplay></video>
+                <div class="controller-buttons">
+                    <button onclick="sendCommand('start')">Start</button>
+                    <button onclick="sendCommand('end')">End</button>
                 </div>
-            </c:forEach>
-        </nav>
-
-        <main class="main">
-            <h1>실시간 영상</h1>
-            <video id="video" width="720" controls autoplay></video>
-            <div class="controller-buttons">
-                <button onclick="sendCommand('start')">Start</button>
-                <button onclick="sendCommand('end')">End</button>
-            </div>
-
-            <div class="controller">
-                <div id="up">↑</div>
-                <div id="left">←</div>
-                <div id="right">→</div>
-                <div id="down">↓</div>
-            </div>
-        </main>
+                <div class="controller">
+                    <div id="up">↑</div>
+                    <div id="left">←</div>
+                    <div id="right">→</div>
+                    <div id="down">↓</div>
+                </div>
+            </main>
+        </div>
     </div>
-
     <footer class="footer">
         <p>&copy; 2025 GAILAB</p>
     </footer>
