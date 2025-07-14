@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 불법주차 리스트 화면 SQL문 -->
+<mapper namespace="com.disabled.mapper.EventListMapper">
+
+	<!-- 검색조건에 따른 이벤트 리스트 -->
+	<select id="getEventList" parameterType="map" resultType="map">
+
+	</select>
+	
+	<!-- 검색조건에 따른 이벤트 리스트 갯수 -->
+	<select id="getEventListCount" parameterType="map" resultType="int">
+
+	</select>
+	
+	<!-- 리스트 클릭시 이벤트 리스트 상세 정보 -->
+	<select id="getEventListDetail" resultType="map">
+	
+	</select>
+
+</mapper>

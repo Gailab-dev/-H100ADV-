@@ -145,6 +145,8 @@ public class ApiServiceImpl implements ApiService{
 	@Override
 	public void forwardStreamToJSON(HashMap<String, Object> json, String dvIp) {
 		
+		System.out.println(dvIp);
+		
 		try {
 			
 		} catch (Exception e) {
