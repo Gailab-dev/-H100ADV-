@@ -1,0 +1,126 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    padding: 15px 40px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 10;
+}
+.logo {
+    font-weight: bold;
+    font-size: 18px;
+}
+.user {
+    font-size: 14px;
+    color: #666;
+    min-width: 80px;     /* 너무 붙지 않도록 영역 확보 */
+    text-align: right;   /* 정렬이 필요하다면 */
+}
+.container {
+    display: flex;
+    margin-top: 70px;
+    height: calc(100vh - 70px);
+}
+.sidebar {
+    width: 200px;
+    background: #f8f8f8;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+}
+.content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+.device-navi {
+    width: 250px;
+    background: #f4f4f4;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+    overflow-y: auto;
+}
+.device-navi h3 {
+    margin-top: 0;
+}
+.main {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+.menu {
+    list-style-type: none;
+    padding: 0;
+}
+.menu > li {
+    margin-bottom: 12px;
+}
+.menu > li > a {
+    display: block;
+    padding: 10px;
+    background: #eee;
+    text-decoration: none;
+    color: #000;
+}
+.accordion {
+    background-color: #ddd;
+    color: black;
+    cursor: pointer;
+    padding: 10px;
+    margin-bottom: 5px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+}
+.accordion.active, .accordion:hover {
+    background-color: #bbb;
+}
+.accordion-content {
+    display: none;
+    padding-left: 10px;
+}
+.accordion.active + .accordion-content {
+    display: block;
+}
+.controller {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 10px;
+}
+.controller div {
+    padding: 20px;
+    background: #333;
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.controller-buttons {
+    text-align: center;
+    margin-top: 20px;
+}
+.controller-buttons button {
+    padding: 10px 20px;
+    background-color: #444;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+.controller-buttons button:hover {
+    background-color: #222;
+}
+.footer {
+    background-color: #f1f1f1;
+    padding: 10px;
+    text-align: center;
+}
