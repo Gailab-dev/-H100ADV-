@@ -23,7 +23,7 @@ public class StatsController {
 	@Autowired
 	StatsMapper statsMapper;
 	
-	// 통계 화면으로 redicrec
+	// 통계 화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
 		
