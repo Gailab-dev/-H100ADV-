@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EventListMapper {
 	List<Map<String, Object>> getEventList();
+	List<Map<String, Object>> getEventList(Map<String,Object> paramMap);
 	Integer getEventListCount();
 	Map<String,Object> getEventListDetail(Integer evId);
 }
