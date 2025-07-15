@@ -6,7 +6,22 @@
 
 	<!-- 검색조건에 따른 이벤트 리스트 -->
 	<select id="getEventList" parameterType="map" resultType="map">
-
+		SELECT A.*
+			, CONCAT(B.dv_addr,' ',B.dv_name) AS dv_addr
+		FROM tbl_event_data A
+		LEFT JOIN tbl_device B
+		ON A.ev_dv_id = B.dv_id
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
+			</if>
+			<if test="startDate != null and endDate != null">
+				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
+			</if>
+		</where>
+        ORDER BY A.ev_reg_date DESC
+        LIMIT #{recordCountPerPage} 
+        OFFSET #{firstIndex}
 	</select>
 	
 	<!-- 검색조건에 따른 이벤트 리스트 갯수 -->
@@ -15,8 +30,15 @@
 	</select>
 	
 	<!-- 리스트 클릭시 이벤트 리스트 상세 정보 -->
-	<select id="getEventListDetail" resultType="map">
-	
+	<select id="getEventListDetail"  parameterType="int" resultType="map">
+		SELECT A.*
+			, CONCAT(B.dv_addr,B.dv_name) AS dv_addr
+		FROM tbl_event_data A
+		LEFT JOIN tbl_device B
+		ON A.ev_dv_id = B.dv_id
+		<where>
+			A.ev_id = #{evId}
+		</where>
 	</select>
 
 </mapper>
