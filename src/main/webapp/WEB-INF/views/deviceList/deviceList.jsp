@@ -136,48 +136,53 @@
 	</script>
 </head>
 <body>
-	<header class="header">
-        <div class="logo">GAILAB</div>
+    <header class="header">
+        <div class="logo"><img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png" alt="GAILAB" class="header-icon"></div>
         <div class="user">ghskim</div>
     </header>
     <div class="container">
-    	<aside class="sidebar">
+        <aside class="sidebar">
             <ul class="menu">
-                <li><a href="#">홈</a></li>
-                <li><a href="#">디바이스 리스트</a></li>
-                <li><a href="#">불법주차 리스트</a></li>
-                <li><a href="#">통계</a></li>
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
             </ul>
         </aside>
         <div class="content">
-        	<nav class="device-navi">
-        		 <h3>디바이스 리스트</h3>
-        		 <!-- 주소와 주소별로 그룹화 된 디바이스 리스트 출력 -->
+            <nav class="device-navi">
+                <h3>디바이스 리스트</h3>
 				<c:forEach var="addr" items="${deviceList}">
-					<button class="accordion">${addr.key}</button>
-					<div class="accordion-content">
-						<ul>
-						<!-- 주소별 그룹화 된 디바이스 리스트 출력-->
-							<c:forEach var="device" items="${addr.value}">
-								<li data-dvid = "${device.dv_id }"> ${device.dv_name } </li>
-							</c:forEach>
-						</ul>
-					</div>	
+				    <button class="accordion">
+				        <span class="accordion-label">${addr.key}</span>
+				        <span class="accordion-arrow">&#9662;</span> <%-- ▼ (열림 표시) --%>
+				    </button>
+				    <div class="accordion-content">
+				        <ul>
+				            <c:forEach var="device" items="${addr.value}">
+				                <li class="device-item" data-dvid="${device.dv_id}">${device.dv_name}</li>
+				            </c:forEach>
+				        </ul>
+				    </div>
 				</c:forEach>
-			</nav>
+            </nav>
 			<main class="main">
 				<h1>실시간 영상</h1>	
-				<video id="video" width="720" controls autoplay></video>
-				<div class="controller-buttons">
-					<button onclick="sendCommand('start')">Start</button>
-                    <button onclick="sendCommand('end')">End</button>
-				</div>
-                <div class="controller">
-                    <div id="up">↑</div>
-                    <div id="left">←</div>
-                    <div id="right">→</div>
-                    <div id="down">↓</div>
-                </div>
+			    <div class="video-controller-group">
+			        <video id="video" width="720" controls autoplay></video>
+			        
+			        <div class="controller-wrapper">
+			            <div class="controller-button up">▲</div>
+			            <div class="controller-button left">◀</div>
+			            <div class="controller-center">⏸</div>
+			            <div class="controller-button right">▶</div>
+			            <div class="controller-button down">▼</div>
+			        </div>
+			    </div>
+			
+			    <div class="controller-buttons">
+			        <button onclick="sendCommand('start')">Start</button>
+			        <button onclick="sendCommand('end')">End</button>
+			    </div>
 			</main>
 		</div>
 	</div>	
