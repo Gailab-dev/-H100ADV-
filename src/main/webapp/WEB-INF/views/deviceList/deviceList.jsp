@@ -111,7 +111,7 @@
 	    	});
 	  	}
 		
-			    // 아코디언 기능: 정상작동하도록 유지
+			    // 아코디언 토글 기능: 정상작동하도록 유지
 	    document.addEventListener('DOMContentLoaded', () => {
 	        const accordions = document.getElementsByClassName("accordion");
 	        for (let acc of accordions) {
@@ -136,9 +136,15 @@
 	</script>
 </head>
 <body>
+	<!-- 헤더 -->
     <header class="header">
-        <div class="logo"><img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png" alt="GAILAB" class="header-icon"></div>
-        <div class="user">ghskim</div>
+        <div class="logo">
+        	<img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png" alt="GAILAB" class="header-icon">
+        </div>
+        <div class="user">
+        	<img src="${pageContext.request.contextPath}/resources/images/user.png" alt="유저" class="user-image">
+        	<span class="user-name">hskim</span>
+        </div>
     </header>
     <div class="container">
         <aside class="sidebar">
@@ -149,7 +155,7 @@
             </ul>
         </aside>
         <div class="content">
-            <nav class="device-navi">
+            <div class="device-navi">
                 <h3>디바이스 리스트</h3>
 				<c:forEach var="addr" items="${deviceList}">
 				    <button class="accordion">
@@ -164,20 +170,22 @@
 				        </ul>
 				    </div>
 				</c:forEach>
-            </nav>
+            </div>
 			<main class="main">
 				<h1>실시간 영상</h1>	
 			    <div class="video-controller-group">
-			        <video id="video" width="720" controls autoplay></video>
-			        
-			        <div class="controller-wrapper">
-			            <div class="controller-button up">▲</div>
-			            <div class="controller-button left">◀</div>
-			            <div class="controller-center">⏸</div>
-			            <div class="controller-button right">▶</div>
-			            <div class="controller-button down">▼</div>
-			        </div>
-			    </div>
+				    <video id="video" width="720" controls autoplay></video>
+				
+				    <div class="controller-center-wrapper">
+				        <div class="controller-wrapper">
+				            <div class="controller-button up">▲</div>
+				            <div class="controller-button left">◀</div>
+				            <div class="controller-center">⏸</div>
+				            <div class="controller-button right">▶</div>
+				            <div class="controller-button down">▼</div>
+				        </div>
+				    </div>
+				</div>
 			
 			    <div class="controller-buttons">
 			        <button onclick="sendCommand('start')">Start</button>

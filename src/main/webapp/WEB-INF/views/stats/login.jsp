@@ -4,9 +4,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>login</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css">
+<title>login</title> <!-- 페이지 제목 설정 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 뷰포트 설정 (모바일 대응) -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css"> <!-- CSS 불러오기 -->
 </head>
 <script>
 	/*
@@ -61,6 +61,7 @@
 	}
 </script>
 <body>
+	<!-- 상단 헤더 공간 (투명, 고정 높이) -->
     <header class="login-header"></header>
 
     <main class="login-body">

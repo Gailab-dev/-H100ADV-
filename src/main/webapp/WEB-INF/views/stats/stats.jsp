@@ -3,13 +3,12 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<!-- 
 <!DOCTYPE html>
 <html>
- -->
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/stats.css">
+<title>home</title>
 </head>
 <style>
 
@@ -118,64 +117,92 @@
 		    },
 		    legend: {
 		    	position: 'right'
+		    },
+		    padding: {
+		        right: 150  // 우측 여백 확보
+		    },
+		    line: {
+		        connectNull: true
+		    },
+		    tooltip: {
+		        grouped: true  // 여러 시리즈 함께 보기
+		    },
+		    color: {
+		        pattern: ['#00cfd5', '#a064c6']  // 비장애인, 장애인 선 색상 지정
 		    }
 		    
 		});
 	})
 </script>
 <body>
-	<h1> 통계 화면</h1>
-	<div id="container">
-		<div id="left">
-			left
-		</div>
-		<div>
-			<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
-			<div id="chart" style="width: 75%; height: 400px;">
-		
-			</div>
+	<!-- 헤더 -->
+    <header class="header">
+        <div class="logo">
+        	<img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png" alt="GAILAB" class="header-icon">
+        </div>
+        <div class="user">
+        	<img src="${pageContext.request.contextPath}/resources/images/user.png" alt="유저" class="user-image">
+        	<span class="user-name">hskim</span>
+        </div>
+    </header>
+    <div class="container">
+        <aside class="sidebar">
+            <ul class="menu">
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+            </ul>
+        </aside>    
+    	<div class="content">
+    		<h1>월별 불법주차 현황</h1>
 			<div>
-				<!-- 장애인, 비장애인 별 이벤트 발생 현황(표) -->
-				<table>
-					<tr>
-						<td> 
-						</td>
-						<c:forEach var="row" items="${statsByMonth}" step="2">
-							<td>
-								${fn:substring(row.st_date,4,6)}월
+				<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
+				<div id="chart" style="width: 75%; height: 400px;">
+			
+				</div>
+				<div>
+					<!-- 장애인, 비장애인 별 이벤트 발생 현황(표) -->
+					<table>
+						<tr>
+							<td> 
 							</td>
-						</c:forEach>
-					</tr>
-					<tr>
-						<td>
-							비장애인주차
-						</td>
-						<c:forEach var="row" items="${statsByMonth}">
-							<c:if test="${row.st_cd == '1'}" >
-								<td>	
-									${row.st_cnt}
-								</td>
-							</c:if>
-						</c:forEach>
-					</tr>
-					<tr>
-						<td>
-							장애인 비등록차량
-						</td>
-						<c:forEach var="row" items="${statsByMonth}">
-							<c:if test="${row.st_cd == '2'}">
+							<c:forEach var="row" items="${statsByMonth}" step="2">
 								<td>
-									${row.st_cnt}
+									${fn:substring(row.st_date,4,6)}월
 								</td>
-							</c:if>	
-						</c:forEach>
-					</tr>
-				</table>
+							</c:forEach>
+						</tr>
+						<tr>
+							<td>
+								비장애인주차
+							</td>
+							<c:forEach var="row" items="${statsByMonth}">
+								<c:if test="${row.st_cd == '1'}" >
+									<td>	
+										${row.st_cnt}
+									</td>
+								</c:if>
+							</c:forEach>
+						</tr>
+						<tr>
+							<td>
+								장애인 미등록차량
+							</td>
+							<c:forEach var="row" items="${statsByMonth}">
+								<c:if test="${row.st_cd == '2'}">
+									<td>
+										${row.st_cnt}
+									</td>
+								</c:if>	
+							</c:forEach>
+						</tr>
+					</table>
+				</div>
 			</div>
-		</div>
-	</div>
-	
+    	</div>
+    </div>
+    <footer class="footer">
+        <p>&copy; 2025 GAILAB</p>
+    </footer>
 </body>
-<!-- 
 </html>
--->

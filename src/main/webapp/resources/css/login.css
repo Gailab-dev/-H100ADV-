@@ -1,15 +1,14 @@
-/* 초기화 */
+/* 초기화: 모든 요소의 margin/padding 제거, box-sizing 설정 */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-
+/* 전체 높이 지정 및 기본 폰트 설정 */
 body, html {
   height: 100%;
   font-family: Arial, sans-serif;
 }
-
 /* header: 상단 고정, 빈 공간 */
 .login-header {
   position: fixed;
@@ -20,24 +19,21 @@ body, html {
   background-color: transparent;
   z-index: 1000;
 }
-
 /* footer: 일반 공백 영역, 고정 X */
 .login-footer {
   height: 60px;
   background-color: transparent;
 }
-
-/* 메인 body 전체 중앙 정렬 */
+/* 메인 body 전체 중앙 정렬 (로그인 폼이 수직 중앙 정렬되도록 설정) */
 .login-body {
   display: flex;
   justify-content: center;
   align-items: center;
   padding-top: 60px; /* header 높이만큼 밀기 */
-  padding-bottom: 60px;
+  padding-bottom: 60px; /* footer 고려 */
   min-height: 100vh;
 }
-
-/* 로그인 컨테이너 */
+/* 로그인 컨테이너(로그인 폼 전체 영역) */
 .login-container {
   display: flex;
   flex-direction: column;
@@ -46,15 +42,13 @@ body, html {
   max-width: 320px;
   padding: 1rem;
 }
-
-/* 제목 */
+/* 제목 스타일*/
 .login-title {
   font-size: 1.5rem;
   font-weight: bold;
   text-align: center;
 }
-
-/* 입력 박스 */
+/* 입력창 스타일 (밑줄만 있는 깔끔한 입력박스) */
 .login-input {
   padding: 12px;
   font-size: 1rem;
@@ -62,8 +56,7 @@ body, html {
   border-bottom: 1px solid #ccc;
   outline: none;
 }
-
-/* 버튼 */
+/* 로그인 버튼 스타일 */
 .login-button {
   padding: 12px;
   font-size: 1rem;
@@ -74,7 +67,7 @@ body, html {
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
 }
-
+/* 버튼 hover 시 색 변경 */
 .login-button:hover {
   background-color: #333;
 }
