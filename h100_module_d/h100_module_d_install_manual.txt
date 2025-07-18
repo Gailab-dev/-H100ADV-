@@ -1,0 +1,4 @@
+1. 사용할 계정으로 접속 후, 
+app 폴더 접속
+1. GEyeParkingH100 디렉토리 생성
+	GEyeParkingH100/

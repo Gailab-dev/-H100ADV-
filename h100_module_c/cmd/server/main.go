@@ -5,14 +5,12 @@ import (
         "os"
         "fmt"
 
-        "github.com/robfig/cron/v3"
         "github.com/joho/godotenv"
         "go.uber.org/zap"
 
-	"local.dev/h100_module_d/internal/middlewares"
-        "local.dev/h100_module_d/internal/handlers/video"
-        "local.dev/h100_module_d/internal/handlers/fileSend"
-        "local.dev/h100_module_d/logger"
+	"local.dev/h100_module_c/internal/middlewares"
+        "local.dev/h100_module_c/internal/handlers/fileReceive"
+        "local.dev/h100_module_c/logger"
 )
 
 func main() {
@@ -29,30 +27,8 @@ func main() {
 	}
         // ===== [E] .env 파일 로딩 ====== //
         
-        // ===== [S] 스케줄러 설정 ====== //
-        log.Info("스케줄러 설정")
-        c := cron.New(cron.WithSeconds())
-	// 초 분 시 일 월 요일
-	_, schErr := c.AddFunc(os.Getenv("FILE_SEND_SCH_TIME"), func() {
-                // _, schErr := c.AddFunc("0 42 13 * * *", func() {
-                log.Info("스케줄러 실행")
-                fileSend.FileSendScheduler()
-        })
-        if schErr != nil {
-                log.Error("스케줄러 등록 실패", zap.Error(eErr))
-        }
-        c.Start()
-        // ===== [E] 스케줄러 설정 ====== //
-        
         // ===== [S] 서버 설정 ====== //
-        http.HandleFunc("/video", middlewares.WithCORS(video.VideoHandler))
-        // HLS 파일 제공을 위한 HTTP 서버설정
-        fileServer := http.FileServer(http.Dir(os.Getenv("HLS_DIR")))
-        
-        // FileServer에 CORS 미들웨어 적용
-        http.Handle("/", middlewares.CorsMiddleware(fileServer))
-        
-        log.Info("video App Start!")
+        http.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.FileReceive))
         
         sErr := http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), nil)
         

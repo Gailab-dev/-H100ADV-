@@ -37,7 +37,7 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) {
 	filesize := fileInfo.Size()
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 
-	part, pErr := writer.CreateFormFile("files", sFileName)
+	part, pErr := writer.CreateFormFile("file", sFileName)
 	if pErr != nil {
 		logger.Log.Error("FormFile 생성 실패", zap.Error(pErr))
 		return
@@ -86,6 +86,6 @@ func FileSendScheduler() {
 			continue // 하위 폴더는 무시
 		}
 
-		FileSender(videoFilePath, entry.Name(), fmt.Sprintf("http://%s/upload", cloudReceiveIp))
+		FileSender(videoFilePath, entry.Name(), fmt.Sprintf("http://%s/fileReceive", cloudReceiveIp))
 	}
 }
