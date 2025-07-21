@@ -1,19 +1,23 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
+
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <script>
-	
-	let eventList = '${eventList}';
-	console.log(eventList);
-	
+	  
 	// 상세보기 클릭시 불법주차 상세 화면으로 이동
 	function eventListDetail(evId){
-		location.href = 'eventListDetail?evId='+evId;
+		location.href = 'eventListDetail?evId='+ evId + "&page=${page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}";
+	}
+	
+	// pagination 객체를 활용한 페이지 이동
+	function goPage(pageNo){
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}";
 	}
 	
 </script>
@@ -56,6 +60,8 @@
 			</table>
 		
 		</div>
+			<ui:pagination paginationInfo="${paginationInfo}" type="image" jsFunction="goPage"/>
+		
 	</div>
 </body>
 </html>

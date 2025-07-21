@@ -7,9 +7,10 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <script>
-
+	
+	// 불법 주차 리스트 화면으로 이동
 	function goToEventList(){
-		location.href ="viewEventList.do";
+		location.href ="viewEventList.do?&page=${page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}";
 	}
 </script>
 </head>

@@ -105,6 +105,7 @@ public class EventListController {
 		}
 		
 		// model add
+		model.addAttribute("paginationInfo",paginationInfo);
 		model.addAttribute("eventList", eventList);
 		model.addAttribute("searchKeyword", searchKeyword);
 		model.addAttribute("startDate",startDate);
@@ -117,7 +118,12 @@ public class EventListController {
 	
 	// 불법주차 리스트 상세
 	@GetMapping("/eventListDetail")
-	private String eventListDetail(Integer evId, Model model) {
+	private String eventListDetail(
+			@RequestParam(value="evId") Integer evId
+			, @RequestParam(value="startDate", required=false) String startDate
+			, @RequestParam(value="endDate", required=false) String endDate
+			, @RequestParam(value="searchKeyword",required=false) String searchKeyword
+			, Model model) {
 		
 		System.out.println("eventListDetail in");
 		
@@ -133,7 +139,12 @@ public class EventListController {
 			// TODO: handle exception
 		}
 		
+		// mdoel add
 		model.addAttribute("eventListDetail", eventListDetail);
+		// 상세 화면에서 리스트 화면으로 돌아왔을 때에도 검색 조건 유지
+		model.addAttribute("searchKeyword", searchKeyword);
+		model.addAttribute("startDate", startDate);
+		model.addAttribute("endDate", endDate);
 		
 		System.out.println("return eventListDetail");
 		
