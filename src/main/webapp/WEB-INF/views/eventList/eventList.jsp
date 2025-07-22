@@ -58,7 +58,7 @@
 			<table class="event-table">
 				<thead>
 					<tr>
-						<th><input type="checkbox"/></th>
+						<th>  </th>
 						<th>날짜</th>
 						<th>위치</th>
 						<th>차량번호</th>
@@ -67,9 +67,9 @@
 					</tr>
 				</thead>
 				<tbody>
-					<c:forEach var="item" items="${eventList}">
+					<c:forEach var="item" items="${eventList} varStatus=""status">
 						<tr>
-							<td><input type="checkbox"/></td>
+							<td>${item.ev_id}</td>
 							<td>${item.ev_date}</td>
 							<td>${item.dv_addr}</td>
 							<td>${item.ev_car_num}</td>
