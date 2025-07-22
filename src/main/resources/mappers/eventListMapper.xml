@@ -19,7 +19,7 @@
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
 			</if>
 		</where>
-        ORDER BY A.ev_reg_date DESC
+        ORDER BY A.ev_id DESC
         LIMIT #{recordCountPerPage} 
         OFFSET #{firstIndex}
 	</select>
