@@ -1,0 +1,172 @@
+/* 공통 요소 스타일 */
+/* 초기화: 모든 요소의 margin/padding 제거 */
+* {
+    margin: 0;
+	padding: 0;
+    font-family: Arial, sans-serif;
+}
+button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+}
+/* 헤더영역 */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    padding: 10px 40px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 10;
+}
+.logo { /* 로고 영역 */
+    display: flex;
+    align-items: center;
+}
+.header-icon{
+	width:150px;
+    vertical-align: middle;
+}
+.user {
+    display: flex;
+    align-items: center;
+    min-width: 80px;
+    padding-right: 10px;
+}
+.user-image {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.user-name {
+    margin-left: 8px;
+    font-size: 14px;
+    color: #444;
+    padding-right: 50px;
+}
+/* 헤더와 푸터 사이영역 */
+.container {
+    display: flex;
+    margin-top: 70px;
+    height: calc(100vh - 70px);
+}
+/* 헤더와 푸터 사이영역-sidebar(홈, 디바이스리스트, 불법주차리스트) */
+.sidebar {
+    width: 200px;
+    background: #fff;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+}
+.menu {
+    list-style-type: none;
+    padding: 0;
+}
+.menu > li {
+    margin-bottom: 12px;
+}
+.menu > li > a {
+    display: block;
+    padding: 10px;
+    background: #fff;
+    text-decoration: none;
+    color: #000;
+    transition: background 0.2s ease;
+}
+.menu > li:nth-child(3) > a {
+    background: #f8f8fa; 
+    font-weight: bold;
+}
+.menu > li > a:hover {
+    background: #eee;
+}
+.menu-icon {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+/* 헤더와 푸터 사이영역 */
+.content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 30px 40px;
+    overflow-y: auto;
+}
+/* 상세 타이틀 */
+.detail-title {
+    font-size: 20px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+/* 이미지 스타일 */
+.image-wrapper {
+    display: flex;
+    justify-content: flex-start;  /* 왼쪽 정렬 */
+    margin-left: 40px;            /* 좌측 여백 */
+    margin-bottom: 20px;
+}
+.detail-image {
+    width: 640px;             /* 이미지 고정 너비 */
+    height: 360px;            /* 고정 높이 */
+    object-fit: cover;        /* 비율 유지하며 꽉 채우기 */
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* 상세 정보 테이블 */
+.detail-table-wrapper {
+    display: flex;
+    justify-content: flex-start;   /* 왼쪽 정렬 */
+    margin-left: 40px;             /* 약간 여백 */
+    margin-bottom: 20px;
+}
+.detail-table {
+    border-collapse: collapse;
+    width: auto;
+    font-size: 14px;
+    border: none;
+}
+.detail-table th,
+.detail-table td {
+    border: none;
+    padding: 6px 8px;
+    font-weight: normal;
+}
+.detail-table th {
+    text-align: left;
+    color: #555;
+    width: 100px;
+}
+/* 돌아가기 버튼 */
+.back-btn-wrapper {
+    display: flex;
+    justify-content: flex-start;
+}
+.back-btn {
+    background-color: transparent;
+    border: none;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    padding: 6px 12px;
+}
+.back-btn:hover {
+    text-decoration: underline;
+}
+/* 푸터영역 */
+.footer {
+    background-color: #f1f1f1;
+    padding: 10px;
+    text-align: center;
+}
