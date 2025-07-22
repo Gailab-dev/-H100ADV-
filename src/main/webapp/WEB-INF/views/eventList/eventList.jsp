@@ -7,7 +7,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/eventList.css">
+<title>eventList</title>
 <script>
 	  
 	// 상세보기 클릭시 불법주차 상세 화면으로 이동
@@ -23,45 +24,65 @@
 </script>
 </head>
 <body>
-	<div>
-		<div>
-			<form action="/eventList/viewEventList.do">
-				<input type="date" value="${startDate}"/>
-				<input type="date" value="${endDate}"/>
-				<input type="text" value="${searchKeyword}"/>
-				<input type="submit"/>
+	<!-- 헤더 -->
+    <header class="header">
+        <div class="logo">
+        	<img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png" alt="GAILAB" class="header-icon">
+        </div>
+        <div class="user">
+        	<img src="${pageContext.request.contextPath}/resources/images/user.png" alt="유저" class="user-image">
+        	<span class="user-name">hskim</span>
+        </div>
+    </header>
+    <div class="container">
+		<aside class="sidebar">
+            <ul class="menu">
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
+                <li><a href="#"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+            </ul>
+        </aside>
+        <div class="content">
+			<form action="/eventList/viewEventList.do" class="filter-form">
+				<div class="filter-input-group">
+					<input type="date" name="startDate" value="${startDate}" />
+				</div>
+				<div class="filter-input-group">
+					<input type="date" name="endDate" value="${endDate}" />
+				</div>
+				<div class="filter-input-group search-field">
+					<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="검색어" />
+				</div>
+				<button type="submit" class="search-btn">조회</button>
 			</form>
-		</div>
-		<div>
-			<table>
+			<table class="event-table">
 				<thead>
-					<th>
-						<td> <img src="" > </td>
-						<td> 날짜 </td>
-						<td> 위치 </td>
-						<td> 차량번호 </td>
-						<td> 내용 </td>
-						<td>  </td>
-					</th>
+					<tr>
+						<th><input type="checkbox"/></th>
+						<th>날짜</th>
+						<th>위치</th>
+						<th>차량번호</th>
+						<th>유형</th>
+						<th></th>
+					</tr>
 				</thead>
 				<tbody>
-					<c:forEach var="item" items="${ eventList }">
+					<c:forEach var="item" items="${eventList}">
 						<tr>
-							<td> <input type="checkbox" alt="불법주차 리스트 선택 체크박스"/> </td>
-							<td> ${item.ev_date } </td>
-							<td> ${item.dv_addr } </td>
-							<td> ${item.ev_car_num } </td>
-							<td> ${item.ev_cd } </td>
-							<td> <button onclick="eventListDetail(${item.ev_id})">상세보기</button> </td>
+							<td><input type="checkbox"/></td>
+							<td>${item.ev_date}</td>
+							<td>${item.dv_addr}</td>
+							<td>${item.ev_car_num}</td>
+							<td>${item.ev_cd}</td>
+							<td><button onclick="eventListDetail(${item.ev_id})">상세보기</button></td>
 						</tr>
 					</c:forEach>
-				
 				</tbody>
 			</table>
-		
-		</div>
-			<ui:pagination paginationInfo="${paginationInfo}" type="image" jsFunction="goPage"/>
-		
-	</div>
+			<div class="pagination">
+				<ui:pagination paginationInfo="${paginationInfo}" type="image" jsFunction="goPage"/>
+			</div>
+        </div>  
+    </div>
 </body>
 </html>
