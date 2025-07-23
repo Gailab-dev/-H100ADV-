@@ -67,7 +67,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					<c:forEach var="item" items="${eventList} varStatus=""status">
+					<c:forEach var="item" items="${eventList}">
 						<tr>
 							<td>${item.ev_id}</td>
 							<td>${item.ev_date}</td>
