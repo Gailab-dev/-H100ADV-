@@ -1,16 +1,18 @@
 package main
 
 import (
-        "net/http"
-        "os"
-        "fmt"
+	"fmt"
+	"net/http"
+	"os"
 
-        "github.com/joho/godotenv"
-        "go.uber.org/zap"
+	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 
+	"local.dev/h100_module_c/database"
+	"local.dev/h100_module_c/insertEvent"
+	"local.dev/h100_module_c/internal/handlers/fileReceive"
 	"local.dev/h100_module_c/internal/middlewares"
-        "local.dev/h100_module_c/internal/handlers/fileReceive"
-        "local.dev/h100_module_c/logger"
+	"local.dev/h100_module_c/logger"
 )
 
 func main() {
@@ -36,6 +38,13 @@ func main() {
                 log.Error("HTTP 서버 오류", zap.Error(sErr))
         }
         // ===== [E] 서버 설정 ====== //
+        // ===== [S] mariaDB 설정 및 이벤트 정보 insert ====== //
+        database.Init()
+        defer database.Close()
+        
+        http.HandleFunc("/insertEventData",insertEvent.InsertEventData())
+        http.ListenAndServe(":8080",nil)
+        // ===== [E] mariaDB 설정 및 이벤트 정보 insert ====== //
         
 }
         
