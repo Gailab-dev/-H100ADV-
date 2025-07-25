@@ -5,23 +5,27 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"local.dev/h100_module_c/database"
 )
 
 type Tbl_Event_Data struct {
 	EvId       uint   `gorm:"primaryKey" json:"id"`
-	EvDvId    uint   `json:"ev_de_id"`
+	EvDvId    uint   `json:"ev_dv_id"`
 	EvCd       uint   `json:"ev_cd"`
 	EvCarNum  string `json:"ev_car_num"`
 	EvMovPath string `json:"ev_mov_path"`
 	EvImgPath string `json:"ev_img_path"`
 	EvDate     string `json:"ev_date"`
 	EvElId    uint   `json:"ev_el_id"`
-	EvRegDate uint   `json:"ev_reg_date"`
+	EvRegDate time.Time   `json:"ev_reg_date"`
 }
 
 func InsertEventData() http.HandlerFunc{
+
+	fmt.Println("insertEventData in")
+
 	return func(w http.ResponseWriter, r *http.Request){
 		
 		// Post 요청이 아닌 경우 실행되지 않음
@@ -29,6 +33,7 @@ func InsertEventData() http.HandlerFunc{
 			http.Error(w,"POST 요청만 허용됩니다.", http.StatusMethodNotAllowed)
 			return 
 		}
+		fmt.Println("post만 허용")
 
 		// JSON 파일 디코딩
 		var eventData Tbl_Event_Data
@@ -37,6 +42,7 @@ func InsertEventData() http.HandlerFunc{
 			http.Error(w,"JSON 파싱 오류",http.StatusBadRequest)
 			return 
 		}
+		fmt.Println("JSON 파싱")
 
 		// DB Insert
 		result := database.DBConn.Create(&eventData)
