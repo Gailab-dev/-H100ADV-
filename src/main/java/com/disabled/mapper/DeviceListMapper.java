@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 @Mapper
 @Repository
 public interface DeviceListMapper {
-
 	List<Map<String, Object>> getDeviceInfo();
 	String getDvIpByDvId(@Param("dvId") int dvId);
 }

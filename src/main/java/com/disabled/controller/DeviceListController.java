@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
@@ -60,7 +61,7 @@ public class DeviceListController {
 		return "/deviceList/deviceList";
 	}
 	
-	/*
+	/**
 	 * 디바이스 리스트를 주소를 기준으로 그룹화하여 리턴
 	 * @prarm 
 	 *   - deviceList: 디바이스 리스트 ( List<Map<String,Object>> )
@@ -84,17 +85,27 @@ public class DeviceListController {
 		return groupAddrByDeviceList;
 	}
 
-	/*
+	/**
 	 * httpServlet을 이용한 on-device 장비와 실시간 스트리밍
-	 * 
+	 * @httpServetRequest의parameter
+	 *  - type: device에게 보낼 명령어(string)
+	 *    - start: 실시간 video streaming 시작
+	 *    - end: 실시간 video streaming 종료
+	 *    - U: device의 화면을 위로 이동
+	 *    - D: device의 화면을 아래로 이동
+	 *    - L: device의 화면을 왼쪽으로 이동
+	 *    - R: device의 화면을 오른쪽으로 이동
+	 *  - id: 명령어를 보낼 device의 id(int) 
 	 */
 	@RequestMapping("/sendCommand")
 	private void sendCommand(HttpServletRequest req, HttpServletResponse res){
 		
 		try {
 			
-			// deviceId를 통해 deviceIp 조회
-			String dvIp = deviceListService.getDvIpByDvID( Integer.parseInt(req.getParameter("id")));
+			String id = req.getParameter("id");
+			
+			// 디바이스 ID를 파라미터로 디바이스 IP를 조회
+			String dvIp = getValidatedDvIp(id);
 			
 			//deviceIp를 url로 한 실시간 데이터 스트리밍
 			apiService.forwardStream(req, res, dvIp);
@@ -110,11 +121,56 @@ public class DeviceListController {
 	/*
 	 * json 파일로 송신시 inputStream을 이용한 on-device 장비와 실시간 스트리밍
 	 */
-	private void sendCommandToJSON(@RequestBody HashMap<String, Object> json) {
+	@ResponseBody
+	@RequestMapping("/sendCommandToJSON")
+	private void sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res) {
 		
-		String dvIp = deviceListService.getDvIpByDvID( Integer.parseInt(json.get("id").toString()));
+		try {
+			
+			String id = json.get("id").toString();
+			
+			// 디바이스 ID를 파라미터로 디바이스 IP를 조회
+			String dvIp = getValidatedDvIp(id);
+			
+			// 디바이스 IP를 통한 실시간 스트리밍
+			apiService.forwardStreamToJSON(res, json,dvIp);
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
 		
-		apiService.forwardStreamToJSON(json,dvIp);
+
+	}
+	
+	/*
+	 * 유효성 검사를 통한 dvId를 파라미터로 dvIp 조회
+	 */
+	private String getValidatedDvIp(String id) {
+		
+		String dvIp = null;
+		
+		try {
+			
+			// 파라미터 유효성 검사
+			if(id == null || id.isEmpty()) {
+				throw new IllegalArgumentException("device ID가 전달되지 않았습니다.");
+			}
+			
+			// deviceId를 통해 deviceIp 조회
+			dvIp = deviceListService.getDvIpByDvID(Integer.parseInt(id));
+			
+			//dvIp 유효성 검사
+			if(dvIp == null || dvIp.trim().isEmpty()) {
+				throw new IllegalArgumentException("유효하지 않은 device ID.");
+			}
+			return dvIp;
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			return "";
+		}
+		
+		
 	}
 		
 	

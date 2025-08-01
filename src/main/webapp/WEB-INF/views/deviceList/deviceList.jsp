@@ -13,6 +13,9 @@
 	<script>	
 		const hls = new Hls();
 		
+		/*
+		* 실시간 스트리밍 실행
+		*/
 		function playVideo(){
 			console.log("playVideo in");
 			
@@ -60,50 +63,67 @@
 			video.load();
 		}
 		
+		/*
+		* 디바이스 컨트롤러 버튼을 화면에 display 할 지 여부 설정
+		* @param
+		*  - display: 컨트롤러 div를 화면에 display하는 설정값(boolean) true면 display
+		*/
+		/*
 	    function displayController(display) {
 	        const controller = document.getElementsByClassName("controller")[0].children;
 	        for (let btn of controller) {
 	            btn.style.display = display;
 	        }
 	    }
-		
-		function sendCommand(command) {
+		*/
+	    /*
+	    * 디바이스에 명령어를 보내 기능 수행
+	    * @param
+	    *  - command : 명령어(string)
+	    *  - id : 명령어를 보낼 device의 id
+	    * @return
+	    */
+		function sendCommand(command,id) {
 			
-			const params = new URLSearchParams();
-			params.append('type',command);
-			params.append('id',1);
+			const body = {
+				'type': command,
+				'id': id
+			};
 			
-	    	fetch('/gov-disabled-web-gs/deviceList/sendCommand', {
+	    	fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
 	      		method: 'POST',
 	      		headers: {
-	        		'Content-Type': 'application/x-www-form-urlencoded'
+	        		'Content-Type': 'application/json'
 	      		},
-	      		body: params.toString()
+	      		body: JSON.stringify(body)
 	    		})
 	    	.then(response => {
 	      		if (!response.ok) throw new Error('요청 실패');
 	      		return response.text();
 	    	})
 	    	.then(res => {
-	    		console.log(res);
-	    		let msg = JSON.parse(res);
-	    		console.log(msg.message);
+	    		//console.log(res); // {} 값 반환함
+	    		//let msg = JSON.parse(res); // ??
+	    		//console.log(msg.message); // undefined
 	    		
+	    		playVideo(); 
+	    		
+	    		// 실시간 영상 스트리밍 및 컨트롤러 버튼 display
 	    		/*
-	    		console.log("blob 타입 : ",blob.type,"blob 크기 : ",blob.size);
-	    		const videoUrl = URL.createObjectURL(blob);
-	    		document.getElementById('video').src = videoUrl;
-	    		*/
 	    		let display = "";
-	    		if(msg.message == "video start" ){
-	    			playVideo();
-	    			displayController("block");
-	    		} else{
+	    		if(msg.message == "video start" ){ 
+	    			// 실시간 영상 스트리밍 실행
+	    			playVideo(); 
+	    			// displayController("block");
+	    		} else if(msg.message == "video stop") {
+	    			// 실시간 영상 스트리밍 종료
 	    			stopVideo();
-	    			displayController("none");
+	    			// displayController("none");
+	    		} else {
+	    			// 디바이스 조작
 	    		}
-	    		displayController(display);
-	    		
+	    		// displayController(display);
+	    		*/
 	    	})
 	    	.catch(error => {
 	    		alert('오류: ' + error);
@@ -165,7 +185,9 @@
 				    <div class="accordion-content">
 				        <ul>
 				            <c:forEach var="device" items="${addr.value}">
-				                <li class="device-item" data-dvid="${device.dv_id}">${device.dv_name}</li>
+				                <li class="device-item" >
+				                	<a href="javascript:void(0);" onclick="sendCommand('start','${device.dv_id}')">${device.dv_name}</a>
+				                </li>
 				            </c:forEach>
 				        </ul>
 				    </div>
@@ -186,11 +208,12 @@
 				        </div>
 				    </div>
 				</div>
-			
+				<!-- 
 			    <div class="controller-buttons">
 			        <button onclick="sendCommand('start')">Start</button>
 			        <button onclick="sendCommand('end')">End</button>
 			    </div>
+			     -->
 			</main>
 		</div>
 	</div>	
