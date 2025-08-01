@@ -11,7 +11,7 @@
 		ORDER BY dv_addr DESC,dv_name DESC		
 	</select>
 	
-	<!-- 선택한 디바이스의 ip값에 따른 ip값 ㄱㅎ -->
+	<!-- 선택한 디바이스의 ip값에 따른 ip값  -->
 	<select id="getDvIpByDvId" parameterType="int" resultType="String">
 		SELECT dv_ip
 		FROM tbl_device

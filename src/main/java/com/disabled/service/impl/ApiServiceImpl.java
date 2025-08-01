@@ -15,8 +15,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.service.ApiService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 // 공통 api 모듈
 @Service
@@ -25,16 +27,21 @@ public class ApiServiceImpl implements ApiService{
 	// 실시간 스트리밍을 위한 버퍼 크기
 	private static final int BUFFER_SIZE = 8192;
 	
-	/*
+	/**
 	 * 실시간 영상 스트리밍
+	 * @Param
+	 * - dvIp: 디바이스 IP주소 (String)
 	 */
 	@Override
 	public void forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp) {
 		
 		System.out.println(dvIp);
 		
+		// content-type : application/x-www-form-urlencoded 
+		String contentType = "application/x-www-form-urlencoded";
+		
 		// 디바이스Url
-		String targetUrl = "http://" + dvIp +":8087/video";
+		String targetUrl = "http://" + dvIp +"/video";
 		// connection 객체
 		HttpURLConnection conn = null;
 		// 인코딩 할 명령어
@@ -45,7 +52,7 @@ public class ApiServiceImpl implements ApiService{
 			encodeCommand = URLEncoder.encode(req.getParameter("type"), "UTF-8");
 			
 			// 2. connection pool 생성
-			conn = createPostConnection(targetUrl, encodeCommand);
+			conn = createPostConnection(targetUrl, encodeCommand, contentType);
 			
 			// 3. output Stream
 			copyResponse(conn, res);
@@ -61,12 +68,15 @@ public class ApiServiceImpl implements ApiService{
 		
 	}
 
-	/*
+	/**
 	 * 실시간 영상 스트리밍을 위한 connection pool 생성
+	 * 	- targetUrl: 스트리밍을 할 device의 ip주소, port번호 등을 포함한 url
+	 *  - body: 전송데이터
+	 *  - contentType : 문자열 : application/x-www-form-urlencoded / JSON : application/json
 	 * @return : HttpURLConnection 객체
 	 */
 	@Override
-	public HttpURLConnection createPostConnection(String targetUrl, String body) {
+	public HttpURLConnection createPostConnection(String targetUrl, String body, String contentType) {
 		
 		System.out.println("createPostConnection in");
 		
@@ -82,7 +92,8 @@ public class ApiServiceImpl implements ApiService{
 			conn = (HttpURLConnection) url.openConnection();
 	        conn.setRequestMethod("POST");
 	        conn.setDoOutput(true);
-	        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+	        conn.setRequestProperty("Content-Type", contentType);
+	        conn.setRequestProperty("Accept", "application/octet-stream");
 	        System.out.println("create connection pool");
 	        
 	        // 실시간 스트리밍 결과 받기
@@ -104,7 +115,7 @@ public class ApiServiceImpl implements ApiService{
 		return conn;
 	}
 	
-	/*
+	/**
 	 * 영상 스트리밍 결과 수신 및 전송
 	 */
 	@Override
@@ -139,15 +150,30 @@ public class ApiServiceImpl implements ApiService{
 		
 	}
 	
-	/*
+	/**
 	 * 송신 데이터 타입이 json객체일 때 실시간 영상 스트리밍
 	 */
 	@Override
-	public void forwardStreamToJSON(HashMap<String, Object> json, String dvIp) {
+	public void forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp ) {
 		
 		System.out.println(dvIp);
 		
+		// content-type : application/json 
+		String contentType = "application/json";
+		
 		try {
+			// 디바이스Url
+			String targetUrl = "http://" + dvIp +"/video";
+			
+	        // 1. JSON → 문자열
+	        ObjectMapper mapper = new ObjectMapper();
+	        String body = mapper.writeValueAsString(json);
+			
+			// 2. connection pool 생성
+			HttpURLConnection conn = createPostConnection(targetUrl, body, contentType);
+			
+			// 3. output Stream
+			copyResponse(conn, res);
 			
 		} catch (Exception e) {
 			// TODO: handle exception
