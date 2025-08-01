@@ -1,14 +1,20 @@
 package com.disabled.controller;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpSession;
 
 import org.apache.ibatis.logging.LogException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.mapper.StatsMapper;
 import com.disabled.service.StatsService;
@@ -38,28 +44,48 @@ public class StatsController {
 		return "stats/login";
 	}
 	
-	// 로그인 버튼 시 취해야 할 action
-	@RequestMapping("/login")
-	private String loginCheck(String id, String pwd) {
+	// 로그인 버튼 클릭 시 action
+	@ResponseBody
+	@PostMapping("/login")
+	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session) {
+		
+		String id = body.get("id");
+		String pwd = body.get("pwd");
+		Integer checkErr = -1;
+		Map<String, Object> resultMap = new HashMap<String, Object>();
 		
 		System.out.println(id + " " + pwd );
-		Integer checkErr = -1;
 		
 		try {
-			checkErr = statsService.loginCheck(id, pwd);
+			checkErr = statsService.loginCheck(id, pwd); //db에 해당 사용자가 있는지 체크
 			if(checkErr < 0) {
 				throw new LogException("로그인 실패");
 			}else {
 				System.out.println("move deviceList");
-				return "redirect:/deviceList";
+				
+				resultMap.put("success", true); // 로그인 성공하면 true 반환
+				
+				// 세션에 계정 정보 추가
+				session.setAttribute("id", id);
+				session.setAttribute("pwd", pwd);
+				
+				return resultMap;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			
-			return "stats/login";
-			// TODO: handle exception
-		} 
+			resultMap.put("success", false); // 로그인 실패하면 false 반환
+			return resultMap;
+		}
 		
+	}
+	
+	/*
+	 * 로그아웃
+	 */
+	@RequestMapping("/logout")
+	public String logout(HttpSession session) {
+	    session.invalidate(); // 세션 만료
+	    return "redirect:/login";
 	}
 	
 	/*

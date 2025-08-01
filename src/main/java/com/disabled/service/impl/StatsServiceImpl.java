@@ -22,6 +22,12 @@ public class StatsServiceImpl implements StatsService{
 	@Autowired
 	StatsMapper statsMapper;
 	
+	/*
+	 * 아이디와 비밀번호를 통해 DB에 해당 계정이 있는지 확인
+	 * @Param
+	 * - id: 아이디(String)
+	 * - pw: 비밀번호(String)
+	 */
 	@Override
 	public Integer loginCheck(String id, String pwd) {
 		// TODO Auto-generated method stub
@@ -45,7 +51,11 @@ public class StatsServiceImpl implements StatsService{
 	}
 	
 	/*
-	 * 사용자의 검색 조건에 따른 통계 데이터 화면에 출력
+	 * 사용자의 검색 조건에 따른 통계 데이터를 조회하여 리스트로 반환
+	 * @Param
+	 * - startDate: 검색 시작일(String)
+	 * - endDate: 검색 마지막일(String)
+	 * - 
 	 */
 	@Override
 	public List<Map<String, Object>> getEventByMonth(String startDate, String endDate) {

@@ -10,6 +10,21 @@
 		
 	<mvc:annotation-driven />
 	
+	<!-- 로그인 전 session이 없으면 interceptor 동작
+		 mvc:exclude-mapping path: interceptor 예외 경로
+		 beans:bean class: session이 없이 url mapping 시도하는 경우 적용될 interceptor 기능이 정의된 class 경로
+	-->
+	<mvc:interceptors>
+	    <mvc:interceptor>
+	        <mvc:mapping path="/**" />
+	        <mvc:exclude-mapping path="/stats/login.do" />
+	        <mvc:exclude-mapping path="/stats/login" />
+	        <mvc:exclude-mapping path="/logout.do" />
+	        <beans:bean class="com.disabled.interceptor.LoginInterceptor" />
+	    </mvc:interceptor>
+	</mvc:interceptors>
+	
+	
 	<!-- css, js, xml 파일 등 적용을 위한 resources mapping -->
 	<mvc:resources mapping="/resources/**" location="/resources/" />
 	<mvc:resources mapping="/gpkisecureweb/**" location="/gpkisecureweb/" />
