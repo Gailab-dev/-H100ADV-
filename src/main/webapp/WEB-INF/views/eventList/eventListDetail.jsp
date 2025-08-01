@@ -39,7 +39,7 @@
 			
 			<!-- 상세 이미지 -->
 			<div class="image-wrapper">
-				<img src="${eventListDetail.imageUrl}" alt="불법주차 리스트 상세 이미지" class="detail-image">
+				<img src="/gov-disabled-web-gs/eventList/imageView.do?filePath=${eventListDetail.ev_img_path}" alt="불법주차 리스트 상세 이미지" class="detail-image">
 			</div>
 			<!-- 상세 정보 -->
 			<div class="detail-table-wrapper">

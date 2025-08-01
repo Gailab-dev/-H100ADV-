@@ -43,7 +43,7 @@
             </ul>
         </aside>
         <div class="content">
-			<form action="/eventList/viewEventList.do" class="filter-form">
+			<form action="/gov-disabled-web-gs/eventList/viewEventList.do" class="filter-form">
 				<div class="filter-input-group">
 					<input type="date" name="startDate" value="${startDate}" />
 				</div>
