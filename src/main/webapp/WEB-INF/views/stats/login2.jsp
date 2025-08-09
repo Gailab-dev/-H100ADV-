@@ -4,7 +4,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>관리자로그인</title> <!-- 페이지 제목 설정 -->
+<title>login</title> <!-- 페이지 제목 설정 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 뷰포트 설정 (모바일 대응) -->
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css"> <!-- CSS 불러오기 -->
 </head>
@@ -77,37 +77,20 @@
 	<!-- 상단 헤더 공간 (투명, 고정 높이) -->
     <header class="login-header"></header>
 
-	<main class="login-wrap">
-	  <!-- 좌측: 제품 사진 -->
-		<section class="bg-panel">
-		    <img src="${pageContext.request.contextPath}/resources/images/product.png"
-		         alt="제품 이미지"
-		         class="bg-img">
-		</section>
-	
-	    <!-- 우측: 로그인 카드 -->
-	    <section class="form-panel">
-	      <div class="login-card">
-	        <p class="product-ver">G.Eye-Parking H100 V1.0</p>
-	
-	        <div class="title-row" role="heading" aria-level="1">
-				<img src="${pageContext.request.contextPath}/resources/images/simbol.png"
-				     alt="아이콘" class="title-icon">
-	          <span class="title-text">관리자 로그인</span>
-	        </div>
-	
-	        <div class="fields">
-	          <input id="id"  class="line-input" type="text"     placeholder="아이디를 입력하세요" autocomplete="username">
-	          <input id="pwd" class="line-input" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
-	
-	          <button id="enterKeyEvent" class="primary-btn"
-	                  onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
-	            로그인
-	          </button>
-	        </div>
-	      </div>
-	    </section>
-	</main>
+    <main class="login-body">
+        <div class="login-container">
+            <h3 class="login-title">로그인</h3>
+
+            <p id="showview"></p>
+
+            <input id="id" class="login-input" type="text" placeholder="아이디를 입력해주세요">
+            <input id="pwd" class="login-input" type="password" placeholder="비밀번호를 입력해주세요">
+
+            <button id="enterKeyEvent" class="login-button" onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
+                로그인
+            </button>
+        </div>
+    </main>
 
     <footer class="login-footer"></footer>
 </body>
