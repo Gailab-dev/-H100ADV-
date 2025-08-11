@@ -50,13 +50,15 @@ func Init(){
 	fmt.Println("파싱 성공")
 
 	// DB Connect
-	// [user]:[password]@tcp([host]:[port])/[dbname]?charset=utf8mb4&parseTime=True&loc=Local
+	// dsn: [user]:[password]@tcp([host]:[port])/[dbname]?charset=utf8mb4&parseTime=True&loc=Local
 	dsn := config.Database.User +":"+ 
 		config.Database.Password +"@tcp(" + 
 		config.Database.Host + ":" + 
 		config.Database.Port + ")/" + 
 		config.Database.Name + "?charset=utf8mb4&parseTime=True&loc=Local"
-	fmt.Println(dsn)	
+	fmt.Println(dsn)
+	
+	// DB와 connection pool 생성
 	DBConn, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect database")
