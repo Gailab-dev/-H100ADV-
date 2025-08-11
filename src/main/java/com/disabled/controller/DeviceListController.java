@@ -8,6 +8,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,10 +19,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
+import com.sun.tools.javac.util.Log;
 
 @Controller
 @RequestMapping("/deviceList")
 public class DeviceListController {
+	
+	// 로그 기록
+	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
 	
 	@Autowired
 	DeviceListService deviceListService;
@@ -32,7 +38,11 @@ public class DeviceListController {
 	@RequestMapping("")
 	public String rootRedirect() {
 		
+		//GS인증시 삭제
 		System.out.println("deviceList rootRedirect");
+		//GS인증시 삭제
+		
+		logger.info("deviceList rootRedirect");
 		
 		return "redirect:/deviceList/viewDeviceList.do";
 	}
@@ -40,6 +50,8 @@ public class DeviceListController {
 	// 디바이스 리스트 화면
 	@RequestMapping("/viewDeviceList.do")
 	private String viewDeviceList(Model model ) {
+		
+		logger.info("viewDeviceList in");
 		
 		// 디바이스 리스트
 		List<Map<String, Object>> deviceList = new ArrayList<Map<String,Object>>();
@@ -56,7 +68,9 @@ public class DeviceListController {
 		//model add
 		model.addAttribute("deviceList", groupAddrByDeviceList);
 		
+		//GS인증시 삭제
 		System.out.println("return DeviceList");
+		//GS인증시 삭제
 		
 		return "/deviceList/deviceList";
 	}
@@ -100,6 +114,8 @@ public class DeviceListController {
 	@RequestMapping("/sendCommand")
 	private void sendCommand(HttpServletRequest req, HttpServletResponse res){
 		
+		logger.info("sendCommand in");
+		
 		try {
 			
 			String id = req.getParameter("id");
@@ -111,8 +127,13 @@ public class DeviceListController {
 			apiService.forwardStream(req, res, dvIp);
 				
 		} catch (Exception e) {
+			
+			// GS 인증시 삭제 필요
 			System.out.println("영상 스트리밍 에러");
 			e.printStackTrace();
+			// GS 인증시 삭제 필요
+			
+			logger.error("DeviceListController의 SendCommand 로직에서 오류 발생 : {}",e.getMessage(),e);
 		}
 		
 		
@@ -125,6 +146,8 @@ public class DeviceListController {
 	@RequestMapping("/sendCommandToJSON")
 	private void sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res) {
 		
+		logger.info("sendCommandToJSON in");
+		
 		try {
 			
 			String id = json.get("id").toString();
@@ -136,7 +159,8 @@ public class DeviceListController {
 			apiService.forwardStreamToJSON(res, json,dvIp);
 			
 		} catch (Exception e) {
-			// TODO: handle exception
+			
+			logger.error("On-device와 실시간 스트리밍 중 오류 발생: {}"+e);
 		}
 		
 
@@ -166,7 +190,9 @@ public class DeviceListController {
 			return dvIp;
 			
 		} catch (Exception e) {
-			// TODO: handle exception
+			
+			logger.error("유효성 검사 소스코드에서 오류 발생: {}"+e);
+			
 			return "";
 		}
 		
