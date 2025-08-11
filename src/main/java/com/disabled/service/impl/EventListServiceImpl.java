@@ -12,9 +12,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.disabled.controller.DeviceListController;
 import com.disabled.mapper.EventListMapper;
 import com.disabled.service.EventListService;
 import com.disabled.service.FileService;
@@ -27,6 +30,10 @@ public class EventListServiceImpl implements EventListService{
 	
 	@Autowired
 	FileService fileService;
+	
+	// 로그 기록
+	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	
 	
 	@Override
 	public List<Map<String, Object>> getEventList() {
@@ -56,8 +63,11 @@ public class EventListServiceImpl implements EventListService{
 			// 이벤트 ID를 검색조건으로 하여 리스트 상세 내역을 select
 			resultMap = eventListMapper.getEventListDetail(evId);
 		} catch (Exception e) {
+			//GS인증시 삭제
 			System.out.println("이벤트 리스트 디테일 서비스 오류");
-			// TODO: handle exception
+			//GS인증시 삭제
+			
+			logger.error("이벤트 리스트 디테일 서비스 오류: {}"+e);
 		}
 		
 		return resultMap;
@@ -82,11 +92,19 @@ public class EventListServiceImpl implements EventListService{
 			// 검색 조건에 부합하는 불법 주차 리스트 select
 			resultList = eventListMapper.getEventList(paramMap);
 			
+			//GS인증시 삭제
 			System.out.println(resultList);
+			//GS인증시 삭제
+			
 		} catch (Exception e) {
+			
+			// GS 인증시 삭제
 			System.out.println("이벤트 리스트 서비스 오류");
 			System.out.println(e + "");
-			// TODO: handle exception
+			// GS 인증시 삭제
+			
+			logger.error("이벤트 리스트 서비스 오류 발생: {}"+e);
+			
 		}
 		
 		return resultList;
@@ -100,9 +118,10 @@ public class EventListServiceImpl implements EventListService{
 	public void viewImageOfFilePath(File file, HttpServletResponse res) {
 		
 		OutputStream os = null;
+		FileInputStream fs = null;
 		
 		try {
-			FileInputStream fs = new FileInputStream(file);
+			fs = new FileInputStream(file);
 			os = res.getOutputStream();
 			
 	        // 이미지 파일 스트리밍
@@ -115,16 +134,19 @@ public class EventListServiceImpl implements EventListService{
 	        os.flush();
 	        
 		} catch (Exception e) {
-			e.printStackTrace();
-			// TODO: handle exception
+			
+			logger.error("이미지 스트리밍 도중 오류 발생: {}"+e);
+			
 		} finally {
 			try {
 				if(os != null) {
 					os.close();
 				}
+				if(fs != null) {
+					fs.close();
+				}
 			} catch (Exception e2) {
-				e2.printStackTrace();
-				// TODO: handle exception
+				logger.error("output straeam, file Stream 객체 종료 중 오류 발생: {}"+e2);
 			}
 		}
 		
@@ -139,7 +161,7 @@ public class EventListServiceImpl implements EventListService{
 		OutputStream os = null;
 		
 		try {
-			// 브라우저 Range 요청 처리 (중요)
+			// 브라우저 Range 요청 처리 
 	        RandomAccessFile raf = new RandomAccessFile(file, "r");
 	        long length = raf.length();
 	        long start = 0;
@@ -176,16 +198,16 @@ public class EventListServiceImpl implements EventListService{
 	        os.flush();
 	        
 		} catch (Exception e) {
-			e.printStackTrace();
-			// TODO: handle exception
+			logger.error("영상 스트리밍 도중 오류 발생: {}"+e);
+			
 		} finally {
 			try {
 				if (os != null) {
 					os.close();
 				}
 			} catch (Exception e2) {
-				e2.printStackTrace();
-				// TODO: handle exception
+				logger.error("output straeam 객체 종료 중 오류 발생: {}"+e2);
+				
 			}
 		}
 	}
