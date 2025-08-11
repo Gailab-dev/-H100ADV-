@@ -14,6 +14,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -30,11 +32,18 @@ public class EventListController {
 	@Autowired
 	EventListService eventListService;
 	
+	// 로그 기록
+	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	
 	// 초기화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
 		
+		// GS 인증시 삭제
 		System.out.println("viewEventList redirect");
+		// GS 인증시 삭제
+		
+		logger.info("viewEventList redirect");
 		
 		return "redirect:/eventList/viewEventList.do";
 	}
@@ -48,8 +57,12 @@ public class EventListController {
 			, @RequestParam(value="page", required=false) Integer page
 			, Model model) {
 		
+		// GS인증시 지워야함
 		System.out.println("viewEventList in");
 		System.out.println("파라미터 초기화 전 startDate"+startDate+"endDate: "+endDate+"searchKeyword: "+searchKeyword+"page: "+page);
+		// GS인증시 지워야함
+		
+		
 		
 		List<Map<String, Object>> eventList = new ArrayList<Map<String,Object>>();
 		
@@ -96,8 +109,10 @@ public class EventListController {
 			int firstIndex = paginationInfo.getFirstRecordIndex(); // LIMIT offset
 			int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
 			
+			// GS 인증시 삭제
 			System.out.println("firstIndex: " + firstIndex);
 			System.out.println("recordCountPerPage: " + recordCountPerPage);
+			// GS 인증시 삭제
 			
 			// DB 검색을 위한 파라미터 설정
 			paramMap.put("firstIndex", firstIndex);
@@ -106,7 +121,9 @@ public class EventListController {
 			paramMap.put("startDate",startDate);
 			paramMap.put("endDate",endDate);
 			
+			// GS 인증시 삭제
 			System.out.println("getEventList");
+			// GS 인증시 삭제
 			
 			// 검색 조건에 따른 이벤트 리스트 조회
 			eventList = eventListService.getEventList(paramMap);
@@ -120,9 +137,11 @@ public class EventListController {
 			convertEndDate = DateTypeInputTagFormat.format(end);
 			
 		} catch (Exception e) {
+			// GS 인증시 삭제
 			System.out.println("이벤트 리스트 컨트롤러 오류");
 			System.out.println(e + "");
-			// TODO: handle exception
+			// GS 인증시 삭제
+			logger.error("이벤트 리스트 컨트롤러 오류: {}" + e);
 		}
 		
 		System.out.println("model에 input된 객체 / paginationInfo: "+ paginationInfo 
@@ -139,7 +158,9 @@ public class EventListController {
 		model.addAttribute("startDate",convertStartDate);
 		model.addAttribute("endDate", convertEndDate);
 		
+		// GS 인증시 삭제
 		System.out.println("return eventList");
+		// GS 인증시 삭제
 		
 		return "eventList/eventList";
 	}
@@ -153,19 +174,27 @@ public class EventListController {
 			, @RequestParam(value="searchKeyword",required=false) String searchKeyword
 			, Model model) {
 		
+		// GS 인증시 삭제
 		System.out.println("eventListDetail in");
+		// GS 인증시 삭제
 		
 		Map<String, Object> eventListDetail = new HashMap<String, Object>();
 		
 		try {
 			
+			// GS 인증시 삭제
 			System.out.println("getEventListDetail");
+			// GS 인증시 삭제
 			
 			eventListDetail = eventListService.getEventListDetail(evId);
 		} catch (Exception e) {
-			e.printStackTrace();
+			
+			// GS 인증시 삭제
 			System.out.println("이벤트 리스트 상세 컨트롤러 오류");
-			// TODO: handle exception
+			// GS 인증시 삭제
+			
+			logger.error("이벤트 리스트 상세 컨트롤러 오류: {}"+e);
+			
 		}
 		
 		// mdoel add
@@ -188,7 +217,9 @@ public class EventListController {
 	@RequestMapping("/imageView.do")
 	public void imageView(@RequestParam("filePath") String filePath, HttpServletResponse res) {
 		
+		// GS 인증시 삭제
 		System.out.println("imageView in : "+filePath);
+		// GS 인증시 삭제
 		
 		// 최종 fullFilePath 
 		String fullFilePath = null;
@@ -201,7 +232,9 @@ public class EventListController {
 			// OS별 fullFilePath 반환
 			fullFilePath = eventListService.mkFullFilePath(filePath);
 			
+			// GS 인증시 삭제
 			System.out.println("mkFullFilePath result : " + fullFilePath);
+			// GS 인증시 삭제
 			
 			// file 객체 생성
 			File file = new File(fullFilePath);
@@ -216,14 +249,13 @@ public class EventListController {
 	        }
 	        
 	        // 이미지 송출 전 오류 점검
-	        // eventListService.fileCheck(file);
+	        eventListService.fileCheck(file);
 	        
 			// 외부 저장소에 저장된 image 파일의 외부 경로로 웹 화면에 이미지 송출
 			eventListService.viewImageOfFilePath(file, res);
 			
 		} catch (Exception e) {
-			e.printStackTrace();
-			// TODO: handle exception
+			logger.error("외부 URL을 통한 이미지를 화면에 출력하는 도중 오류 발생: {}"+e);
 		}
 	}
 	
@@ -235,32 +267,41 @@ public class EventListController {
 	@RequestMapping("/videoView.do")
 	public void videoView(@RequestParam("filePath") String filePath, HttpServletRequest req, HttpServletResponse res) {
 	    
-		// 아직 해당 함수 기능 안 됨
-		String baseFilePath = filePath;
-		
-		File videoFile = new File(baseFilePath);
-		
-		// 파일 path 검증
-	    if (!videoFile.exists()) {
-	        res.setStatus(HttpServletResponse.SC_NOT_FOUND);
-	        return;
-	    }
-	    
-        // 비디오 확장자에 따라 Content-Type 설정
-        if (filePath.endsWith(".mp4")) {
-            res.setContentType("video/mp4");
-        } else if (filePath.endsWith(".webm")) {
-            res.setContentType("video/webm");
-        } else {
-            res.setContentType("application/octet-stream");
-        }
+		// 최종 fullFilePath 
+		String fullFilePath = null;
 
 	    try {
+	    	
+			// 디렉토리 생성
+			eventListService.mkdirForStream(filePath);
+			
+			// OS별 fullFilePath 반환
+			fullFilePath = eventListService.mkFullFilePath(filePath);
+			
+			// GS 인증시 삭제
+			System.out.println("mkFullFilePath result : " + fullFilePath);
+			// GS 인증시 삭제
+			
+			// file 객체 생성
+			File file = new File(fullFilePath);
+			
+	        // 비디오 확장자에 따라 Content-Type 설정
+	        if (filePath.endsWith(".mp4")) {
+	            res.setContentType("video/mp4");
+	        } else if (filePath.endsWith(".webm")) {
+	            res.setContentType("video/webm");
+	        } else {
+	            res.setContentType("application/octet-stream");
+	        }
+	    	
+	        // 이미지 송출 전 오류 점검
+	        eventListService.fileCheck(file);
+	        
 	    	// 외부 저장소에 저장된 video 파일의 외부 경로로 웹 화면에 비디오 파일 스트리밍
-	    	eventListService.viewVideoOfFilePath(videoFile, req, res);
+	    	eventListService.viewVideoOfFilePath(file, req, res);
 	        
 	    } catch (Exception e) {
-	        e.printStackTrace();
+	        logger.error("비디오 파일 스티미밍 도중 에러 발생: {}"+e);
 	    }
 	}
 
