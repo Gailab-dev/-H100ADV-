@@ -13,7 +13,8 @@
 		ON A.ev_dv_id = B.dv_id
 		<where>
 			<if test="searchKeyword != null and searchKeyword != ''">
-				AND A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
+				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
+				OR dv_addr like CONCAT('%',#{searchKeyword},'%'))
 			</if>
 			<if test="startDate != null and endDate != null">
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
