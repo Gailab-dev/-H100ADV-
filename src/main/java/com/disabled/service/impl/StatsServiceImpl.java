@@ -6,9 +6,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.logging.LogException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.disabled.controller.DeviceListController;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.mapper.StatsMapper;
 import com.disabled.service.StatsService;
@@ -22,6 +25,9 @@ public class StatsServiceImpl implements StatsService{
 	@Autowired
 	StatsMapper statsMapper;
 	
+	// 로그 기록
+	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	
 	/*
 	 * 아이디와 비밀번호를 통해 DB에 해당 계정이 있는지 확인
 	 * @Param
@@ -30,13 +36,15 @@ public class StatsServiceImpl implements StatsService{
 	 */
 	@Override
 	public Integer loginCheck(String id, String pwd) {
-		// TODO Auto-generated method stub
 		
 		int cnt = 0;
 		
 		try {
 			cnt = loginMapper.cntUsrByIdAndPwd(id,pwd);
+			
+			// GS인증시 삭제
 			System.out.println(cnt);
+			// GS인증시 삭제
 			
 			if(cnt != 1) {
 				throw new LogException("로그인 실패");
@@ -44,8 +52,8 @@ public class StatsServiceImpl implements StatsService{
 				return 1;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			// TODO: handle exception
+			
+			logger.error("로그인 체크 오류: {}"+e);
 			return -1;
 		} 
 	}
@@ -70,8 +78,13 @@ public class StatsServiceImpl implements StatsService{
 			
 			getEventByMonth = statsMapper.getEventByMonth(param);
 		} catch (Exception e) {
+			
+			//GS인증시 삭제
 			System.out.println("selcet 실패");
-			// TODO: handle exception
+			//GS인증시 삭제
+			
+			logger.error("selcet 실패: {}"+e);
+			
 		}
 		
 		return getEventByMonth;
@@ -87,8 +100,12 @@ public class StatsServiceImpl implements StatsService{
 		try {
 			getEventByMonth = statsMapper.getAllEvent();
 		} catch (Exception e) {
+			
+			//GS인증시 삭제
 			System.out.println("selcet 실패");
-			// TODO: handle exception
+			//GS인증시 삭제
+			
+			logger.error("selcet 실패: {}"+e);
 		}
 		
 		return getEventByMonth;
