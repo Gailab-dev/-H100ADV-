@@ -11,7 +11,9 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/deviceList.css">
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 	<script>	
-		const hls = new Hls();
+		const hls = new Hls({
+			maxBufferLength:3	
+		});
 		
 		/*
 		* 실시간 스트리밍 실행
@@ -34,7 +36,28 @@
 				
 				hls.on(Hls.Events.MANIFEST_PARSED,() => {
 					console.log("video play hls");
+					console.log()
 					video.play();
+				});
+				
+				hls.on(Hls.Events.ERROR,function(event,data){
+					console.error("🔴 HLS Error:", data.type, data.details, data);
+				      if (data.fatal) {
+				        switch (data.type) {
+				          case Hls.ErrorTypes.NETWORK_ERROR:
+				            console.warn("⚠️ 네트워크 오류, 재시도 중...");
+				            hls.startLoad();
+				            break;
+				          case Hls.ErrorTypes.MEDIA_ERROR:
+				            console.warn("⚠️ 미디어 오류, 복구 시도 중...");
+				            hls.recoverMediaError();
+				            break;
+				          default:
+				            console.error("❌ 복구 불가, 스트리밍 중단");
+				            hls.destroy();
+				            break;
+				        }
+				      }
 				});
 			} else if(video.canPlayType('application/vnd.apple.mpegurl')){
 				
@@ -85,6 +108,16 @@
 	    */
 		function sendCommand(command,id) {
 			
+	    	// id값 검증하여 없다면 return
+	    	if(id == null || id == undefined || id == 0 || id == ""){
+	    		alert("먼저 디바이스 리스트에서 디바이스를 선택해주세요");
+	    		return;
+	    	}
+	    	
+	    	// 정지 버튼의 data-device-id 속성에 저장
+	        document.getElementById("stopStreamBtn").dataset.deviceId = id;
+	    
+	    	
 			const body = {
 				'type': command,
 				'id': id
@@ -102,28 +135,18 @@
 	      		return response.text();
 	    	})
 	    	.then(res => {
-	    		//console.log(res); // {} 값 반환함
-	    		//let msg = JSON.parse(res); // ??
-	    		//console.log(msg.message); // undefined
-	    		
-	    		playVideo(); 
-	    		
-	    		// 실시간 영상 스트리밍 및 컨트롤러 버튼 display
-	    		/*
-	    		let display = "";
-	    		if(msg.message == "video start" ){ 
-	    			// 실시간 영상 스트리밍 실행
+
+	    		if(command == "start"){
 	    			playVideo(); 
-	    			// displayController("block");
-	    		} else if(msg.message == "video stop") {
-	    			// 실시간 영상 스트리밍 종료
+	    		} else if (command == "end"){
 	    			stopVideo();
-	    			// displayController("none");
-	    		} else {
-	    			// 디바이스 조작
+	    		}else{
+	    			// 다른 버튼도 추가 구현해야 함
 	    		}
-	    		// displayController(display);
-	    		*/
+	    		
+	    		
+	    		
+
 	    	})
 	    	.catch(error => {
 	    		alert('오류: ' + error);
@@ -202,7 +225,7 @@
 				        <div class="controller-wrapper">
 				            <div class="controller-button up">▲</div>
 				            <div class="controller-button left">◀</div>
-				            <div class="controller-center">⏸</div>
+				            <div id = "stopStreamBtn" class="controller-center" data-device-id="" onclick="sendCommand('end',this.dataset.deviceId)">⏸</div>
 				            <div class="controller-button right">▶</div>
 				            <div class="controller-button down">▼</div>
 				        </div>
