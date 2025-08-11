@@ -14,15 +14,20 @@ import java.util.HashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.controller.DeviceListController;
 import com.disabled.service.ApiService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 // 공통 api 모듈
 @Service
 public class ApiServiceImpl implements ApiService{
+	
+	// 로그 기록
+	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
 	
 	// 실시간 스트리밍을 위한 버퍼 크기
 	private static final int BUFFER_SIZE = 8192;
@@ -35,7 +40,9 @@ public class ApiServiceImpl implements ApiService{
 	@Override
 	public void forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp) {
 		
+		// GS인증시 지워야함
 		System.out.println(dvIp);
+		// GS인증시 지워야함
 		
 		// content-type : application/x-www-form-urlencoded 
 		String contentType = "application/x-www-form-urlencoded";
@@ -58,11 +65,18 @@ public class ApiServiceImpl implements ApiService{
 			copyResponse(conn, res);
 			
 		} catch (UnsupportedEncodingException e) {
+			
+			//GS인증시 삭제//
 			System.out.println("connection pool 생성 오류 : " + e);
 			e.printStackTrace();
+			//GS인증시 삭제//
+			
+			logger.error("connection pool 생성 오류 : {}" + e);
+			
 		} finally {
 			if (conn != null) conn.disconnect();
-			System.out.println("conn close");
+			// System.out.println("conn close");
+			logger.debug(" conn close: {}");
 		}
 		
 		
@@ -94,23 +108,38 @@ public class ApiServiceImpl implements ApiService{
 	        conn.setDoOutput(true);
 	        conn.setRequestProperty("Content-Type", contentType);
 	        conn.setRequestProperty("Accept", "application/octet-stream");
+	        
+	        // GS인증시 지워야함
 	        System.out.println("create connection pool");
+	        // GS인증시 지워야함
 	        
 	        // 실시간 스트리밍 결과 받기
 	        try(OutputStream os = conn.getOutputStream()){
+	        	
+	        	// GS인증시 지워야함
 	        	System.out.println("outputStream ready");
+	        	// GS인증시 지워야함
+	        	
 	        	os.write(body.getBytes(StandardCharsets.UTF_8));
 	        }
 	        
 		} catch (MalformedURLException e) {
+			
+			// GS인증시 지워야함
 			System.out.println("open connection 생성 에러");
-			e.printStackTrace();
+			// GS인증시 지워야함
+			
+			logger.error("open connection 생성 에러 : {}"+e);
+			
+			
 		} catch (IOException e) {
-			System.out.println("");
-			e.printStackTrace();
+			logger.error("에러 : {}"+e);
+			
 		}
 		
+		// GS인증시 지워야함
 		System.out.println("return conn");
+		// GS인증시 지워야함
 		
 		return conn;
 	}
@@ -138,14 +167,19 @@ public class ApiServiceImpl implements ApiService{
                    outputStream.write(buffer, 0, bytesRead);
                }
                
+               // GS인증시 삭제피야함
                System.out.println("outputStream flush");
+               // GS인증시 삭제피야함
                
                // 4. 받은 데이터를 실시간 스트리밍
                outputStream.flush();
             }
 		} catch (IOException e) {
+			// GS인증시 삭제해야함
 			System.out.println("response 에러");
-			e.printStackTrace();
+			// GS인증시 삭제해야함
+			
+			logger.error("response 에러 :{}");
 		}
 		
 	}
@@ -156,7 +190,9 @@ public class ApiServiceImpl implements ApiService{
 	@Override
 	public void forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp ) {
 		
+		// GS 인증시 삭제
 		System.out.println(dvIp);
+		// GS 인증시 삭제
 		
 		// content-type : application/json 
 		String contentType = "application/json";
@@ -176,10 +212,8 @@ public class ApiServiceImpl implements ApiService{
 			copyResponse(conn, res);
 			
 		} catch (Exception e) {
-			// TODO: handle exception
+			logger.error("실시간 스트리밍(JS) 에러");
 		}
-
-		// TODO Auto-generated method stub
 		
 	}
 }
