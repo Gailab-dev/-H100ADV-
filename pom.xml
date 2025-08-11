@@ -70,6 +70,7 @@
 			<artifactId>org.egovframe.rte.fdl.property</artifactId>
 			<version>${org.egovframe.rte.version}</version>
 		</dependency>
+		<!-- cryto 라이브러리 -->	
 		<dependency>
 			<groupId>org.egovframe.rte</groupId>
 			<artifactId>org.egovframe.rte.fdl.crypto</artifactId>
@@ -265,6 +266,7 @@
 		    <artifactId>commons-logging</artifactId>
 		    <version>1.2</version>
 		</dependency>
+			
 	</dependencies>
 	<build>
 		<defaultGoal>install</defaultGoal>
