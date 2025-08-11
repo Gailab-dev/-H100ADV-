@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"local.dev/h100_module_c/database"
-	"local.dev/h100_module_c/generateImgPath"
 )
 
 type Tbl_Event_Data struct {
@@ -38,7 +37,7 @@ func InsertEventData() http.HandlerFunc{
 
 		// 파일 경로 생성
 		var eventData Tbl_Event_Data
-		eventData.EvImgPath = generateImgPath.Generate(eventData.EvDvId)
+		// eventData.EvImgPath = generateImgPath.Generate(eventData.EvDvId)
 		
 		// JSON 파일 디코딩
 		err := json.NewDecoder(r.Body).Decode(&eventData)
