@@ -25,7 +25,7 @@ public class LoginInterceptor implements HandlerInterceptor{
         // id 값이 session에 없다면 login 화면으로 이동
         if (session == null || session.getAttribute("id") == null) {
             if (!uri.contains("/login.do")) {
-                response.sendRedirect("/gov-disabled-web-gs/stats/login.do?timeout=true");
+                response.sendRedirect("/gov-disabled-web-gs");
                 return false;
             }
         }
