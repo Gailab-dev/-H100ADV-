@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
-import com.sun.tools.javac.util.Log;
 
 @Controller
 @RequestMapping("/deviceList")
@@ -38,20 +37,12 @@ public class DeviceListController {
 	@RequestMapping("")
 	public String rootRedirect() {
 		
-		//GS인증시 삭제
-		System.out.println("deviceList rootRedirect");
-		//GS인증시 삭제
-		
-		logger.info("deviceList rootRedirect");
-		
 		return "redirect:/deviceList/viewDeviceList.do";
 	}
 	
 	// 디바이스 리스트 화면
 	@RequestMapping("/viewDeviceList.do")
 	private String viewDeviceList(Model model ) {
-		
-		logger.info("viewDeviceList in");
 		
 		// 디바이스 리스트
 		List<Map<String, Object>> deviceList = new ArrayList<Map<String,Object>>();
@@ -67,10 +58,6 @@ public class DeviceListController {
 		
 		//model add
 		model.addAttribute("deviceList", groupAddrByDeviceList);
-		
-		//GS인증시 삭제
-		System.out.println("return DeviceList");
-		//GS인증시 삭제
 		
 		return "/deviceList/deviceList";
 	}
@@ -114,28 +101,29 @@ public class DeviceListController {
 	@RequestMapping("/sendCommand")
 	private void sendCommand(HttpServletRequest req, HttpServletResponse res){
 		
-		logger.info("sendCommand in");
-		
 		try {
 			
 			String id = req.getParameter("id");
 			
+			//id 유효성 검사
+			if(id == null || id.trim().isEmpty()) {
+				throw new IllegalArgumentException("유효하지 않은 파라미터(id)");
+			}
+			
 			// 디바이스 ID를 파라미터로 디바이스 IP를 조회
 			String dvIp = getValidatedDvIp(id);
+			
+			//dvIp 유효성 검사
+			if(dvIp == null || dvIp.trim().isEmpty()) {
+				throw new IllegalArgumentException("유효하지 않은 device ID.");
+			}
 			
 			//deviceIp를 url로 한 실시간 데이터 스트리밍
 			apiService.forwardStream(req, res, dvIp);
 				
-		} catch (Exception e) {
-			
-			// GS 인증시 삭제 필요
-			System.out.println("영상 스트리밍 에러");
-			e.printStackTrace();
-			// GS 인증시 삭제 필요
-			
-			logger.error("DeviceListController의 SendCommand 로직에서 오류 발생 : {}",e.getMessage(),e);
+		} catch (IllegalArgumentException e) {
+			logger.error("유효성 검사 오류: ",e);
 		}
-		
 		
 	}
 	
@@ -146,23 +134,27 @@ public class DeviceListController {
 	@RequestMapping("/sendCommandToJSON")
 	private void sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res) {
 		
-		logger.info("sendCommandToJSON in");
-		
 		try {
-			
 			String id = json.get("id").toString();
+			
+			//id 유효성 검사
+			if(id == null || id.trim().isEmpty()) {
+				throw new IllegalArgumentException("유효하지 않은 파라미터(id)");
+			}
 			
 			// 디바이스 ID를 파라미터로 디바이스 IP를 조회
 			String dvIp = getValidatedDvIp(id);
 			
+			//dvIp 유효성 검사
+			if(dvIp == null || dvIp.trim().isEmpty()) {
+				throw new IllegalArgumentException("유효하지 않은 device ID.");
+			}
+			
 			// 디바이스 IP를 통한 실시간 스트리밍
 			apiService.forwardStreamToJSON(res, json,dvIp);
-			
-		} catch (Exception e) {
-			
-			logger.error("On-device와 실시간 스트리밍 중 오류 발생: {}"+e);
+		} catch (IllegalArgumentException e) {
+			logger.error("유효성 검사 오류: ",e);
 		}
-		
 
 	}
 	
@@ -174,7 +166,6 @@ public class DeviceListController {
 		String dvIp = null;
 		
 		try {
-			
 			// 파라미터 유효성 검사
 			if(id == null || id.isEmpty()) {
 				throw new IllegalArgumentException("device ID가 전달되지 않았습니다.");
@@ -187,18 +178,13 @@ public class DeviceListController {
 			if(dvIp == null || dvIp.trim().isEmpty()) {
 				throw new IllegalArgumentException("유효하지 않은 device ID.");
 			}
-			return dvIp;
-			
-		} catch (Exception e) {
-			
-			logger.error("유효성 검사 소스코드에서 오류 발생: {}"+e);
-			
-			return "";
-		}
+		} catch (IllegalArgumentException e) {
+			logger.error("유효성 검사 오류: ",e);
+		} 
 		
+		return dvIp;
 		
 	}
-		
 	
 }
 

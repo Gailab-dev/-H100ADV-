@@ -2,6 +2,8 @@ package com.disabled.service.impl;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.disabled.controller.DeviceListController;
@@ -62,12 +65,8 @@ public class EventListServiceImpl implements EventListService{
 		try {
 			// 이벤트 ID를 검색조건으로 하여 리스트 상세 내역을 select
 			resultMap = eventListMapper.getEventListDetail(evId);
-		} catch (Exception e) {
-			//GS인증시 삭제
-			System.out.println("이벤트 리스트 디테일 서비스 오류");
-			//GS인증시 삭제
-			
-			logger.error("이벤트 리스트 디테일 서비스 오류: {}"+e);
+		} catch (DataAccessException e) {
+			logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId) : ",e);
 		}
 		
 		return resultMap;
@@ -92,16 +91,7 @@ public class EventListServiceImpl implements EventListService{
 			// 검색 조건에 부합하는 불법 주차 리스트 select
 			resultList = eventListMapper.getEventList(paramMap);
 			
-			//GS인증시 삭제
-			System.out.println(resultList);
-			//GS인증시 삭제
-			
-		} catch (Exception e) {
-			
-			// GS 인증시 삭제
-			System.out.println("이벤트 리스트 서비스 오류");
-			System.out.println(e + "");
-			// GS 인증시 삭제
+		} catch (DataAccessException e) {
 			
 			logger.error("이벤트 리스트 서비스 오류 발생: {}"+e);
 			
@@ -112,13 +102,15 @@ public class EventListServiceImpl implements EventListService{
 	}
 	
 	/**
-	 * 외부 저장소에 저장된 image 파일의 외부 경로로 웹 화면에 이미지 송출 
+	 * 외부 저장소에 저장된 image 파일의 외부 경로로 웹 화면에 이미지 송출
+	 * @param file: file 타입 객체, res: HttpServletResponse 타입 객체 
 	 */
 	@Override
 	public void viewImageOfFilePath(File file, HttpServletResponse res) {
 		
 		OutputStream os = null;
 		FileInputStream fs = null;
+		
 		
 		try {
 			fs = new FileInputStream(file);
@@ -130,24 +122,19 @@ public class EventListServiceImpl implements EventListService{
 	        while ((bytesRead = fs.read(buffer)) != -1) {
 	            os.write(buffer, 0, bytesRead);
 	        }
-
 	        os.flush();
 	        
-		} catch (Exception e) {
-			
-			logger.error("이미지 스트리밍 도중 오류 발생: {}"+e);
-			
+		} catch (FileNotFoundException e) {
+			logger.error("FileInputStream 객체 생성 중 오류 발생 : ",e);
+		} catch (IOException e2) {
+			logger.error("OutputStream 객체 생성 중 오류 발생 : ", e2);
 		} finally {
 			try {
-				if(os != null) {
-					os.close();
-				}
-				if(fs != null) {
-					fs.close();
-				}
-			} catch (Exception e2) {
-				logger.error("output straeam, file Stream 객체 종료 중 오류 발생: {}"+e2);
-			}
+				if(os != null) os.close();
+				if(fs != null) fs.close();
+			} catch (IOException e3) {
+				logger.error("객체 메모리 반환 중 오류 발생 : ",e3);
+			}	
 		}
 		
 	}
@@ -156,16 +143,20 @@ public class EventListServiceImpl implements EventListService{
 	 * 외부 저장소에 저장된 video 파일의 외부 경로로 웹 화면에 비디오 파일 스트리밍
 	 */
 	@Override
-	public void viewVideoOfFilePath(File file, HttpServletRequest req, HttpServletResponse res) {
+	public void viewVideoOfFilePath(File file, HttpServletRequest req, HttpServletResponse res) throws IndexOutOfBoundsException{
 		
 		OutputStream os = null;
+		RandomAccessFile raf = null;
 		
 		try {
 			// 브라우저 Range 요청 처리 
-	        RandomAccessFile raf = new RandomAccessFile(file, "r");
+	        raf = new RandomAccessFile(file, "r");
 	        long length = raf.length();
 	        long start = 0;
 	        long end = length - 1;
+	        if(end <= 0) {
+	        	throw new IndexOutOfBoundsException("파일 길이는 0 이하가 될 수 없습니다.");
+	        }
 
 	        String range = req.getHeader("Range");
 	        if (range != null && range.startsWith("bytes=")) {
@@ -193,11 +184,10 @@ public class EventListServiceImpl implements EventListService{
 	            os.write(buffer, 0, (int)Math.min(len, remaining));
 	            remaining -= len;
 	        }
-
-	        raf.close();
+	        
 	        os.flush();
 	        
-		} catch (Exception e) {
+		} catch (IOException e) {
 			logger.error("영상 스트리밍 도중 오류 발생: {}"+e);
 			
 		} finally {
@@ -205,10 +195,13 @@ public class EventListServiceImpl implements EventListService{
 				if (os != null) {
 					os.close();
 				}
-			} catch (Exception e2) {
-				logger.error("output straeam 객체 종료 중 오류 발생: {}"+e2);
-				
+				if(raf != null) {
+					raf.close();
+				}
+			} catch (IOException e2) {
+				logger.error("Outputstream 객체 또는RandomAccessFile 객체 종료 중 오류 발생 : ",e2);
 			}
+		
 		}
 	}
 	
@@ -217,8 +210,6 @@ public class EventListServiceImpl implements EventListService{
 	 */
 	public void mkdirForStream(String filePath) {
 		
-		System.out.println("mkdirFroStream in : " + filePath);
-		
 		// OS별 경로 정리
 		String filePathByOS = fileService.convertPathByOS(filePath);
 		
@@ -226,9 +217,10 @@ public class EventListServiceImpl implements EventListService{
 		String dirPath = fileService.extractDirectoryPath(filePathByOS);
 		
 		// 디렉토리 생성
-		String err = fileService.ensureDirectory(dirPath);
-		if(err != null) {
-			throw new RuntimeException(err);
+		try {
+			fileService.ensureDirectory(dirPath);
+		} catch (IOException e) {
+			logger.error("디렉토리 생성시 오류 발생 : ",e);
 		}
 		
 	}
@@ -241,7 +233,15 @@ public class EventListServiceImpl implements EventListService{
 	@Override
 	public String mkFullFilePath(String filePath) {
 		
-		return fileService.makePullPath(filePath);
+		String fullFilePath = null;
+		
+		try {
+			fullFilePath = fileService.makePullPath(filePath);
+		} catch (RuntimeException e) {
+			logger.error("fullFilePath 생성 중 오류 : ",e);
+		}
+		
+		return fullFilePath;
 	}
 	
 	/**
@@ -251,12 +251,17 @@ public class EventListServiceImpl implements EventListService{
 	@Override
 	public void fileCheck(File file) {
 		
-		// 디렉토리가 실제 존재하는지 확인하여 없으면 에러 있으면 아무일도 일어나지 않음
-		fileService.isExistFilePath(file);
-		
-		// 디렉토리가 BASE_DIR 외에 다른 dir에서 파일을 생성하려고 한다면 에러 발생
-		fileService.isCanonicalPath(file);
-		
-		// 추후 다른 오류 검증 필요시 고도화 할 것
+		try {
+			// 디렉토리가 실제 존재하는지 확인하여 없으면 에러 있으면 아무일도 일어나지 않음
+			fileService.isExistFilePath(file);
+			
+			// 디렉토리가 BASE_DIR 외에 다른 dir에서 파일을 생성하려고 한다면 에러 발생
+			fileService.isCanonicalPath(file);
+			
+			// 추후 다른 오류 검증 필요시 고도화 할 것
+		} catch (RuntimeException e) {
+			logger.error("파일 객체 오류 체크시 오류 발생 : ",e);
+		}
+
 	}
 }

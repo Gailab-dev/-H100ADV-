@@ -1,9 +1,8 @@
 package com.disabled.controller;
 
 import java.io.File;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,12 +38,6 @@ public class EventListController {
 	@RequestMapping("")
 	public String rootRedirect() {
 		
-		// GS 인증시 삭제
-		System.out.println("viewEventList redirect");
-		// GS 인증시 삭제
-		
-		logger.info("viewEventList redirect");
-		
 		return "redirect:/eventList/viewEventList.do";
 	}
 	
@@ -57,21 +50,10 @@ public class EventListController {
 			, @RequestParam(value="page", required=false) Integer page
 			, Model model) {
 		
-		// GS인증시 지워야함
-		System.out.println("viewEventList in");
-		System.out.println("파라미터 초기화 전 startDate"+startDate+"endDate: "+endDate+"searchKeyword: "+searchKeyword+"page: "+page);
-		// GS인증시 지워야함
-		
-		
-		
 		List<Map<String, Object>> eventList = new ArrayList<Map<String,Object>>();
 		
 		// 페이징 객체
 		PaginationInfo paginationInfo = new PaginationInfo();
-		
-		// 오늘 날짜 설정
-		LocalDate today = LocalDate.now();
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
 		
 		// 파라미터 값 설정
 		Map<String, Object> paramMap = new HashMap<String, Object>();
@@ -82,14 +64,14 @@ public class EventListController {
 		
 		try {
 			
-			//특별한 검색 조건을 지정하지 않을 경우 시작일은 그 달의 첫째날로 초기화, 마지막 날은 오늘로 초기화
+			//특별한 검색 조건을 지정하지 않을 경우 초기화
 			if(startDate == null || startDate.isEmpty()) {
-				// startDate = today.withDayOfMonth(1).format(formatter).toString();
+				startDate = "";
 			}else {
 				startDate = startDate.replace("-", "");
 			}
 			if(endDate == null || endDate.isEmpty()) {
-				// endDate = today.format(formatter).toString();
+				endDate = "";
 			}else {
 				endDate = endDate.replace("-", "");;
 			}
@@ -99,7 +81,6 @@ public class EventListController {
 				page = 1;
 			}
 			
-			System.out.println("파라미터 초기화 후 searchKeyword: "+ searchKeyword + " startDate: " + startDate + " endDate: " + endDate + " ");
 			
 			// 페이징 설정
 			paginationInfo.setCurrentPageNo(page); // 현제 페이지 번호
@@ -109,10 +90,6 @@ public class EventListController {
 			int firstIndex = paginationInfo.getFirstRecordIndex(); // LIMIT offset
 			int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
 			
-			// GS 인증시 삭제
-			System.out.println("firstIndex: " + firstIndex);
-			System.out.println("recordCountPerPage: " + recordCountPerPage);
-			// GS 인증시 삭제
 			
 			// DB 검색을 위한 파라미터 설정
 			paramMap.put("firstIndex", firstIndex);
@@ -121,35 +98,31 @@ public class EventListController {
 			paramMap.put("startDate",startDate);
 			paramMap.put("endDate",endDate);
 			
-			// GS 인증시 삭제
-			System.out.println("getEventList");
-			// GS 인증시 삭제
-			
 			// 검색 조건에 따른 이벤트 리스트 조회
 			eventList = eventListService.getEventList(paramMap);
 			
 			// date 타입 input태그에 날짜가 표시되도록 format 변환
+			// stringTypeInputTagFormat: 문자열을 날짜로 변환
 			SimpleDateFormat stringTypeInputTagFormat = new SimpleDateFormat("yyyyMMdd");
-			Date start = stringTypeInputTagFormat.parse(startDate);
-			Date end = stringTypeInputTagFormat.parse(endDate);
-			SimpleDateFormat DateTypeInputTagFormat = new SimpleDateFormat("yyyy-MM-dd");
-			convertStartDate = DateTypeInputTagFormat.format(start);
-			convertEndDate = DateTypeInputTagFormat.format(end);
 			
-		} catch (Exception e) {
-			// GS 인증시 삭제
-			System.out.println("이벤트 리스트 컨트롤러 오류");
-			System.out.println(e + "");
-			// GS 인증시 삭제
-			logger.error("이벤트 리스트 컨트롤러 오류: {}" + e);
+			// 날짜를 문자열로 변환
+			SimpleDateFormat DateTypeInputTagFormat = new SimpleDateFormat("yyyy-MM-dd");
+			
+			// 검색조건의 시작 날짜의 타입을 날짜로 변환한 뒤, 원하는 형식의 문자열로 재변환
+			if(startDate != "" && !startDate.isEmpty() && startDate != null) {
+				Date start = stringTypeInputTagFormat.parse(startDate);
+				convertStartDate = DateTypeInputTagFormat.format(start);
+			}
+			
+			// 검색조건의 끝 날짜의 타입을 날짜로 변환한 뒤, 원하는 형식의 문자열로 재변환
+			if(endDate != "" && !endDate.isEmpty() && endDate != null) {
+				Date end = stringTypeInputTagFormat.parse(endDate);
+				convertEndDate = DateTypeInputTagFormat.format(end);
+			}
+			
+		}catch (ParseException e) {
+			logger.error("데이터 타입 변환 중 오류 발생 : ",e);
 		}
-		
-		System.out.println("model에 input된 객체 / paginationInfo: "+ paginationInfo 
-				+ " eventList: " + eventList 
-				+ " searchKeyword: " + searchKeyword
-				+ " convertStartDate: " + convertStartDate
-				+ " convertEndDate: "+ convertEndDate
-				);
 		
 		// model add
 		model.addAttribute("paginationInfo",paginationInfo);
@@ -157,10 +130,6 @@ public class EventListController {
 		model.addAttribute("searchKeyword", searchKeyword);
 		model.addAttribute("startDate",convertStartDate);
 		model.addAttribute("endDate", convertEndDate);
-		
-		// GS 인증시 삭제
-		System.out.println("return eventList");
-		// GS 인증시 삭제
 		
 		return "eventList/eventList";
 	}
@@ -174,38 +143,22 @@ public class EventListController {
 			, @RequestParam(value="searchKeyword",required=false) String searchKeyword
 			, Model model) {
 		
-		// GS 인증시 삭제
-		System.out.println("eventListDetail in");
-		// GS 인증시 삭제
-		
-		Map<String, Object> eventListDetail = new HashMap<String, Object>();
-		
 		try {
-			
-			// GS 인증시 삭제
-			System.out.println("getEventListDetail");
-			// GS 인증시 삭제
+			Map<String, Object> eventListDetail = new HashMap<String, Object>();
 			
 			eventListDetail = eventListService.getEventListDetail(evId);
-		} catch (Exception e) {
+
+			// mdoel add
+			model.addAttribute("eventListDetail", eventListDetail);
+			// 상세 화면에서 리스트 화면으로 돌아왔을 때에도 검색 조건 유지
+			model.addAttribute("searchKeyword", searchKeyword);
+			model.addAttribute("startDate", startDate);
+			model.addAttribute("endDate", endDate);
 			
-			// GS 인증시 삭제
-			System.out.println("이벤트 리스트 상세 컨트롤러 오류");
-			// GS 인증시 삭제
-			
-			logger.error("이벤트 리스트 상세 컨트롤러 오류: {}"+e);
-			
+		} catch (IllegalArgumentException e) {
+			logger.error("잘못된 인자 전달로 인한 오류 발생 : ",e);
 		}
-		
-		// mdoel add
-		model.addAttribute("eventListDetail", eventListDetail);
-		// 상세 화면에서 리스트 화면으로 돌아왔을 때에도 검색 조건 유지
-		model.addAttribute("searchKeyword", searchKeyword);
-		model.addAttribute("startDate", startDate);
-		model.addAttribute("endDate", endDate);
-		
-		System.out.println("return eventListDetail");
-		
+
 		return "eventList/eventListDetail";
 	}
 	
@@ -217,24 +170,20 @@ public class EventListController {
 	@RequestMapping("/imageView.do")
 	public void imageView(@RequestParam("filePath") String filePath, HttpServletResponse res) {
 		
-		// GS 인증시 삭제
-		System.out.println("imageView in : "+filePath);
-		// GS 인증시 삭제
-		
 		// 최종 fullFilePath 
 		String fullFilePath = null;
 		
 		try {
+			
+	    	if(filePath == null || filePath == "") {
+	    		throw new IllegalArgumentException("filePath는 null이거나 공백이어서는 안 됩니다.");
+	    	}
 			
 			// 디렉토리 생성
 			eventListService.mkdirForStream(filePath);
 			
 			// OS별 fullFilePath 반환
 			fullFilePath = eventListService.mkFullFilePath(filePath);
-			
-			// GS 인증시 삭제
-			System.out.println("mkFullFilePath result : " + fullFilePath);
-			// GS 인증시 삭제
 			
 			// file 객체 생성
 			File file = new File(fullFilePath);
@@ -253,10 +202,12 @@ public class EventListController {
 	        
 			// 외부 저장소에 저장된 image 파일의 외부 경로로 웹 화면에 이미지 송출
 			eventListService.viewImageOfFilePath(file, res);
-			
-		} catch (Exception e) {
-			logger.error("외부 URL을 통한 이미지를 화면에 출력하는 도중 오류 발생: {}"+e);
+		} catch (IllegalArgumentException e) {
+			logger.error("잘못된 인자 전달 : ",e);
 		}
+		
+
+		
 	}
 	
 	/**
@@ -272,15 +223,15 @@ public class EventListController {
 
 	    try {
 	    	
+	    	if(filePath == null || filePath == "") {
+	    		throw new IllegalArgumentException("filePath는 null이거나 공백이어서는 안 됩니다.");
+	    	}
+	    	
 			// 디렉토리 생성
 			eventListService.mkdirForStream(filePath);
 			
 			// OS별 fullFilePath 반환
 			fullFilePath = eventListService.mkFullFilePath(filePath);
-			
-			// GS 인증시 삭제
-			System.out.println("mkFullFilePath result : " + fullFilePath);
-			// GS 인증시 삭제
 			
 			// file 객체 생성
 			File file = new File(fullFilePath);
@@ -300,8 +251,10 @@ public class EventListController {
 	    	// 외부 저장소에 저장된 video 파일의 외부 경로로 웹 화면에 비디오 파일 스트리밍
 	    	eventListService.viewVideoOfFilePath(file, req, res);
 	        
-	    } catch (Exception e) {
-	        logger.error("비디오 파일 스티미밍 도중 에러 발생: {}"+e);
+	    } catch (IllegalArgumentException e) {
+	        logger.error("잘못된 인자 전달 오류 발생: ",e);
+	    } catch (IndexOutOfBoundsException e2) {
+	    	logger.error("잘못된 index 오류 발생 : ",e2);
 	    }
 	}
 

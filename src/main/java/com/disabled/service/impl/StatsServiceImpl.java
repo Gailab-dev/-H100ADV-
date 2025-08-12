@@ -9,6 +9,7 @@ import org.apache.ibatis.logging.LogException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.disabled.controller.DeviceListController;
@@ -42,18 +43,14 @@ public class StatsServiceImpl implements StatsService{
 		try {
 			cnt = loginMapper.cntUsrByIdAndPwd(id,pwd);
 			
-			// GS인증시 삭제
-			System.out.println(cnt);
-			// GS인증시 삭제
-			
 			if(cnt != 1) {
 				throw new LogException("로그인 실패");
 			}else {
 				return 1;
 			}
-		} catch (Exception e) {
+		} catch (DataAccessException e) {
 			
-			logger.error("로그인 체크 오류: {}"+e);
+			logger.error("로그인 체크 오류 : ",e);
 			return -1;
 		} 
 	}
@@ -77,13 +74,9 @@ public class StatsServiceImpl implements StatsService{
 			param.put("endDate", endDate);
 			
 			getEventByMonth = statsMapper.getEventByMonth(param);
-		} catch (Exception e) {
+		} catch (DataAccessException e) {
 			
-			//GS인증시 삭제
-			System.out.println("selcet 실패");
-			//GS인증시 삭제
-			
-			logger.error("selcet 실패: {}"+e);
+			logger.error("SQL문 처리 도중 오류 발생 getEventByMonth(String startDate, String endDate) : ",e);
 			
 		}
 		
@@ -99,13 +92,9 @@ public class StatsServiceImpl implements StatsService{
 		
 		try {
 			getEventByMonth = statsMapper.getAllEvent();
-		} catch (Exception e) {
+		} catch (DataAccessException e) {
 			
-			//GS인증시 삭제
-			System.out.println("selcet 실패");
-			//GS인증시 삭제
-			
-			logger.error("selcet 실패: {}"+e);
+			logger.error("SQL문 처리 도중 오류 발생 getEventByMonth() : ",e);
 		}
 		
 		return getEventByMonth;

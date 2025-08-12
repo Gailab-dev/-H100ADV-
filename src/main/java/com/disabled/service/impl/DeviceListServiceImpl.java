@@ -4,9 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import com.disabled.controller.DeviceListController;
 import com.disabled.mapper.DeviceListMapper;
 import com.disabled.service.DeviceListService;
 
@@ -15,6 +19,9 @@ public class DeviceListServiceImpl implements DeviceListService{
 
 	@Autowired
 	DeviceListMapper deviceListMapper;
+	
+	// 로그 기록
+	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
 	
 	/**
 	 * 모든 디바이스 리스트를 가져오는 함수
@@ -28,7 +35,11 @@ public class DeviceListServiceImpl implements DeviceListService{
 		
 		List<Map<String, Object>> deviceList = new ArrayList<Map<String, Object>>();
 		
-		deviceList = deviceListMapper.getDeviceInfo();
+		try {
+			deviceList = deviceListMapper.getDeviceInfo();
+		} catch (DataAccessException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDeviceInfo() : ",e);
+		}
 		
 		return deviceList;
 	}
@@ -43,7 +54,15 @@ public class DeviceListServiceImpl implements DeviceListService{
 	@Override
 	public String getDvIpByDvID(int dvId) {
 		
-		return deviceListMapper.getDvIpByDvId(dvId);
+		String dvIp = null;
+		
+		try {
+			dvIp =  deviceListMapper.getDvIpByDvId(dvId);
+		} catch (DataAccessException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDvIpByDvId(dvId) : ",e);
+		}
+		
+		return dvIp;
 	}
 
 }

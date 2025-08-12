@@ -16,7 +16,7 @@
 				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
 				OR dv_addr like CONCAT('%',#{searchKeyword},'%'))
 			</if>
-			<if test="startDate != null and endDate != null">
+			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
 			</if>
 		</where>

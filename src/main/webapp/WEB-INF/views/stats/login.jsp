@@ -8,22 +8,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 뷰포트 설정 (모바일 대응) -->
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css"> <!-- CSS 불러오기 -->
 </head>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.js"
+  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+  crossorigin="anonymous"></script>
 <script>
 	
-	/*
+	/**
 	* 엔터키 감지하여 로그인 버튼 클릭
-		
-	$(document).ready(function(){
-		
-		const enterKeyEvent = document.getElementById('enterKeyEvent');
-		enterKeyEvent.addEventListener('keydown',function(event){
-			if (event.key === 'Enter'){
-				event.preventDefault();
-				enterKeyEvent.click();
-			}
-		})
-	})
 	*/
+	function enterKeyEvent(event){
+		if(event.key == 'Enter'){
+			const id = document.getElementById('id').value;
+			const pwd = document.getElementById('pwd').value;
+			login(id, pwd);
+		}
+	}
+	
+	/**
+	* 키보드에 반응할 수 있도록 input태그에 eventListener 추가
+	*/
+	$(document).ready(function(){
+		const id = document.getElementById('id');
+		const pwd = document.getElementById('pwd');
+		
+		id.addEventListener('keyup',enterKeyEvent);
+		pwd.addEventListener('keyup',enterKeyEvent);
+
+	})
+	
 	/*
 	 * 로그인 정보를 받아서 로그인 가능한 사용자라면 로그인
 	 * @param id,pw
@@ -100,7 +113,7 @@
 	          <input id="id"  class="line-input" type="text"     placeholder="아이디를 입력하세요" autocomplete="username">
 	          <input id="pwd" class="line-input" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
 	
-	          <button id="enterKeyEvent" class="primary-btn"
+	          <button class="primary-btn"
 	                  onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
 	            로그인
 	          </button>

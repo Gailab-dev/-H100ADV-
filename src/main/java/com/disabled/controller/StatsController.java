@@ -42,10 +42,6 @@ public class StatsController {
 	@RequestMapping("")
 	public String rootRedirect() {
 		
-		// GS인증시 삭제
-		System.out.println("stats rootRedirect");
-		// GS인증시 삭제
-		
 		return "redirect:/stats/login.do";
 	}
 	
@@ -66,10 +62,6 @@ public class StatsController {
 		Integer checkErr = -1;
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		
-		//GS인증시 해당 소스는삭제)
-		System.out.println(id + " " + pwd );
-		//GS인증시 해당 솟스튼 삭제 삭제)
-		
 		try {
 			
 			// 암호화
@@ -79,7 +71,6 @@ public class StatsController {
 			if(checkErr < 0) {
 				throw new LogException("로그인 실패");
 			}else {
-				System.out.println("move deviceList");
 				
 				resultMap.put("success", true); // 로그인 성공하면 true 반환
 				
@@ -89,13 +80,14 @@ public class StatsController {
 				
 				return resultMap;
 			}
-		} catch (Exception e) {
+		} catch (IllegalArgumentException e) {
 			
-			logger.error("로그인 에러: {}" +e);
+			logger.error("잘못된 인자 전달",e);
 			resultMap.put("success", false); // 로그인 실패하면 false 반환
-			return resultMap;
+			
 		}
 		
+		return resultMap;
 	}
 	
 	/*
@@ -114,26 +106,13 @@ public class StatsController {
 	@RequestMapping("/viewStat.do")
 	private String viewStat(Model model) {
 		
-		// GS인증시 지워야 함
-		System.out.println("viewStat in");
-		// GS인증시 지워야 함
-		
-		logger.info("viewStat in");
-		
 		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
 		
 		try {
 			statsByMonth = statsService.getEventByMonth();
-		} catch (Exception e) {
-			
-			logger.error("통계 화면에서 에러 발생: {}" +e);
-			
-			// GS인증시 지워야 함
-			System.out.println("통계 자료 로드 실패");
-			// GS인증시 지워야 함
+		} catch (IllegalArgumentException e) {
+			logger.error("잘못된 인자 전달",e);
 		}
-	
-		
 		model.addAttribute("statsByMonth", statsByMonth);
 		return "stats/stats";
 	}
