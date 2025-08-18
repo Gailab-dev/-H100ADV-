@@ -43,9 +43,7 @@
 	 * @return successMessage or errorMessage
 	 */
 	async function login(id, pwd) {
-		
-		console.log(id + " "+ pwd)
-		
+
 		try{
 			// validation
 			if(id == null || id == "" || id == "undefinded"){
@@ -68,9 +66,7 @@
 			});
 			
 	        if (!response.ok) {
-	            const errorHtml = await response.text();
-	            console.error("HTML 응답:", errorHtml);
-	            throw new Error("서버 응답 오류 " + response.status);
+	            alert("서버 응답 오류 " + response.status);
 	        }
 		    
 			const result = await response.json();
@@ -78,11 +74,11 @@
 			if(result.success){
 				window.location.href = "/gov-disabled-web-gs/stats/viewStat.do";
 			}else {
-				alert("로그인 실패");
+				alert("ID 또는 비밀번호가 다릅니다.");
 			}
 		}catch (err){
-			console.error("로그인 오류:", err);
-	        alert("서버 오류: 로그인 요청 처리 실패");
+			alert("로그인 오류: " + err);
+	        
 		}
 	}
 </script>

@@ -169,6 +169,9 @@ public class EventListServiceImpl implements EventListService{
 	        }
 
 	        long contentLength = end - start + 1;
+	        if(contentLength <= 0) {
+	        	throw new IndexOutOfBoundsException("파일 길이는 0 이하가 될 수 없습니다.");
+	        }
 	        res.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + length);
 	        res.setHeader("Accept-Ranges", "bytes");
 	        res.setHeader("Content-Length", String.valueOf(contentLength));

@@ -11,15 +11,16 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/deviceList.css">
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 	<script>	
-		const hls = new Hls({
-			maxBufferLength:3	
-		});
+		const hls = null;
 		
 		/*
 		* 실시간 스트리밍 실행
 		*/
 		function playVideo(){
-			console.log("playVideo in");
+			
+			hls = new Hls({
+				maxBufferLength:3	
+			});
 			
 			const video = document.getElementById('video');
 			// jetson : 192.168.0.31, 개발 : 192.18.0.15
@@ -27,45 +28,39 @@
 			
 			if(Hls.isSupported()){
 				
-				console.log("Hls supported");
-				
 				hls.loadSource(videoSrc);
 				hls.attachMedia(video);
 				
-				console.log("Hls on");
-				
 				hls.on(Hls.Events.MANIFEST_PARSED,() => {
-					console.log("video play hls");
-					console.log()
 					video.play();
 				});
 				
 				hls.on(Hls.Events.ERROR,function(event,data){
-					console.error("🔴 HLS Error:", data.type, data.details, data);
+					alert("🔴 HLS Error:", data.type, data.details, data);
 				      if (data.fatal) {
 				        switch (data.type) {
+				          // 네트워크 오류인 경우
 				          case Hls.ErrorTypes.NETWORK_ERROR:
-				            console.warn("⚠️ 네트워크 오류, 재시도 중...");
 				            hls.startLoad();
+				            alert("⚠️ 네트워크 오류, 재시도 중...");
 				            break;
+				          // 미디어 오류인 경우
 				          case Hls.ErrorTypes.MEDIA_ERROR:
-				            console.warn("⚠️ 미디어 오류, 복구 시도 중...");
 				            hls.recoverMediaError();
+				            alert("⚠️ 미디어 오류, 복구 시도 중...");
 				            break;
+				          // 그 외 오류, 스트리밍 중단
 				          default:
-				            console.error("❌ 복구 불가, 스트리밍 중단");
 				            hls.destroy();
+				            alert("❌ 복구 불가, 스트리밍 중단");
 				            break;
 				        }
 				      }
 				});
 			} else if(video.canPlayType('application/vnd.apple.mpegurl')){
-				
-				console.log("Hls not supported");
-				
+				// video 타입이 hls가 아닌 경우 mpegurl 타입으로 video 실행
 				video.src = videoSrc;
 				video.addEventListener('loadedmetadata',() => {
-					console.log("video play mpegurl");
 					video.play();
 				});
 			} else {
@@ -78,7 +73,6 @@
 			const video = document.getElementById('video');
 			
 			if(hls){
-				console.log("hls destroy");
 				hls.destroy();
 			}
 			
@@ -143,9 +137,6 @@
 	    		}else{
 	    			// 다른 버튼도 추가 구현해야 함
 	    		}
-	    		
-	    		
-	    		
 
 	    	})
 	    	.catch(error => {

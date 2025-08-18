@@ -30,7 +30,7 @@ public class CryptoARIAController {
 			// 암호화
 			encryptText = cryptoARIAService.encryptPassword(plainText);
 			
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			logger.error("cryptoPasswordController에서 오류 발생: {}",e);
 		}
 		

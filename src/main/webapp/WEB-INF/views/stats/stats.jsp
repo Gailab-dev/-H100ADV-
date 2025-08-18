@@ -72,14 +72,6 @@
 				</c:forEach>
 			];
 		
-		
-		console.log(xData);
-		console.log(yData1);
-		console.log(yData2);
-		console.log(typeof xData[1]);
-		console.log(typeof yData1[1]);
-		console.log(typeof yData2[1]);
-		
 		// 차트 생성
 		let chart = c3.generate({
 			bindto:'#chart', // 바인팅할 html 태그의 id

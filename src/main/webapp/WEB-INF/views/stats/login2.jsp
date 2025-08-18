@@ -11,27 +11,11 @@
 <script>
 	
 	/*
-	* 엔터키 감지하여 로그인 버튼 클릭
-		
-	$(document).ready(function(){
-		
-		const enterKeyEvent = document.getElementById('enterKeyEvent');
-		enterKeyEvent.addEventListener('keydown',function(event){
-			if (event.key === 'Enter'){
-				event.preventDefault();
-				enterKeyEvent.click();
-			}
-		})
-	})
-	*/
-	/*
 	 * 로그인 정보를 받아서 로그인 가능한 사용자라면 로그인
 	 * @param id,pw
 	 * @return successMessage or errorMessage
 	 */
 	async function login(id, pwd) {
-		
-		console.log(id + " "+ pwd)
 		
 		try{
 			// validation
@@ -56,7 +40,6 @@
 			
 	        if (!response.ok) {
 	            const errorHtml = await response.text();
-	            console.error("HTML 응답:", errorHtml);
 	            throw new Error("서버 응답 오류 " + response.status);
 	        }
 		    
@@ -68,7 +51,6 @@
 				alert("로그인 실패");
 			}
 		}catch (err){
-			console.error("로그인 오류:", err);
 	        alert("서버 오류: 로그인 요청 처리 실패");
 		}
 	}
