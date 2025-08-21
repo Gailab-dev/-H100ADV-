@@ -179,11 +179,11 @@ public class EventListController {
 	    		throw new IllegalArgumentException("filePath는 null이거나 공백이어서는 안 됩니다.");
 	    	}
 			
-			// 디렉토리 생성
-			eventListService.mkdirForStream(filePath);
-			
 			// OS별 fullFilePath 반환
 			fullFilePath = eventListService.mkFullFilePath(filePath);
+	    	
+			// 디렉토리 생성
+			eventListService.mkdirForStream(fullFilePath);
 			
 			// file 객체 생성
 			File file = new File(fullFilePath);
@@ -227,11 +227,11 @@ public class EventListController {
 	    		throw new IllegalArgumentException("filePath는 null이거나 공백이어서는 안 됩니다.");
 	    	}
 	    	
-			// 디렉토리 생성
-			eventListService.mkdirForStream(filePath);
-			
 			// OS별 fullFilePath 반환
 			fullFilePath = eventListService.mkFullFilePath(filePath);
+	    	
+			// 디렉토리 생성
+			eventListService.mkdirForStream(fullFilePath);
 			
 			// file 객체 생성
 			File file = new File(fullFilePath);

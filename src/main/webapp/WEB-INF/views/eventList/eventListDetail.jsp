@@ -62,7 +62,7 @@
 							</c:choose>
 							<button type="button"
 							        class="video-icon-btn"
-							        data-video="${pageContext.request.contextPath}/resources/images/sample.mp4"  
+							        data-video="/gov-disabled-web-gs/eventList/imageView.do?filePath=${eventListDetail.ev_mov_path}"  
 							        aria-controls="photoModal" aria-expanded="false"><!-- 여기에 동영상 URL -->
 								 <img alt="상세영상 보기"
 								      src="${pageContext.request.contextPath}/resources/images/영상 버튼.png"

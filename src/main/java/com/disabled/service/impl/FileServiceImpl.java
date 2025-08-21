@@ -16,7 +16,7 @@ import com.disabled.service.FileService;
 public class FileServiceImpl implements FileService{
 	
 	// 추후 BASE_PATH 변경시 해당 내용 변경
-	final String BASE_PATH_WIN = "C:\\gstest";
+	final String BASE_PATH_WIN = "C:\\gstest\\";
 	final String BASE_PATH_LINUX = "/gstest";
 	final static String OS = System.getProperty("os.name").toLowerCase();
 	
@@ -89,8 +89,6 @@ public class FileServiceImpl implements FileService{
 		if(!dir.exists()) {
 			boolean created = dir.mkdirs();
 			if(!created) throw new IOException("디렉토리 생성 실패 : " + directoryPath);
-		}else {
-			throw new NoSuchFileException("파일 없음 : " + directoryPath);
 		}
 		// 디렉토리가 존재하지 않은 경우 에러 발생
 		if(!dir.isDirectory()) throw new FileNotFoundException("디렉토리 확인 실패: " + directoryPath);
