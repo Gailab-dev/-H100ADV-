@@ -1,6 +1,7 @@
 package video
 
 import (
+	"fmt"
 	"os/exec"
 	"net/http"
         "encoding/json"
@@ -14,10 +15,26 @@ import (
 )
 
 type Response struct {
-        result string
+        Result string `json:"result"`
 }
 
-var cmdManager = createCmdManager()
+/*var cmdManager = createCmdManager()*/
+
+func VideoHandler(oCmdManager *CmdManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ids5 := make([]string, 0, len(oCmdManager.store))
+                for id := range oCmdManager.store {
+                        ids5 = append(ids5, id)
+                }
+
+                logger.Log.Info(fmt.Sprintf("--555555---ids5 :", ids5))
+
+
+
+		VideoFunction(w, r, oCmdManager)
+	}
+}
+
 
 /**
  * CCTV 실시간 스트리밍 관련 핸들러
@@ -25,7 +42,7 @@ var cmdManager = createCmdManager()
  * @param       id      cmdManager의 id
  * @return      result  결과값
  */
-func VideoHandler(res http.ResponseWriter, req *http.Request) {
+func VideoFunction(res http.ResponseWriter, req *http.Request, oCmdManager *CmdManager) {
         if req.Method != http.MethodPost {
                 http.Error(res, "Method not allowed", http.StatusMethodNotAllowed)
                 return
@@ -49,10 +66,16 @@ func VideoHandler(res http.ResponseWriter, req *http.Request) {
                 logger.Log.Error("type 키가 존재하지 않습니다.", zap.Error(err))
         } else {
                 if tType == "start" {
-                        resVal := StartVideo()
-                        response := Response{result: resVal}
+                        resVal := StartVideo(oCmdManager)
+			logger.Log.Info(fmt.Sprintf("resVal : %s", resVal))
+			response := Response{Result: resVal}
+			/*json.NewEncoder(res).Encode(map[string]string{"result": resVal})*/
                         res.Header().Set("Content-Type", "application/json")
-                        json.NewEncoder(res).Encode(response)
+
+			if err := json.NewEncoder(res).Encode(response); err != nil {
+				logger.Log.Error("failed to encode response: ", zap.Error(err))
+			}
+
                         return
                 } else if tType == "end" {
                         id, iOk := bData["id"] // cmdManager의 id
@@ -60,8 +83,9 @@ func VideoHandler(res http.ResponseWriter, req *http.Request) {
                                 logger.Log.Error("id 키가 존재하지 않습니다.", zap.Error(err))
                         } else {
 				if strID, ok := id.(string); ok {
-					resVal := EndVideo(strID)
-	                                response := Response{result: resVal}
+					resVal := EndVideo(strID, oCmdManager)
+					logger.Log.Info(fmt.Sprintf("resVal : %s", resVal))
+	                                response := Response{Result: resVal}
         	                        res.Header().Set("Content-Type", "application/json")
                 	                json.NewEncoder(res).Encode(response)
 				} else {
@@ -81,7 +105,7 @@ func VideoHandler(res http.ResponseWriter, req *http.Request) {
  * CCTV 실시간 스트리밍 시작
  * @return      id  cmdManager의 id
  */
-func StartVideo() string{
+func StartVideo(oCmdManager *CmdManager) string{
         // HLS 디렉토리 준비
         err := os.MkdirAll(os.Getenv("HLS_DIR"), os.ModePerm)
         if err != nil {
@@ -92,26 +116,34 @@ func StartVideo() string{
 	cmd := exec.Command(
                 os.Getenv("FFMPEG_PATH"),
                 "-i", os.Getenv("RTSP_URL"),
-                "-c:v", "libx264",
+		"-c:v", "libx264",
                 "-preset", "veryfast",
-                "-g", "50",
+                "-profile:v", "main",
+                "-level", "4.0",
                 "-sc_threshold", "0",
+                "-g", "48",
+                "-keyint_min", "48",
+                "-force_key_frames", "expr:gte(t,n_forced*2)",
+                "-sc_threshold", "0",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-ac", "2",
                 "-f", "hls",
                 "-hls_time", os.Getenv("SEGMENT_TIME"),
-                "-hls_list_size", "3",
-                "-hls_flags", "delete_segments+omit_endlist",
+                "-hls_list_size", "0",
+                "-hls_flags", "delete_segments",
                 filepath.Join(os.Getenv("HLS_DIR"), "index.m3u8"),
         )
 
         logger.Log.Info("FFmpeg 시작...")
 
 	// FFmpeg 실행
-	cmdManager := &CmdManager{}
-	if cmdManager.store == nil {
-		cmdManager.store = make(map[string]*exec.Cmd)
+	oCmdManager = &CmdManager{}
+	if oCmdManager.store == nil {
+		oCmdManager.store = make(map[string]*exec.Cmd)
 	}
 
-	return cmdManager.cmdStart(cmd)
+	return cmdStart(cmd, oCmdManager)
 }
 
 /**
@@ -119,9 +151,9 @@ func StartVideo() string{
  * @param       id     cmdManager의 id
  * @return      error  프로세스 종료 결과
  */
-func EndVideo(id string) string{
+func EndVideo(id string, oCmdManager *CmdManager) string{
         // 종료 신호 대기
         logger.Log.Info("end 신호 수신. FFmpeg 종료 중...")
-	cmdManager := &CmdManager{}
-        return cmdManager.cmdStop(id)
+	/*cmdManager := &CmdManager{}*/
+        return cmdStop(id, oCmdManager)
 }

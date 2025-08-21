@@ -11,7 +11,7 @@ func CorsMiddleware(next http.Handler) http.Handler {
                 // CORS 헤더 설정
                 w.Header().Set("Access-Control-Allow-Origin", "*")
                 w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
-                w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+                w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Range, Origin, Accept")
 
                 // 캐시 방지 헤더
             w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
@@ -36,7 +36,7 @@ func WithCORS(h http.HandlerFunc) http.HandlerFunc {
 		// CORS 헤더 설정
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Range, Origin, Accept")
 
                 // 캐시 방지 헤더
                 w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")

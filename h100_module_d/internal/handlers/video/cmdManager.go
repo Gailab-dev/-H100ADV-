@@ -22,7 +22,7 @@ type CmdManager struct {
  * CmdManager 생성자
  * @return	CmdManager  CmdManager 구조체
  */
-func createCmdManager() *CmdManager {
+func CreateCmdManager() *CmdManager {
 	return &CmdManager{
 		store: make(map[string]*exec.Cmd),
 	}
@@ -35,11 +35,27 @@ func createCmdManager() *CmdManager {
  * @param		cmd		    커맨드
  * @return      id			cmdManager의 id
  */
-func (cmdManager *CmdManager) cmdStart(cmd *exec.Cmd) string {
+func cmdStart(cmd *exec.Cmd, oCmdManager *CmdManager) string {
+/*func (manager *CmdManager) cmdStart(cmd *exec.Cmd, cmdManager *CmdManager) string {*/
 	id := uuid.NewString()
-	cmdManager.mu.Lock() // cmdManager 동시 접근 금지
-	cmdManager.store[id] = cmd
-	cmdManager.mu.Unlock()  // cmdManager 동시 접근 금지 해제
+	oCmdManager.mu.Lock() // cmdManager 동시 접근 금지
+	oCmdManager.store[id] = cmd
+
+	ids := make([]string, 0, len(oCmdManager.store))
+        for id := range oCmdManager.store {
+                ids = append(ids, id)
+        }
+
+        logger.Log.Info(fmt.Sprintf("--1111111---ids :", ids))
+
+	oCmdManager.mu.Unlock()  // cmdManager 동시 접근 금지 해제
+
+	ids2 := make([]string, 0, len(oCmdManager.store))
+	for id := range oCmdManager.store {
+                ids2 = append(ids2, id)
+        }
+
+        logger.Log.Info(fmt.Sprintf("--222222---ids2 :", ids2))
 
 	// 비동기 처리(고루틴)
 	go func() {
@@ -54,10 +70,29 @@ func (cmdManager *CmdManager) cmdStart(cmd *exec.Cmd) string {
 			logger.Log.Info("명령어 실행 성공!")
 		}
 
+		ids3 := make([]string, 0, len(oCmdManager.store))
+                for id := range oCmdManager.store {
+                        ids3 = append(ids3, id)
+                }
+
+                logger.Log.Info(fmt.Sprintf("--333333---ids3 :", ids3))
+
+		/*
 		cmdManager.mu.Lock()
 		delete(cmdManager.store, id) // 프로세스 누수 방지를 위해 생성 함수에서 delete 코드 추가
 		cmdManager.mu.Unlock()
+
+		ids4 := make([]string, 0, len(cmdManager.store))
+                for id := range cmdManager.store {
+                        ids3 = append(ids4, id)
+                }
+
+                logger.Log.Info(fmt.Sprintf("--444444---ids4 :", ids4))
+		*/
 	}()
+
+	logger.Log.Info(fmt.Sprintf("--=-------id : %s", id))
+	logger.Log.Info(fmt.Sprintf("====start PID:", os.Getpid()))
 
 	return id
 }
@@ -68,10 +103,24 @@ func (cmdManager *CmdManager) cmdStart(cmd *exec.Cmd) string {
  * @param       id          cmdManager의 id
  * @return      error
  */
-func (cmdManager *CmdManager) cmdStop(id string) string {
-	cmdManager.mu.Lock()
-	cmd, ok := cmdManager.store[id]
-	cmdManager.mu.Unlock()
+func cmdStop(id string, oCmdManager *CmdManager) string {
+/*func (manager *CmdManager) cmdStop(id string, cmdManager *CmdManager) string {*/
+	logger.Log.Info(fmt.Sprintf("====end PID:", os.Getpid()))
+	logger.Log.Info(fmt.Sprintf("=====end id : %s", id))
+	oCmdManager.mu.Lock()
+	
+	ids4 := make([]string, 0, len(oCmdManager.store))
+        for id := range oCmdManager.store {
+                 ids4 = append(ids4, id)
+        }
+
+        logger.Log.Info(fmt.Sprintf("--444444---ids4 :", ids4))
+
+	cmd, ok := oCmdManager.store[id]
+	oCmdManager.mu.Unlock()
+
+	logger.Log.Info(fmt.Sprintf("=====end ok : %s", ok))
+	logger.Log.Info(fmt.Sprintf("=====end !ok : %s", !ok))
 	if !ok {
 		return fmt.Sprintf("프로세스 ID 미존재: %s", id)
 	}

@@ -15,6 +15,8 @@ import (
         "local.dev/h100_module_d/logger"
 )
 
+var oCmdManager = video.CreateCmdManager()
+
 func main() {
         // ===== [S] logger 적용 ====== //
         logger.InitLogger()
@@ -45,7 +47,8 @@ func main() {
         // ===== [E] 스케줄러 설정 ====== //
         
         // ===== [S] 서버 설정 ====== //
-        http.HandleFunc("/video", middlewares.WithCORS(video.VideoHandler))
+        http.HandleFunc("/video", middlewares.WithCORS(video.VideoHandler(oCmdManager)))
+        http.HandleFunc("/fileSend", middlewares.WithCORS(fileSend.FileSendHandler))
         // HLS 파일 제공을 위한 HTTP 서버설정
         fileServer := http.FileServer(http.Dir(os.Getenv("HLS_DIR")))
         
@@ -60,6 +63,5 @@ func main() {
                 log.Error("HTTP 서버 오류", zap.Error(sErr))
         }
         // ===== [E] 서버 설정 ====== //
-        
 }
         

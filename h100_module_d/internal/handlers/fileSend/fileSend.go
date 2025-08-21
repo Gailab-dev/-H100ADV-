@@ -9,11 +9,77 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"encoding/json"
+	"strconv"
 
 	"go.uber.org/zap"
 
 	"local.dev/h100_module_d/logger"
 )
+
+type Response struct {
+        Result string `json:"result"`
+}
+
+/**
+ * 파일 전송 핸들러 
+ * @param       type    	파일 요청 유형 (image: 이미지, video: 영상)
+ * @param       fileName	파일명
+ * @param       id      	cmdManager의 id
+ * @return      result  결과값
+ */
+func FileSendHandler(res http.ResponseWriter, req *http.Request) {
+        if req.Method != http.MethodPost {
+                http.Error(res, "Method not allowed", http.StatusMethodNotAllowed)
+                return
+        }
+
+        bodyBytes, err := io.ReadAll(req.Body) // body 값
+        if err != nil {
+                http.Error(res, "Failed to read request body", http.StatusInternalServerError)
+                return
+        }
+        defer req.Body.Close()
+
+        var bData map[string]interface{} // json 파싱한 body 값
+        if err := json.Unmarshal(bodyBytes, &bData); err != nil {
+                http.Error(res, "JSON 파싱 실패", http.StatusBadRequest)
+                return
+        }
+
+        tType, tOk := bData["type"] // 파일 요청 유형
+		if !tOk {
+                logger.Log.Error("type 키가 존재하지 않습니다.", zap.Error(err))
+				return
+        }
+
+		tFileName, tOk := bData["fileName"] // 파일 요청 유형
+        if !tOk {
+                logger.Log.Error("fileName 키가 존재하지 않습니다.", zap.Error(err))
+				return
+        }
+
+		filePath := ""
+	
+        if tType == "image" {
+        	filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_images/")
+        } else if tType == "video" {
+			filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_videos/")
+		} else {
+			http.Error(res, "Invalid body content", http.StatusBadRequest)
+		}
+
+		resVal := FileSender(filePath, tFileName.(string), fmt.Sprintf("http://%s/fileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
+		logger.Log.Info(fmt.Sprintf("resVal : ", strconv.FormatBool(resVal)))
+		response := Response{Result: strconv.FormatBool(resVal)}
+		res.Header().Set("Content-Type", "application/json")
+
+		if err := json.NewEncoder(res).Encode(response); err != nil {
+			logger.Log.Error("failed to encode response: ", zap.Error(err))
+		}
+
+		return
+}
 
 /**
  * 단일 파일 전송 함수
@@ -21,14 +87,16 @@ import (
  * @param	sFileName    파일명
  * @param	sendUrl      수신 url
  */
-func FileSender(sFilePath string, sFileName string, sendUrl string) {
+func FileSender(sFilePath string, sFileName string, sendUrl string) bool {
 	filePath := filepath.Join(sFilePath, sFileName)
 	file, fErr := os.Open(filePath)
 	if fErr != nil {
 		logger.Log.Error(fmt.Sprintf("파일 열기 실패: %s", filePath), zap.Error(fErr))
-		return
+		defer file.Close()
+		return false
+	} else {
+		defer file.Close()
 	}
-	defer file.Close()
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -40,7 +108,7 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) {
 	part, pErr := writer.CreateFormFile("file", sFileName)
 	if pErr != nil {
 		logger.Log.Error("FormFile 생성 실패", zap.Error(pErr))
-		return
+		return false
 	}
 	io.Copy(part, file)
 
@@ -50,6 +118,7 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) {
 	req, rErr := http.NewRequest("POST", sendUrl, body)
 	if rErr != nil {
 		logger.Log.Error("POST 요청 생성 실패", zap.Error(rErr))
+		return false
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -57,11 +126,14 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) {
 	resp, reErr := client.Do(req)
 	if reErr != nil {
 		logger.Log.Error("클라이언트 요청 생성 실패", zap.Error(reErr))
+		return false
 	}
 	defer resp.Body.Close()
 
 	respBody, _ := io.ReadAll(resp.Body)
 	logger.Log.Info(fmt.Sprintf("서버 응답: %s", string(respBody)))
+
+	return true
 }
 
 /**
@@ -71,7 +143,7 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) {
  * @return      result  결과값
  */
 func FileSendScheduler() {
-	videoFilePath := os.Getenv("VIDEO_FILE_PATH") // 송신할 파일이 있는 폴더 경로
+	videoFilePath := os.Getenv("FILE_PATH") // 송신할 파일이 있는 폴더 경로
 	cloudReceiveIp := os.Getenv("CLOUD_RECEIVE_IP") // 클라우드 수신 모듈 IP
 
 	logger.Log.Info("파일 보내기 시작")
@@ -86,6 +158,6 @@ func FileSendScheduler() {
 			continue // 하위 폴더는 무시
 		}
 
-		FileSender(videoFilePath, entry.Name(), fmt.Sprintf("http://%s/fileReceive", cloudReceiveIp))
+		logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(videoFilePath, entry.Name(), fmt.Sprintf("http://%s/fileReceive", cloudReceiveIp))))
 	}
 }
