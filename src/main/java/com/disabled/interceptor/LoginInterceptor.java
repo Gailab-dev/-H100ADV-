@@ -4,10 +4,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import com.disabled.component.ConnectionPoolManager;
 
 public class LoginInterceptor implements HandlerInterceptor{
     
+	@Autowired
+	ConnectionPoolManager connectionPoolManager;
+	
 	/*
 	 * 세션이 사라지면 자동으로 로그아웃하여 로그인 페이지로 이동
 	 * handler:
