@@ -170,3 +170,24 @@ button {
     padding: 10px;
     text-align: center;
 }
+
+/* 라이트박스 모달 */
+.lb-modal{position:fixed;inset:0;display:none;z-index:9999}
+.lb-modal.is-open{display:block}
+.lb-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.lb-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:#222;border-radius:12px;overflow:hidden;max-width:min(90vw,1200px);max-height:90vh;
+  box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.lb-dialog .lb-video {
+  display: block;
+  width: 800px;     /* 원하는 너비 */
+  height: 600px;    /* 원하는 높이 */
+  object-fit: contain; /* 비율 유지 (cover로 바꾸면 꽉 채우기) */
+  max-width: 100%;
+  max-height: 90vh;
+}
+.lb-close{position:absolute;right:10px;top:6px;border:0;background:transparent;font-size:28px;color:#fff;cursor:pointer}
+body.lb-open{overflow:hidden}
+
+/* 아이콘 버튼 기본 */
+.video-icon-btn{border:0;background:transparent;cursor:pointer;vertical-align:middle}
