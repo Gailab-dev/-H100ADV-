@@ -60,16 +60,18 @@ func FileSendHandler(res http.ResponseWriter, req *http.Request) {
         }
 
 		filePath := ""
+		resVal := false
 	
         if tType == "image" {
         	filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_images/")
+			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("http://%s/imageFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
         } else if tType == "video" {
 			filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_videos/")
+			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("http://%s/videoFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
 		} else {
 			http.Error(res, "Invalid body content", http.StatusBadRequest)
 		}
 
-		resVal := FileSender(filePath, tFileName.(string), fmt.Sprintf("http://%s/fileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
 		logger.Log.Info(fmt.Sprintf("resVal : ", strconv.FormatBool(resVal)))
 		response := Response{Result: strconv.FormatBool(resVal)}
 		res.Header().Set("Content-Type", "application/json")

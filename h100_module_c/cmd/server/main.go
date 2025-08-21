@@ -32,7 +32,9 @@ func main() {
         defer database.Close()
         // ===== [E] mariadb 설정 ====== //
         // ===== [S] 핸들러 등록 ====== //
-        http.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.FileReceive))
+        http.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.OneFileReceive))
+        http.HandleFunc("/imageFileReceive", middlewares.WithCORS(fileReceive.ImageFileReceive))
+        http.HandleFunc("/videoFileReceive", middlewares.WithCORS(fileReceive.VideoFileReceive))
         http.HandleFunc("/insertEventData",insertEvent.InsertEventData())
         // ===== [E] 핸들러 등록 ====== //
         // ===== [S] 서버 설정 ====== //
