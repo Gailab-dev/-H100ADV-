@@ -109,4 +109,15 @@
 	<session-config>
 		<session-timeout>30</session-timeout>
 	</session-config>
+	
+	<!-- 비디오 파일 스트리밍시 Tomcat에 정적 리소스 캐싱 비활성화 -->
+	<mime-mapping>
+  		<extension>m3u8</extension>
+  		<mime-type>application/vnd.apple.mpegurl</mime-type>
+	</mime-mapping>
+	<mime-mapping>
+  		<extension>ts</extension>
+  		<mime-type>video/mp2t</mime-type>
+	</mime-mapping>
+	
 </web-app>

@@ -10,20 +10,79 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/deviceList.css">
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-	<script>	
-		const hls = null;
-		
+	<script
+  src="https://code.jquery.com/jquery-3.7.1.js"
+  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+  crossorigin="anonymous"></script>
+	<script>
+		/*
+		$(function(){
+			const video = document.getElementById('video');
+			// jetson : 192.168.0.31, 개발 : 192.18.0.15
+			// ccty : 192.168.0.39
+			const videoSrc = 'http://192.168.0.15:8087/index.m3u8';
+			
+			const hls = new Hls({
+				maxBufferLength:10,
+				maxBufferSize: 60 * 1000 * 1000
+			});
+			
+			if(Hls.isSupported()){
+				
+				hls.loadSource(videoSrc);
+				hls.attachMedia(video);
+				
+				hls.on(Hls.Events.MANIFEST_PARSED,() => {
+					video.play();
+				});
+				
+				hls.on(Hls.Events.ERROR,function(event,data){
+					alert("🔴 HLS Error:" + data.type + " / " + data.details + " / " + data);
+				      if (data.fatal) {
+				        switch (data.type) {
+				          // 네트워크 오류인 경우
+				          case Hls.ErrorTypes.NETWORK_ERROR:
+				            hls.startLoad();
+				            alert("⚠️ 네트워크 오류, 재시도 중...");
+				            break;
+				          // 미디어 오류인 경우
+				          case Hls.ErrorTypes.MEDIA_ERROR:
+				            hls.recoverMediaError();
+				            alert("⚠️ 미디어 오류, 복구 시도 중...");
+				            break;
+				          // 그 외 오류, 스트리밍 중단
+				          default:
+				            hls.destroy();
+				            alert("❌ 복구 불가, 스트리밍 중단");
+				            break;
+				        }
+				      }
+				});
+			} else if(video.canPlayType('application/vnd.apple.mpegurl')){
+				// video 타입이 hls가 아닌 경우 mpegurl 타입으로 video 실행
+				video.src = videoSrc;
+				video.muted = true;
+				video.play().catch(err => {
+					alert("비디오 플레이 중 오류 : " + err);
+				});
+			} else {
+				alert('HLS를 지원하지 않는 브라우저입니다.')
+			}
+		});
+		*/
 		/*
 		* 실시간 스트리밍 실행
 		*/
 		function playVideo(){
 			
 			hls = new Hls({
-				maxBufferLength:3	
+				maxBufferLength:10,
+				maxBufferSize: 60 * 1000 * 1000
 			});
 			
 			const video = document.getElementById('video');
 			// jetson : 192.168.0.31, 개발 : 192.18.0.15
+			// ccty : 192.168.0.39
 			const videoSrc = 'http://192.168.0.15:8087/index.m3u8';
 			
 			if(Hls.isSupported()){
@@ -36,7 +95,7 @@
 				});
 				
 				hls.on(Hls.Events.ERROR,function(event,data){
-					alert("🔴 HLS Error:", data.type, data.details, data);
+					alert("🔴 HLS Error:" + data.type + " / " + data.details + " / " + data);
 				      if (data.fatal) {
 				        switch (data.type) {
 				          // 네트워크 오류인 경우
@@ -61,7 +120,11 @@
 				// video 타입이 hls가 아닌 경우 mpegurl 타입으로 video 실행
 				video.src = videoSrc;
 				video.addEventListener('loadedmetadata',() => {
-					video.play();
+					
+					video.muted = true;
+					video.play().catch(err => {
+						alert("비디오 플레이 중 오류 : " + err);
+					});
 				});
 			} else {
 				alert('HLS를 지원하지 않는 브라우저입니다.')
@@ -156,7 +219,10 @@
 	            });
 	        }
 	    });
-		
+	  	
+	  	// 자동실행
+		playVideo();
+	  	
 		/*
 			1. video 태그에 넣을 url
   				- url  > http://[개발서버ip]:8087/index.m3u8
@@ -210,7 +276,9 @@
 			<main class="main">
 				<h1>실시간 영상</h1>	
 			    <div class="video-controller-group">
-				    <video id="video" width="720" controls autoplay></video>
+				    <video id="video" width="720" controls autoplay>
+				    	<source src="http://192.168.0.15:8087/index.m3u8" type="application/x-mpegURL">
+				    </video>
 				
 				    <div class="controller-center-wrapper">
 				        <div class="controller-wrapper">

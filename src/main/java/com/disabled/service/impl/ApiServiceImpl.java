@@ -1,7 +1,9 @@
 package com.disabled.service.impl;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -16,8 +18,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.disabled.component.ConnectionPoolManager;
 import com.disabled.controller.DeviceListController;
 import com.disabled.service.ApiService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,6 +37,10 @@ public class ApiServiceImpl implements ApiService{
 	// 실시간 스트리밍을 위한 버퍼 크기
 	private static final int BUFFER_SIZE = 8192;
 	
+	// connection pool 관리
+	@Autowired
+	ConnectionPoolManager connectionPoolManager;
+	
 	/**
 	 * 실시간 영상 스트리밍
 	 * @Param
@@ -40,10 +48,6 @@ public class ApiServiceImpl implements ApiService{
 	 */
 	@Override
 	public void forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp) {
-		
-		// GS인증시 지워야함
-		System.out.println(dvIp);
-		// GS인증시 지워야함
 		
 		// content-type : application/x-www-form-urlencoded 
 		String contentType = "application/x-www-form-urlencoded";
@@ -67,11 +71,9 @@ public class ApiServiceImpl implements ApiService{
 			
 		} catch (UnsupportedEncodingException e) {
 			
-			logger.error("connection pool 생성 오류 : {}",e);
+			logger.error("connection pool 생성 오류 : ",e);
 			
-		} finally {
-			if (conn != null) conn.disconnect();
-		}
+		} 
 		
 		
 	}
@@ -85,8 +87,6 @@ public class ApiServiceImpl implements ApiService{
 	 */
 	@Override
 	public HttpURLConnection createPostConnection(String targetUrl, String body, String contentType) {
-		
-		System.out.println("createPostConnection in");
 		
 		URL url = null;
 		HttpURLConnection conn = null;
@@ -103,23 +103,22 @@ public class ApiServiceImpl implements ApiService{
 	        conn.setRequestProperty("Content-Type", contentType);
 	        conn.setRequestProperty("Accept", "application/octet-stream");
 	        
-	        // 실시간 스트리밍 결과 받기
+	        // 요청 송신
+	        
 	        try(OutputStream os = conn.getOutputStream()){
 	        	
 	        	os.write(body.getBytes(StandardCharsets.UTF_8));
+	        	os.flush();
 	        }
+	        
 	        
 		} catch (MalformedURLException e) {
 			
-			logger.error("open connection 생성 에러 : ",e);
+			logger.error("createPostConnection에서 open connection 생성 에러 : ",e);
 			
 		} catch (IOException e) {
-			logger.error("실시간 스트리밍 에러 : ",e);
 			
-		} finally {
-			if(conn != null) {
-				conn.disconnect();
-			}
+			logger.error("createPostConnection에서 실시간 스트리밍 에러 : ",e);
 			
 		}
 		
@@ -133,11 +132,25 @@ public class ApiServiceImpl implements ApiService{
 	public void copyResponse(HttpURLConnection conn, HttpServletResponse res) {
 		
 		try {
+			
+			// 응답 수신
+			try (InputStream is = conn.getInputStream();
+		             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+		            StringBuilder sb = new StringBuilder();
+		            String line;
+		            while ((line = br.readLine()) != null) {
+		                sb.append(line);
+		                logger.debug("Device로부터 응답 수신 : " + sb.toString());
+		            }
+		            
+			/*
 			// 1. connection pool의 respose code와 contentType 설정값 설정
 			res.setStatus(conn.getResponseCode());
 			res.setContentType(conn.getContentType());
 			
 			// 2. connetion pool 객체가 연결되어 있는 동안 outputStream 객체 실행하여 데이터 수신
+			
+			
 	        try (InputStream inputStream = conn.getInputStream();
                 OutputStream outputStream = res.getOutputStream()) {
 	           	
@@ -151,15 +164,13 @@ public class ApiServiceImpl implements ApiService{
                
                // 4. 받은 데이터를 실시간 스트리밍
                outputStream.flush();
+               
+               */
             }
 		} catch (IOException e) {
 			
-			logger.error("response 에러 :{}",e);
-		} finally {
-			if(conn != null) {
-				conn.disconnect();
-			}
-		}
+			logger.error("response 에러 : ",e);
+		} 
 		
 	}
 	
@@ -172,6 +183,9 @@ public class ApiServiceImpl implements ApiService{
 		// content-type : application/json 
 		String contentType = "application/json";
 		
+		// connetion 객체를 connection pool에서 가져오기
+		HttpURLConnection conn = connectionPoolManager.getConnection(dvIp);
+		
 		try {
 			// 디바이스Url
 			String targetUrl = "http://" + dvIp +"/video";
@@ -180,11 +194,50 @@ public class ApiServiceImpl implements ApiService{
 	        ObjectMapper mapper = new ObjectMapper();
 	        String body = mapper.writeValueAsString(json);
 			
-			// 2. connection pool 생성
-			HttpURLConnection conn = createPostConnection(targetUrl, body, contentType);
-			
-			// 3. output Stream
-			copyResponse(conn, res);
+	        // 2. type 값 추출 
+	        Object obj = json.get("type");
+	        String type = "";
+	        
+	        if(obj != null) {
+	        	type = obj.toString();
+	        }else {
+	        	logger.error("type 값 없음");
+	        	return;
+	        }
+	        
+	        // 3. type 값 별 분기 실행
+	        if(type.equals("start")) {
+	        	
+	        	// 3-1. connection pool 생성
+	        	if(conn == null) {
+	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
+	        		conn = createPostConnection(targetUrl, body, contentType);
+	        		// connectionPool에 해당 디바이스 추가
+	        		connectionPoolManager.addConnection(dvIp, conn);
+	        	}
+	        	
+				// 3-2. output Stream
+				copyResponse(conn, res);
+	        } else if(type.equals("end")) {
+	        	
+	        	// 3-3. connection pool 종료
+	        	if(conn != null) {
+	        		
+	        		connectionPoolManager.closeConnection(dvIp);
+	        		conn.disconnect();
+	        	}
+	        } else if(type.equals("U")) {
+	        	// 추후 고도화
+	        } else if(type.equals("D")) {
+	        	// 추후 고도화
+	        } else if(type.equals("L")) {
+	        	// 추후 고도화
+	        } else if(type.equals("R")) {
+	        	// 추후 고도화
+	        } else {
+	        	logger.error("잘못된 type 값 전송");
+	        	return;
+	        }
 			
 		} catch (JsonProcessingException e) {
 			logger.error("JSON 변환 에러 : ",e);
