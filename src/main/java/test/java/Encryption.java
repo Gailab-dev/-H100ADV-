@@ -16,8 +16,6 @@ public class Encryption {
 		EgovPasswordEncoder pe = new EgovPasswordEncoder();
 		
 		String str = pe.encryptPassword("asdf");
-		System.out.println(str);
-		System.out.println(pe.checkPassword("asdf", str));
 	}
 
 }
