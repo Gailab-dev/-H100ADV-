@@ -45,10 +45,15 @@ func main() {
         }
         c.Start()
         // ===== [E] 스케줄러 설정 ====== //
+
+        // ===== [S] SSL 적용 ====== //
+        // mux := http.NewServeMux()
+        // ===== [E] SSL 적용 ====== //
         
         // ===== [S] 서버 설정 ====== //
         http.HandleFunc("/video", middlewares.WithCORS(video.VideoHandler(oCmdManager)))
         http.HandleFunc("/fileSend", middlewares.WithCORS(fileSend.FileSendHandler))
+
         // HLS 파일 제공을 위한 HTTP 서버설정
         fileServer := http.FileServer(http.Dir(os.Getenv("HLS_DIR")))
         
@@ -58,6 +63,7 @@ func main() {
         log.Info("video App Start!")
         
         sErr := http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), nil)
+        //  sErr := http.ListenAndServeTLS(":"+os.Getenv("PORT"), os.Getenv("TLS_CERT_FILE"), os.Getenv("TLS_KEY_FILE"), mux)
         
         if sErr != nil {
                 log.Error("HTTP 서버 오류", zap.Error(sErr))

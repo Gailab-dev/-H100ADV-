@@ -5,6 +5,26 @@
 
 ==============================================================
 
+0. SSL 설치
+	1) sudo apt update && sudo apt install -y openssl
+	2) sudo mkdir -p /etc/ssl/example.com
+	3) sudo openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout /etc/ssl/example.com/privkey.pem \
+  -out    /etc/ssl/example.com/fullchain.pem \
+  -days 365 \
+  -subj "/CN=example.com"
+  4) 발급 후 파일 경로(자동 갱신 포함):
+
+인증서: /home/dsic/h100_module_c/ssl/privkey.pem
+프라이빗키: /home/dsic/h100_module_c/ssl/fullchain.pem
+	6) cd /home/dsic/h100_module_c
+	7) mkdir ssl
+	8) sudo cp /etc/ssl/example.com/fullchain.pem /home/dsic/h100_module_c/ssl/
+	9) sudo cp /etc/ssl/example.com/privkey.pem /home/dsic/h100_module_c/ssl/
+	10) cd ssl
+	11) sudo chown -R dsic:dsic /home/dsic/h100_module_c/ssl
+
+
 1. 소스 업로드
 	1) 개발자 계정으로 서버 접속
 

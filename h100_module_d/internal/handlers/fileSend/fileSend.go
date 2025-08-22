@@ -64,10 +64,10 @@ func FileSendHandler(res http.ResponseWriter, req *http.Request) {
 	
         if tType == "image" {
         	filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_images/")
-			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("http://%s/imageFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
+			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("https://%s/imageFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
         } else if tType == "video" {
 			filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_videos/")
-			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("http://%s/videoFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
+			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("https://%s/videoFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
 		} else {
 			http.Error(res, "Invalid body content", http.StatusBadRequest)
 		}
@@ -156,10 +156,31 @@ func FileSendScheduler() {
 	}
 
 	for _, entry := range files {
-		if entry.IsDir() {
-			continue // 하위 폴더는 무시
-		}
+		if !entry.IsDir() {
+			continue // 하위 파일은 무시
+		} else {
+			name := entry.Name()
 
-		logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(videoFilePath, entry.Name(), fmt.Sprintf("http://%s/fileReceive", cloudReceiveIp))))
+			if name == "output_images" || name == "output_videos" {
+				files, err := os.ReadDir(filepath.Join(videoFilePath, name))
+				
+				if err != nil {
+					logger.Log.Info(fmt.Sprintf("하위 디렉토리 이름: %s", filepath.Join(videoFilePath, name)))
+					logger.Log.Error("하위 디렉토리 열기 실패", zap.Error(err))
+				}
+
+				for _, entry2 := range files {
+					if entry2.IsDir() {
+						continue // 하위 파일은 무시
+					} else {
+						if name == "output_images" {
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_images/"), entry2.Name(), fmt.Sprintf("http:s//%s/imageFileReceive", cloudReceiveIp))))
+						} else if name == "output_videos" {
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_videos/"), entry2.Name(), fmt.Sprintf("http:s//%s/videoFileReceive", cloudReceiveIp))))
+						}
+					}
+				}
+			}
+		}
 	}
 }
