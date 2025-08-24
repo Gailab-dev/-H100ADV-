@@ -32,7 +32,7 @@ public class EventListController {
 	EventListService eventListService;
 	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(EventListController.class);
 	
 	// 초기화면으로 redirect
 	@RequestMapping("")
@@ -141,7 +141,8 @@ public class EventListController {
 			, @RequestParam(value="startDate", required=false) String startDate
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="searchKeyword",required=false) String searchKeyword
-			, Model model) {
+			, Model model
+			, HttpServletResponse res) {
 		
 		try {
 			Map<String, Object> eventListDetail = new HashMap<String, Object>();
@@ -154,6 +155,9 @@ public class EventListController {
 			model.addAttribute("searchKeyword", searchKeyword);
 			model.addAttribute("startDate", startDate);
 			model.addAttribute("endDate", endDate);
+			
+			// 이미지파일, 영상 파일 module에서 수신
+			eventListService.requestFileFromModule(res, evId,eventListDetail);
 			
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달로 인한 오류 발생 : ",e);
