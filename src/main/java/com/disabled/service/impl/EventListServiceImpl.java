@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import com.disabled.controller.DeviceListController;
 import com.disabled.mapper.EventListMapper;
+import com.disabled.service.ApiService;
 import com.disabled.service.EventListService;
 import com.disabled.service.FileService;
 
@@ -34,8 +38,11 @@ public class EventListServiceImpl implements EventListService{
 	@Autowired
 	FileService fileService;
 	
+	@Autowired
+	ApiService apiService;
+	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(EventListServiceImpl.class);
 	
 	
 	@Override
@@ -267,4 +274,91 @@ public class EventListServiceImpl implements EventListService{
 		}
 
 	}
+	
+	@Override
+	public void requestFileFromModule(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
+		
+		System.out.println("requertFileFromModule in");
+		
+		// 디바이스 IP
+		String dvIp = "";
+		
+		// 요청 json
+		HashMap<String, Object> json = new HashMap<String, Object>();
+		
+		try {
+			
+			System.out.println(eventListDetail);
+			System.out.println(eventListDetail.get("ev_has_img"));
+			
+			// 이미지 파일이 없다면
+			if("0".equals(eventListDetail.get("ev_has_img").toString())) {
+				
+				System.out.println("no image");
+				System.out.println("evId : " + evId);
+				
+				// 이벤트 ID에 해당하는 deviceIp 가져오기
+				dvIp = getDvIpByEvId(evId);
+				
+				System.out.println("dvIp : "+dvIp);
+				
+				json.put("type", "image");
+				json.put("fileName", eventListDetail.get("ev_img_path").toString());
+				
+				// 이미지 파일 가져오기
+				apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
+				
+				System.out.println("updateEvHasImgOne in");
+				
+				// ev_has_mov update
+				eventListMapper.updateEvHasImgOne(evId);
+				
+			}
+			
+			// 영상 파일이 없다면
+			if("0".equals(eventListDetail.get("ev_has_mov").toString())) {
+				
+				System.out.println("no video");
+				
+				// 이벤트 ID에 해당하는 deviceIp 가져오기
+				dvIp = getDvIpByEvId(evId);
+				json.put("type", "video");
+				json.put("fileName", eventListDetail.get("ev_mov_path").toString());
+				
+				// 영상 파일 가져오기
+				apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
+				
+				System.out.println("updateEvHasMovOne in");
+				
+				// ev_has_mov update
+				eventListMapper.updateEvHasMovOne(evId);
+			}
+			
+		} catch (DataAccessException e2) {
+			logger.error("requestFileFromModule에서 evHasMovChange 또는 evHasImgChange 오류 발생 : ",e2);
+		} catch (RuntimeException e) {
+			logger.error("requestFileFromModule에서 오류 발생 : ",e);
+		} 
+	}
+	
+	/**
+	 * 이벤트를 보낸 디바이스의 IP를 조회
+	 * @param evId : 이벤트 ID
+	 * @return dvIp : 디바이스 IP
+	 */
+	@Override
+	public String getDvIpByEvId(Integer evId) {
+		
+		//dvIp
+		String dvIp = "";
+		
+		try {
+			
+			dvIp = eventListMapper.getDvIpByEvId(evId);
+		} catch (DataAccessException e) {
+			logger.error("getDvIpByEvId에서 SQL문 오류 : ",e);
+		}
+		return dvIp;
+	}
+	
 }
