@@ -41,5 +41,25 @@
 			A.ev_id = #{evId}
 		</where>
 	</select>
+	
+	<select id="getDvIpByEvId" parameterType="int" resultType="java.lang.String">
+		SELECT B.dv_ip AS dvIp
+		FROM tbl_event_data A
+		LEFT JOIN tbl_device B
+		ON A.ev_dv_id = B.dv_id
+		WHERE A.ev_id = #{evId}
+	</select>
+	
+	<update id="updateEvHasImgOne" parameterType="int">
+		UPDATE tbl_event_data
+		SET ev_has_img = 1
+		WHERE ev_id = #{evId}
+	</update>
+	
+	<update id="updateEvHasMovOne" parameterType="int">
+		UPDATE tbl_event_data
+		SET ev_has_mov = 1
+		WHERE ev_id = #{evId} 
+	</update>
 
 </mapper>
