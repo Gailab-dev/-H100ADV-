@@ -14,7 +14,7 @@ import com.disabled.service.CryptoARIAService;
 public class CryptoARIAController {
 	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(CryptoARIAController.class);
 	
 	@Autowired
 	CryptoARIAService cryptoARIAService;
