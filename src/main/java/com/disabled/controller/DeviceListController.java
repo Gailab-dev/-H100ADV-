@@ -151,7 +151,7 @@ public class DeviceListController {
 			}
 			
 			// 디바이스 IP를 통한 실시간 스트리밍
-			apiService.forwardStreamToJSON(res, json,dvIp);
+			apiService.forwardStreamToJSON(res, json, dvIp, "/video");
 		} catch (IllegalArgumentException e) {
 			logger.error("유효성 검사 오류: ",e);
 		}
