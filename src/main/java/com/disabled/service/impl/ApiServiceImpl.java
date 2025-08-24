@@ -1,6 +1,7 @@
 package com.disabled.service.impl;
 
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,6 +14,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -22,7 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.disabled.component.ConnectionPoolManager;
-import com.disabled.controller.DeviceListController;
 import com.disabled.service.ApiService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,10 +33,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class ApiServiceImpl implements ApiService{
 	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(ApiServiceImpl.class);
 	
 	// 실시간 스트리밍을 위한 버퍼 크기
-	private static final int BUFFER_SIZE = 8192;
+	private static final int BUFFER_SIZE = 4096;
+	
+	//context path
+	@Autowired
+	private ServletContext servletContext;
 	
 	// connection pool 관리
 	@Autowired
@@ -104,7 +109,6 @@ public class ApiServiceImpl implements ApiService{
 	        conn.setRequestProperty("Accept", "application/octet-stream");
 	        
 	        // 요청 송신
-	        
 	        try(OutputStream os = conn.getOutputStream()){
 	        	
 	        	os.write(body.getBytes(StandardCharsets.UTF_8));
@@ -143,34 +147,40 @@ public class ApiServiceImpl implements ApiService{
 		                logger.debug("Device로부터 응답 수신 : " + sb.toString());
 		            }
 		            
-			/*
-			// 1. connection pool의 respose code와 contentType 설정값 설정
-			res.setStatus(conn.getResponseCode());
-			res.setContentType(conn.getContentType());
-			
-			// 2. connetion pool 객체가 연결되어 있는 동안 outputStream 객체 실행하여 데이터 수신
-			
-			
-	        try (InputStream inputStream = conn.getInputStream();
-                OutputStream outputStream = res.getOutputStream()) {
-	           	
-               byte[] buffer = new byte[BUFFER_SIZE];
-               int bytesRead;
-               
-               // 3. outpusStream 객체에 받은 데이터 저장
-               while ((bytesRead = inputStream.read(buffer)) != -1) {
-                   outputStream.write(buffer, 0, bytesRead);
-               }
-               
-               // 4. 받은 데이터를 실시간 스트리밍
-               outputStream.flush();
-               
-               */
+
             }
 		} catch (IOException e) {
-			
-			logger.error("response 에러 : ",e);
+			logger.error("copyResponse 에서 에러 발생 : ",e);
 		} 
+		
+	}
+	
+	/**
+	 * 
+	 * @param conn
+	 * @param res
+	 */
+	public void fileResponse(HttpURLConnection conn, String filePath) {
+		
+		try {
+		
+			// 2. connetion pool 객체가 연결되어 있는 동안 outputStream 객체 실행하여 데이터 수신
+			try (InputStream inputStream = conn.getInputStream();
+					FileOutputStream fileOutputStream = new FileOutputStream(filePath)) {
+           	
+				byte[] buffer = new byte[BUFFER_SIZE];
+				int bytesRead;
+           
+				// 3. outpusStream 객체에 받은 데이터 저장
+				while ((bytesRead = inputStream.read(buffer)) != -1) {
+					fileOutputStream.write(buffer, 0, bytesRead);
+				}
+           
+				logger.info("파일 다운로드 성공 : " + filePath);
+			}
+        } catch (IOException e) {
+        	logger.error("fileResponse 에서 에러 발생 : ",e);
+		}
 		
 	}
 	
@@ -178,17 +188,23 @@ public class ApiServiceImpl implements ApiService{
 	 * 송신 데이터 타입이 json객체일 때 실시간 영상 스트리밍
 	 */
 	@Override
-	public void forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp ) {
+	public void forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path ) {
+		
+		System.out.println("forwardStreamToJSON in");
 		
 		// content-type : application/json 
 		String contentType = "application/json";
 		
+		System.out.println(dvIp);
+		
 		// connetion 객체를 connection pool에서 가져오기
 		HttpURLConnection conn = connectionPoolManager.getConnection(dvIp);
 		
+		// 디바이스 Url
+		String targetUrl = "";
+		
 		try {
-			// 디바이스Url
-			String targetUrl = "http://" + dvIp +"/video";
+
 			
 	        // 1. JSON → 문자열
 	        ObjectMapper mapper = new ObjectMapper();
@@ -196,10 +212,16 @@ public class ApiServiceImpl implements ApiService{
 			
 	        // 2. type 값 추출 
 	        Object obj = json.get("type");
+	        
+	        System.out.println("obj : "+obj);
+	        
 	        String type = "";
 	        
 	        if(obj != null) {
 	        	type = obj.toString();
+	        	
+	        	System.out.println("type : "+type);
+	        	
 	        }else {
 	        	logger.error("type 값 없음");
 	        	return;
@@ -207,6 +229,11 @@ public class ApiServiceImpl implements ApiService{
 	        
 	        // 3. type 값 별 분기 실행
 	        if(type.equals("start")) {
+	        	
+	        	//디바이스 Url
+	        	targetUrl = "http://" + dvIp + path;
+	        	
+	        	System.out.println("targetUrl : "+targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
 	        	if(conn == null) {
@@ -234,6 +261,63 @@ public class ApiServiceImpl implements ApiService{
 	        	// 추후 고도화
 	        } else if(type.equals("R")) {
 	        	// 추후 고도화
+	        } else if(type.equals("image")) {
+	        	
+	        	System.out.println("image");
+	        	
+	        	//디바이스 Url
+	        	targetUrl = "http://" + dvIp + path;
+	        	
+	        	System.out.println("targetUrl : "+targetUrl);
+	        	
+	        	// 3-1. connection pool 생성
+	        	if(conn == null) {
+	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
+	        		conn = createPostConnection(targetUrl, body, contentType);
+	        		// connectionPool에 해당 디바이스 추가
+	        		connectionPoolManager.addConnection(dvIp, conn);
+	        	}
+	        	
+	        	String filePath = servletContext.getRealPath("/img") + "/" + json.get("fileName");
+	        	
+				// 3-2. file stream
+	        	fileResponse(conn, filePath);
+	        	
+	        	// 3-3. connection pool 종료
+	        	if(conn != null) {
+	        		
+	        		connectionPoolManager.closeConnection(dvIp);
+	        		conn.disconnect();
+	        	}
+	        } else if(type.equals("video")) {
+	        	
+	        	System.out.println("video");
+	        	
+	        	//디바이스 Url
+	        	targetUrl = "http://" + dvIp + path;
+	        	
+	        	System.out.println("targetUrl : "+targetUrl);
+	        	
+	        	// 3-1. connection pool 생성
+	        	if(conn == null) {
+	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
+	        		conn = createPostConnection(targetUrl, body, contentType);
+	        		// connectionPool에 해당 디바이스 추가
+	        		connectionPoolManager.addConnection(dvIp, conn);
+	        	}
+	        	
+	        	String filePath = servletContext.getRealPath("/img") + "/" + json.get("fileName");
+	        	
+				// 3-2. file stream
+	        	fileResponse(conn, filePath);
+	        	
+	        	// 3-3. connection pool 종료
+	        	if(conn != null) {
+	        		
+	        		connectionPoolManager.closeConnection(dvIp);
+	        		conn.disconnect();
+	        	}
+				
 	        } else {
 	        	logger.error("잘못된 type 값 전송");
 	        	return;
@@ -241,7 +325,8 @@ public class ApiServiceImpl implements ApiService{
 			
 		} catch (JsonProcessingException e) {
 			logger.error("JSON 변환 에러 : ",e);
-		}
+		} 
 		
 	}
+	
 }
