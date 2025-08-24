@@ -3,13 +3,11 @@ package com.disabled.service.impl;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.NoSuchFileException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.disabled.controller.DeviceListController;
 import com.disabled.service.FileService;
 
 @Service
@@ -21,7 +19,7 @@ public class FileServiceImpl implements FileService{
 	final static String OS = System.getProperty("os.name").toLowerCase();
 	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(FileServiceImpl.class);
 	
 	/**
 	 * OS에 맞는 패스 구분자 변경 함수
