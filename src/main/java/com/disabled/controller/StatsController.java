@@ -27,7 +27,7 @@ import com.disabled.service.StatsService;
 public class StatsController {
 	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(StatsController.class);
 	
 	@Autowired
 	StatsService statsService;
