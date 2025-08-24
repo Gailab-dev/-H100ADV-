@@ -21,7 +21,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 	DeviceListMapper deviceListMapper;
 	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(DeviceListServiceImpl.class);
 	
 	/**
 	 * 모든 디바이스 리스트를 가져오는 함수
