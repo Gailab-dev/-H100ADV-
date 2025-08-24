@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import com.disabled.controller.DeviceListController;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.mapper.StatsMapper;
 import com.disabled.service.StatsService;
@@ -27,7 +26,7 @@ public class StatsServiceImpl implements StatsService{
 	StatsMapper statsMapper;
 	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
+	private static final Logger logger = LoggerFactory.getLogger(StatsServiceImpl.class);
 	
 	/*
 	 * 아이디와 비밀번호를 통해 DB에 해당 계정이 있는지 확인
