@@ -17,4 +17,6 @@ public interface EventListService {
 	void mkdirForStream(String filePath);
 	String mkFullFilePath(String filePath);
 	void fileCheck(File file);
+	void requestFileFromModule(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail);
+	String getDvIpByEvId(Integer evId);
 }
