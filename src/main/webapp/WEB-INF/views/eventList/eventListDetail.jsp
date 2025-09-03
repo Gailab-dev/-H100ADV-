@@ -32,7 +32,7 @@
 			
 			<!-- 상세 이미지 -->
 			<div class="image-wrapper">
-				<img src="/gov-disabled-web-gs/eventList/imageView.do?filePath=${eventListDetail.ev_img_path}" alt="불법주차 리스트 상세 이미지" class="detail-image">
+				<img src="/imgFile/${eventListDetail.ev_img_path}" alt="불법주차 리스트 상세 이미지" class="detail-image">
 			</div>
 			<!-- 상세 정보 -->
 			<div class="detail-table-wrapper">
@@ -55,14 +55,15 @@
 							<c:choose>
 								<c:when test="${eventListDetail.ev_cd == 1}">비장애인 주차 🚫</c:when>
 								<c:when test="${eventListDetail.ev_cd == 2}">장애인 미등록차량 🚫</c:when>
-								<c:when test="${eventListDetail.ev_cd == 3}">스티커 불법 사용</c:when>
-								<c:when test="${eventListDetail.ev_cd == 4}">위험상황</c:when>
-								<c:when test="${eventListDetail.ev_cd == 5}">물건적재</c:when>
+								<c:when test="${eventListDetail.ev_cd == 3}">스티커 불법 사용 🚫</c:when>
+								<c:when test="${eventListDetail.ev_cd == 4}">위험상황 🚫</c:when>
+								<c:when test="${eventListDetail.ev_cd == 5}">물건적재 🚫</c:when>
+								<c:when test="${eventListDetail.ev_cd == 6}">이중주차 🚫</c:when>
 								<c:otherwise>기타</c:otherwise>
 							</c:choose>
 							<button type="button"
 							        class="video-icon-btn"
-							        data-video="/gov-disabled-web-gs/eventList/imageView.do?filePath=${eventListDetail.ev_mov_path}"  
+							        data-video="/videoFile/${eventListDetail.ev_mov_path}"  
 							        aria-controls="photoModal" aria-expanded="false"><!-- 여기에 동영상 URL -->
 								 <img alt="상세영상 보기"
 								      src="${pageContext.request.contextPath}/resources/images/영상 버튼.png"

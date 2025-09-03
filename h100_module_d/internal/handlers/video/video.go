@@ -138,7 +138,7 @@ func StartVideo(oCmdManager *CmdManager) string{
         logger.Log.Info("FFmpeg 시작...")
 
 	// FFmpeg 실행
-	oCmdManager = &CmdManager{}
+	// oCmdManager = &CmdManager{}
 	if oCmdManager.store == nil {
 		oCmdManager.store = make(map[string]*exec.Cmd)
 	}

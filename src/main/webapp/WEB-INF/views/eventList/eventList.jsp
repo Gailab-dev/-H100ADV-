@@ -73,7 +73,17 @@
 							<td>${item.ev_date}</td>
 							<td>${item.dv_addr}</td>
 							<td>${item.ev_car_num}</td>
-							<td>${item.ev_cd}</td>
+							<td>
+								<c:choose>
+									<c:when test="${item.ev_cd == 1}">비장애인 주차</c:when>
+									<c:when test="${item.ev_cd == 2}">장애인 미등록차량</c:when>
+									<c:when test="${item.ev_cd == 3}">스티커 불법 사용</c:when>
+									<c:when test="${item.ev_cd == 4}">위험상황</c:when>
+									<c:when test="${item.ev_cd == 5}">물건적재</c:when>
+									<c:when test="${item.ev_cd == 6}">이중주차</c:when>
+									<c:otherwise>기타</c:otherwise>
+								</c:choose>
+							</td>
 							<td><button onclick="eventListDetail(${item.ev_id})">상세보기</button></td>
 						</tr>
 					</c:forEach>
