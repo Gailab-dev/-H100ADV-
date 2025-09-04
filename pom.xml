@@ -266,7 +266,15 @@
 		    <artifactId>commons-logging</artifactId>
 		    <version>1.2</version>
 		</dependency>
-			
+		
+		<!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
+		<!-- jsonobject -->
+		<dependency>
+		    <groupId>com.googlecode.json-simple</groupId>
+		    <artifactId>json-simple</artifactId>
+		    <version>1.1</version>
+		</dependency>
+					
 	</dependencies>
 	<build>
 		<defaultGoal>install</defaultGoal>
