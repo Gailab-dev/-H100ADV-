@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,15 +15,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.transaction.Transactional;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import com.disabled.controller.DeviceListController;
 import com.disabled.mapper.EventListMapper;
 import com.disabled.service.ApiService;
 import com.disabled.service.EventListService;
@@ -280,8 +276,6 @@ public class EventListServiceImpl implements EventListService{
 	@Override
 	public void requestFileFromModule(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
 		
-		System.out.println("requertFileFromModule in");
-		
 		// 디바이스 IP
 		String dvIp = "";
 		
@@ -290,27 +284,19 @@ public class EventListServiceImpl implements EventListService{
 		
 		try {
 			
-			System.out.println(eventListDetail);
-			System.out.println(eventListDetail.get("ev_has_img"));
-			
 			// 이미지 파일이 없다면
 			if("0".equals(eventListDetail.get("ev_has_img").toString())) {
 				
-				System.out.println("no image");
-				System.out.println("evId : " + evId);
 				
 				// 이벤트 ID에 해당하는 deviceIp 가져오기
 				dvIp = getDvIpByEvId(evId);
 				
-				System.out.println("dvIp : "+dvIp);
 				
 				json.put("type", "image");
 				json.put("fileName", eventListDetail.get("ev_img_path").toString());
 				
 				// 이미지 파일 가져오기
 				apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
-				
-				System.out.println("updateEvHasImgOne in");
 				
 				// ev_has_mov update
 				eventListMapper.updateEvHasImgOne(evId);
@@ -320,8 +306,6 @@ public class EventListServiceImpl implements EventListService{
 			// 영상 파일이 없다면
 			if("0".equals(eventListDetail.get("ev_has_mov").toString())) {
 				
-				System.out.println("no video");
-				
 				// 이벤트 ID에 해당하는 deviceIp 가져오기
 				dvIp = getDvIpByEvId(evId);
 				json.put("type", "video");
@@ -329,8 +313,6 @@ public class EventListServiceImpl implements EventListService{
 				
 				// 영상 파일 가져오기
 				apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
-				
-				System.out.println("updateEvHasMovOne in");
 				
 				// ev_has_mov update
 				eventListMapper.updateEvHasMovOne(evId);

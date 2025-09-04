@@ -78,11 +78,8 @@ public class StatsController {
 				
 				// 세션에 계정 정보 추가
 				logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
-				
 				session.setAttribute("id", id);
 				session.setAttribute("pwd", pwd);
-				
-				
 				
 				return resultMap;
 			}

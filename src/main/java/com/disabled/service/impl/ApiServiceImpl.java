@@ -190,12 +190,8 @@ public class ApiServiceImpl implements ApiService{
 	@Override
 	public void forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path ) {
 		
-		System.out.println("forwardStreamToJSON in");
-		
 		// content-type : application/json 
 		String contentType = "application/json";
-		
-		System.out.println(dvIp);
 		
 		// connetion 객체를 connection pool에서 가져오기
 		HttpURLConnection conn = connectionPoolManager.getConnection(dvIp);
@@ -205,7 +201,6 @@ public class ApiServiceImpl implements ApiService{
 		
 		try {
 
-			
 	        // 1. JSON → 문자열
 	        ObjectMapper mapper = new ObjectMapper();
 	        String body = mapper.writeValueAsString(json);
@@ -213,14 +208,11 @@ public class ApiServiceImpl implements ApiService{
 	        // 2. type 값 추출 
 	        Object obj = json.get("type");
 	        
-	        System.out.println("obj : "+obj);
 	        
 	        String type = "";
 	        
 	        if(obj != null) {
 	        	type = obj.toString();
-	        	
-	        	System.out.println("type : "+type);
 	        	
 	        }else {
 	        	logger.error("type 값 없음");
@@ -232,8 +224,6 @@ public class ApiServiceImpl implements ApiService{
 	        	
 	        	//디바이스 Url
 	        	targetUrl = "http://" + dvIp + path;
-	        	
-	        	System.out.println("targetUrl : "+targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
 	        	if(conn == null) {
@@ -263,12 +253,8 @@ public class ApiServiceImpl implements ApiService{
 	        	// 추후 고도화
 	        } else if(type.equals("image")) {
 	        	
-	        	System.out.println("image");
-	        	
 	        	//디바이스 Url
 	        	targetUrl = "http://" + dvIp + path;
-	        	
-	        	System.out.println("targetUrl : "+targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
 	        	if(conn == null) {
@@ -291,12 +277,8 @@ public class ApiServiceImpl implements ApiService{
 	        	}
 	        } else if(type.equals("video")) {
 	        	
-	        	System.out.println("video");
-	        	
 	        	//디바이스 Url
 	        	targetUrl = "http://" + dvIp + path;
-	        	
-	        	System.out.println("targetUrl : "+targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
 	        	if(conn == null) {
