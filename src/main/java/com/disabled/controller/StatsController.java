@@ -1,5 +1,6 @@
 package com.disabled.controller;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,14 +70,19 @@ public class StatsController {
 			
 			checkErr = statsService.loginCheck(id, pwd); //db에 해당 사용자가 있는지 체크
 			if(checkErr < 0) {
+				logger.info("로그인 실패");
 				throw new LogException("로그인 실패");
 			}else {
 				
 				resultMap.put("success", true); // 로그인 성공하면 true 반환
 				
 				// 세션에 계정 정보 추가
+				logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
+				
 				session.setAttribute("id", id);
 				session.setAttribute("pwd", pwd);
+				
+				
 				
 				return resultMap;
 			}
@@ -95,6 +101,7 @@ public class StatsController {
 	 */
 	@RequestMapping("/logout")
 	public String logout(HttpSession session) {
+		logger.info("{} 세션이 {}에 만료되어 로그인 페이지로 돌아갑니다.",session , LocalDateTime.now());
 	    session.invalidate(); // 세션 만료
 	    return "redirect:/login";
 	}

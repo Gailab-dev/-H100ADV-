@@ -34,6 +34,7 @@ public class ConnectionPoolManager {
      * @return HttpURLConnection 객체
      */
     public HttpURLConnection getConnection(String dvIp) {
+    	logger.info("get connection for device {} at {}",dvIp,LocalDateTime.now());
         return connectionPool.get(dvIp);
     }
     
@@ -43,7 +44,6 @@ public class ConnectionPoolManager {
     public void closeConnection(String dvIp) {
         HttpURLConnection conn = connectionPool.remove(dvIp);
         if (conn != null) {
-        	
             conn.disconnect();
             logger.info("disconnect connection for device {} at {}",dvIp,LocalDateTime.now());
         }
