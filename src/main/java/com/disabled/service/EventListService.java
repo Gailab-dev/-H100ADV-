@@ -19,4 +19,5 @@ public interface EventListService {
 	void fileCheck(File file);
 	void requestFileFromModule(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail);
 	String getDvIpByEvId(Integer evId);
+	int getTotalRecordCount(String startDate, String endDate, String searchKeyword);
 }

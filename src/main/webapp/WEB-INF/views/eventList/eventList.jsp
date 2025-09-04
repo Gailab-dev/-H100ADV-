@@ -13,12 +13,18 @@
 	  
 	// 상세보기 클릭시 불법주차 상세 화면으로 이동
 	function eventListDetail(evId){
-		location.href = 'eventListDetail?evId='+ evId + "&page=${page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}";
+		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
+	    let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
+	    let keyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
+		location.href = 'eventListDetail?evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword";
 	}
 	
 	// pagination 객체를 활용한 페이지 이동
 	function goPage(pageNo){
-		location.href = "viewEventList.do?page=" + pageNo + "&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}";
+		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
+	    let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
+	    let keyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
 	}
 	
 </script>

@@ -17,4 +17,5 @@ public interface EventListMapper {
 	String getDvIpByEvId(@Param("evId") Integer evId) throws DataAccessException;
 	void updateEvHasImgOne(@Param("evId") Integer evId) throws DataAccessException;
 	void updateEvHasMovOne(@Param("evId") Integer evId) throws DataAccessException;
+	int getTotalRecordCount(String startDate, String endDate, String searchKeyword);
 }

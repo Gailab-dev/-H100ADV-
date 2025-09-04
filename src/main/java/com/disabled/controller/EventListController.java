@@ -89,7 +89,9 @@ public class EventListController {
 			
 			int firstIndex = paginationInfo.getFirstRecordIndex(); // LIMIT offset
 			int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
+			int totalRecordCount = eventListService.getTotalRecordCount(startDate,endDate,searchKeyword);
 			
+			paginationInfo.setTotalRecordCount(totalRecordCount);
 			
 			// DB 검색을 위한 파라미터 설정
 			paramMap.put("firstIndex", firstIndex);

@@ -14,6 +14,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Transactional;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -30,6 +31,7 @@ import com.disabled.service.EventListService;
 import com.disabled.service.FileService;
 
 @Service
+@Transactional
 public class EventListServiceImpl implements EventListService{
 	
 	@Autowired
@@ -359,6 +361,26 @@ public class EventListServiceImpl implements EventListService{
 			logger.error("getDvIpByEvId에서 SQL문 오류 : ",e);
 		}
 		return dvIp;
+	}
+	
+	/**
+	 * 페이징 기능을 위한 검색 조건에 따른 총 레코드 갯수
+	 * @param startDate : 검색 조건 중 시작일
+	 * @param endDate : 검색 조건 중 마지막일
+	 * @param searchKeyword : 검색 조건 중 검색어
+	 * @return totalRecordCount : 검색 조건에 따른 총 레코드 갯수
+	 */
+	@Override
+	public int getTotalRecordCount(String startDate, String endDate, String searchKeyword) {
+		int totalRecordCount = 0;
+		
+		try {
+			totalRecordCount = eventListMapper.getTotalRecordCount(startDate, endDate, searchKeyword);
+		} catch (DataAccessException e) {
+			logger.error("getTotalRecordCount에서 오류 발생 : ",e);
+		}
+		
+		return totalRecordCount;
 	}
 	
 }
