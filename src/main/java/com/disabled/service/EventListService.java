@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 public interface EventListService {
 	List<Map<String, Object>> getEventList();
 	List<Map<String, Object>> getEventList(Map<String, Object> paramMap);
-	Integer getEventListCount();
 	Map<String, Object> getEventListDetail(Integer evId);
 	void viewImageOfFilePath(File file, HttpServletResponse res);
 	void viewVideoOfFilePath(File file, HttpServletRequest req, HttpServletResponse res);

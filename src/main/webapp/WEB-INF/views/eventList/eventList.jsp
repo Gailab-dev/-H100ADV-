@@ -27,6 +27,25 @@
 		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
 	}
 	
+	// 검색 조건에 따른 검색
+	function searchEventList(pageNo){
+		
+		console.log(pageNo);
+		
+		let form = document.getElementById('eventListSearchForm');
+	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
+	  	const endDate   = form.elements['endDate'].value;
+	  	const keyword   = form.elements['searchKeyword'].value;
+		
+		if( startDate > endDate ){
+			alert("날짜를 확인해주세요.");
+			return;
+		}
+		
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
+		
+	}
+	
 </script>
 </head>
 <body>
@@ -49,7 +68,7 @@
             </ul>
         </aside>
         <div class="content">
-			<form action="/gov-disabled-web-gs/eventList/viewEventList.do" class="filter-form">
+			<form id="eventListSearchForm" action="/gov-disabled-web-gs/eventList/viewEventList.do" class="filter-form">
 				<div class="filter-input-group">
 					<input type="date" name="startDate" value="${startDate}" />
 				</div>
@@ -59,7 +78,7 @@
 				<div class="filter-input-group search-field">
 					<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="검색어" />
 				</div>
-				<button type="submit" class="search-btn">조회</button>
+				<button type="button" class="search-btn" onclick="searchEventList('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
 			</form>
 			<table class="event-table">
 				<thead>

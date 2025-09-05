@@ -49,12 +49,6 @@ public class EventListServiceImpl implements EventListService{
 		return null;
 	}
 
-	@Override
-	public Integer getEventListCount() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
 	/**
 	 * 불법 주차 리스트에서 이벤트 상세 내역을 DB에서 가져옴
 	 * @Param

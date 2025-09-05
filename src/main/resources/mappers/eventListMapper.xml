@@ -17,7 +17,7 @@
 				OR dv_addr like CONCAT('%',#{searchKeyword},'%'))
 			</if>
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
+				AND A.ev_date BETWEEN #{startDate} AND #{endDate}	
 			</if>
 		</where>
         ORDER BY A.ev_id DESC
@@ -26,7 +26,7 @@
 	</select>
 	
 	<!-- 검색조건에 따른 페이징 기능을 위한 레코드 갯수 -->
-	<select id="getEventListCount" parameterType="map" resultType="int">
+	<select id="getTotalRecordCount" resultType="int">
 		SELECT COUNT(1) 
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
@@ -40,11 +40,6 @@
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
 			</if>
 		</where>
-	</select>
-	
-	<!-- 검색조건에 따른 이벤트 리스트 갯수 -->
-	<select id="getEventListCount" parameterType="map" resultType="int">
-
 	</select>
 	
 	<!-- 리스트 클릭시 이벤트 리스트 상세 정보 -->
