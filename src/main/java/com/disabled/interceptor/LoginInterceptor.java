@@ -28,6 +28,15 @@ public class LoginInterceptor implements HandlerInterceptor{
         HttpSession session = request.getSession(false);
         String uri = request.getRequestURI();
         
+        // 로그인 페이지와 정적 자원은 제외
+        if (uri.contains("/login.do") 
+        		|| uri.contains("/css") 
+        		|| uri.contains("/js") 
+        		|| uri.contains("/images")
+        		|| uri.contains("/font")) {
+            return true;
+        }
+        
         // id 값이 session에 없다면 login 화면으로 이동
         if (session == null || session.getAttribute("id") == null) {
             if (!uri.contains("/login.do")) {

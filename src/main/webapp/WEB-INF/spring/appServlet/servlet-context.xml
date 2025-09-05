@@ -15,13 +15,14 @@
 		 beans:bean class: interceptor 기능이 정의된 class 경로
 		 
 	-->
+	<beans:bean id="loginInterceptor" class="com.disabled.interceptor.LoginInterceptor" />
 	<mvc:interceptors>
 	    <mvc:interceptor>
 	        <mvc:mapping path="/**" />
 	        <mvc:exclude-mapping path="/stats/login.do" />
 	        <mvc:exclude-mapping path="/stats/login" />
 	        <mvc:exclude-mapping path="/logout.do" />
-	        <mvc:exclude-mapping path="/encryptPassword" />
+	        <mvc:exclude-mapping path="/crypto/**" />
 	        <mvc:exclude-mapping path="/resources/css/**" />
 			<mvc:exclude-mapping path="/resources/images/**" />
 			<mvc:exclude-mapping path="/resources/js/**" />

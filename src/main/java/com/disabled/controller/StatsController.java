@@ -8,7 +8,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpSession;
 
-import org.apache.ibatis.logging.LogException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,10 +67,11 @@ public class StatsController {
 			// 암호화
 			encryptPwd = cryptoARIAService.encryptPassword(pwd);
 			
-			checkErr = statsService.loginCheck(id, pwd); //db에 해당 사용자가 있는지 체크
-			if(checkErr < 0) {
+			checkErr = statsService.loginCheck(id, encryptPwd); //db에 해당 사용자가 있는지 체크
+			if(checkErr != 1) {
 				logger.info("로그인 실패");
-				throw new LogException("로그인 실패");
+				resultMap.put("success", false); // 로그인 실패하면 false 반환
+				return resultMap;
 			}else {
 				
 				resultMap.put("success", true); // 로그인 성공하면 true 반환
@@ -79,7 +79,6 @@ public class StatsController {
 				// 세션에 계정 정보 추가
 				logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
 				session.setAttribute("id", id);
-				session.setAttribute("pwd", pwd);
 				
 				return resultMap;
 			}
