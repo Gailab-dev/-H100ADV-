@@ -5,17 +5,15 @@ import java.util.Map;
 
 import org.apache.ibatis.annotations.Param;
 import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
-import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Repository;
 
 @Mapper
 @Repository
 public interface EventListMapper {
-	List<Map<String, Object>> getEventList(Map<String,Object> paramMap) throws DataAccessException;
-	Integer getEventListCount() throws DataAccessException;
-	Map<String,Object> getEventListDetail(@Param("evId") Integer evId) throws DataAccessException;
-	String getDvIpByEvId(@Param("evId") Integer evId) throws DataAccessException;
-	void updateEvHasImgOne(@Param("evId") Integer evId) throws DataAccessException;
-	void updateEvHasMovOne(@Param("evId") Integer evId) throws DataAccessException;
-	int getTotalRecordCount(String startDate, String endDate, String searchKeyword);
+	List<Map<String, Object>> getEventList(Map<String,Object> paramMap) throws RuntimeException;
+	Map<String,Object> getEventListDetail(@Param("evId") Integer evId) throws RuntimeException;
+	String getDvIpByEvId(@Param("evId") Integer evId) throws RuntimeException;
+	void updateEvHasImgOne(@Param("evId") Integer evId) throws RuntimeException;
+	void updateEvHasMovOne(@Param("evId") Integer evId) throws RuntimeException;
+	int getTotalRecordCount(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("searchKeyword") String searchKeyword) throws RuntimeException;
 }

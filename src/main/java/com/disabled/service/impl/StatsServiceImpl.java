@@ -43,14 +43,14 @@ public class StatsServiceImpl implements StatsService{
 			cnt = loginMapper.cntUsrByIdAndPwd(id,pwd);
 			
 			if(cnt != 1) {
-				throw new LogException("로그인 실패");
+				return -1;
 			}else {
-				return 1;
+				return cnt;
 			}
-		} catch (DataAccessException e) {
+		} catch (RuntimeException e) {
 			
 			logger.error("로그인 체크 오류 : ",e);
-			return -1;
+			throw e;
 		} 
 	}
 	

@@ -279,7 +279,8 @@
 				    <video id="video" width="720" controls autoplay>
 				    	<source src="http://192.168.0.15:8087/index.m3u8" type="application/x-mpegURL">
 				    </video>
-				
+					<!-- 디바이스 컨트롤러  -->
+					<!-- 
 				    <div class="controller-center-wrapper">
 				        <div class="controller-wrapper">
 				            <div class="controller-button up">▲</div>
@@ -289,7 +290,9 @@
 				            <div class="controller-button down">▼</div>
 				        </div>
 				    </div>
+				     -->
 				</div>
+				<!-- 컨트롤러 버튼 -->
 				<!-- 
 			    <div class="controller-buttons">
 			        <button onclick="sendCommand('start')">Start</button>
