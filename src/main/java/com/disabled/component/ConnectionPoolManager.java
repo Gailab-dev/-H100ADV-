@@ -13,8 +13,10 @@ import com.disabled.controller.DeviceListController;
 
 @Component
 public class ConnectionPoolManager {
-    private final Map<String, HttpURLConnection> connectionPool = new ConcurrentHashMap<>();
     
+	// connection pool
+	private final Map<String, HttpURLConnection> connectionPool = new ConcurrentHashMap<>();
+	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
     
@@ -24,7 +26,13 @@ public class ConnectionPoolManager {
      * @param conn : HttpURLConnection 객체 
      */
     public void addConnection(String dvIp, HttpURLConnection conn) {
-        connectionPool.put(dvIp, conn);
+    	
+    	// 차후 고도화시 ID별로 conncetion 관리할 수 있도록 수정해야 함
+    	// 현재 소스코드는 한 IP당 한 Connection만 유지할 수 있음
+    	// 모든 connecion 종료
+    	closeAll();
+    	
+    	connectionPool.put(dvIp, conn);
         logger.info("create connection for device {} at {}",dvIp,LocalDateTime.now());
     }
     
