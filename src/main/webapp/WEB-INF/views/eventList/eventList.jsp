@@ -36,6 +36,11 @@
 	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate'].value;
 	  	const keyword   = form.elements['searchKeyword'].value;
+	  	
+	  	if( keyword.length >= 100 ){
+	  		alert("검색어는 100자를 넘을 수 없습니다.");
+	  		return;
+	  	}
 		
 		if( startDate > endDate ){
 			alert("날짜를 확인해주세요.");

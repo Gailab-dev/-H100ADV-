@@ -54,6 +54,14 @@
 				alert("비밀번호를 입력해주세요");
 				return;
 			}
+		  	if( id.length >= 100 ){
+		  		alert("ID는 100자를 넘을 수 없습니다.");
+		  		return;
+		  	}
+		  	if( pwd.length >= 100 ){
+		  		alert("비밀번호는 100자를 넘을 수 없습니다.");
+		  		return;
+		  	}
 			
 		    // 동기 통신으로 로그인
 			const response = await fetch('/gov-disabled-web-gs/stats/login',{
