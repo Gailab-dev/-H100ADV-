@@ -15,9 +15,18 @@
   	<!-- ----------------------- 공통 스타일 ------------------------------- -->
   	<link rel="stylesheet" href="/resources/css/common.css" />
 	<!-- ----------------------- 공통 스타일 ------------------------------- -->
+	<!-- ------------------------- pagination ------------------------------- -->
+	<link rel="stylesheet" href="/resources/css/pagination.css" />
+	<!-- ------------------------- pagination ------------------------------- -->
   	<!-- ---------------------- 공통 자바스크립트 함수 ---------------------- -->
   	<script src="/resources/js/common.js"></script>
 	<!-- ---------------------- 공통 자바스크립트 함수 ---------------------- -->
+	<!-- ------------------------------ jQuery ------------------------------ -->
+	<script
+  		src="https://code.jquery.com/jquery-3.7.1.js"
+  		integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+  		crossorigin="anonymous"></script>
+  	<!-- ------------------------------ jQuery ------------------------------ -->	
 	<tiles:insertAttribute name="header"/>
 </head>
 <body>

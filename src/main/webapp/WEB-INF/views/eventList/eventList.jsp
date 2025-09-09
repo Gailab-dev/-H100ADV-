@@ -10,36 +10,38 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/eventList.css">
 <title>eventList</title>
 <script>
-	  
-	// 상세보기 클릭시 불법주차 상세 화면으로 이동
-	function eventListDetail(evId){
-		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
-	    let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
-	    let keyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
-		location.href = 'eventListDetail?evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword";
-	}
-	
+	 
 	// pagination 객체를 활용한 페이지 이동
-	function goPage(pageNo){
+	window.goPage = function(pageNo){
+		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
+    	let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
+    	let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
+	}
+	 
+	
+		
+	// 상세보기 클릭시 불법주차 상세 화면으로 이동
+	window.eventListDetail = function(evId){
 		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
 	    let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
-	    let keyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
-		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
+	    let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
+		location.href = 'eventListDetail?evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
 	}
 	
 	// 검색 조건에 따른 검색
-	function searchEventList(pageNo){
+	window.searchEventList = function(pageNo){
 		
 		console.log(pageNo);
 		
 		let form = document.getElementById('eventListSearchForm');
 	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate'].value;
-	  	const keyword   = form.elements['searchKeyword'].value;
+	  	const searchKeyword   = form.elements['searchKeyword'].value;
 	  	
-	  	if( keyword.length >= 100 ){
+	  	if( searchKeyword.length >= 100 ){
 	  		alert("검색어는 100자를 넘을 수 없습니다.");
-	  		return;
+	  		return;window
 	  	}
 		
 		if( startDate > endDate ){
@@ -50,6 +52,10 @@
 		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
 		
 	}
+		
+	
+
+	
 	
 </script>
 </head>
@@ -120,7 +126,7 @@
 				</tbody>
 			</table>
 			<div class="pagination">
-				<ui:pagination paginationInfo="${paginationInfo}" type="image" jsFunction="goPage"/>
+				<ui:pagination paginationInfo="${paginationInfo}" type="text" jsFunction="goPage"/>
 			</div>
         </div>  
     </div>

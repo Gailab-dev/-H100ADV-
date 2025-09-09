@@ -14,7 +14,8 @@
 		<where>
 			<if test="searchKeyword != null and searchKeyword != ''">
 				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
-				OR dv_addr like CONCAT('%',#{searchKeyword},'%'))
+				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
 			</if>
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate}	
@@ -27,14 +28,15 @@
 	
 	<!-- 검색조건에 따른 페이징 기능을 위한 레코드 갯수 -->
 	<select id="getTotalRecordCount" resultType="int">
-		SELECT COUNT(1) 
+		SELECT COUNT(*) 
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
 		<where>
 			<if test="searchKeyword != null and searchKeyword != ''">
 				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
-				OR dv_addr like CONCAT('%',#{searchKeyword},'%'))
+				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
 			</if>
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 

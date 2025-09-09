@@ -1,0 +1,9 @@
+
+/* 페이지네이션 관련 css */
+.pagination { display:flex; gap:6px; align-items:center; justify-content:center; margin:16px 0; }
+.pagination a, .pagination strong {
+  min-width:32px; padding:6px 10px; text-align:center; border:1px solid #ddd; border-radius:6px;
+  color:#333; text-decoration:none; background:#fff;
+}
+.pagination a:hover { background:#f5f7fa; border-color:#cfd6e4; }
+.pagination strong { background:#2d6cdf; color:#fff; border-color:#2d6cdf; }

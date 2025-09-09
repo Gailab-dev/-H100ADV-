@@ -58,6 +58,9 @@ public class EventListController {
 		
 		List<Map<String, Object>> eventList = new ArrayList<Map<String,Object>>();
 		
+		// 페이지 null 방지
+		if (page == null || page < 1) page = 1;
+		
 		// 페이징 객체
 		PaginationInfo paginationInfo = new PaginationInfo();
 		
