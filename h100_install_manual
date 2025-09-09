@@ -1,0 +1,38 @@
+1. DB
+	1) MariaDB 접속
+		$ mysql -uroot -p
+
+	2) 데이터베이스 접속
+		> use able_park;
+
+	3) 스케줄러 작동 확인
+		> SHOW VARIABLES LIKE 'event_scheduler';
+
+	4) 스케줄러 일시적으로 ON
+		> SET GLOBAL event_scheduler = ON;
+
+	5) 영구적으로 스케줄러 유지하려면 my.cnf에 설정 변경
+		[mysqld]
+		event_scheduler=ON
+
+	6) 스케줄러 등록
+		CREATE EVENT IF NOT EXISTS evt_statistics
+		    ON SCHEDULE EVERY 1 DAY
+		    STARTS TIMESTAMP(CURRENT_DATE + INTERVAL 2 HOUR)   -- 오늘 새벽 2시부터
+		    ON COMPLETION PRESERVE
+		    DO
+				INSERT INTO tbl_statistics (st_cd, st_cnt, st_date, st_reg_date)
+				SELECT *
+				FROM (
+					SELECT ev_cd, 
+						COUNT(1) AS ev_st_cnt,
+						LEFT(ev_date, 6) AS ev_st_date,
+						NOW() AS st_reg_date
+					FROM tbl_event_data
+					WHERE 1=1
+						AND ev_date = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y%m%d')
+					GROUP BY ev_cd, ev_date, LEFT(ev_date, 6)
+				) a
+				ON DUPLICATE KEY UPDATE
+					st_cnt = st_cnt + ev_st_cnt,
+					st_reg_date = NOW();

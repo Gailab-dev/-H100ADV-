@@ -2,6 +2,7 @@ package fileSend
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -124,7 +125,11 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) bool {
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 	resp, reErr := client.Do(req)
 	if reErr != nil {
 		logger.Log.Error("클라이언트 요청 생성 실패", zap.Error(reErr))
@@ -174,9 +179,9 @@ func FileSendScheduler() {
 						continue // 하위 파일은 무시
 					} else {
 						if name == "output_images" {
-							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_images/"), entry2.Name(), fmt.Sprintf("http:s//%s/imageFileReceive", cloudReceiveIp))))
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_images/"), entry2.Name(), fmt.Sprintf("https://%s/imageFileReceive", cloudReceiveIp))))
 						} else if name == "output_videos" {
-							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_videos/"), entry2.Name(), fmt.Sprintf("http:s//%s/videoFileReceive", cloudReceiveIp))))
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_videos/"), entry2.Name(), fmt.Sprintf("https://%s/videoFileReceive", cloudReceiveIp))))
 						}
 					}
 				}
