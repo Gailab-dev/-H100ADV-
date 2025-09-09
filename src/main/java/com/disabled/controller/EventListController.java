@@ -3,6 +3,7 @@ package com.disabled.controller;
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
@@ -48,7 +50,11 @@ public class EventListController {
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
 			, @RequestParam(value="page", required=false) Integer page
-			, Model model) {
+			, Model model
+			, HttpSession session) {
+		
+		// 접근 로그
+		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
 		
 		List<Map<String, Object>> eventList = new ArrayList<Map<String,Object>>();
 		
@@ -144,7 +150,11 @@ public class EventListController {
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="searchKeyword",required=false) String searchKeyword
 			, Model model
-			, HttpServletResponse res) {
+			, HttpServletResponse res
+			, HttpSession session) {
+		
+		// 접근 로그
+		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
 		
 		try {
 			Map<String, Object> eventListDetail = new HashMap<String, Object>();

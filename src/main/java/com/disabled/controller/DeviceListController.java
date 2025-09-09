@@ -1,5 +1,6 @@
 package com.disabled.controller;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +44,10 @@ public class DeviceListController {
 	
 	// 디바이스 리스트 화면
 	@RequestMapping("/viewDeviceList.do")
-	private String viewDeviceList(Model model ) {
+	private String viewDeviceList(Model model, HttpSession session  ) {
+		
+		// 접근 로그
+		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
 		
 		// 디바이스 리스트
 		List<Map<String, Object>> deviceList = new ArrayList<Map<String,Object>>();

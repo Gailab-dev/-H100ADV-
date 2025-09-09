@@ -69,7 +69,9 @@ public class StatsController {
 			
 			checkErr = statsService.loginCheck(id, encryptPwd); //db에 해당 사용자가 있는지 체크
 			if(checkErr != 1) {
-				logger.info("로그인 실패");
+				
+				// 로그인 실패
+				logger.info("{} 사용자가 {}에 로그인 실패하였습니다.",id,LocalDateTime.now());
 				resultMap.put("success", false); // 로그인 실패하면 false 반환
 				return resultMap;
 			}else {
@@ -107,7 +109,10 @@ public class StatsController {
 	 * 
 	 */
 	@RequestMapping("/viewStat.do")
-	private String viewStat(Model model) {
+	private String viewStat(Model model, HttpSession session) {
+		
+		// 접근 로그
+		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
 		
 		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
 		
