@@ -5,8 +5,6 @@ import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class ConnectionShutdownHook {
-    
-	
 	
 	@Autowired
     private ConnectionPoolManager connectionPoolManager;
