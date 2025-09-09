@@ -15,61 +15,7 @@
   integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
   crossorigin="anonymous"></script>
 	<script>
-		/*
-		$(function(){
-			const video = document.getElementById('video');
-			// jetson : 192.168.0.31, 개발 : 192.18.0.15
-			// ccty : 192.168.0.39
-			const videoSrc = 'http://192.168.0.15:8087/index.m3u8';
-			
-			const hls = new Hls({
-				maxBufferLength:10,
-				maxBufferSize: 60 * 1000 * 1000
-			});
-			
-			if(Hls.isSupported()){
-				
-				hls.loadSource(videoSrc);
-				hls.attachMedia(video);
-				
-				hls.on(Hls.Events.MANIFEST_PARSED,() => {
-					video.play();
-				});
-				
-				hls.on(Hls.Events.ERROR,function(event,data){
-					alert("🔴 HLS Error:" + data.type + " / " + data.details + " / " + data);
-				      if (data.fatal) {
-				        switch (data.type) {
-				          // 네트워크 오류인 경우
-				          case Hls.ErrorTypes.NETWORK_ERROR:
-				            hls.startLoad();
-				            alert("⚠️ 네트워크 오류, 재시도 중...");
-				            break;
-				          // 미디어 오류인 경우
-				          case Hls.ErrorTypes.MEDIA_ERROR:
-				            hls.recoverMediaError();
-				            alert("⚠️ 미디어 오류, 복구 시도 중...");
-				            break;
-				          // 그 외 오류, 스트리밍 중단
-				          default:
-				            hls.destroy();
-				            alert("❌ 복구 불가, 스트리밍 중단");
-				            break;
-				        }
-				      }
-				});
-			} else if(video.canPlayType('application/vnd.apple.mpegurl')){
-				// video 타입이 hls가 아닌 경우 mpegurl 타입으로 video 실행
-				video.src = videoSrc;
-				video.muted = true;
-				video.play().catch(err => {
-					alert("비디오 플레이 중 오류 : " + err);
-				});
-			} else {
-				alert('HLS를 지원하지 않는 브라우저입니다.')
-			}
-		});
-		*/
+		
 		/*
 		* 실시간 스트리밍 실행
 		*/
@@ -95,18 +41,18 @@
 				});
 				
 				hls.on(Hls.Events.ERROR,function(event,data){
-					alert("🔴 HLS Error:" + data.type + " / " + data.details + " / " + data);
+					// alert("🔴 HLS Error:" + data.type + " / " + data.details + " / " + data);
 				      if (data.fatal) {
 				        switch (data.type) {
 				          // 네트워크 오류인 경우
 				          case Hls.ErrorTypes.NETWORK_ERROR:
 				            hls.startLoad();
-				            alert("⚠️ 네트워크 오류, 재시도 중...");
+				            alert("⚠️ 네트워크 오류");
 				            break;
 				          // 미디어 오류인 경우
 				          case Hls.ErrorTypes.MEDIA_ERROR:
 				            hls.recoverMediaError();
-				            alert("⚠️ 미디어 오류, 복구 시도 중...");
+				            alert("⚠️ 미디어 오류");
 				            break;
 				          // 그 외 오류, 스트리밍 중단
 				          default:
@@ -144,7 +90,7 @@
 		}
 		
 		/*
-		* 디바이스 컨트롤러 버튼을 화면에 display 할 지 여부 설정
+		* 디바이스 컨트롤러 버튼을 화면에 display 할 지 여부 설정, 
 		* @param
 		*  - display: 컨트롤러 div를 화면에 display하는 설정값(boolean) true면 display
 		*/
@@ -163,7 +109,7 @@
 	    *  - id : 명령어를 보낼 device의 id
 	    * @return
 	    */
-		function sendCommand(command,id) {
+		acync function sendCommand(command,id) {
 			
 	    	// id값 검증하여 없다면 return
 	    	if(id == null || id == undefined || id == 0 || id == ""){
@@ -171,9 +117,10 @@
 	    		return;
 	    	}
 	    	
-	    	// 정지 버튼의 data-device-id 속성에 저장
-	        document.getElementById("stopStreamBtn").dataset.deviceId = id;
+	    	// 정지 버튼의 data-device-id 속성에 저장, 추후 고도화시 다시 구현
+	        // document.getElementById("stopStreamBtn").dataset.deviceId = id;
 	    
+	    	
 	    	
 			const body = {
 				'type': command,
@@ -192,6 +139,8 @@
 	      		return response.text();
 	    	})
 	    	.then(res => {
+	    		
+	    		const text= await res.text);
 
 	    		if(command == "start"){
 	    			playVideo(); 
