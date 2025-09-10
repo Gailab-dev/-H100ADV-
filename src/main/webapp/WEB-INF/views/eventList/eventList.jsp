@@ -8,6 +8,7 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/eventList.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
 <title>eventList</title>
 <script>
 	 
@@ -52,8 +53,51 @@
 		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
 		
 	}
-		
 	
+	//  Pagination 
+	document.addEventListener('DOMContentLoaded', function () {
+		  const $wrap = document.querySelector('.pagination');
+		  if (!$wrap) return;
+
+		  const links = Array.from($wrap.querySelectorAll('a'));
+		  const current = $wrap.querySelector('strong'); // 현재 페이지(예: <strong>3</strong>)
+		  const curPage = current ? parseInt(current.textContent.trim(), 10) : NaN;
+
+		  // 유틸: goPage(숫자)에서 숫자만 뽑기
+		  const getPageFromHref = (a) => {
+		    const m = a.getAttribute('href')?.match(/goPage\((\d+)\)/);
+		    return m ? parseInt(m[1], 10) : null;
+		  };
+
+		  // 이동 버튼 텍스트 치환 및 클래스 세팅
+		  links.forEach(a => {
+		    const txt = a.textContent.replace(/\s+/g,'').trim();
+		    const page = getPageFromHref(a);
+
+		    if (/\[처음\]/.test(txt)) {
+		      a.textContent = '«';
+		      a.classList.add('pg-first');
+		      if (curPage && curPage <= 1) a.classList.add('is-disabled');
+		    } else if (/\[이전\]/.test(txt)) {
+		      a.textContent = '‹';
+		      a.classList.add('pg-prev');
+		      if (curPage && curPage <= 1) a.classList.add('is-disabled');
+		    } else if (/\[다음\]/.test(txt)) {
+		      a.textContent = '›';
+		      a.classList.add('pg-next');
+		      // 다음이 마지막을 넘어가면 비활성
+		      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
+		    } else if (/\[마지막\]/.test(txt)) {
+		      a.textContent = '»';
+		      a.classList.add('pg-last');
+		      // 마지막 페이지 계산이 어려우니 “goPage(n)” 값이 현재와 같거나 작으면 비활성
+		      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
+		    } else {
+		      // 숫자 링크는 그대로 두되 불필요한 공백 제거
+		      if (/^\d+$/.test(txt)) a.textContent = txt;
+		    }
+		  });
+		});
 
 	
 	
