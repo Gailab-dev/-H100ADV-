@@ -4,24 +4,50 @@
 <!-- 통계 화면 SQL문 -->
 <mapper namespace="com.disabled.mapper.StatsMapper">
 
-	<!-- 조건에 따른 월별 이벤트 발생 수(최대 24개, 1년) -->
 	<select id="getEventByMonth" parameterType="map" resultType="map">
-		SELECT st_date, st_cd, st_cnt 
-		FROM tbl_statistics
-		GROUP BY st_date, st_cd
-		HAVING st_cd IN(1,2)
-		ORDER BY st_date desc
-		LIMIT 24;
+	
+
 	</select>
 	
 	<!-- 조건이 없는 모든 이벤트 발생 수(최대 24개, 1년) -->
 	<select id="getAllEvent" resultType="map">
-		SELECT st_date, st_cd, st_cnt 
-		FROM tbl_statistics
-		GROUP BY st_date, st_cd
-		HAVING st_cd IN(1,2)
-		ORDER BY st_date desc
-		LIMIT 24;
+		<!-- 
+			months
+			재귀적 호출로 올해 1월달부터 현재 날짜의 달에 해당하는 달까지 달을 구함
+		 -->
+		WITH RECURSIVE months AS (
+		  SELECT DATE_FORMAT(MAKEDATE(YEAR(CURDATE()),1), '%Y-%m') AS month,
+		         MAKEDATE(YEAR(CURDATE()),1) AS d
+		  UNION ALL
+		  SELECT DATE_FORMAT(d + INTERVAL 1 MONTH, '%Y-%m'),
+		         d + INTERVAL 1 MONTH
+		  FROM months
+		  WHERE d + INTERVAL 1 MONTH &lt;= DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 0 MONTH
+		),
+		
+		<!-- 
+			불법주차 리스트 코드
+			이벤트 코드 ( 1: 불법주차(미등록차량) / 2: 불법주차(장애인미탑승) / 3: 스티커 불법 사용 / 4: 위험상황 / 5: 물건적재 ) 
+		 -->
+		codes AS (
+		  SELECT 1 AS st_cd UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+		)
+		
+		<!-- 
+			월별, 코드별 갯수를 조회
+		 -->
+		SELECT
+		  m.month AS st_date,
+		  s.st_date,
+		  d,
+		  c.st_cd AS st_cd,
+		  IFNULL(s.st_cnt, 0) AS st_cnt
+		FROM months m
+		CROSS JOIN codes c
+		LEFT JOIN tbl_statistics s
+		  ON s.st_cd = c.st_cd
+		  AND STR_TO_DATE(s.st_date, '%Y%m') = STR_TO_DATE(m.month, '%Y-%m')
+		ORDER BY m.month, c.st_cd;
 	</select>
 
 </mapper>

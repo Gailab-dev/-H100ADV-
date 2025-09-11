@@ -3,6 +3,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -53,24 +54,55 @@
 		
 		// 변수 선언 및 배열로 정렬
 		let xData = ['x' 
-				<c:forEach var="row" items="${statsByMonth}" step="2">
-					, '${row.st_date}'
+				<c:forEach var="row" items="${statsByMonth}" varStatus="month">
+					<c:if test = "${month.index % 6 == 0}">
+						, '${row.st_date}'
+					</c:if>	
 				</c:forEach>
 			];
 		let yData1 = ['data1'
 				<c:forEach var="row" items="${statsByMonth}">
-					<c:if test="${row.st_cd == '1'}">
+					<c:if test="${row.st_cd == 1}">
 						, ${row.st_cnt}
 					</c:if>	
 				</c:forEach>
 			];
 		let yData2 = ['data2'
 				<c:forEach var="row" items="${statsByMonth}">
-					<c:if test="${row.st_cd == '2'}">
+					<c:if test="${row.st_cd == 2}">
 						, ${row.st_cnt}
 					</c:if>	
 				</c:forEach>
 			];
+		let yData3 = ['data3'
+			<c:forEach var="row" items="${statsByMonth}">
+				<c:if test="${row.st_cd == 3}">
+					, ${row.st_cnt}
+				</c:if>	
+			</c:forEach>
+		];
+		let yData4 = ['data4'
+			<c:forEach var="row" items="${statsByMonth}">
+				<c:if test="${row.st_cd == 4}">
+					, ${row.st_cnt}
+				</c:if>	
+			</c:forEach>
+		];
+		let yData5 = ['data5'
+			<c:forEach var="row" items="${statsByMonth}">
+				<c:if test="${row.st_cd == 5}">
+					, ${row.st_cnt}
+				</c:if>	
+			</c:forEach>
+		];
+		let yData6 = ['data6'
+			<c:forEach var="row" items="${statsByMonth}">
+				<c:if test="${row.st_cd == 6}">
+					, ${row.st_cnt}
+				</c:if>	
+			</c:forEach>
+		];
+
 		
 		// 차트 생성
 		let chart = c3.generate({
@@ -80,12 +112,20 @@
 		        columns: [  // 각 컬럼별 배열
 		        	xData,
 		        	yData1,
-		        	yData2
+		        	yData2,
+		        	yData3,
+		        	yData4,
+		        	yData5,
+		        	yData6
 		        ],
 		        type:'line', // 그래프 종류(라인 그래프)
 		        names :{  // 데이터 별 이름
-		        	data1: '비장애인주차', 
-		        	data2: '장애인 비등록차량'
+		        	data1: '미등록차량', 
+		        	data2: '장애인미탑승',
+	        		data3: '스티커 불법 사용',
+        			data4: '위험상황',
+        			data5: '물건적재',
+        			data6: '이중주차'
 		        }
 		    },
 		    area: {
@@ -120,7 +160,7 @@
 		        grouped: true  // 여러 시리즈 함께 보기
 		    },
 		    color: {
-		        pattern: ['#00cfd5', '#a064c6']  // 비장애인, 장애인 선 색상 지정
+		        pattern: ['#7a7978', '#87cbac','#90ffdc','#8de4ff','#8ac4ff']  // 비장애인, 장애인 선 색상 지정
 		    }
 		    
 		});
@@ -158,15 +198,17 @@
 						<tr>
 							<td> 
 							</td>
-							<c:forEach var="row" items="${statsByMonth}" step="2">
-								<td>
-									${fn:substring(row.st_date,4,6)}월
-								</td>
+							<c:forEach var="row" items="${statsByMonth}"  varStatus="month">
+								<c:if test="${month.index % 6 == 0}">
+									<td>
+										${fn:substring(row.st_date,5,7)}월
+									</td>
+								</c:if>
 							</c:forEach>
 						</tr>
 						<tr>
 							<td>
-								비장애인주차
+								미등록차량
 							</td>
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '1'}" >
@@ -178,10 +220,58 @@
 						</tr>
 						<tr>
 							<td>
-								장애인 미등록차량
+								장애인미탑승
 							</td>
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '2'}">
+									<td>
+										${row.st_cnt}
+									</td>
+								</c:if>	
+							</c:forEach>
+						</tr>
+						<tr>
+							<td>
+								스티커 불법 사용
+							</td>
+							<c:forEach var="row" items="${statsByMonth}">
+								<c:if test="${row.st_cd == '3'}">
+									<td>
+										${row.st_cnt}
+									</td>
+								</c:if>	
+							</c:forEach>
+						</tr>
+						<tr>
+							<td>
+								위험상황
+							</td>
+							<c:forEach var="row" items="${statsByMonth}">
+								<c:if test="${row.st_cd == '4'}">
+									<td>
+										${row.st_cnt}
+									</td>
+								</c:if>	
+							</c:forEach>
+						</tr>
+						<tr>
+							<td>
+								물건적재
+							</td>
+							<c:forEach var="row" items="${statsByMonth}">
+								<c:if test="${row.st_cd == '5'}">
+									<td>
+										${row.st_cnt}
+									</td>
+								</c:if>	
+							</c:forEach>
+						</tr>
+						<tr>
+							<td>
+								이중주차
+							</td>
+							<c:forEach var="row" items="${statsByMonth}">
+								<c:if test="${row.st_cd == '6'}">
 									<td>
 										${row.st_cnt}
 									</td>

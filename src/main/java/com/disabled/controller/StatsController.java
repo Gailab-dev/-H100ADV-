@@ -118,6 +118,7 @@ public class StatsController {
 		
 		try {
 			statsByMonth = statsService.getEventByMonth();
+			
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달",e);
 		}
