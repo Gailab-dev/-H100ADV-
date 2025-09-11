@@ -13,13 +13,11 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@WebFilter("/*")
 public class NoCacheFilter implements Filter{
 
 	private static final Logger logger = LoggerFactory.getLogger(NoCacheFilter.class);
