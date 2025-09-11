@@ -1,9 +1,13 @@
 package com.disabled.interceptor;
 
+import java.io.IOException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -11,6 +15,8 @@ import com.disabled.component.ConnectionPoolManager;
 
 public class LoginInterceptor implements HandlerInterceptor{
     
+	private final Logger logger = LoggerFactory.getLogger(this.getClass());
+	
 	@Autowired
 	ConnectionPoolManager connectionPoolManager;
 	
@@ -23,7 +29,7 @@ public class LoginInterceptor implements HandlerInterceptor{
 	 */
 	@Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-        throws Exception {
+        throws RuntimeException {
 
         HttpSession session = request.getSession(false);
         String uri = request.getRequestURI();
@@ -40,7 +46,11 @@ public class LoginInterceptor implements HandlerInterceptor{
         // id 값이 session에 없다면 login 화면으로 이동
         if (session == null || session.getAttribute("id") == null) {
             if (!uri.contains("/login.do")) {
-                response.sendRedirect("/gov-disabled-web-gs");
+                try {
+					response.sendRedirect("/gov-disabled-web-gs");
+				} catch (IOException e) {
+					logger.error("LoginInterceptor 처리 중 오류 발생 : ",e);
+				}
                 return false;
             }
         }
