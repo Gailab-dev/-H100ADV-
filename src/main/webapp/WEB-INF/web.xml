@@ -124,11 +124,10 @@
 	<filter>
 		<filter-name>noCacheFilter</filter-name>
   		<filter-class>com.disabled.filter.NoCacheFilter</filter-class>
-  		  <!-- 캐시 예외 패턴: 쉼표로 구분 -->
   		<init-param>
     		<param-name>excludePatterns</param-name>
     		<param-value>
-      			^/css/.*,^/js/.*,^/images/.*,^/font/.*,^/webjars/.*,^/favicon\.ico$
+      			^/resources/.*,^/css/.*,^/js/.*,^/images/.*,^/font/.*,^/webjars/.*,^/favicon\.ico$
     		</param-value>
   		</init-param>
 	</filter>
