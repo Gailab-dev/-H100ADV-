@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public interface ApiService {
 	HttpURLConnection createPostConnection(String targetUrl, String body, String contentType);
-	void forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp);
-	void copyResponse(HttpURLConnection conn, HttpServletResponse res);
-	void forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path );
+	boolean forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp);
+	boolean copyResponse(HttpURLConnection conn, HttpServletResponse res);
+	boolean forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path );
 }

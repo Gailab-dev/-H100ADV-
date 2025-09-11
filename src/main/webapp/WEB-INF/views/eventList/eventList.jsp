@@ -33,8 +33,6 @@
 	// 검색 조건에 따른 검색
 	window.searchEventList = function(pageNo){
 		
-		console.log(pageNo);
-		
 		let form = document.getElementById('eventListSearchForm');
 	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate'].value;

@@ -290,7 +290,11 @@ public class EventListServiceImpl implements EventListService{
 				json.put("fileName", eventListDetail.get("ev_img_path").toString());
 				
 				// 이미지 파일 가져오기
-				apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
+				boolean streamCheck = false;
+				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
+				if(!streamCheck) {
+					return; 
+				}
 				
 				// ev_has_mov update
 				eventListMapper.updateEvHasImgOne(evId);
@@ -306,7 +310,11 @@ public class EventListServiceImpl implements EventListService{
 				json.put("fileName", eventListDetail.get("ev_mov_path").toString());
 				
 				// 영상 파일 가져오기
+				boolean streamCheck = false;
 				apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
+				if(!streamCheck) {
+					return;
+				}
 				
 				// ev_has_mov update
 				eventListMapper.updateEvHasMovOne(evId);
@@ -316,7 +324,7 @@ public class EventListServiceImpl implements EventListService{
 			logger.error("requestFileFromModule에서 evHasMovChange 또는 evHasImgChange 오류 발생 : ",e2);
 		} catch (RuntimeException e) {
 			logger.error("requestFileFromModule에서 오류 발생 : ",e);
-		} 
+		}
 	}
 	
 	/**

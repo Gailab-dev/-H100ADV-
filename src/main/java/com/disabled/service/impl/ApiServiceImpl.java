@@ -52,7 +52,7 @@ public class ApiServiceImpl implements ApiService{
 	 * - dvIp: 디바이스 IP주소 (String)
 	 */
 	@Override
-	public void forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp) {
+	public boolean forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp) {
 		
 		// content-type : application/x-www-form-urlencoded 
 		String contentType = "application/x-www-form-urlencoded";
@@ -72,11 +72,18 @@ public class ApiServiceImpl implements ApiService{
 			conn = createPostConnection(targetUrl, encodeCommand, contentType);
 			
 			// 3. output Stream
-			copyResponse(conn, res);
+			boolean streamCheck = false;
+			streamCheck = copyResponse(conn, res);
+			if(!streamCheck) {
+				return false;
+			}else {
+				return true;
+			}
 			
 		} catch (UnsupportedEncodingException e) {
 			
 			logger.error("connection pool 생성 오류 : ",e);
+			return false;
 			
 		} 
 		
@@ -133,7 +140,7 @@ public class ApiServiceImpl implements ApiService{
 	 * 영상 스트리밍 결과 수신 및 전송
 	 */
 	@Override
-	public void copyResponse(HttpURLConnection conn, HttpServletResponse res) {
+	public boolean copyResponse(HttpURLConnection conn, HttpServletResponse res) {
 		
 		try {
 			
@@ -147,10 +154,17 @@ public class ApiServiceImpl implements ApiService{
 		                logger.debug("Device로부터 응답 수신 : " + sb.toString());
 		            }
 		            
+		            int code = conn.getResponseCode();
+		            if(code != HttpURLConnection.HTTP_OK) {
+		            	return false;
+		            }else {
+		            	return true;
+		            }
 
             }
 		} catch (IOException e) {
 			logger.error("copyResponse 에서 에러 발생 : ",e);
+			return false;
 		} 
 		
 	}
@@ -188,7 +202,7 @@ public class ApiServiceImpl implements ApiService{
 	 * 송신 데이터 타입이 json객체일 때 실시간 영상 스트리밍
 	 */
 	@Override
-	public void forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path ) {
+	public boolean forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path ) {
 		
 		// content-type : application/json 
 		String contentType = "application/json";
@@ -216,7 +230,7 @@ public class ApiServiceImpl implements ApiService{
 	        	
 	        }else {
 	        	logger.error("type 값 없음");
-	        	return;
+	        	return false;
 	        }
 	        
 	        // 3. type 값 별 분기 실행
@@ -234,7 +248,16 @@ public class ApiServiceImpl implements ApiService{
 	        	}
 	        	
 				// 3-2. output Stream
-				copyResponse(conn, res);
+				boolean responseCheck = false;
+				responseCheck = copyResponse(conn, res);
+				if(!responseCheck) {
+	        		connectionPoolManager.closeConnection(dvIp);
+	        		conn.disconnect();
+					return false;
+				}
+				
+				return true;
+				
 	        } else if(type.equals("end")) {
 	        	
 	        	// 3-3. connection pool 종료
@@ -243,6 +266,9 @@ public class ApiServiceImpl implements ApiService{
 	        		connectionPoolManager.closeConnection(dvIp);
 	        		conn.disconnect();
 	        	}
+	        	
+	        	return true;
+	        	
 	        } else if(type.equals("U")) {
 	        	// 추후 고도화
 	        } else if(type.equals("D")) {
@@ -275,6 +301,8 @@ public class ApiServiceImpl implements ApiService{
 	        		connectionPoolManager.closeConnection(dvIp);
 	        		conn.disconnect();
 	        	}
+	        	
+	        	return true;
 	        } else if(type.equals("video")) {
 	        	
 	        	//디바이스 Url
@@ -299,14 +327,19 @@ public class ApiServiceImpl implements ApiService{
 	        		connectionPoolManager.closeConnection(dvIp);
 	        		conn.disconnect();
 	        	}
+	        	
+	        	return true;
 				
 	        } else {
 	        	logger.error("잘못된 type 값 전송");
-	        	return;
+	        	return false;
 	        }
+	        
+	        return true;
 			
 		} catch (JsonProcessingException e) {
 			logger.error("JSON 변환 에러 : ",e);
+			return false;
 		} 
 		
 	}
