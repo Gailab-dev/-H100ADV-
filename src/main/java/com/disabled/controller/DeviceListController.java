@@ -104,7 +104,9 @@ public class DeviceListController {
 	 *  - id: 명령어를 보낼 device의 id(int) 
 	 */
 	@RequestMapping("/sendCommand")
-	private void sendCommand(HttpServletRequest req, HttpServletResponse res){
+	private String sendCommand(HttpServletRequest req, HttpServletResponse res){
+		
+		String returnStr = "실시간 디바이스와 송수신 실패";
 		
 		try {
 			
@@ -124,10 +126,19 @@ public class DeviceListController {
 			}
 			
 			//deviceIp를 url로 한 실시간 데이터 스트리밍
-			apiService.forwardStream(req, res, dvIp);
+			boolean streamCheck = false;
+			streamCheck = apiService.forwardStream(req, res, dvIp);
+			if(!streamCheck) {
+				return returnStr;
+			}
+			
+			returnStr = "실시간 스트리밍 성공";
+			return returnStr;
 				
 		} catch (IllegalArgumentException e) {
 			logger.error("유효성 검사 오류: ",e);
+			return returnStr;
+			
 		}
 		
 	}
@@ -137,7 +148,9 @@ public class DeviceListController {
 	 */
 	@ResponseBody
 	@RequestMapping("/sendCommandToJSON")
-	private void sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res) {
+	private String sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res) {
+		
+		String returnStr = "실시간 디바이스와 송수신 실패";
 		
 		try {
 			String id = json.get("id").toString();
@@ -156,9 +169,18 @@ public class DeviceListController {
 			}
 			
 			// 디바이스 IP를 통한 실시간 스트리밍
-			apiService.forwardStreamToJSON(res, json, dvIp, "/video");
+			boolean streamCheck = false;
+			streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/video");
+			if(!streamCheck) {
+				return returnStr;
+			}
+			
+			returnStr = "실시간 디바이스와 송수신 성공";
+			return returnStr;
+			
 		} catch (IllegalArgumentException e) {
 			logger.error("유효성 검사 오류: ",e);
+			return returnStr;
 		}
 
 	}

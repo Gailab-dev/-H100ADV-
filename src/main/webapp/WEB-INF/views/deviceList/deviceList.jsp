@@ -140,7 +140,7 @@
 	    	})
 	    	.then(res => {
 	    		
-	    		const text= await res.text);
+	    		const text= await res.text();
 
 	    		if(command == "start"){
 	    			playVideo(); 
