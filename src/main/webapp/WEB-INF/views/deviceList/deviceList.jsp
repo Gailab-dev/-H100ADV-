@@ -29,7 +29,7 @@
 			const video = document.getElementById('video');
 			// jetson : 192.168.0.31, 개발 : 192.18.0.15
 			// ccty : 192.168.0.39
-			const videoSrc = 'http://192.168.0.15:8087/index.m3u8';
+			const videoSrc = 'https://www.geyeparking.shop/index.m3u8';
 			
 			if(Hls.isSupported()){
 				
@@ -109,7 +109,7 @@
 	    *  - id : 명령어를 보낼 device의 id
 	    * @return
 	    */
-		acync function sendCommand(command,id) {
+		async function sendCommand(command,id) {
 			
 	    	// id값 검증하여 없다면 return
 	    	if(id == null || id == undefined || id == 0 || id == ""){
@@ -138,9 +138,7 @@
 	      		if (!response.ok) throw new Error('요청 실패');
 	      		return response.text();
 	    	})
-	    	.then(res => {
-	    		
-	    		const text= await res.text();
+	    	.then(text => {
 
 	    		if(command == "start"){
 	    			playVideo(); 
@@ -226,7 +224,7 @@
 				<h1>실시간 영상</h1>	
 			    <div class="video-controller-group">
 				    <video id="video" width="720" controls autoplay>
-				    	<source src="http://192.168.0.15:8087/index.m3u8" type="application/x-mpegURL">
+				    	<source src="https://www.geyeparking.shop/index.m3u8" type="application/x-mpegURL">
 				    </video>
 					<!-- 디바이스 컨트롤러  -->
 					<!-- 

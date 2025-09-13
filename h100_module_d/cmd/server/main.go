@@ -1,6 +1,7 @@
 package main
 
 import (
+        "crypto/tls"
         "net/http"
         "os"
        // "fmt"
@@ -8,6 +9,7 @@ import (
         "github.com/robfig/cron/v3"
         "github.com/joho/godotenv"
         "go.uber.org/zap"
+        "golang.org/x/crypto/acme/autocert"
 
 	"local.dev/h100_module_d/internal/middlewares"
         "local.dev/h100_module_d/internal/handlers/video"
@@ -47,7 +49,42 @@ func main() {
         // ===== [E] 스케줄러 설정 ====== //
 
         // ===== [S] SSL 적용 ====== //
+        domain := "geyeparking.shop" // 가비아에서 구입한 도메인
+
+        m := &autocert.Manager{
+		// 인증서 캐시(필수). 없으면 재부팅 때마다 재발급 시도 → 레이트리밋 위험
+		Cache:      autocert.DirCache("/var/lib/autocert"),
+		HostPolicy: autocert.HostWhitelist(domain, "www."+domain), // www 서브도메인 포함
+		Prompt:     autocert.AcceptTOS, // Let's Encrypt 서비스 약관 자동 동의
+	}
+
+        // HTTP-01 챌린지용 80 포트 핸들러(이 경로는 꼭 열려야 함)
+	go func() {
+		httpSrv := &http.Server{
+			Addr:    ":80",
+			Handler: m.HTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// 그 외 경로는 HTTPS 리다이렉트
+				target := "https://" + r.Host + r.URL.RequestURI()
+				http.Redirect(w, r, target, http.StatusPermanentRedirect)
+			})),
+		}
+		if err := httpSrv.ListenAndServe(); err != nil {
+			log.Fatal("HTTP 서버 시작 실패", zap.Error(err))
+		}
+	}()
+
         mux := http.NewServeMux()
+
+	// 실제 HTTPS 서버
+	httpsSrv := &http.Server{
+		Addr:    ":443",
+		// Addr:    ":"+os.Getenv("PORT"),
+		Handler: mux,
+		TLSConfig: &tls.Config{
+			MinVersion:     tls.VersionTLS12,
+			GetCertificate: m.GetCertificate, // ★ 인증서 자동 로드/갱신
+		},
+	}
         // ===== [E] SSL 적용 ====== //
         
         // ===== [S] 서버 설정 ====== //
@@ -61,12 +98,14 @@ func main() {
         mux.Handle("/", middlewares.CorsMiddleware(fileServer))
         
         log.Info("video App Start!")
-        
+
+        // Start custom port server for development/testing
         // sErr := http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), nil)
-        sErr := http.ListenAndServeTLS(":"+os.Getenv("PORT"), os.Getenv("TLS_CERT_FILE"), os.Getenv("TLS_KEY_FILE"), mux)
+        // sErr := http.ListenAndServeTLS(":"+os.Getenv("PORT"), os.Getenv("TLS_CERT_FILE"), os.Getenv("TLS_KEY_FILE"), mux)
         
-        if sErr != nil {
-                log.Error("HTTP 서버 오류", zap.Error(sErr))
+        // Start HTTPS server with Let's Encrypt
+        if err := httpsSrv.ListenAndServeTLS("", ""); err != nil {
+                log.Fatal("HTTPS 서버 시작 실패", zap.Error(err))
         }
         // ===== [E] 서버 설정 ====== //
 }
