@@ -268,7 +268,7 @@ public class EventListServiceImpl implements EventListService{
 	}
 	
 	@Override
-	public void requestFileFromModule(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
+	public boolean requestFileFromModule(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
 		
 		// 디바이스 IP
 		String dvIp = "";
@@ -293,11 +293,17 @@ public class EventListServiceImpl implements EventListService{
 				boolean streamCheck = false;
 				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
 				if(!streamCheck) {
-					return; 
+					
+					// 실패 처리
+					logger.error("디바이스에서 이미지 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);
+					return false; 
+				}else{
+					
+					// 이미지 파일 전송 성공시 ev_has_Img update
+					eventListMapper.updateEvHasImgOne(evId);
 				}
 				
-				// ev_has_mov update
-				eventListMapper.updateEvHasImgOne(evId);
+
 				
 			}
 			
@@ -311,20 +317,29 @@ public class EventListServiceImpl implements EventListService{
 				
 				// 영상 파일 가져오기
 				boolean streamCheck = false;
-				apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
+				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
 				if(!streamCheck) {
-					return;
+					
+					// 실패 처리
+					logger.error("디바이스에서 영상 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);
+					return false;
+				}else {
+					// 영상파일 전송 성공시 ev_has_mov update
+					eventListMapper.updateEvHasMovOne(evId);
 				}
 				
-				// ev_has_mov update
-				eventListMapper.updateEvHasMovOne(evId);
+
 			}
 			
 		} catch (DataAccessException e2) {
 			logger.error("requestFileFromModule에서 evHasMovChange 또는 evHasImgChange 오류 발생 : ",e2);
+			return false;
 		} catch (RuntimeException e) {
 			logger.error("requestFileFromModule에서 오류 발생 : ",e);
+			return false;
 		}
+		
+		return true;
 	}
 	
 	/**

@@ -56,6 +56,7 @@ public class StatsController {
 	@PostMapping("/login")
 	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session) {
 		
+		// 초기값 설정
 		String id = body.get("id");
 		String pwd = body.get("pwd");
 		String encryptPwd = null;
@@ -112,7 +113,7 @@ public class StatsController {
 	private String viewStat(Model model, HttpSession session) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
+		logger.info("{} 사용자의 {}에 viewStat 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
 		
 		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
 		

@@ -100,6 +100,8 @@ public class ApiServiceImpl implements ApiService{
 	@Override
 	public HttpURLConnection createPostConnection(String targetUrl, String body, String contentType) {
 		
+		logger.info("파라미터 정보 / targetUrl : " + targetUrl + "/ body : " + body + "/ contentType : " + contentType);
+		
 		URL url = null;
 		HttpURLConnection conn = null;
 		
@@ -126,10 +128,12 @@ public class ApiServiceImpl implements ApiService{
 		} catch (MalformedURLException e) {
 			
 			logger.error("createPostConnection에서 open connection 생성 에러 : ",e);
+			return null;
 			
 		} catch (IOException e) {
 			
 			logger.error("createPostConnection에서 실시간 스트리밍 에러 : ",e);
+			return null;
 			
 		}
 		
@@ -174,7 +178,9 @@ public class ApiServiceImpl implements ApiService{
 	 * @param conn
 	 * @param res
 	 */
-	public void fileResponse(HttpURLConnection conn, String filePath) {
+	public boolean fileResponse(HttpURLConnection conn, String filePath) {
+		
+		logger.info("파라미터 정보 / conn : " + conn + "/ filePath : " + filePath);
 		
 		try {
 		
@@ -194,7 +200,10 @@ public class ApiServiceImpl implements ApiService{
 			}
         } catch (IOException e) {
         	logger.error("fileResponse 에서 에러 발생 : ",e);
+        	return false;
 		}
+		
+		return true;
 		
 	}
 	
@@ -203,6 +212,8 @@ public class ApiServiceImpl implements ApiService{
 	 */
 	@Override
 	public boolean forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path ) {
+		
+		logger.info("파라미터 정보 / json : " + json + "/ dvIp : " + dvIp + " / path : " + path);
 		
 		// content-type : application/json 
 		String contentType = "application/json";
@@ -238,11 +249,17 @@ public class ApiServiceImpl implements ApiService{
 	        	
 	        	//디바이스 Url
 	        	targetUrl = "http://" + dvIp + path;
+	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
 	        	if(conn == null) {
 	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
 	        		conn = createPostConnection(targetUrl, body, contentType);
+	        		if(conn == null) {
+	        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
+	        			return false;
+	        		}
+	        			
 	        		// connectionPool에 해당 디바이스 추가
 	        		connectionPoolManager.addConnection(dvIp, conn);
 	        	}
@@ -251,6 +268,7 @@ public class ApiServiceImpl implements ApiService{
 				boolean responseCheck = false;
 				responseCheck = copyResponse(conn, res);
 				if(!responseCheck) {
+					logger.error("실시간 디바이스 통신 중, 실시간 데이터 수신 실패 / conn : " + conn + "res : " + res);
 	        		connectionPoolManager.closeConnection(dvIp);
 	        		conn.disconnect();
 					return false;
@@ -281,11 +299,16 @@ public class ApiServiceImpl implements ApiService{
 	        	
 	        	//디바이스 Url
 	        	targetUrl = "http://" + dvIp + path;
+	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
 	        	if(conn == null) {
 	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
 	        		conn = createPostConnection(targetUrl, body, contentType);
+	        		if(conn == null) {
+	        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
+	        			return false;
+	        		}
 	        		// connectionPool에 해당 디바이스 추가
 	        		connectionPoolManager.addConnection(dvIp, conn);
 	        	}
@@ -293,7 +316,11 @@ public class ApiServiceImpl implements ApiService{
 	        	String filePath = servletContext.getRealPath("/img") + "/" + json.get("fileName");
 	        	
 				// 3-2. file stream
-	        	fileResponse(conn, filePath);
+	        	boolean fileResponseCheck = fileResponse(conn, filePath);
+	        	if(!fileResponseCheck) {
+	        		logger.error("디바이스에서 이미지 파일 수신 실패 / conn : " + conn + "filePath : " + filePath);
+	        		return false;
+	        	}
 	        	
 	        	// 3-3. connection pool 종료
 	        	if(conn != null) {
@@ -307,11 +334,17 @@ public class ApiServiceImpl implements ApiService{
 	        	
 	        	//디바이스 Url
 	        	targetUrl = "http://" + dvIp + path;
+	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
 	        	if(conn == null) {
 	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
 	        		conn = createPostConnection(targetUrl, body, contentType);
+	        		if(conn == null) {
+	        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
+	        			return false;
+	        		}
+	        		
 	        		// connectionPool에 해당 디바이스 추가
 	        		connectionPoolManager.addConnection(dvIp, conn);
 	        	}
@@ -319,7 +352,11 @@ public class ApiServiceImpl implements ApiService{
 	        	String filePath = servletContext.getRealPath("/img") + "/" + json.get("fileName");
 	        	
 				// 3-2. file stream
-	        	fileResponse(conn, filePath);
+	        	boolean fileResponseCheck = fileResponse(conn, filePath);
+	        	if(!fileResponseCheck) {
+	        		logger.error("영상 파일 수신 실패 / conn : " + conn + "filePath : " + filePath);
+	        		return false;
+	        	}
 	        	
 	        	// 3-3. connection pool 종료
 	        	if(conn != null) {
@@ -334,13 +371,13 @@ public class ApiServiceImpl implements ApiService{
 	        	logger.error("잘못된 type 값 전송");
 	        	return false;
 	        }
-	        
-	        return true;
 			
 		} catch (JsonProcessingException e) {
 			logger.error("JSON 변환 에러 : ",e);
 			return false;
 		} 
+		
+		return true;
 		
 	}
 	

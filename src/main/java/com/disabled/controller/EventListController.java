@@ -172,10 +172,19 @@ public class EventListController {
 			model.addAttribute("endDate", endDate);
 			
 			// 이미지파일, 영상 파일 module에서 수신
-			eventListService.requestFileFromModule(res, evId,eventListDetail);
+			boolean moduleCheck = false;
+			moduleCheck = eventListService.requestFileFromModule(res, evId,eventListDetail);
+			if(!moduleCheck) {
+				logger.error("Device와 파일 송수신 도중 오류 발생 / response : " + res.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
+				model.addAttribute("errorMsg", "상세 조회 중 오류가 발생했습니다.");
+				return "redirect:/eventList/viewEventList.do";
+			}
 			
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달로 인한 오류 발생 : ",e);
+			model.addAttribute("errorMsg", "상세 조회 중 오류가 발생했습니다.");
+			return "redirect:/eventList/viewEventList.do";
+			
 		}
 
 		return "eventList/eventListDetail";

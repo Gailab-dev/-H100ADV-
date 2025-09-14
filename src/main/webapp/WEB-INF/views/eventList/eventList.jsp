@@ -2,6 +2,7 @@
     pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %> 
 
 <!DOCTYPE html>
 <html>
@@ -10,6 +11,14 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/eventList.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
 <title>eventList</title>
+
+<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+<c:if test="${not empty errorMsg}">
+<script>
+  alert("${fn:escapeXml(errorMsg)}");
+</script>
+</c:if>
+<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
 <script>
 	 
 	// pagination 객체를 활용한 페이지 이동
