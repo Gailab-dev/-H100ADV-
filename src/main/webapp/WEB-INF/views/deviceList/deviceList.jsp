@@ -14,7 +14,25 @@
   src="https://code.jquery.com/jquery-3.7.1.js"
   integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
   crossorigin="anonymous"></script>
+  
+  	<!-- 디바이스 리스트의 첫번째 디바이스의 ID -->
+  	<c:forEach var="entry" items="${deviceList}" varStatus="status">
+    	<c:if test="${status.first}">
+        	<c:set var="firstDeviceList" value="${entry.value}" />
+        	<c:if test="${not empty firstDeviceList}">
+    			<c:set var="deviceId" value="${firstDeviceList[0].dv_id}" />
+			</c:if>
+    	</c:if>
+	</c:forEach>
+  	
 	<script>
+		
+		// 현재 스트리밍 중인 deviceId
+		var deviceId = null;
+		
+		// 현재 스트리밍중인지 아닌지 여부
+		var isStreamingActive = false;
+		
 		
 		/*
 		* 실시간 스트리밍 실행
@@ -117,10 +135,9 @@
 	    		return;
 	    	}
 	    	
+	    	
 	    	// 정지 버튼의 data-device-id 속성에 저장, 추후 고도화시 다시 구현
 	        // document.getElementById("stopStreamBtn").dataset.deviceId = id;
-	    
-	    	
 	    	
 			const body = {
 				'type': command,
@@ -167,9 +184,51 @@
 	        }
 	    });
 	  	
-	  	// 자동실행
-		playVideo();
+	  	// 버튼 클릭시 조건에 따라 start, stop 명령어 실행
+	  	function deviceBtnClick(command,newDeviceId){
+	  		
+	  		// 이미 다른 디바이스 실행되고 있는 경우
+	  		if(deviceId != null){
+	  			sendCommand('stop',deviceId);
+	  			deviceId == null;
+	  			isStreamingActive = false;
+	  		}
+	  		
+	  		deviceId = newDeviceId;
+	  		
+	  		sendCommand(command,newDeviceId);
+	  		isStreamingActive = true;
+	  		
+	  	}
 	  	
+	  	// 페이지 시작시 자동 실행
+	    document.addEventListener('DOMContentLoaded', function() {
+	    
+	    	// deviceId값이 null이면 자동실행 금지
+	    	if(deviceId == null){
+	    		deviceId = '${deviceId}';
+	    		
+	    		return;
+	    	}
+	    	
+	    	sendCommand('start',deviceId);
+	    	isStreamingActive = true;
+	    });
+	    
+
+	 	// 기존 스크립트에 추가할 페이지 이탈 처리 코드
+
+	 	// 페이지 종료 전 이벤트 처리
+		 window.addEventListener('beforeunload', function(event) {
+		     
+		     // 현재 스트리밍이 활성화되어 있으면 종료 명령 전송
+		     if (isStreamingActive && deviceId) {
+		         // 동기 방식으로 end 명령 전송 (페이지 종료 시에는 비동기 요청이 취소될 수 있음)
+		    	 sendCommand('end',deviceId);
+		     }
+		 });
+	 	
+	    
 		/*
 			1. video 태그에 넣을 url
   				- url  > http://[개발서버ip]:8087/index.m3u8

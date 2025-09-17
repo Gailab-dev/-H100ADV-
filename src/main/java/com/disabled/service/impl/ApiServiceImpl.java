@@ -58,7 +58,7 @@ public class ApiServiceImpl implements ApiService{
 		String contentType = "application/x-www-form-urlencoded";
 		
 		// 디바이스Url
-		String targetUrl = "http://" + dvIp +"/video";
+		String targetUrl = "https://" + dvIp +"/video";
 		// connection 객체
 		HttpURLConnection conn = null;
 		// 인코딩 할 명령어
@@ -160,6 +160,7 @@ public class ApiServiceImpl implements ApiService{
 		            
 		            int code = conn.getResponseCode();
 		            if(code != HttpURLConnection.HTTP_OK) {
+		            	logger.error("응답코드 : " + code);
 		            	return false;
 		            }else {
 		            	return true;
@@ -248,7 +249,7 @@ public class ApiServiceImpl implements ApiService{
 	        if(type.equals("start")) {
 	        	
 	        	//디바이스 Url
-	        	targetUrl = "http://" + dvIp + path;
+	        	targetUrl = "https://" + dvIp + path;
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
@@ -298,7 +299,7 @@ public class ApiServiceImpl implements ApiService{
 	        } else if(type.equals("image")) {
 	        	
 	        	//디바이스 Url
-	        	targetUrl = "http://" + dvIp + path;
+	        	targetUrl = "https://" + dvIp + path;
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
@@ -333,7 +334,7 @@ public class ApiServiceImpl implements ApiService{
 	        } else if(type.equals("video")) {
 	        	
 	        	//디바이스 Url
-	        	targetUrl = "http://" + dvIp + path;
+	        	targetUrl = "https://" + dvIp + path;
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
