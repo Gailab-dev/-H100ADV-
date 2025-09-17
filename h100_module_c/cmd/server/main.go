@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
-        // "fmt"
+        "fmt"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -33,23 +33,23 @@ func main() {
         // ===== [E] mariadb 설정 ====== //
 
         // ===== [S] SSL 적용 ====== //
-        mux := http.NewServeMux()
+        // mux := http.NewServeMux()
         // ===== [E] SSL 적용 ====== //
         
         // ===== [S] 핸들러 등록 ====== //
-        mux.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.OneFileReceive))
-        mux.HandleFunc("/imageFileReceive", middlewares.WithCORS(fileReceive.ImageFileReceive))
-        mux.HandleFunc("/videoFileReceive", middlewares.WithCORS(fileReceive.VideoFileReceive))
-        mux.HandleFunc("/insertEventData",insertEvent.InsertEventData())
-        // http.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.OneFileReceive))
-        // http.HandleFunc("/imageFileReceive", middlewares.WithCORS(fileReceive.ImageFileReceive))
-        // http.HandleFunc("/videoFileReceive", middlewares.WithCORS(fileReceive.VideoFileReceive))
-        // http.HandleFunc("/insertEventData",insertEvent.InsertEventData())
+        // mux.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.OneFileReceive))
+        // mux.HandleFunc("/imageFileReceive", middlewares.WithCORS(fileReceive.ImageFileReceive))
+        // mux.HandleFunc("/videoFileReceive", middlewares.WithCORS(fileReceive.VideoFileReceive))
+        // mux.HandleFunc("/insertEventData",insertEvent.InsertEventData())
+        http.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.OneFileReceive))
+        http.HandleFunc("/imageFileReceive", middlewares.WithCORS(fileReceive.ImageFileReceive))
+        http.HandleFunc("/videoFileReceive", middlewares.WithCORS(fileReceive.VideoFileReceive))
+        http.HandleFunc("/insertEventData",insertEvent.InsertEventData())
         // ===== [E] 핸들러 등록 ====== //
         
         // ===== [S] 서버 설정 ====== //
-        // sErr := http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), nil)
-        sErr := http.ListenAndServeTLS(":"+os.Getenv("PORT"), os.Getenv("TLS_CERT_FILE"), os.Getenv("TLS_KEY_FILE"), mux)
+        sErr := http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), nil)
+        // sErr := http.ListenAndServeTLS(":"+os.Getenv("PORT"), os.Getenv("TLS_CERT_FILE"), os.Getenv("TLS_KEY_FILE"), mux)
         
         if sErr != nil {
                 log.Error("HTTP 서버 오류", zap.Error(sErr))
