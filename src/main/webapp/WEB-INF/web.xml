@@ -136,4 +136,14 @@
   		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
+	<!-- 외부 디렉토리에 파일 저장  -->
+	<context-param>
+    	<param-name>imgFilePath</param-name>
+    	<param-value>/app/H100_system/output_images</param-value>
+	</context-param>
+	<context-param>
+    	<param-name>videoFilePath</param-name>
+    	<param-value>/app/H100_system/output_videos</param-value>
+	</context-param>
+	
 </web-app>

@@ -28,10 +28,13 @@
 	<script>
 		
 		// 현재 스트리밍 중인 deviceId
-		var deviceId = null;
+		let deviceId = null;
 		
 		// 현재 스트리밍중인지 아닌지 여부
-		var isStreamingActive = false;
+		let isStreamingActive = false;
+		
+		
+		let teardownSent = false;
 		
 		
 		/*
@@ -125,52 +128,73 @@
 	    * @param
 	    *  - command : 명령어(string)
 	    *  - id : 명령어를 보낼 device의 id
-	    * @return
+	    * @return : true가 오류, false가 정상인 경우 return할 것
 	    */
-		async function sendCommand(command,id) {
-			
-	    	// id값 검증하여 없다면 return
-	    	if(id == null || id == undefined || id == 0 || id == ""){
-	    		alert("먼저 디바이스 리스트에서 디바이스를 선택해주세요");
-	    		return;
-	    	}
-	    	
-	    	
-	    	// 정지 버튼의 data-device-id 속성에 저장, 추후 고도화시 다시 구현
-	        // document.getElementById("stopStreamBtn").dataset.deviceId = id;
+		function sendCommand(command,id) {
 	    	
 			const body = {
 				'type': command,
 				'id': id
 			};
 			
-	    	fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
-	      		method: 'POST',
-	      		headers: {
-	        		'Content-Type': 'application/json'
-	      		},
-	      		body: JSON.stringify(body)
-	    		})
-	    	.then(response => {
-	      		if (!response.ok) throw new Error('요청 실패');
-	      		return response.text();
-	    	})
-	    	.then(text => {
+			try{
+		    	const response = fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
+		      		method: 'POST',
+		      		headers: {
+		        		'Content-Type': 'application/json'
+		      		},
+		      		body: JSON.stringify(body),
+		      		keepalive: command === 'end'
+		    		});
+		    	
+		    	if(!response.ok) {return true;}
+		    	
+		    	return false;
+			}catch(e){
+				return true;
+			}
 
-	    		if(command == "start"){
-	    			playVideo(); 
-	    		} else if (command == "end"){
-	    			stopVideo();
-	    		}else{
-	    			// 다른 버튼도 추가 구현해야 함
-	    		}
-
-	    	})
-	    	.catch(error => {
-	    		alert('오류: ' + error);
-	    		stopVideo();
-	    	});
 	  	}
+	    
+	    // 페이지 종료되었을 때 종료 처리 함수
+	    function sendEndBeaconOnce(){
+		 	if(teardownSent) return;
+		 	if(!isStreamingActive || !deviceId) return;
+			 
+		 	teardownSent = true;
+		    	
+    		// 보낼 데이터
+    	    const body = JSON.stringify({ type: 'end', id: deviceId });
+	    	
+	    	// 실시간 스트리밍 종료 요청
+    	    try {
+    	    	// 1) sendBeacon 방식으로 브라우저 중도 요청 취소 방지
+    	        const ok = navigator.sendBeacon(
+    	          '/gov-disabled-web-gs/deviceList/sendCommandToJSON',
+    	          new Blob([body], { type: 'application/json' })
+    	        );
+    	        if (!ok) {
+    	          // 2) sendBeacon 실패시 fetch에 keepalive true 속성 사용하여 실시간 스트리밍 종료 요청
+    	          fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
+    	            method: 'POST',
+    	            headers: { 'Content-Type': 'application/json' },
+    	            body,
+    	            keepalive: true
+    	          });
+    	        }
+    	      
+    	      // 페이지 밖으로 벗어남으로 에러 처리 없음
+    	      } catch (_) {}
+    	      
+    	      // 로컬 플레이어는 즉시 정리 (네트워크 요청과 별개)
+    	      try { if (hls) { hls.destroy(); hls = null; } } catch(_){}
+    	      try {
+    	        const v = document.getElementById('video');
+    	        if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+    	      } catch(_){}
+    	      isStreamingActive = false;
+
+	    }
 		
 			    // 아코디언 토글 기능: 정상작동하도록 유지
 	    document.addEventListener('DOMContentLoaded', () => {
@@ -185,48 +209,62 @@
 	    });
 	  	
 	  	// 버튼 클릭시 조건에 따라 start, stop 명령어 실행
-	  	function deviceBtnClick(command,newDeviceId){
+	  	async function deviceBtnClick(command,newDeviceId){
 	  		
 	  		// 이미 다른 디바이스 실행되고 있는 경우
-	  		if(deviceId != null){
-	  			sendCommand('stop',deviceId);
-	  			deviceId == null;
-	  			isStreamingActive = false;
+	  		if(isStreamingActive && deviceId && deviceId !== newDeviceId){
+	  			const ok = await sendCommand('stop',deviceId);
+	  			if(!ok){
+	  				alert("기존 디바이스와 통신 오류");
+	  				return;
+	  			}else{
+	  				stopVideo();
+		  			deviceId = null;
+		  			isStreamingActive = false;
+	  			}
+
 	  		}
 	  		
+	  		// 새로운 디바이스와 통신
 	  		deviceId = newDeviceId;
+	  		const ok = await sendCommand(command,newDeviceId);
 	  		
-	  		sendCommand(command,newDeviceId);
-	  		isStreamingActive = true;
+	  		// 새로운 디바이스와 통신 중 오류 처리
+	  		if(!ok){
+	  			alert("새 디바이스와 통신 오류");
+	  			isStreamingActive = false;
+	  			deviceId = null;
+	  			
+  			// 새로운 디바이스와 연결 시 요청에 따른 videoPlayer 처리
+	  		}else{
+	  			if(command === 'start'){
+	  				playVideo();
+	  				isStreamingActive = true;
+	  			}else if(command === 'end'){
+	  				stopVideo();
+	  				isStreamingActive = false;
+	  			}
+	  		}
+	  		
 	  		
 	  	}
 	  	
+	  	
 	  	// 페이지 시작시 자동 실행
 	    document.addEventListener('DOMContentLoaded', function() {
-	    
-	    	// deviceId값이 null이면 자동실행 금지
-	    	if(deviceId == null){
-	    		deviceId = '${deviceId}';
-	    		
-	    		return;
-	    	}
 	    	
-	    	sendCommand('start',deviceId);
-	    	isStreamingActive = true;
+	    	deviceBtnClick('start','${deviceId}');
+	    	
 	    });
-	    
-
-	 	// 기존 스크립트에 추가할 페이지 이탈 처리 코드
+	  	
 
 	 	// 페이지 종료 전 이벤트 처리
-		 window.addEventListener('beforeunload', function(event) {
-		     
-		     // 현재 스트리밍이 활성화되어 있으면 종료 명령 전송
-		     if (isStreamingActive && deviceId) {
-		         // 동기 방식으로 end 명령 전송 (페이지 종료 시에는 비동기 요청이 취소될 수 있음)
-		    	 sendCommand('end',deviceId);
-		     }
+		 window.addEventListener('beforeunload', () => {sendEndBeaconOnce();});
+		 window.addEventListener('pagehide', () => { sendEndBeaconOnce(); }, { capture: true });
+		 document.addEventListener('visibilitychange', () => {
+		    if (document.visibilityState === 'hidden') sendEndBeaconOnce();
 		 });
+		 window.addEventListener('unload', () => { sendEndBeaconOnce(); });
 	 	
 	    
 		/*

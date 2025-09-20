@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.disabled.component.ConnectionPoolManager;
@@ -46,10 +47,20 @@ public class ApiServiceImpl implements ApiService{
 	@Autowired
 	ConnectionPoolManager connectionPoolManager;
 	
+	//외부 파일 저장
+	
+	@Value("#{servletContext.getInitParameter('imgFilePath')}")
+	private String imgFilePath;
+	
+	@Value("#{servletContext.getInitParameter('videoFilePath')}")
+	private String videoFilePath;
+	
 	/**
 	 * 실시간 영상 스트리밍
-	 * @Param
-	 * - dvIp: 디바이스 IP주소 (String)
+	 * @param req : HttpServletRequest 객체
+	 * @param res : HttpServletResponse 객체
+	 * @Param dvIp: 디바이스 IP주소 (String)
+	 * 
 	 */
 	@Override
 	public boolean forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp) {
@@ -92,9 +103,9 @@ public class ApiServiceImpl implements ApiService{
 
 	/**
 	 * 실시간 영상 스트리밍을 위한 connection pool 생성
-	 * 	- targetUrl: 스트리밍을 할 device의 ip주소, port번호 등을 포함한 url
-	 *  - body: 전송데이터
-	 *  - contentType : 문자열 : application/x-www-form-urlencoded / JSON : application/json
+	 * @param targetUrl: 스트리밍을 할 device의 ip주소, port번호 등을 포함한 url
+	 * @param body: 전송데이터
+	 * @param contentType : 문자열 : application/x-www-form-urlencoded / JSON : application/json
 	 * @return : HttpURLConnection 객체
 	 */
 	@Override
@@ -142,6 +153,8 @@ public class ApiServiceImpl implements ApiService{
 	
 	/**
 	 * 영상 스트리밍 결과 수신 및 전송
+	 * @param conn : HttpURLConnection 객체
+	 * @param res : HttpServletResponse 객체
 	 */
 	@Override
 	public boolean copyResponse(HttpURLConnection conn, HttpServletResponse res) {
@@ -175,13 +188,15 @@ public class ApiServiceImpl implements ApiService{
 	}
 	
 	/**
-	 * 
-	 * @param conn
-	 * @param res
+	 * 디바이스와 통신하여 이미지, 영상 파일 스트리밍하여 filePath에 저장
+	 * @param conn : HttpURLConnection 객체
+	 * @param filePath : 이미지, 영상 파일 저장할 파일 경로
 	 */
 	public boolean fileResponse(HttpURLConnection conn, String filePath) {
 		
 		logger.info("파라미터 정보 / conn : " + conn + "/ filePath : " + filePath);
+		
+		java.nio.file.Path out = java.nio.file.Paths.get(filePath);
 		
 		try {
 		
@@ -199,6 +214,17 @@ public class ApiServiceImpl implements ApiService{
            
 				logger.info("파일 다운로드 성공 : " + filePath);
 			}
+        } catch (java.io.FileNotFoundException fnfe) {
+            // RO FS일 때 가장 먼저 여기서 터짐 → 원인 메시지 명확히
+            String parentWritable = "unknown";
+            try 
+            { 
+            	parentWritable = String.valueOf(java.nio.file.Files.isWritable(out.getParent())); 
+            } catch (Exception ignore) {
+            	logger.error("외부 파일 시스템에서 쓰기 불가 오류 : ",ignore);
+            	logger.error("부모 디렉토리 writable 여부 : ",parentWritable);
+                return false;
+            }
         } catch (IOException e) {
         	logger.error("fileResponse 에서 에러 발생 : ",e);
         	return false;
@@ -219,8 +245,8 @@ public class ApiServiceImpl implements ApiService{
 		// content-type : application/json 
 		String contentType = "application/json";
 		
-		// connetion 객체를 connection pool에서 가져오기
-		HttpURLConnection conn = connectionPoolManager.getConnection(dvIp);
+		// connetion 객체를 
+		HttpURLConnection conn = null;
 		
 		// 디바이스 Url
 		String targetUrl = "";
@@ -246,128 +272,64 @@ public class ApiServiceImpl implements ApiService{
 	        }
 	        
 	        // 3. type 값 별 분기 실행
-	        if(type.equals("start")) {
+	        if(type.equals("start") | type.equals("end")) {
 	        	
 	        	//디바이스 Url
 	        	targetUrl = "https://" + dvIp + path;
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
-	        	if(conn == null) {
-	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
-	        		conn = createPostConnection(targetUrl, body, contentType);
-	        		if(conn == null) {
-	        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-	        			return false;
-	        		}
-	        			
-	        		// connectionPool에 해당 디바이스 추가
-	        		connectionPoolManager.addConnection(dvIp, conn);
+        		conn = createPostConnection(targetUrl, body, contentType);
+        		if(conn == null) {
+        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
+        			return false;
+        		}
+
+        		// device와 통신 중 오류 발생시 오류코드
+	        	Integer code = conn.getResponseCode();
+	        	if(code != 200) {
+	        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
+	        		return false;
 	        	}
-	        	
-				// 3-2. output Stream
-				boolean responseCheck = false;
-				responseCheck = copyResponse(conn, res);
-				if(!responseCheck) {
-					logger.error("실시간 디바이스 통신 중, 실시간 데이터 수신 실패 / conn : " + conn + "res : " + res);
-	        		connectionPoolManager.closeConnection(dvIp);
-	        		conn.disconnect();
-					return false;
-				}
 				
 				return true;
 				
-	        } else if(type.equals("end")) {
-	        	
-	        	// 3-3. connection pool 종료
-	        	if(conn != null) {
-	        		
-	        		connectionPoolManager.closeConnection(dvIp);
-	        		conn.disconnect();
-	        	}
-	        	
-	        	return true;
-	        	
-	        } else if(type.equals("U")) {
+	        } else if(type.equals("U") | type.equals("D") | type.equals("L") | type.equals("R")) {
 	        	// 추후 고도화
-	        } else if(type.equals("D")) {
-	        	// 추후 고도화
-	        } else if(type.equals("L")) {
-	        	// 추후 고도화
-	        } else if(type.equals("R")) {
-	        	// 추후 고도화
-	        } else if(type.equals("image")) {
+	        } else if(type.equals("image") | type.equals("video")) {
 	        	
 	        	//디바이스 Url
 	        	targetUrl = "https://" + dvIp + path;
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
+	        	conn = createPostConnection(targetUrl, body, contentType);
 	        	if(conn == null) {
-	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
-	        		conn = createPostConnection(targetUrl, body, contentType);
-	        		if(conn == null) {
-	        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-	        			return false;
-	        		}
-	        		// connectionPool에 해당 디바이스 추가
-	        		connectionPoolManager.addConnection(dvIp, conn);
-	        	}
-	        	
-	        	String filePath = servletContext.getRealPath("/img") + "/" + json.get("fileName");
-	        	
-				// 3-2. file stream
-	        	boolean fileResponseCheck = fileResponse(conn, filePath);
-	        	if(!fileResponseCheck) {
-	        		logger.error("디바이스에서 이미지 파일 수신 실패 / conn : " + conn + "filePath : " + filePath);
+	        		logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
 	        		return false;
 	        	}
 	        	
-	        	// 3-3. connection pool 종료
-	        	if(conn != null) {
-	        		
-	        		connectionPoolManager.closeConnection(dvIp);
-	        		conn.disconnect();
+	        	// 3-2. filePath 설정
+	        	String filePath = "";
+	        	if(type.equals("image")) {
+	        		filePath = imgFilePath + "/" + json.get("fileName");
+	        	}else if(type.equals("video")) {
+	        		filePath = videoFilePath + "/" + json.get("fileName");
 	        	}
-	        	
-	        	return true;
-	        } else if(type.equals("video")) {
-	        	
-	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + path;
-	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
-	        	
-	        	// 3-1. connection pool 생성
-	        	if(conn == null) {
-	        		// connectionPool에 해당 디바이스 IP에 해당하는 connection이 없다면 새로 생성
-	        		conn = createPostConnection(targetUrl, body, contentType);
-	        		if(conn == null) {
-	        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-	        			return false;
-	        		}
-	        		
-	        		// connectionPool에 해당 디바이스 추가
-	        		connectionPoolManager.addConnection(dvIp, conn);
-	        	}
-	        	
-	        	String filePath = servletContext.getRealPath("/img") + "/" + json.get("fileName");
-	        	
-				// 3-2. file stream
+	        			
+				// 3-3. file stream
 	        	boolean fileResponseCheck = fileResponse(conn, filePath);
-	        	if(!fileResponseCheck) {
-	        		logger.error("영상 파일 수신 실패 / conn : " + conn + "filePath : " + filePath);
-	        		return false;
-	        	}
-	        	
-	        	// 3-3. connection pool 종료
-	        	if(conn != null) {
-	        		
-	        		connectionPoolManager.closeConnection(dvIp);
-	        		conn.disconnect();
+	        	if (!fileResponseCheck) {
+	        	    try {
+	        	        logger.error("디바이스에서 이미지 파일 수신 실패 / url: " + conn.getURL() + " / filePath: "+filePath+" / parentWritable: "+java.nio.file.Files.isWritable(java.nio.file.Paths.get(filePath).getParent()));
+	        	            
+	        	    } catch (RuntimeException ignore) {
+	        	    	logger.error("",ignore);
+	        	    }
+	        	    return false;
 	        	}
 	        	
 	        	return true;
-				
 	        } else {
 	        	logger.error("잘못된 type 값 전송");
 	        	return false;
@@ -376,7 +338,19 @@ public class ApiServiceImpl implements ApiService{
 		} catch (JsonProcessingException e) {
 			logger.error("JSON 변환 에러 : ",e);
 			return false;
-		} 
+		} catch(IOException e3) {
+			logger.error("response 결과 200이 아님 : ",e3);
+			return false;
+		} finally {
+			// 모든 작업 후에도 conn 객체 남아 있다면 close
+			try {
+				if(conn != null) {
+					conn.disconnect();
+				}
+			} catch (RuntimeException e2) {
+				logger.error("connection 객체 disconnect 실패 : ",e2);
+			}
+		}
 		
 		return true;
 		
