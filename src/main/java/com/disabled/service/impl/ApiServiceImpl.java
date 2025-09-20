@@ -100,7 +100,7 @@ public class ApiServiceImpl implements ApiService{
 	@Override
 	public HttpURLConnection createPostConnection(String targetUrl, String body, String contentType) {
 		
-		logger.info("파라미터 정보 / targetUrl : " + targetUrl + "/ body : " + body + "/ contentType : " + contentType);
+		logger.info("파라미터 정보 / targetUrl : " + targetUrl + " / body : " + body + " / contentType : " + contentType);
 		
 		URL url = null;
 		HttpURLConnection conn = null;

@@ -13,9 +13,9 @@
 <title>eventList</title>
 
 <!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
-<c:if test="${not empty errorMsg}">
+<c:if test="${not empty param.errorMsg}">
 <script>
-  alert("${fn:escapeXml(errorMsg)}");
+	alert('<c:out value="${param.errorMsg}" />');
 </script>
 </c:if>
 <!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
