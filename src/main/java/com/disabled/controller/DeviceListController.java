@@ -13,8 +13,10 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -61,8 +63,12 @@ public class DeviceListController {
 		// 디바이스 리스트 주소별로 그룹화
 		groupAddrByDeviceList = groupedByAddr(deviceList);
 		
+		// 첫번째 디바이스 값 따로 분리
+		Integer firstDeviceId = (Integer) deviceList.get(0).get("dv_id");
+		
 		//model add
 		model.addAttribute("deviceList", groupAddrByDeviceList);
+		model.addAttribute("deviceId", firstDeviceId);
 		
 		return "/deviceList/deviceList";
 	}
@@ -110,7 +116,7 @@ public class DeviceListController {
 		
 		try {
 			
-			String id = req.getParameter("id");
+			String id = req.getParameter("deviceId");
 			
 			//id 유효성 검사
 			if(id == null || id.trim().isEmpty()) {
@@ -147,13 +153,15 @@ public class DeviceListController {
 	 * json 파일로 송신시 inputStream을 이용한 on-device 장비와 실시간 스트리밍
 	 */
 	@ResponseBody
-	@RequestMapping("/sendCommandToJSON")
+	@PostMapping(
+	  value = "/sendCommandToJSON",
+	  consumes = MediaType.APPLICATION_JSON_VALUE,
+	  produces = MediaType.APPLICATION_JSON_VALUE
+	)
 	private String sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res) {
 		
-		String returnStr = "실시간 디바이스와 송수신 실패";
-		
 		try {
-			String id = json.get("id").toString();
+			String id = json.get("deviceId").toString();
 			
 			//id 유효성 검사
 			if(id == null || id.trim().isEmpty()) {
@@ -169,18 +177,19 @@ public class DeviceListController {
 			}
 			
 			// 디바이스 IP를 통한 실시간 스트리밍
-			boolean streamCheck = false;
+			String streamCheck;
 			streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/video");
-			if(!streamCheck) {
-				return returnStr;
+			if("error".equals(streamCheck)) {
+				return "";
 			}
 			
-			returnStr = "실시간 디바이스와 송수신 성공";
-			return returnStr;
+			String resultString = extractJsonObject(streamCheck);
+			
+			return resultString;
 			
 		} catch (IllegalArgumentException e) {
 			logger.error("유효성 검사 오류: ",e);
-			return returnStr;
+			return "";
 		}
 
 	}
@@ -211,6 +220,15 @@ public class DeviceListController {
 		
 		return dvIp;
 		
+	}
+	
+	// 문자열 자르기
+	private static String extractJsonObject(String raw) {
+	    if (raw == null) return null;
+	    int s = raw.indexOf('{');
+	    int e = raw.lastIndexOf('}');
+	    if (s < 0 || e < s) return null;
+	    return raw.substring(s, e + 1).trim();
 	}
 	
 }

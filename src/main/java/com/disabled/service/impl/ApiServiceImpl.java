@@ -191,6 +191,7 @@ public class ApiServiceImpl implements ApiService{
 	 * 디바이스와 통신하여 이미지, 영상 파일 스트리밍하여 filePath에 저장
 	 * @param conn : HttpURLConnection 객체
 	 * @param filePath : 이미지, 영상 파일 저장할 파일 경로
+	 * 
 	 */
 	public boolean fileResponse(HttpURLConnection conn, String filePath) {
 		
@@ -236,9 +237,11 @@ public class ApiServiceImpl implements ApiService{
 	
 	/**
 	 * 송신 데이터 타입이 json객체일 때 실시간 영상 스트리밍
+	 * @return tokenId : 디바이스에서 보내준 토큰 ID(String)
+	 * @return error : 오류 발생시 'error'라는 문자열 보내기(String)
 	 */
 	@Override
-	public boolean forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path ) {
+	public String forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path ) {
 		
 		logger.info("파라미터 정보 / json : " + json + "/ dvIp : " + dvIp + " / path : " + path);
 		
@@ -268,7 +271,7 @@ public class ApiServiceImpl implements ApiService{
 	        	
 	        }else {
 	        	logger.error("type 값 없음");
-	        	return false;
+	        	return "error";
 	        }
 	        
 	        // 3. type 값 별 분기 실행
@@ -282,17 +285,21 @@ public class ApiServiceImpl implements ApiService{
         		conn = createPostConnection(targetUrl, body, contentType);
         		if(conn == null) {
         			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-        			return false;
+        			return "error";
         		}
 
         		// device와 통신 중 오류 발생시 오류코드
 	        	Integer code = conn.getResponseCode();
 	        	if(code != 200) {
 	        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
-	        		return false;
+	        		return "error";
 	        	}
+	        	
+	        	// tokenId 수신
+	            try (InputStream in = conn.getInputStream()) {
+	                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+	            }
 				
-				return true;
 				
 	        } else if(type.equals("U") | type.equals("D") | type.equals("L") | type.equals("R")) {
 	        	// 추후 고도화
@@ -306,7 +313,7 @@ public class ApiServiceImpl implements ApiService{
 	        	conn = createPostConnection(targetUrl, body, contentType);
 	        	if(conn == null) {
 	        		logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-	        		return false;
+	        		return "error";
 	        	}
 	        	
 	        	// 3-2. filePath 설정
@@ -326,21 +333,21 @@ public class ApiServiceImpl implements ApiService{
 	        	    } catch (RuntimeException ignore) {
 	        	    	logger.error("",ignore);
 	        	    }
-	        	    return false;
+	        	    return "error";
 	        	}
 	        	
-	        	return true;
+	        	return "true";
 	        } else {
 	        	logger.error("잘못된 type 값 전송");
-	        	return false;
+	        	return "error";
 	        }
 			
 		} catch (JsonProcessingException e) {
 			logger.error("JSON 변환 에러 : ",e);
-			return false;
+			return "error";
 		} catch(IOException e3) {
 			logger.error("response 결과 200이 아님 : ",e3);
-			return false;
+			return "error";
 		} finally {
 			// 모든 작업 후에도 conn 객체 남아 있다면 close
 			try {
@@ -352,7 +359,7 @@ public class ApiServiceImpl implements ApiService{
 			}
 		}
 		
-		return true;
+		return "true";
 		
 	}
 	

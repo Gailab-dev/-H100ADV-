@@ -10,5 +10,5 @@ public interface ApiService {
 	HttpURLConnection createPostConnection(String targetUrl, String body, String contentType);
 	boolean forwardStream(HttpServletRequest req, HttpServletResponse res, String dvIp);
 	boolean copyResponse(HttpURLConnection conn, HttpServletResponse res);
-	boolean forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path );
+	String forwardStreamToJSON(HttpServletResponse res, HashMap<String, Object> json, String dvIp, String path );
 }
