@@ -183,7 +183,17 @@ public class DeviceListController {
 				return "";
 			}
 			
-			String resultString = extractJsonObject(streamCheck);
+			String playUrl = "https://"+ dvIp+ "/index.m3u8";
+			String resultString = "";
+			if("start".equals(json.get("type"))) {
+				resultString = extractJsonObject(streamCheck,playUrl);
+			}
+			if("end".equals(json.get("type"))) {
+				resultString = "{\"result\":null,\"playUrl\":null}";
+
+			}
+			
+			logger.info("resultString : " + resultString);
 			
 			return resultString;
 			
@@ -231,5 +241,43 @@ public class DeviceListController {
 	    return raw.substring(s, e + 1).trim();
 	}
 	
+	// 문자열 자르기
+	private static String extractJsonObject(String raw, String playUrl) {
+	    if (raw == null) return null;
+	    int s = raw.indexOf('{');
+	    int e = raw.lastIndexOf('}');
+	    if (s < 0 || e < s) return null;
+	    
+	    String inner = raw.substring(s + 1, e).trim(); // {와 } 사이
+	    StringBuilder sb = new StringBuilder();
+	    sb.append('{');
+	    if (!inner.isEmpty()) {
+	        sb.append(inner);
+	        if (inner.charAt(inner.length() - 1) != ',') sb.append(',');
+	    }
+	    sb.append("\"playUrl\":\"").append(escapeJson(playUrl)).append("\"}");
+	    return sb.toString();
+	}
+	
+	private static String escapeJson(String s) {
+	    if (s == null) return null;
+	    StringBuilder sb = new StringBuilder(s.length() + 16);
+	    for (int i = 0; i < s.length(); i++) {
+	        char c = s.charAt(i);
+	        switch (c) {
+	            case '\\': sb.append("\\\\"); break;
+	            case '"':  sb.append("\\\""); break;
+	            case '\b': sb.append("\\b");  break;
+	            case '\f': sb.append("\\f");  break;
+	            case '\n': sb.append("\\n");  break;
+	            case '\r': sb.append("\\r");  break;
+	            case '\t': sb.append("\\t");  break;
+	            default:
+	                if (c < 0x20) sb.append(String.format("\\u%04x", (int)c));
+	                else sb.append(c);
+	        }
+	    }
+	    return sb.toString();
+	}
 }
 

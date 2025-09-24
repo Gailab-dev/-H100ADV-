@@ -15,16 +15,6 @@
   integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
   crossorigin="anonymous"></script>
   
-  	<!-- 디바이스 리스트의 첫번째 디바이스의 ID -->
-  	<c:forEach var="entry" items="${deviceList}" varStatus="status">
-    	<c:if test="${status.first}">
-        	<c:set var="firstDeviceList" value="${entry.value}" />
-        	<c:if test="${not empty firstDeviceList}">
-    			<c:set var="deviceId" value="${firstDeviceList[0].dv_id}" />
-			</c:if>
-    	</c:if>
-	</c:forEach>
-  	
 	<script>
 		
 		// 현재 스트리밍 중인 deviceId
@@ -36,33 +26,62 @@
 		
 		let teardownSent = false;
 		
+		// 전역 토큰 ID
+		let tokenId  = null;
+		
+		// 전역 hls
+		let hls = null;
+		
+		// video source tag id
+		let video = null;
+		
+		
+		/*
+		* 1~2초 대기
+		*/
+		function sleep(ms) { return new Promise(r => setTimeout(r,ms));}
 		
 		/*
 		* 실시간 스트리밍 실행
 		*/
-		function playVideo(){
+		async function playVideo(playUrl){
 			
 			hls = new Hls({
-				maxBufferLength:10,
-				maxBufferSize: 60 * 1000 * 1000
+				autoStartLoad:false
+				, maxBufferLength:10
+				, maxBufferSize: 60 * 1000 * 1000
+				, liveSyncDuration: 3            // or liveSyncDurationCount: 2~3
+				, liveMaxLatencyDuration: 10     // or liveMaxLatencyDurationCount: 8~10
+				, maxLiveSyncPlaybackRate: 1.5    // 살짝 가속해 엣지 추격
 			});
 			
-			const video = document.getElementById('video');
+			video = document.getElementById('video');
 			// jetson : 192.168.0.31, 개발 : 192.18.0.15
 			// ccty : 192.168.0.39
-			const videoSrc = 'https://www.geyeparking.shop/index.m3u8';
+			// 운영 = 'https://www.geyeparking.shop/index.m3u8';
+			video.setAttribute('src',playUrl);
 			
 			if(Hls.isSupported()){
 				
-				hls.loadSource(videoSrc);
 				hls.attachMedia(video);
 				
-				hls.on(Hls.Events.MANIFEST_PARSED,() => {
-					video.play();
-				});
+			  hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
+			    hls.loadSource(playUrl);        // 소스만 로드
+			    await sleep(2000);            // 1~2초 대기
+			    hls.startLoad(-1);               // ★ 실제 로드 시작(라이브 엣지)
+			  });
+
 				
 				hls.on(Hls.Events.ERROR,function(event,data){
-					// alert("🔴 HLS Error:" + data.type + " / " + data.details + " / " + data);
+					  /*
+					  * Hls.Events.ERROR 발생시 자세한 에러 로그 확인하는 코드, 오류 발생시에만 주석 풀어서 디버깅
+						console.log('HLS ERROR', {
+						    type: data.type,
+						    details: data.details,
+						    code: data.response?.code,
+						    url: data.response?.url
+						  });
+					  */
 				      if (data.fatal) {
 				        switch (data.type) {
 				          // 네트워크 오류인 경우
@@ -85,7 +104,7 @@
 				});
 			} else if(video.canPlayType('application/vnd.apple.mpegurl')){
 				// video 타입이 hls가 아닌 경우 mpegurl 타입으로 video 실행
-				video.src = videoSrc;
+				video.src = playUrl;
 				video.addEventListener('loadedmetadata',() => {
 					
 					video.muted = true;
@@ -100,14 +119,16 @@
 		
 		function stopVideo(){
 			
-			const video = document.getElementById('video');
+			video = document.getElementById('video');
 			
 			if(hls){
 				hls.destroy();
+				hls = null;
 			}
 			
 			video.pause();
 			video.load();
+			video.removeAttribute('src');
 		}
 		
 		/*
@@ -123,48 +144,69 @@
 	        }
 	    }
 		*/
+		
 	    /*
 	    * 디바이스에 명령어를 보내 기능 수행
 	    * @param
 	    *  - command : 명령어(string)
-	    *  - id : 명령어를 보낼 device의 id
-	    * @return : true가 오류, false가 정상인 경우 return할 것
+	    *  - deviceId : 명령어를 보낼 device의 id
+	    * @return : "error" | "end" | playUrl(String)
 	    */
-		function sendCommand(command,id) {
+		async function sendCommand(command,deviceId) {
 	    	
 			const body = {
 				'type': command,
-				'id': id
+				'id': tokenId,
+				'deviceId':deviceId
 			};
 			
 			try{
-		    	const response = fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
-		      		method: 'POST',
-		      		headers: {
-		        		'Content-Type': 'application/json'
-		      		},
-		      		body: JSON.stringify(body),
-		      		keepalive: command === 'end'
+		    	const response = await fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
+		      		method: 'POST'
+		      		, headers: { 'Content-Type': 'application/json' }
+		      		, body: JSON.stringify(body)
+		      		, keepalive: command === 'end'
+		      		, credentials : 'same-origin'
+		      		, cache:'no-store'
 		    		});
 		    	
-		    	if(!response.ok) {return true;}
+		    	// fetch는 항상 response 객체로 리턴
+		    	if (!response.ok) return "error";
+				
+		    	// response에서 json값 가져오기
+		    	let data = await response.json();
 		    	
-		    	return false;
+		    	// start면 tokenId, playUrl 추가
+		    	if(command === 'start'){ 
+		    		tokenId = data.result || data.id || null;
+		    		let playUrl = data.playUrl || null;
+		    		return playUrl;
+	    		}
+		    	
+		    	// end면 tokenId 초기화
+		    	if(command === 'end'){ 
+		    		tokenId = null; 
+		    		return "end";	
+		    	}
+		    	
+		    	
+		    	return "error";
 			}catch(e){
-				return true;
+				return "error";
 			}
 
 	  	}
 	    
 	    // 페이지 종료되었을 때 종료 처리 함수
 	    function sendEndBeaconOnce(){
+	    	
 		 	if(teardownSent) return;
 		 	if(!isStreamingActive || !deviceId) return;
 			 
 		 	teardownSent = true;
 		    	
     		// 보낼 데이터
-    	    const body = JSON.stringify({ type: 'end', id: deviceId });
+    	    const body = JSON.stringify({ type: 'end', id: tokenId, deviceId: deviceId });
 	    	
 	    	// 실시간 스트리밍 종료 요청
     	    try {
@@ -173,6 +215,7 @@
     	          '/gov-disabled-web-gs/deviceList/sendCommandToJSON',
     	          new Blob([body], { type: 'application/json' })
     	        );
+    	    	
     	        if (!ok) {
     	          // 2) sendBeacon 실패시 fetch에 keepalive true 속성 사용하여 실시간 스트리밍 종료 요청
     	          fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
@@ -211,34 +254,41 @@
 	  	// 버튼 클릭시 조건에 따라 start, stop 명령어 실행
 	  	async function deviceBtnClick(command,newDeviceId){
 	  		
-	  		// 이미 다른 디바이스 실행되고 있는 경우
-	  		if(isStreamingActive && deviceId && deviceId !== newDeviceId){
-	  			const ok = await sendCommand('stop',deviceId);
-	  			if(!ok){
+	  		let result = "error";
+	  		
+	  		// 이미 다른 디바이스 실행되고 있는 경우 먼저 end command 보냄
+	  		if(isStreamingActive && deviceId){
+	  			
+	  			result = await sendCommand('end',deviceId);
+	  			
+	  			if(result === "error"){
 	  				alert("기존 디바이스와 통신 오류");
 	  				return;
-	  			}else{
-	  				stopVideo();
-		  			deviceId = null;
-		  			isStreamingActive = false;
 	  			}
 
+  				stopVideo();
+  				deviceId = null;
+	  			isStreamingActive = false;
+	  			tokenId = null;
+	  			
 	  		}
 	  		
 	  		// 새로운 디바이스와 통신
 	  		deviceId = newDeviceId;
-	  		const ok = await sendCommand(command,newDeviceId);
+	  		result = await sendCommand(command,deviceId);
 	  		
 	  		// 새로운 디바이스와 통신 중 오류 처리
-	  		if(!ok){
+	  		if(result === "error"){
 	  			alert("새 디바이스와 통신 오류");
 	  			isStreamingActive = false;
 	  			deviceId = null;
+	  			return;
 	  			
   			// 새로운 디바이스와 연결 시 요청에 따른 videoPlayer 처리
 	  		}else{
 	  			if(command === 'start'){
-	  				playVideo();
+	  				if (hls) { try{ hls.destroy(); }catch(_){} hls = null; } // 기존에 hls가 남아 있다면 제거
+	  				playVideo(result); //playUrl
 	  				isStreamingActive = true;
 	  			}else if(command === 'end'){
 	  				stopVideo();
@@ -259,13 +309,20 @@
 	  	
 
 	 	// 페이지 종료 전 이벤트 처리
-		 window.addEventListener('beforeunload', () => {sendEndBeaconOnce();});
+		 window.addEventListener('beforeunload', () => {
+			 sendEndBeaconOnce();
+			 
+			 });
 		 window.addEventListener('pagehide', () => { sendEndBeaconOnce(); }, { capture: true });
 		 document.addEventListener('visibilitychange', () => {
-		    if (document.visibilityState === 'hidden') sendEndBeaconOnce();
+			 
+		     if (document.visibilityState === 'hidden') sendEndBeaconOnce();
 		 });
-		 window.addEventListener('unload', () => { sendEndBeaconOnce(); });
-	 	
+		 window.addEventListener('unload', () => { 
+			 sendEndBeaconOnce(); 
+			  
+		 });
+
 	    
 		/*
 			1. video 태그에 넣을 url
@@ -310,7 +367,7 @@
 				        <ul>
 				            <c:forEach var="device" items="${addr.value}">
 				                <li class="device-item" >
-				                	<a href="javascript:void(0);" onclick="sendCommand('start','${device.dv_id}')">${device.dv_name}</a>
+				                	<a href="javascript:void(0);" onclick="deviceBtnClick('start','${device.dv_id}')">${device.dv_name}</a>
 				                </li>
 				            </c:forEach>
 				        </ul>
