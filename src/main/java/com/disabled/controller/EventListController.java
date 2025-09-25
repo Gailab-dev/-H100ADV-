@@ -85,6 +85,15 @@ public class EventListController {
 				endDate = endDate.replace("-", "");;
 			}
 			
+			// 세션과 비교해 검색 결과가 달라졌다면 검색 결과 1로 설정
+			String prevSig = (String) session.getAttribute("eventListSearchSig");
+			String sig = startDate + "|" + endDate + "|" + searchKeyword;
+			if (!sig.equals(prevSig)) {
+				page = 1;
+			    session.setAttribute("eventListSearchSig", sig);
+			}
+
+			
 			//현재 페이지가 없는 경우 1페이지로 설정
 			if(page == null || page < 0) {
 				page = 1;
@@ -96,11 +105,20 @@ public class EventListController {
 			paginationInfo.setRecordCountPerPage(10);  // 한 페이지에 출력할 게시글 수
 			paginationInfo.setPageSize(10); // 페이지 블록 수
 			
-			int firstIndex = paginationInfo.getFirstRecordIndex(); // LIMIT offset
 			int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
 			int totalRecordCount = eventListService.getTotalRecordCount(startDate,endDate,searchKeyword);
 			
 			paginationInfo.setTotalRecordCount(totalRecordCount);
+			
+		    // 마지막 페이지 계산 후 page 보정
+		    int lastPage = (int) Math.ceil(totalRecordCount / (double) recordCountPerPage);
+		    if (lastPage < 1) lastPage = 1;
+
+		    int currentPage = Math.min(Math.max(page, 1), lastPage);
+		    paginationInfo.setCurrentPageNo(currentPage);
+
+		    // offset 재계산
+		    int firstIndex = (currentPage - 1) * recordCountPerPage;
 			
 			// DB 검색을 위한 파라미터 설정
 			paramMap.put("firstIndex", firstIndex);
