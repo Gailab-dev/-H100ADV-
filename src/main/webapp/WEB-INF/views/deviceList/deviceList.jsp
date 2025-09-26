@@ -46,22 +46,30 @@
 		*/
 		async function playVideo(playUrl){
 			
-			hls = new Hls({
-				autoStartLoad:false
-				, maxBufferLength:10
-				, maxBufferSize: 60 * 1000 * 1000
-				, liveSyncDuration: 3            // or liveSyncDurationCount: 2~3
-				, liveMaxLatencyDuration: 10     // or liveMaxLatencyDurationCount: 8~10
-				, maxLiveSyncPlaybackRate: 1.5    // 살짝 가속해 엣지 추격
-			});
-			
+
 			video = document.getElementById('video');
 			// jetson : 192.168.0.31, 개발 : 192.18.0.15
 			// ccty : 192.168.0.39
 			// 운영 = 'https://www.geyeparking.shop/index.m3u8';
-			video.setAttribute('src',playUrl);
+			
+			// 네이티브 로드를 차단
+			  try { video.pause(); } catch(_) {}
+			  video.removeAttribute('src');   // ★ 네이티브 로드를 먼저 차단
+			  video.load();
+			  if (hls) { try { hls.destroy(); } catch(_){} hls = null; }
 			
 			if(Hls.isSupported()){
+				
+				await sleep(3000); 
+				
+				hls = new Hls({
+					autoStartLoad:false
+					, maxBufferLength:10
+					, maxBufferSize: 60 * 1000 * 1000
+					, liveSyncDuration: 2            // or liveSyncDurationCount: 2~3
+					, liveMaxLatencyDuration: 5     // or liveMaxLatencyDurationCount: 8~10
+					, maxLiveSyncPlaybackRate: 1.5    // 살짝 가속해 엣지 추격
+				});
 				
 				hls.attachMedia(video);
 				
@@ -175,6 +183,7 @@
 				
 		    	// response에서 json값 가져오기
 		    	let data = await response.json();
+		    	await sleep(2000);
 		    	
 		    	// start면 tokenId, playUrl 추가
 		    	if(command === 'start'){ 

@@ -21,6 +21,9 @@ public class ShutdownConfig {
 	@Autowired
     private ConnectionPoolManager connectionPoolManager;
 
+	/**
+	 * 
+	 */
     @PostConstruct
     public void registerHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

@@ -21,7 +21,7 @@ public class ConnectionPoolManager {
 	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
     
     /**
-     * 디바이스 IP에 해당하는 connection 객체를 Connection pool에서 저장 
+     * 디바이스 IP에 해당하는 connection 객체를 Connection pool에 저장 
      * @param dvIp : 디바이스 IP
      * @param conn : HttpURLConnection 객체 
      */

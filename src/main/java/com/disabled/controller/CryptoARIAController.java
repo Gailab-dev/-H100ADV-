@@ -21,6 +21,11 @@ public class CryptoARIAController {
 	@Autowired
 	CryptoARIAService cryptoARIAService;
 	
+	/**
+	 * 순수 문자열을 해시 암호화하여 암호화된 문자열을 반환
+	 * @param plainText(String) : 암호화 전 문자열
+	 * @return encryptText(String) : 해시 암호화 된 문자열
+	 */
 	@ResponseBody
 	@PostMapping("/encryptPassword")
 	public String cryptoPasswordController(@RequestBody String plainText) {

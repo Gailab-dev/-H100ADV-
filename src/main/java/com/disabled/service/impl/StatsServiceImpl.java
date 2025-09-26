@@ -54,7 +54,7 @@ public class StatsServiceImpl implements StatsService{
 	}
 	
 	/*
-	 * 사용자의 검색 조건에 따른 통계 데이터를 조회하여 리스트로 반환
+	 * 월별 통계 데이터를 조회하여 리스트로 반환
 	 * @Param
 	 * - startDate: 검색 시작일(String)
 	 * - endDate: 검색 마지막일(String)

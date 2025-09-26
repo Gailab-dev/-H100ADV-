@@ -209,7 +209,7 @@ public class EventListController {
 	}
 	
 	/**
-	 * 외부 URL을 통한 이미지 화면에 출력
+	 * tomcat 외부 경로에 저장된 이미지 파일 불러오기
 	 * @Param
 	 * - filePath: 파일경로
 	 */
@@ -257,7 +257,7 @@ public class EventListController {
 	}
 	
 	/**
-	 * 외부 URL을 통한 비디오 화면에 스트리밍
+	 * tomcat 외부 경로에 저장된 비디오 파일 불러오기
 	 * @Param
 	 * - filePath: 파일경로
 	 */

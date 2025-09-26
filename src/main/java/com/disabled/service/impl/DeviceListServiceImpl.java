@@ -23,7 +23,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 	private static final Logger logger = LoggerFactory.getLogger(DeviceListServiceImpl.class);
 	
 	/**
-	 * 모든 디바이스 리스트를 가져오는 함수
+	 * 모든 디바이스 리스트를 가져옴
 	 * @return 디바이스 리스트(List)
 	 *   - dv_id : 장치 ID (String)
 	 *   - dv_name : 장치명 (String)

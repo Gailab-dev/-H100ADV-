@@ -102,7 +102,7 @@ public class ApiServiceImpl implements ApiService{
 	}
 
 	/**
-	 * 실시간 영상 스트리밍을 위한 connection pool 생성
+	 * 실시간 영상 스트리밍을 위한 connection 생성
 	 * @param targetUrl: 스트리밍을 할 device의 ip주소, port번호 등을 포함한 url
 	 * @param body: 전송데이터
 	 * @param contentType : 문자열 : application/x-www-form-urlencoded / JSON : application/json

@@ -22,7 +22,7 @@ public class FileServiceImpl implements FileService{
 	private static final Logger logger = LoggerFactory.getLogger(FileServiceImpl.class);
 	
 	/**
-	 * OS에 맞는 패스 구분자 변경 함수
+	 * OS에 맞는 패스 구분자 변경 
 	 * @param filePath: 파일 경로(String)
 	 * @return convertPath: OS에 맞게 구분자 변경된 파일 경로(String)
 	 */

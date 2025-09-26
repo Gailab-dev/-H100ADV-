@@ -51,7 +51,7 @@ public class StatsController {
 		return "stats/login";
 	}
 	
-	// 로그인 버튼 클릭 시 action
+	// 사용자 ID,PW를 확인하여 가입되었다면 통계 화면으로, 그렇지 않다면 로그인 화면으로 이동
 	@ResponseBody
 	@PostMapping("/login")
 	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session) {
