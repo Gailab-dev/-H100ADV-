@@ -24,6 +24,9 @@ public class NoCacheFilter implements Filter{
 	
     private List<Pattern> excludePatterns = Collections.emptyList();
 	
+    /**
+     * 캐싱 예외 필터에 설정된 필터값을 제외한 나머지 웹페이지에는 no-cache 설정
+     */
 	@Override
 	public void init(FilterConfig filterConfig) throws ServletException {
         

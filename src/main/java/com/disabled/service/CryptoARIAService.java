@@ -15,6 +15,10 @@ public class CryptoARIAService {
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(DeviceListController.class);
 	
+	/**
+	 * 해시 암호화 알고리즘을 활용하여 평문을 암호화
+	 * 
+	 */
 	@Resource(name="passwordEncoder")
 	private EgovPasswordEncoder passwordEncoder;
 	
