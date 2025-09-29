@@ -1,0 +1,32 @@
+1. 빌드 전 설정파일 점검
+  1). root-context.xml
+     - <bean id = datasource> 태그 안 <property> 태그 점검
+     - driverClassName : org.mariadb.jdbc.Driver
+     - url : jdbc:mariadb://localhost:3307/able_park
+     - username : root
+     - password : asdf
+
+2. 프로젝트 빌드
+  eclipse 툴 기준
+  1). 상단 메뉴 - project - clean
+  2). (maven 최신 상태가 아니라면) 프로젝트 루트 폴터 - 마우스 오른쪽 버튼 클릭 - maven - update project
+  3). 프로젝트 루트 폴더 - 마우스 오른쪽 버튼 클릭 - Run As - maven clean
+  4). 프로젝트 루트 폴더 - 마우스 오른쪽 버튼 클릭 - Run As - maven install 
+  5). 프로젝트 루트 폴더 - 마우스 오른쪽 버튼 클릭 - Refresh
+  6). 프로젝트 루트 폴터 하위 폴더 중 target 폴터 하위 폴더에 *.war 파일 생성 확인
+
+3. 프로젝트 배포
+  1). 서버 접속 툴 사용하여 *.war 파일 서버에 업로드
+    
+  2). 서버 프로세스 종료 후 새 *.war 파일 반영
+    sudo -i
+    cd /var/lib/tomcat9/webapps
+    systemctl stop tomcat9
+    systemctl status tomcat9 ( 생략가능)
+    rm -rf gov-disables-web-gs
+    rm gov-disables-web-gs.war
+    mv /home/ubuntu/gov-disabled-web-gs.war ./
+    ls -al ( 생략가능)
+    chown tomcat9:tomcat9 gov-disabled-web-gs.war
+    systemctl start tomcat9
+    ps -ef |grep tomcat9
