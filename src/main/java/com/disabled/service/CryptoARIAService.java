@@ -29,10 +29,13 @@ public class CryptoARIAService {
 		try {
 			// 암호화
 			encryptText = passwordEncoder.encryptPassword(plainText);
+		} catch (NullPointerException e) {
+			logger.error("CrypoARIAService의 SHA-256 암호화 하는 도중 오류 발생: ",e);
+			throw e;
 		} catch (RuntimeException e) {
 			logger.error("CrypoARIAService의 SHA-256 암호화 하는 도중 오류 발생: ",e);
 			throw e;
-		}
+		} 
 		
 		return encryptText;
 	}
