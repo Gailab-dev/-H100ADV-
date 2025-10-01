@@ -82,6 +82,10 @@
 	8) go 설치 확인(버전 확인)
 	$ go version
 
+	9) PATH가 자꾸 풀린다면
+	$ echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+
+
 3. ffmpeg 설치 
 	1) apt 업데이트
 	$ sudo apt update

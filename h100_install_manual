@@ -16,23 +16,27 @@
 		event_scheduler=ON
 
 	6) 스케줄러 등록
-		CREATE EVENT IF NOT EXISTS evt_statistics
-		    ON SCHEDULE EVERY 1 DAY
-		    STARTS TIMESTAMP(CURRENT_DATE + INTERVAL 2 HOUR)   -- 오늘 새벽 2시부터
-		    ON COMPLETION PRESERVE
-		    DO
-				INSERT INTO tbl_statistics (st_cd, st_cnt, st_date, st_reg_date)
-				SELECT *
-				FROM (
-					SELECT ev_cd, 
-						COUNT(1) AS ev_st_cnt,
-						LEFT(ev_date, 6) AS ev_st_date,
-						NOW() AS st_reg_date
-					FROM tbl_event_data
-					WHERE 1=1
-						AND ev_date = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y%m%d')
-					GROUP BY ev_cd, ev_date, LEFT(ev_date, 6)
-				) a
-				ON DUPLICATE KEY UPDATE
-					st_cnt = st_cnt + ev_st_cnt,
-					st_reg_date = NOW();
+		DELIMITER $$
+
+			CREATE EVENT IF NOT EXISTS evt_statistics
+			    ON SCHEDULE EVERY 1 DAY
+			    STARTS TIMESTAMP(CURRENT_DATE + INTERVAL 2 HOUR)
+			    ON COMPLETION PRESERVE
+			DO
+			    INSERT INTO tbl_statistics (st_cd, st_cnt, st_date, st_reg_date)
+			    SELECT *
+			    FROM (
+			        SELECT ev_cd, 
+			               COUNT(1) AS ev_st_cnt,
+			               LEFT(ev_date, 6) AS ev_st_date,
+			               NOW() AS st_reg_date
+			        FROM tbl_event_data
+			        WHERE ev_date = DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 DAY), '%Y%m%d')
+			        GROUP BY ev_cd, ev_date, LEFT(ev_date, 6)
+			    ) a
+			    ON DUPLICATE KEY UPDATE
+			        st_cnt = st_cnt + ev_st_cnt,
+			        st_reg_date = NOW();
+
+			$$
+			DELIMITER ;

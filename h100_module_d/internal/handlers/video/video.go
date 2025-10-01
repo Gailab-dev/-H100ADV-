@@ -112,26 +112,39 @@ func StartVideo(oCmdManager *CmdManager) string{
                 logger.Log.Error("HLS 디렉토리 생성 실패", zap.Error(err))
         }
 
+        // 기존 HLS 파일들 삭제 (과거 세그먼트 방지)
+        hlsDir := os.Getenv("HLS_DIR")
+        files, _ := filepath.Glob(filepath.Join(hlsDir, "*.ts"))
+        for _, f := range files {
+                os.Remove(f)
+        }
+        os.Remove(filepath.Join(hlsDir, "index.m3u8"))
+
         // FFmpeg 명령어 구성
 	cmd := exec.Command(
                 os.Getenv("FFMPEG_PATH"),
                 "-i", os.Getenv("RTSP_URL"),
+                "-rtsp_transport", "tcp",        // UDP 대신 TCP 사용 (더 안정적)
+                "-fflags", "+genpts",            // 타임스탬프 재생성
+                "-avoid_negative_ts", "make_zero", // 음수 타임스탬프 방지
+                "-err_detect", "ignore_err",     // 에러 무시하고 계속 진행
 		"-c:v", "libx264",
                 "-preset", "veryfast",
                 "-profile:v", "main",
                 "-level", "4.0",
                 "-sc_threshold", "0",
-                "-g", "48",
-                "-keyint_min", "48",
-                "-force_key_frames", "expr:gte(t,n_forced*2)",
+                "-g", "30",  // GOP 크기를 줄임 (더 자주 키프레임)
+                "-keyint_min", "30",
+                "-force_key_frames", "expr:gte(t,n_forced*1)",  // 1초마다 키프레임
                 "-sc_threshold", "0",
                 "-c:a", "aac",
                 "-b:a", "128k",
                 "-ac", "2",
                 "-f", "hls",
                 "-hls_time", os.Getenv("SEGMENT_TIME"),
-                "-hls_list_size", "0",
-                "-hls_flags", "delete_segments",
+                "-hls_list_size", "3",  // 최대 3개 세그먼트만 유지
+                "-hls_flags", "delete_segments+independent_segments",  // 플래그 개선
+                "-hls_start_number_source", "datetime",  // 세그먼트 번호를 시간 기반으로
                 filepath.Join(os.Getenv("HLS_DIR"), "index.m3u8"),
         )
 
