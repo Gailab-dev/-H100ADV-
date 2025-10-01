@@ -36,7 +36,7 @@ public class StatsServiceImpl implements StatsService{
 	@Override
 	public Integer loginCheck(String id, String pwd) {
 		
-		int cnt = 0;
+		Integer cnt = 0;
 		
 		try {
 			cnt = loginMapper.cntUsrByIdAndPwd(id,pwd);
