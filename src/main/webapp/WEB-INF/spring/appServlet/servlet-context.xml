@@ -10,7 +10,8 @@
 		
 	<mvc:annotation-driven />
 	
-	<!-- 로그인 전 session이 없으면 interceptor 동작
+	<!-- 
+		로그인 전 session값이 없으면 interceptor 동작하여 해당 페이지로 바로 접근을 방지하는 설정
 		 mvc:exclude-mapping path: interceptor 예외 경로
 		 beans:bean class: interceptor 기능이 정의된 class 경로
 		 
