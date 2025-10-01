@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
@@ -47,7 +48,16 @@ public class StatsController {
 	
 	// 로그인 화면 이동
 	@RequestMapping("/login.do")
-	private String viewLogin() {
+	private String viewLogin(HttpServletRequest request) {
+		
+		// 세션 확인하여 옛날 세션이 남아 있다면 세션 없애기
+	    HttpSession s = request.getSession(false);
+	    if (s != null) {
+	        try { s.invalidate(); } catch (IllegalStateException ignore) {}
+	    }
+	    // 캐시 방지 (뒤로가기 시 로그인 화면이 캐시로 보이는 현상 방지)
+	    request.setAttribute("noCache", true);
+		
 		return "stats/login";
 	}
 	
@@ -57,13 +67,21 @@ public class StatsController {
 	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session) {
 		
 		// 초기값 설정
-		String id = body.get("id");
-		String pwd = body.get("pwd");
+		String id = "";
+		String pwd = "";
 		String encryptPwd = null;
 		Integer checkErr = -1;
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		
 		try {
+			
+			if(body.get("id") == null || body.get("pwd") == null) {
+				resultMap.put("success", false); // 로그인 실패하면 false 반환
+				return resultMap;
+			}else {
+				id = body.get("id");
+				pwd = body.get("pwd");
+			}
 			
 			// 암호화
 			encryptPwd = cryptoARIAService.encryptPassword(pwd);
@@ -90,7 +108,17 @@ public class StatsController {
 			logger.error("잘못된 인자 전달",e);
 			resultMap.put("success", false); // 로그인 실패하면 false 반환
 			
-		}
+		} catch (NullPointerException e) {
+			
+			logger.error("NullPointerException => ",e);
+			resultMap.put("success", false); // 로그인 실패하면 false 반환
+			
+		} catch (RuntimeException e) {
+			
+			logger.error("RuntimeException => ",e);
+			resultMap.put("success", false); // 로그인 실패하면 false 반환
+			
+		} 
 		
 		return resultMap;
 	}
