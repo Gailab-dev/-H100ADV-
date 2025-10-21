@@ -198,6 +198,16 @@
 		    		return "end";	
 		    	}
 		    	
+		    	// 화각변환
+		    	if(command === 'U' || command === 'D' || command === 'L' || command === 'R'){
+		    		return "ok";
+		    	}
+		    	
+		    	// 줌 인, 줌 아웃
+		    	if(command === 'zoomIn' || command === 'zoomOut'){
+		    		return "ok";
+		    	}
+		    	
 		    	
 		    	return "error";
 			}catch(e){
@@ -260,7 +270,7 @@
 	        }
 	    });
 	  	
-	  	// 버튼 클릭시 조건에 따라 start, stop 명령어 실행
+	  	// 디바이스 리스트 버튼 클릭시 조건에 따라 start, stop 명령어 실행
 	  	async function deviceBtnClick(command,newDeviceId){
 	  		
 	  		let result = "error";
@@ -279,6 +289,11 @@
   				deviceId = null;
 	  			isStreamingActive = false;
 	  			tokenId = null;
+	  			
+	  			// 기존 디바이스 종료 명령이라면 여기에서 return
+	  			if(command === 'end'){
+	  				return;
+	  			}
 	  			
 	  		}
 	  		
@@ -331,7 +346,28 @@
 			 sendEndBeaconOnce(); 
 			  
 		 });
-
+		
+		 
+		 // 틸팅 관련 버튼 클릭시 명령어 디바이스에 송신
+		 async function tiltingBtnClick(command){
+			 
+			 // 디바이스에 실시간 송출이 되고 있지 않다면 return
+			 if(deviceId == null || deviceId == undefined || deviceId == ""){
+				 alert("먼저 디바이스부터 실행해주세요.");
+				 return;
+			 }
+			 
+			 result = await sendCommand(command,deviceId);
+			 
+		  		// 새로운 디바이스와 통신 중 오류 처리
+		  		if(result === "error"){
+		  			alert("틸팅 실패");
+		  			return;
+		  		}
+		  	
+		  		await sleep(3000);
+		  		
+		 }
 	    
 		/*
 			1. video 태그에 넣을 url
@@ -390,25 +426,25 @@
 				    	<source src="https://www.geyeparking.shop/index.m3u8" type="application/x-mpegURL">
 				    </video>
 					<!-- 디바이스 컨트롤러  -->
-					<!-- 
+					
 				    <div class="controller-center-wrapper">
 				        <div class="controller-wrapper">
-				            <div class="controller-button up">▲</div>
-				            <div class="controller-button left">◀</div>
-				            <div id = "stopStreamBtn" class="controller-center" data-device-id="" onclick="sendCommand('end',this.dataset.deviceId)">⏸</div>
-				            <div class="controller-button right">▶</div>
-				            <div class="controller-button down">▼</div>
+				            <div class="controller-button up" onclick="tiltingBtnClick('U')">▲</div>
+				            <div class="controller-button left" onclick="tiltingBtnClick('L')">◀</div>
+				            <div class="controller-center" onclick="deviceBtnClick('stop')">⏸</div>
+				            <div class="controller-button right" onclick="tiltingBtnClick('R')">▶</div>
+				            <div class="controller-button down" onclick="tiltingBtnClick('D')">▼</div>
 				        </div>
 				    </div>
-				     -->
+				     
 				</div>
 				<!-- 컨트롤러 버튼 -->
-				<!-- 
+				
 			    <div class="controller-buttons">
-			        <button onclick="sendCommand('start')">Start</button>
-			        <button onclick="sendCommand('end')">End</button>
+			        <button onclick="tiltingBtnClick('zoomIn')">zoomIn</button>
+			        <button onclick="tiltingBtnClick('zoomOut')">zoomOut</button>
 			    </div>
-			     -->
+			    
 			</main>
 		</div>
 	</div>	

@@ -149,7 +149,7 @@ public class DeviceListController {
 		
 	}
 	
-	/*
+	/**
 	 * json 파일로 송신시 inputStream을 이용한 on-device 장비와 실시간 스트리밍
 	 */
 	@ResponseBody
@@ -191,6 +191,12 @@ public class DeviceListController {
 			if("end".equals(json.get("type"))) {
 				resultString = "{\"result\":null,\"playUrl\":null}";
 
+			}
+			if("U".equals(json.get("type")) || "D".equals(json.get("type")) || "L".equals(json.get("type")) || "R".equals(json.get("type"))) {
+				resultString = "{\"result\":ok,\"playUrl\":null}";
+			}
+			if("zoomIn".equals(json.get("type")) || "zoomOut".equals(json.get("type"))) {
+				resultString = "{\"result\":ok,\"playUrl\":null}";
 			}
 			
 			logger.info("resultString : " + resultString);

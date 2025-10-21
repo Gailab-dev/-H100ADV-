@@ -300,9 +300,27 @@ public class ApiServiceImpl implements ApiService{
 	                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
 	            }
 				
-				
+				// 디바이스 화각 변경
 	        } else if(type.equals("U") | type.equals("D") | type.equals("L") | type.equals("R")) {
 	        	// 추후 고도화
+	        	//디바이스 Url
+	        	targetUrl = "https://" + dvIp + path;
+	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
+	        	
+	        	// 3-1. connection pool 생성
+        		conn = createPostConnection(targetUrl, body, contentType);
+        		if(conn == null) {
+        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
+        			return "error";
+        		}	
+        		
+        		// device와 통신 중 오류 발생시 오류코드
+	        	Integer code = conn.getResponseCode();
+	        	if(code != 200) {
+	        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
+	        		return "error";
+	        	}
+	        	
 	        } else if(type.equals("image") | type.equals("video")) {
 	        	
 	        	//디바이스 Url
@@ -337,6 +355,27 @@ public class ApiServiceImpl implements ApiService{
 	        	}
 	        	
 	        	return "true";
+	        	
+	        // 디바이스 줌 인, 줌 아웃 기능	
+	        } else if(type.equals("zoomIn") | type.equals("zoomOut")) {
+	        	//디바이스 Url
+	        	targetUrl = "https://" + dvIp + path;
+	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
+	        	
+	        	// 3-1. connection pool 생성
+	        	conn = createPostConnection(targetUrl, body, contentType);
+	        	if(conn == null) {
+	        		logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
+	        		return "error";
+	        	}
+	        	
+        		// device와 통신 중 오류 발생시 오류코드
+	        	Integer code = conn.getResponseCode();
+	        	if(code != 200) {
+	        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
+	        		return "error";
+	        	}
+	        	
 	        } else {
 	        	logger.error("잘못된 type 값 전송");
 	        	return "error";
