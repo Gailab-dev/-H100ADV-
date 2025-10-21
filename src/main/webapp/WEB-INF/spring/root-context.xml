@@ -22,10 +22,22 @@
 		 
 		<!-- 운영 -->
 		<property name="url"
-			value="jdbc:mariadb://localhost:3307/able_park" />
+			value="jdbc:mariadb://localhost:3307/able_park?useUnicode=true&amp;characterEncoding=utf8&amp;serverTimezone=Asia/Seoul&amp;tcpKeepAlive=true&amp;connectTimeout=10000&amp;socketTimeout=60000" />
 		<property name="username" value="root" />
 		<property name="password" value="asdf" />
-		 
+			
+		  <property name="maxIdle" value="10"/>
+		  <property name="minIdle" value="5"/>
+		
+		  <!-- 핵심: 검증 -->
+		  <property name="testOnBorrow" value="true"/>
+		  <property name="testWhileIdle" value="true"/>
+		  <property name="validationQuery" value="SELECT 1"/>
+		  <property name="validationQueryTimeout" value="5"/>
+		
+		  <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+		  <property name="minEvictableIdleTimeMillis" value="300000"/>	
+		  	 
 	</bean>
 	
 	<!-- mybatis 설정파일 위치, mapper.xml 파일 위치 -->
