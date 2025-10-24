@@ -20,6 +20,10 @@
     
   </definition>
   
+  <definition name="popup" template="/WEB-INF/views/layout/popup.jsp">
+    <put-attribute name="body" value="" /> 
+  </definition>
+  
   <!-- 
   	실제 페이지 정의 
   	실제 페이지에 템플릿 기본 정의를 적용하려면 아래 페이지 정의 부분에 레이아웃을 정의해주어야 한다.
@@ -39,6 +43,11 @@
     <!-- 통계 -->
   <definition name="stats" extends="defaultLayout">
     <put-attribute name="body" value="/WEB-INF/views/stats/stats.jsp" />
+  </definition>
+  
+  <!-- 실시간영상 -->
+  <definition name="popup" extends="popup">
+    <put-attribute name="body" value="/WEB-INF/views/popup/*/*Popup.jsp" />
   </definition>
   
 </tiles-definitions>

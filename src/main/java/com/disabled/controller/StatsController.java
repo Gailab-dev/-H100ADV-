@@ -70,7 +70,7 @@ public class StatsController {
 		String id = "";
 		String pwd = "";
 		String encryptPwd = null;
-		Integer checkErr = -1;
+		Map<String, Object> checkErr = null;
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		
 		try {
@@ -87,7 +87,7 @@ public class StatsController {
 			encryptPwd = cryptoARIAService.encryptPassword(pwd);
 			
 			checkErr = statsService.loginCheck(id, encryptPwd); //db에 해당 사용자가 있는지 체크
-			if(checkErr != 1) {
+			if(checkErr == null) {
 				
 				// 로그인 실패
 				logger.info("{} 사용자가 {}에 로그인 실패하였습니다.",id,LocalDateTime.now());

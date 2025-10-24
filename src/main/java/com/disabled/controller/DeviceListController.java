@@ -1,5 +1,7 @@
 package com.disabled.controller;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.service.ApiService;
@@ -46,29 +50,61 @@ public class DeviceListController {
 	
 	// 디바이스 리스트 화면
 	@RequestMapping("/viewDeviceList.do")
-	private String viewDeviceList(Model model, HttpSession session  ) {
+	private String viewDeviceList(
+			@RequestParam(value="searchKeyword", required=false) String searchKeyword
+			, @RequestParam(value="page", required=false) Integer page
+			, Model model
+			, HttpSession session  ) {
 		
 		// 접근 로그
 		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
 		
-		// 디바이스 리스트
-		List<Map<String, Object>> deviceList = new ArrayList<Map<String,Object>>();
+		// 페이지 null 방지
+		if (page == null || page < 1) page = 1;
+		
+		// 페이징 객체
+		PaginationInfo paginationInfo = new PaginationInfo();
+		
+		// 페이징 설정
+		paginationInfo.setCurrentPageNo(page); // 현제 페이지 번호
+		paginationInfo.setRecordCountPerPage(15);  // 한 페이지에 출력할 게시글 수
+		paginationInfo.setPageSize(10); // 페이지 블록 수
+		
+		int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
+		int totalRecordCount = deviceListService.getTotalRecordCount(searchKeyword);
+		paginationInfo.setTotalRecordCount(totalRecordCount);
+		
+	    // 마지막 페이지 계산 후 page 보정
+	    int lastPage = (int) Math.ceil(totalRecordCount / (double) recordCountPerPage);
+	    if (lastPage < 1) lastPage = 1;
+
+	    int currentPage = Math.min(Math.max(page, 1), lastPage);
+	    paginationInfo.setCurrentPageNo(currentPage);
+
+	    // offset 재계산
+	    int firstIndex = (currentPage - 1) * recordCountPerPage;
+		
+		// DB 검색을 위한 파라미터 설정
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("firstIndex", firstIndex);
+		paramMap.put("recordCountPerPage", recordCountPerPage);
+		paramMap.put("searchKeyword", searchKeyword == null ? "" : searchKeyword );
 		
 		// 디바이스 리스트 가져오기
-		deviceList = deviceListService.getDeviceList();
-		
-		// 주소 기준으로 그룹화 한 디바이스 리스트
-		Map<String, List<Map<String, Object>>> groupAddrByDeviceList = new HashMap<String, List<Map<String,Object>>>();
-				
+		List<Map<String, Object>> deviceList = deviceListService.getDeviceList(paramMap);
+			
 		// 디바이스 리스트 주소별로 그룹화
-		groupAddrByDeviceList = groupedByAddr(deviceList);
+		// Map<String, List<Map<String, Object>>> groupAddrByDeviceList = groupedByAddr(deviceList);
 		
 		// 첫번째 디바이스 값 따로 분리
-		Integer firstDeviceId = (Integer) deviceList.get(0).get("dv_id");
+		// Integer firstDeviceId = (Integer) deviceList.get(0).get("dv_id");
 		
 		//model add
-		model.addAttribute("deviceList", groupAddrByDeviceList);
-		model.addAttribute("deviceId", firstDeviceId);
+		// model.addAttribute("groupAddrByDeviceList", groupAddrByDeviceList);
+		model.addAttribute("deviceList", deviceList);
+		model.addAttribute("paginationInfo", paginationInfo);
+		model.addAttribute("searchKeyword", searchKeyword == null ? "" : searchKeyword);
+		// model.addAttribute("deviceId", firstDeviceId);
 		
 		return "/deviceList/deviceList";
 	}
@@ -80,6 +116,7 @@ public class DeviceListController {
 	 * @return
 	 *   - groupAddrByDeviceList : 주소 기준으로 그룹화 된 디바이스 리스트 ( List<Map<String, List<Map<String,Object>>>> )	 
 	 */
+	@SuppressWarnings("unused")
 	private Map<String, List<Map<String, Object>>> groupedByAddr(List<Map<String, Object>> deviceList) {
 		
 		Map<String, List<Map<String, Object>>> groupAddrByDeviceList = new HashMap<String, List<Map<String,Object>>>();
@@ -238,7 +275,173 @@ public class DeviceListController {
 		
 	}
 	
+	//실시간 영상 팝업창
+	@PostMapping("/viewRealTimeVideoPopup")
+	public String viewRealTimeVideoPopup(Integer dvId, Model model) {
+		
+		model.addAttribute("deviceId", dvId);
+		return "/popup/deviceList/realTimeVideoPopup";
+	}
+	
+	// 디바이스 등록, 수정 팝업창
+	@PostMapping("/viewDeviceInfoPopup")
+	public String viewDeviceInfoPopup(
+			@RequestParam(value = "dvId", required = false) Integer dvId
+			, Model model
+			) {
+		
+		if(dvId != null) {
+			Map<String,Object> dvInfo = deviceListService.getDeviceInfo(dvId);
+			model.addAttribute("dvInfo",dvInfo);
+		}	
+		
+		model.addAttribute("dvId", dvId);
+		return "/popup/deviceList/deviceInfoPopup";
+	}
+	
+	// 디바이스 삭제 팝업창
+	@PostMapping("/viewDeleteDevicePopup")
+	public String viewDeleteDevicePopup(Model model) {
+
+		return "/popup/deviceList/deleteDevicePopup";
+	}
+	
+	// 디바이스 등록
+	@ResponseBody
+	@PostMapping("/insertDeviceInfo")
+	public Map<String, Object> insertDeviceInfo(
+			@RequestParam("dvName") String dvName
+			, @RequestParam("dvAddr") String dvAddr
+			, @RequestParam("dvIp") String dvIp
+			) {
+		
+		// connetion 객체
+		HttpURLConnection conn = null;
+		
+		// dv 상태
+		Integer dvStatus = 1;
+		
+		// resultMap
+		Map<String, Object> res = new HashMap<>();
+		
+		try {
+			
+			// device 상태 확인
+			conn = apiService.createPostConnection(dvIp, "", "application/json");
+			if(conn == null || conn.getResponseCode() != 200) {
+				dvStatus = 0;
+			}
+			
+			// 디바이스 등록
+			deviceListService.insertDeviceInfo(dvName,dvAddr,dvIp,dvStatus);
+			
+			
+		} catch (RuntimeException e) {
+			logger.error("디바이스 등록 중 오류 발생 : ",e);
+			res.put("ok", false);
+			res.put("msg", "디바이스 수정 중 오류 발생");
+			return res;
+			
+		} catch (IOException e) {
+			logger.error("디바이스 등록 중 connection 객체 생성 중 오류 발생 : ",e);
+			res.put("ok", false);
+			res.put("msg", "connection 생성 중 오류 발생");
+			return res;
+		} finally {
+	        if (conn != null) try { conn.disconnect(); } catch (Exception ignore) {logger.debug("",ignore);}
+	    }
+		
+		res.put("ok", true);
+		return res;
+	}
+	
+	// 디바이스 수정
+	@ResponseBody
+	@PostMapping("/updateDeviceInfo")
+	public Map<String,Object> updateDeviceInfo(
+			@RequestParam("dvId") Integer dvId
+			, @RequestParam("dvName") String dvName
+			, @RequestParam("dvAddr") String dvAddr
+			, @RequestParam("dvIp") String dvIp
+			) {
+		
+		// connetion 객체
+		HttpURLConnection conn = null;
+		
+		// dv 상태(1 = 정상, 0 = 비정상)
+		Integer dvStatus = 1;
+		
+		// resultMap
+		Map<String, Object> res = new HashMap<>();
+		
+		try {
+			
+			// device 상태 확인
+			conn = apiService.createPostConnection(dvAddr, "", "application/json");
+			if(conn == null || conn.getResponseCode() != 200) {
+				dvStatus = 0;
+			}
+			
+			// 디바이스 수정
+			deviceListService.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus);
+			
+			
+		} catch (RuntimeException e) {
+			logger.error("디바이스 수정 중 오류 발생 : ",e);
+			res.put("ok", false);
+			res.put("msg", "디바이스 수정 중 오류 발생");
+			return res;
+			
+		} catch (IOException e) {
+			logger.error("디바이스 수정 중 connection 객체 생성 중 오류 발생 : ",e);
+			res.put("ok", false);
+			res.put("msg", "connection 생성 중 오류 발생");
+			return res;
+		} finally {
+	        if (conn != null) try { conn.disconnect(); } catch (Exception ignore) {logger.debug("",ignore);}
+	    }
+		
+		res.put("ok", true);
+		return res;
+	}
+	
+	
+	// 디바이스 삭제
+	@ResponseBody
+	@PostMapping("/deleteDeviceInfo")
+	public Map<String,Object> deleteDeviceInfo(
+			@RequestBody Map<String, List<Integer>> body
+			) {
+		
+		Map<String, Object> res = new HashMap<>();
+		
+		try {
+			
+			List<Integer> dvIds = body.get("dvIds");
+			if(dvIds == null || dvIds.isEmpty()) {
+				res.put("ok", false);
+				res.put("msg","삭제할 데이터가 없습니다.");
+				return res;
+			}
+			
+			// 디바이스 삭제
+			deviceListService.deleteDeviceInfo(dvIds);
+			
+		} catch (RuntimeException e) {
+			logger.error("디바이스 삭제 중 오류 발생 : ",e);
+			res.put("ok", false);
+			res.put("msg","디바이스 삭제 중 오류 발생.");
+			return res;
+			
+		}
+		
+		res.put("ok", true);
+		return res;
+	}
+
+	
 	// 문자열 자르기
+	@SuppressWarnings("unused")
 	private static String extractJsonObject(String raw) {
 	    if (raw == null) return null;
 	    int s = raw.indexOf('{');

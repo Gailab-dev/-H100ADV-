@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="ui" uri="http://egovframework.gov/ctl/ui"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %> 
  
 <!DOCTYPE html>
 <html>
@@ -16,249 +18,13 @@
   crossorigin="anonymous"></script>
   
 	<script>
-		
-		// 현재 스트리밍 중인 deviceId
-		let deviceId = null;
-		
-		// 현재 스트리밍중인지 아닌지 여부
-		let isStreamingActive = false;
-		
-		
-		let teardownSent = false;
-		
-		// 전역 토큰 ID
-		let tokenId  = null;
-		
-		// 전역 hls
-		let hls = null;
-		
-		// video source tag id
-		let video = null;
-		
-		
-		/*
-		* 1~2초 대기
-		*/
-		function sleep(ms) { return new Promise(r => setTimeout(r,ms));}
-		
-		/*
-		* 실시간 스트리밍 실행
-		*/
-		async function playVideo(playUrl){
 			
-
-			video = document.getElementById('video');
-			// jetson : 192.168.0.31, 개발 : 192.18.0.15
-			// ccty : 192.168.0.39
-			// 운영 = 'https://www.geyeparking.shop/index.m3u8';
-			
-			// 네이티브 로드를 차단
-			  try { video.pause(); } catch(_) {}
-			  video.removeAttribute('src');   // ★ 네이티브 로드를 먼저 차단
-			  video.load();
-			  if (hls) { try { hls.destroy(); } catch(_){} hls = null; }
-			
-			if(Hls.isSupported()){
-				
-				await sleep(3000); 
-				
-				hls = new Hls({
-					autoStartLoad:false
-					, maxBufferLength:10
-					, maxBufferSize: 60 * 1000 * 1000
-					, liveSyncDuration: 2            // or liveSyncDurationCount: 2~3
-					, liveMaxLatencyDuration: 5     // or liveMaxLatencyDurationCount: 8~10
-					, maxLiveSyncPlaybackRate: 1.5    // 살짝 가속해 엣지 추격
-				});
-				
-				hls.attachMedia(video);
-				
-			  hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
-			    hls.loadSource(playUrl);        // 소스만 로드
-			    await sleep(2000);            // 1~2초 대기
-			    hls.startLoad(-1);               // ★ 실제 로드 시작(라이브 엣지)
-			  });
-
-				
-				hls.on(Hls.Events.ERROR,function(event,data){
-					  /*
-					  * Hls.Events.ERROR 발생시 자세한 에러 로그 확인하는 코드, 오류 발생시에만 주석 풀어서 디버깅
-						console.log('HLS ERROR', {
-						    type: data.type,
-						    details: data.details,
-						    code: data.response?.code,
-						    url: data.response?.url
-						  });
-					  */
-				      if (data.fatal) {
-				        switch (data.type) {
-				          // 네트워크 오류인 경우
-				          case Hls.ErrorTypes.NETWORK_ERROR:
-				            hls.startLoad();
-				            alert("⚠️ 네트워크 오류");
-				            break;
-				          // 미디어 오류인 경우
-				          case Hls.ErrorTypes.MEDIA_ERROR:
-				            hls.recoverMediaError();
-				            alert("⚠️ 미디어 오류");
-				            break;
-				          // 그 외 오류, 스트리밍 중단
-				          default:
-				            hls.destroy();
-				            alert("❌ 복구 불가, 스트리밍 중단");
-				            break;
-				        }
-				      }
-				});
-			} else if(video.canPlayType('application/vnd.apple.mpegurl')){
-				// video 타입이 hls가 아닌 경우 mpegurl 타입으로 video 실행
-				video.src = playUrl;
-				video.addEventListener('loadedmetadata',() => {
-					
-					video.muted = true;
-					video.play().catch(err => {
-						alert("비디오 플레이 중 오류 : " + err);
-					});
-				});
-			} else {
-				alert('HLS를 지원하지 않는 브라우저입니다.')
-			}
-		}
-		
-		function stopVideo(){
-			
-			video = document.getElementById('video');
-			
-			if(hls){
-				hls.destroy();
-				hls = null;
-			}
-			
-			video.pause();
-			video.load();
-			video.removeAttribute('src');
-		}
-		
-		/*
-		* 디바이스 컨트롤러 버튼을 화면에 display 할 지 여부 설정, 
-		* @param
-		*  - display: 컨트롤러 div를 화면에 display하는 설정값(boolean) true면 display
-		*/
-		/*
-	    function displayController(display) {
-	        const controller = document.getElementsByClassName("controller")[0].children;
-	        for (let btn of controller) {
-	            btn.style.display = display;
-	        }
-	    }
-		*/
-		
-	    /*
-	    * 디바이스에 명령어를 보내 기능 수행
-	    * @param
-	    *  - command : 명령어(string)
-	    *  - deviceId : 명령어를 보낼 device의 id
-	    * @return : "error" | "end" | playUrl(String)
-	    */
-		async function sendCommand(command,deviceId) {
-	    	
-			const body = {
-				'type': command,
-				'id': tokenId,
-				'deviceId':deviceId
-			};
-			
-			try{
-		    	const response = await fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
-		      		method: 'POST'
-		      		, headers: { 'Content-Type': 'application/json' }
-		      		, body: JSON.stringify(body)
-		      		, keepalive: command === 'end'
-		      		, credentials : 'same-origin'
-		      		, cache:'no-store'
-		    		});
-		    	
-		    	// fetch는 항상 response 객체로 리턴
-		    	if (!response.ok) return "error";
-				
-		    	// response에서 json값 가져오기
-		    	let data = await response.json();
-		    	await sleep(2000);
-		    	
-		    	// start면 tokenId, playUrl 추가
-		    	if(command === 'start'){ 
-		    		tokenId = data.result || data.id || null;
-		    		let playUrl = data.playUrl || null;
-		    		return playUrl;
-	    		}
-		    	
-		    	// end면 tokenId 초기화
-		    	if(command === 'end'){ 
-		    		tokenId = null; 
-		    		return "end";	
-		    	}
-		    	
-		    	// 화각변환
-		    	if(command === 'U' || command === 'D' || command === 'L' || command === 'R'){
-		    		return "ok";
-		    	}
-		    	
-		    	// 줌 인, 줌 아웃
-		    	if(command === 'zoomIn' || command === 'zoomOut'){
-		    		return "ok";
-		    	}
-		    	
-		    	
-		    	return "error";
-			}catch(e){
-				return "error";
-			}
-
-	  	}
-	    
-	    // 페이지 종료되었을 때 종료 처리 함수
-	    function sendEndBeaconOnce(){
-	    	
-		 	if(teardownSent) return;
-		 	if(!isStreamingActive || !deviceId) return;
-			 
-		 	teardownSent = true;
-		    	
-    		// 보낼 데이터
-    	    const body = JSON.stringify({ type: 'end', id: tokenId, deviceId: deviceId });
-	    	
-	    	// 실시간 스트리밍 종료 요청
-    	    try {
-    	    	// 1) sendBeacon 방식으로 브라우저 중도 요청 취소 방지
-    	        const ok = navigator.sendBeacon(
-    	          '/gov-disabled-web-gs/deviceList/sendCommandToJSON',
-    	          new Blob([body], { type: 'application/json' })
-    	        );
-    	    	
-    	        if (!ok) {
-    	          // 2) sendBeacon 실패시 fetch에 keepalive true 속성 사용하여 실시간 스트리밍 종료 요청
-    	          fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
-    	            method: 'POST',
-    	            headers: { 'Content-Type': 'application/json' },
-    	            body,
-    	            keepalive: true
-    	          });
-    	        }
-    	      
-    	      // 페이지 밖으로 벗어남으로 에러 처리 없음
-    	      } catch (_) {}
-    	      
-    	      // 로컬 플레이어는 즉시 정리 (네트워크 요청과 별개)
-    	      try { if (hls) { hls.destroy(); hls = null; } } catch(_){}
-    	      try {
-    	        const v = document.getElementById('video');
-    	        if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
-    	      } catch(_){}
-    	      isStreamingActive = false;
-
-	    }
-		
-			    // 아코디언 토글 기능: 정상작동하도록 유지
+	    const table = document.getElementById('boardTable');
+	    const countEl = document.getElementById('selectedCount');
+	    const btnClear = document.getElementById('btnClear');
+	    const btnDelete = document.getElementById('btnDelete');
+	
+	    // 아코디언 토글 기능: 정상작동하도록 유지
 	    document.addEventListener('DOMContentLoaded', () => {
 	        const accordions = document.getElementsByClassName("accordion");
 	        for (let acc of accordions) {
@@ -269,117 +35,312 @@
 	            });
 	        }
 	    });
-	  	
-	  	// 디바이스 리스트 버튼 클릭시 조건에 따라 start, stop 명령어 실행
-	  	async function deviceBtnClick(command,newDeviceId){
-	  		
-	  		let result = "error";
-	  		
-	  		// 이미 다른 디바이스 실행되고 있는 경우 먼저 end command 보냄
-	  		if(isStreamingActive && deviceId){
-	  			
-	  			result = await sendCommand('end',deviceId);
-	  			
-	  			if(result === "error"){
-	  				alert("기존 디바이스와 통신 오류");
-	  				return;
-	  			}
-
-  				stopVideo();
-  				deviceId = null;
-	  			isStreamingActive = false;
-	  			tokenId = null;
-	  			
-	  			// 기존 디바이스 종료 명령이라면 여기에서 return
-	  			if(command === 'end'){
-	  				return;
-	  			}
-	  			
-	  		}
-	  		
-	  		// 새로운 디바이스와 통신
-	  		deviceId = newDeviceId;
-	  		result = await sendCommand(command,deviceId);
-	  		
-	  		// 새로운 디바이스와 통신 중 오류 처리
-	  		if(result === "error"){
-	  			alert("새 디바이스와 통신 오류");
-	  			isStreamingActive = false;
-	  			deviceId = null;
-	  			return;
-	  			
-  			// 새로운 디바이스와 연결 시 요청에 따른 videoPlayer 처리
-	  		}else{
-	  			if(command === 'start'){
-	  				if (hls) { try{ hls.destroy(); }catch(_){} hls = null; } // 기존에 hls가 남아 있다면 제거
-	  				playVideo(result); //playUrl
-	  				isStreamingActive = true;
-	  			}else if(command === 'end'){
-	  				stopVideo();
-	  				isStreamingActive = false;
-	  			}
-	  		}
-	  		
-	  		
-	  	}
-	  	
-	  	
-	  	// 페이지 시작시 자동 실행
-	    document.addEventListener('DOMContentLoaded', function() {
-	    	
-	    	deviceBtnClick('start','${deviceId}');
-	    	
-	    });
-	  	
-
-	 	// 페이지 종료 전 이벤트 처리
-		 window.addEventListener('beforeunload', () => {
-			 sendEndBeaconOnce();
-			 
-			 });
-		 window.addEventListener('pagehide', () => { sendEndBeaconOnce(); }, { capture: true });
-		 document.addEventListener('visibilitychange', () => {
-			 
-		     if (document.visibilityState === 'hidden') sendEndBeaconOnce();
-		 });
-		 window.addEventListener('unload', () => { 
-			 sendEndBeaconOnce(); 
-			  
-		 });
 		
-		 
-		 // 틸팅 관련 버튼 클릭시 명령어 디바이스에 송신
-		 async function tiltingBtnClick(command){
-			 
-			 // 디바이스에 실시간 송출이 되고 있지 않다면 return
-			 if(deviceId == null || deviceId == undefined || deviceId == ""){
-				 alert("먼저 디바이스부터 실행해주세요.");
-				 return;
-			 }
-			 
-			 result = await sendCommand(command,deviceId);
-			 
-		  		// 새로운 디바이스와 통신 중 오류 처리
-		  		if(result === "error"){
-		  			alert("틸팅 실패");
-		  			return;
-		  		}
-		  	
-		  		await sleep(3000);
-		  		
-		 }
+		
+	 // -------------------------------- pagination 활용한 페이지 이동 ----------------------------
 	    
-		/*
-			1. video 태그에 넣을 url
-  				- url  > http://[개발서버ip]:8087/index.m3u8
-			2. start 버튼 누르면 요청할 restfulAPI
-  				- url  > http://[개발서버ip]:8087/control
-  				- data > start (body에 넣어주시면 됩니다)
-			3. end 버튼 누르면 요청할 restfulAPI
-  				- url  > http://[개발서버ip]:8087/control
-  				- data > end (body에 넣어주시면 됩니다)
-		*/
-	</script>
+		// 디바이스 및 주소 검색
+		window.searchDeviceList = function(pageNo){
+			
+			let form = document.getElementById('deviceListSearchForm');
+		  	const searchKeyword   = form.elements['searchKeyword'].value;
+		  	
+		  	if( searchKeyword.length >= 100 ){
+		  		alert("검색어는 100자를 넘을 수 없습니다.");
+		  		return;
+		  	}
+			
+			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword;
+			
+		}
+		
+		// pagination 객체를 활용한 페이지 이동
+		window.goPage = function(pageNo){
+	    	let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
+			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword;
+		}
+		
+		//  Pagination 
+		document.addEventListener('DOMContentLoaded', function () {
+			  const $wrap = document.querySelector('.pagination');
+			  if (!$wrap) return;
+
+			  const links = Array.from($wrap.querySelectorAll('a'));
+			  const current = $wrap.querySelector('strong'); 
+			  const curPage = current ? parseInt(current.textContent.trim(), 10) : NaN;
+
+			  // 유틸: goPage(숫자)에서 숫자만 뽑기
+			  const getPageFromHref = (a) => {
+			      const href = a.getAttribute('href') || '';
+			      const m = href.match(/goPage\(\s*'?(\d+)'?\s*\)/);
+			      return m ? parseInt(m[1], 10) : null;
+			  };
+
+			  // 이동 버튼 텍스트 치환 및 클래스 세팅
+			  links.forEach(a => {
+			    const txt = a.textContent.replace(/\s+/g,'').trim();
+			    const page = getPageFromHref(a);
+
+			    if (/\[처음\]/.test(txt)) {
+			      a.textContent = '«';
+			      a.classList.add('pg-first');
+			      if (curPage && curPage <= 1) a.classList.add('is-disabled');
+			    } else if (/\[이전\]/.test(txt)) {
+			      a.textContent = '‹';
+			      a.classList.add('pg-prev');
+			      if (curPage && curPage <= 1) a.classList.add('is-disabled');
+			    } else if (/\[다음\]/.test(txt)) {
+			      a.textContent = '›';
+			      a.classList.add('pg-next');
+			      // 다음이 마지막을 넘어가면 비활성
+			      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
+			    } else if (/\[마지막\]/.test(txt)) {
+			      a.textContent = '»';
+			      a.classList.add('pg-last');
+			      // 마지막 페이지 계산이 어려우니 “goPage(n)” 값이 현재와 같거나 작으면 비활성
+			      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
+			    } else {
+			      // 숫자 링크는 그대로 두되 불필요한 공백 제거
+			      if (/^\d+$/.test(txt)) a.textContent = txt;
+			    }
+			  });
+			});
+		
+		// -------------------------------- pagination 활용한 페이지 이동 ----------------------------
+		
+		// ----------------------------- 디바이스 리스트에서 리스트 복수 선택, 갱신 -------------------
+		
+	    // 전체 선택 해제
+	    function clearAllSelection() {
+	      table.querySelectorAll('tbody .row-check:checked').forEach(cb => cb.checked = false);
+	      updateSelectedCount();
+	    }
+	    
+	    // 공통: 선택 수 갱신
+	    function updateSelectedCount() {
+	      const checked = table.querySelectorAll('tbody .row-check:checked').length;
+	      countEl.textContent = `${checked}개 선택됨`;
+	      btnDelete.disabled = checked === 0; // 아무것도 없으면 삭제 비활성화(선택)
+	    }
+
+	    // 행 체크박스 변경(실시간 카운트 갱신) - 이벤트 위임
+	    table.addEventListener('change', (e) => {
+	      if (e.target.classList.contains('row-check')) {
+	        updateSelectedCount();
+	      }
+	    });
+
+	    // 버튼 핸들러 바인딩
+	    btnClear.addEventListener('click', clearAllSelection);
+	    btnDelete.addEventListener('click', deleteSelectedRows);
+
+	    // 초기 상태 동기화
+	    updateSelectedCount();
+	    
+	 // ----------------------------- 디바이스 리스트에서 리스트 복수 선택, 갱신 -------------------------
+	    
+		// -----------------------------  디바이스 삭제 팝업 ------------------------------------------
+		
+	    // 디바이스 삭제 팝업
+		function viewDeleteDevicePopup(){
+			
+			axios.post('/deviceList/viewDeleteDevicePopup')
+			.then(function(r){
+				console.log(r);
+				
+				let rtDiv = document.getElementById("deleteDeivcePopup");
+				
+				rtDiv.innerHTML = r.data;
+				
+				rtDiv.style.display = 'block';
+				
+			})
+			.catch(function(error) {
+				console.log(error);
+			})
+		}
+		
+	    // 삭제 버튼 클릭 
+	    function deleteSelectedRows() {
+			
+	    	const table = document.getElementById('deviceTable');
+	    	const checkedRows = Array.from(table.querySelectorAll('tbody .row-check:checked'))
+	        .map(cb => cb.closest('tr'));
+		      if (checkedRows.length === 0) return;
+	
+		      const dvIds = checkedRows.map(tr => tr.getAttribute('data-dv-id')); // 서버에 보낼 PK들
+		      console.log('삭제 요청 보낼 dvIds:', dvIds);
+				
+				axios.post('/deviceList/deleteDevicePopup',{
+					dvIds : dvIds,
+				})
+				.then(function(r){
+					
+					console.log(r);
+					
+					if(r.ok){
+						removeDeletePopup();
+						
+					}else{
+						alert(r.msg);
+					}
+					
+				})
+				.catch(function(e) {
+					console.log(e);
+				})
+	    }
+	    
+	    // 삭제 팝업 삭제
+	    function removeDeletePopup() {
+	    	let rdDiv = document.getElementById("deletedevicePopup");
+	    	rdDiv.innerHTML = "";
+	    	rdDiv.style.display = 'none';
+	    	location.reload();
+	    }
+	    
+	 // ------------------------------------- 디바이스 삭제 팝업 ------------------------------------------
+
+
+	    
+	    // -------------------------------- 디바이스 등록, 수정 ------------------------------
+	    
+	    // 디바이스 정보 팝업 열기
+		function viewDeviceInfoPopup(dvId){
+			axios.post('/deviceList/viewDeviceInfoPopup',{
+				dvId : dvId
+    		})
+    		.then(function(r)){
+    			console.log(r);
+    			
+				let riDiv = document.getElementById("deviceInfoPopup");
+				
+				riDiv.innerHTML = r.data;
+				
+				riDiv.style.display = 'block';
+    		}
+    		.error(function(e)){
+    			console.log(e);
+    		}
+	    }
+	 
+    	// 디바이스 수정
+    	function updateDeviceInfo(dvId){
+    		
+    		let dvName = document.getElementById("dvName").value;
+    		if(dvName == null || dvName == undefined || dvName == ""){
+    			alert("디바이스명은 필수입니다.");
+    			return;
+    		}
+    		let dvAddr = document.getElementById("dvAddr").value;
+    		if(dvAddr == null || dvAddr == undefined || dvAddr == ""){
+    			alert("주소는 필수입니다.");
+    			return;
+    		}
+    		let dvIp = document.getElementById("dvIp").value;
+    		if(dvIp == null || dvIp == undefined || dvIp == ""){
+    			alert("ip는 필수입니다.");
+    			return;
+    		}
+    		
+    		axios.post('/deviceList/updateDeviceInfo',{
+    			new URLSearchParams(dvId : dvid
+    			, dvName : dvName
+    			, dvAddr : dvAddr
+    			, dvIp : dvIp)
+    		})
+    		.then(function(r)){
+    			console.log(r);
+    			if(r.data?.ok){
+    				removeDeviceInfoPopup();
+    			}else{
+    				alert(r.data?.msg);
+    			}
+    			
+    		}
+    		.error(function(e)){
+    			console.log(e);
+    			alert("수정 중 오류가 발생했습니다.");
+    		}
+    	}
+    	
+    	// 디바이스 등록
+    	function insertDeviceInfo(){
+    		
+    		let dvName = document.getElementById("dvName").value;
+    		if(dvName == null || dvName == undefined || dvName == ""){
+    			alert("디바이스명은 필수입니다.");
+    			return;
+    		}
+    		let dvAddr = document.getElementById("dvAddr").value;
+    		if(dvAddr == null || dvAddr == undefined || dvAddr == ""){
+    			alert("주소는 필수입니다.");
+    			return;
+    		}
+    		let dvIp = document.getElementById("dvIp").value;
+    		if(dvIp == null || dvIp == undefined || dvIp == ""){
+    			alert("ip는 필수입니다.");
+    			return;
+    		}
+    		
+    		axios.post('deviceList/insertDeviceInfo',{
+    			new URLSearchParams(dvName : dvName
+    			, dvAddr : dvAddr
+    			, dvIp : dvIp)
+    		})
+    		.then(function(r)){
+    			console.log(r);
+    			
+    			if(r.data?.ok){
+    				removeDeviceInfoPopup();
+    			}else{
+    				alert(r.data?.msg);
+    			}
+    			
+    		}
+    		.error(function(e)){
+    			console.log(e);
+    			alert("등록 중 오류가 발생했습니다.");
+    		}
+    	}
+    	
+    	// 디바이스 등록, 수정 팝업창 닫기
+    	function removeDeviceInfoPopup(){
+			diDiv = document.getElementById("deviceInfoPopup");
+			diDiv.innerHTML = "";
+			diDiv.style.display = none;
+			location.reload();
+    	}
+	    	
+    	// -------------------------------- 디바이스 등록, 수정 ------------------------------
+    	
+	 	    
+	    // ---------------------------- 실시간 영상 팝업 -------------------------------
+	    
+	    // 실시간 영상 팝업
+		function viewRealTimeVideoPopup(dvId){
+			axios.post('/deviceList/viewRealTimeVideo',{
+				dvId : dvId,
+			})
+			.then(function(r){
+				console.log(r);
+				
+				let rtDiv = document.getElementById("realTimeVideoPopup");
+				
+				rtDiv.innerHTML = r.data;
+				
+				rtDiv.style.display = 'block';
+				
+			})
+			.catch(function(e) {
+				console.log(e);
+			})
+		}
+		
+		// ---------------------------- 실시간 영상 팝업 -------------------------------   
+	 
+	  	
+    </script>
 </head>
 <body>
 	<!-- 헤더 -->
@@ -401,9 +362,10 @@
             </ul>
         </aside>
         <div class="content">
+            <!--  
             <div class="device-navi">
                 <h3>디바이스 리스트</h3>
-				<c:forEach var="addr" items="${deviceList}">
+				<c:forEach var="addr" items="${groupAddrByDeviceList}">
 				    <button class="accordion">
 				        <span class="accordion-label">${addr.key}</span>
 				        <span class="accordion-arrow">&#9662;</span> <%-- ▼ (열림 표시) --%>
@@ -419,14 +381,17 @@
 				    </div>
 				</c:forEach>
             </div>
+            -->
 			<main class="main">
 				<h1>실시간 영상</h1>	
+			    <!-- 
 			    <div class="video-controller-group">
 				    <video id="video" width="720" controls autoplay>
 				    	<source src="https://www.geyeparking.shop/index.m3u8" type="application/x-mpegURL">
 				    </video>
-					<!-- 디바이스 컨트롤러  -->
 					
+					// 디바이스 컨트롤러 
+					  
 				    <div class="controller-center-wrapper">
 				        <div class="controller-wrapper">
 				            <div class="controller-button up" onclick="tiltingBtnClick('U')">▲</div>
@@ -436,15 +401,98 @@
 				            <div class="controller-button down" onclick="tiltingBtnClick('D')">▼</div>
 				        </div>
 				    </div>
-				     
+				    
 				</div>
+				 -->
 				<!-- 컨트롤러 버튼 -->
-				
+				<!-- 
 			    <div class="controller-buttons">
 			        <button onclick="tiltingBtnClick('zoomIn')">zoomIn</button>
 			        <button onclick="tiltingBtnClick('zoomOut')">zoomOut</button>
 			    </div>
-			    
+			     -->
+			     
+			     <!-- 디바이스 리스트 -->
+			     <div>
+			     	<div>
+			     		<button>+ 디바이스 등록</button>
+				     	<form id="deviceListSearchForm">
+				     		<button class="search-btn" onclick="searchDeviceList()"> </button>
+				     		<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
+				     	</form>
+			     	</div>
+					<div>
+						<input type="checkbox">
+						
+						<button type="button" onclick="viewDeleteDevicePopup()"> 삭제 버튼</button>
+					</div>
+					<table id="deviceTable" class="event-table">
+						<thead>
+							<tr>
+								<th><input type="checkbox" id="checkAllHeader" /></th>
+								<th>디바이스명</th>
+								<th>디바이스주소</th>
+								<th>디바이스상태</th>
+								<th>실시간영상</th>
+								<th>디바이스수정</th>
+							</tr>
+						</thead>
+						<tbody>
+							<c:forEach var="item" items="${deviceList}">
+								<tr data-dv-id="${item.dv_id}">
+									<td>
+										<input type="checkbox" class="row-check" />
+									</td>
+									<td>${item.dv_name}</td>
+									<td>${item.dv_addr}</td>
+									
+									<td>
+										<c:choose>
+											<c:when test="${item.dv_status eq 0}">OFF</c:when>
+											<c:when test="${item.dv_status eq 1}">ON</c:when>
+										</c:choose>
+									</td>
+									<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 
+									<td>
+										<c:choose>
+											<c:when test="${item.dv_status eq 0}">Jetson 통신 불가</c:when>
+											<c:when test="${item.dv_status eq 1}">정상 </c:when>
+											<c:when test="${item.dv_status eq 2}">CCTV 통신 불가</c:when>
+											<c:when test="${item.dv_status eq 3}">전광판 통신 불가</c:when>
+											<c:when test="${item.dv_status eq 4}">알림소리 통신 불가</c:when>
+											<c:when test="${item.dv_status eq 5}">안전버튼 통신 불가</c:when>
+										</c:choose>
+									</td>
+									 -->
+									<td>
+										<button type="button" onclick="viewRealTimeVideoPopup(${item.dv_id})"> 📽 </button>
+									</td>
+									<td><button type="button" onclick="viewDeviceInfoPopup(${item.dv_id})"> 수정 </button></td>
+								</tr>
+							</c:forEach>
+						</tbody>
+					</table>
+					<div class="pagination">
+						<ui:pagination paginationInfo="${paginationInfo}" type="text" jsFunction="goPage"/>
+					</div>
+					
+					<!-- 실시간 영상 버튼 클릭시 위 div 하단에 팝업 창 -->
+					<div id="realTimeVideoPopup" style="display:none">
+					
+					</div>
+					
+					<!-- 수정 버튼 클릭시 위 div 하단에 팝업 창 -->
+					<div id="deviceInfoPopup" style="display:none">
+					
+					</div>
+					
+					<!-- 삭제 버튼 클릭시 위 div 하단에 팝업 창 -->
+					<div id="deletedevicePopup" style="display:none">
+					
+					</div>
+					
+			     </div>
+			     
 			</main>
 		</div>
 	</div>	

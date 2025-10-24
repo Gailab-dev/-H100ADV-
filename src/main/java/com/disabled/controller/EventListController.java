@@ -92,12 +92,6 @@ public class EventListController {
 				page = 1;
 			    session.setAttribute("eventListSearchSig", sig);
 			}
-
-			
-			//현재 페이지가 없는 경우 1페이지로 설정
-			if(page == null || page < 0) {
-				page = 1;
-			}
 			
 			
 			// 페이징 설정

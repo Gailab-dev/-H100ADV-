@@ -8,7 +8,15 @@
 	<select id="getDeviceInfo" resultType="map">
 		SELECT dv_id, dv_name, dv_addr
 		FROM tbl_device
-		ORDER BY dv_addr DESC,dv_name DESC		
+		WHERE 
+			1=1
+			AND (
+				dv_name like CONCAT('%',#{searchKeyword},'%')
+				OR dv_addr like CONCAT('%',#{searchKeyword},'%')
+			)
+		ORDER BY dv_addr DESC,dv_name DESC	
+        LIMIT #{recordCountPerPage} 
+        OFFSET #{firstIndex}	
 	</select>
 	
 	<!-- 선택한 디바이스의 ip값에 따른 ip값  -->
@@ -16,6 +24,71 @@
 		SELECT dv_ip
 		FROM tbl_device
 		WHERE dv_id = #{dvId}	
+	</select>
+	
+	<!-- 검색 조건에 따른 전체 record 수 -->
+	<select id="getTotalRecordCount" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_device
+		WHERE 
+			1=1
+			AND (
+				dv_name like CONCAT('%',#{searchKeyword},'%')
+				OR dv_addr like CONCAT('%',#{searchKeyword},'%')
+			)	
+	</select>
+	
+	<!-- 디바이스 등록 -->
+	<insert id="insertDeviceInfo">
+		INSERT INTO tbl_device(
+			dv_org_id
+			, dv_name
+			, dv_addr
+			, dv_ip
+			, dv_status
+			, dv_reg_user
+			, dv_mod_user
+			, dv_reg_date
+			, dv_mod_date
+		)
+		VALUES(
+			1
+			, #{dvName}
+			, #{dvAddr}
+			, #{dvIp}
+			, #{dvStatus}
+			, 1
+			, 1
+			, NOW()
+			, NOW()
+		)
+	</insert>
+	
+	<!-- 디바이스 수정 -->
+	<update id="updateDeviceInfo">
+		UPDATE tbl_device
+		SET
+			dv_name = #{dvName}
+			, dv_addr = #{dvAddr}
+			, dv_ip = #{dvIp}
+			, dv_status = #{dvStatus}
+			, dv_mod_user = 1
+			, dv_mod_date = NOW()
+		WHERE dv_id = #{dvId}	
+	
+	</update>
+	
+	<!-- 디바이스 1건 삭제 -->
+	<delete id="deleteDeviceInfo">
+		DELETE FROM tbl_device
+		WHERE dv_id = #{dvId}
+	</delete>
+	
+	<!-- 디바이스 1개 정보 -->
+	<select id="getOneDeviceInfo" resultType="map">
+		SELECT dv_name, dv_addr, dv_ip
+		FROM tbl_device
+		WHERE dv_id = #{dvId}
 	</select>
 
 </mapper>

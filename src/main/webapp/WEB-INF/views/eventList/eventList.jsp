@@ -49,7 +49,7 @@
 	  	
 	  	if( searchKeyword.length >= 100 ){
 	  		alert("검색어는 100자를 넘을 수 없습니다.");
-	  		return;window
+	  		return;
 	  	}
 		
 		if( startDate > endDate ){

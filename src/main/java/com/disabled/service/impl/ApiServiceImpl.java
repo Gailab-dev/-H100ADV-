@@ -248,7 +248,7 @@ public class ApiServiceImpl implements ApiService{
 		// content-type : application/json 
 		String contentType = "application/json";
 		
-		// connetion 객체를 
+		// connetion 객체
 		HttpURLConnection conn = null;
 		
 		// 디바이스 Url

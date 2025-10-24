@@ -34,17 +34,17 @@ public class StatsServiceImpl implements StatsService{
 	 * - pw: 비밀번호(String)
 	 */
 	@Override
-	public Integer loginCheck(String id, String pwd) {
+	public Map<String,Object> loginCheck(String id, String pwd) {
 		
-		Integer cnt = 0;
+		Map<String,Object> resultMap = new HashMap<String, Object>();
 		
 		try {
-			cnt = loginMapper.cntUsrByIdAndPwd(id,pwd);
+			resultMap = loginMapper.cntUsrByIdAndPwd(id,pwd);
 			
-			if(cnt != 1) {
-				return -1;
+			if(resultMap == null) {
+				return null;
 			}else {
-				return cnt;
+				return resultMap;
 			}
 		} catch (RuntimeException e) {
 			

@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.disabled.mapper.DeviceListMapper;
 import com.disabled.service.DeviceListService;
 
 @Service
+@Transactional(rollbackFor = Exception.class)
 public class DeviceListServiceImpl implements DeviceListService{
 
 	@Autowired
@@ -30,12 +32,12 @@ public class DeviceListServiceImpl implements DeviceListService{
 	 *   - dv_addr : 장치설치주소(String)
 	 */
 	@Override
-	public List<Map<String, Object>>  getDeviceList() {
+	public List<Map<String, Object>>  getDeviceList(Map<String, Object> paramMap) {
 		
 		List<Map<String, Object>> deviceList = new ArrayList<Map<String, Object>>();
 		
 		try {
-			deviceList = deviceListMapper.getDeviceInfo();
+			deviceList = deviceListMapper.getDeviceInfo(paramMap);
 		} catch (DataAccessException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDeviceInfo() : ",e);
 		}
@@ -62,6 +64,85 @@ public class DeviceListServiceImpl implements DeviceListService{
 		}
 		
 		return dvIp;
+	}
+
+	@Override
+	public Integer getTotalRecordCount(String searchKeyword) {
+		
+		try {
+			return deviceListMapper.getTotalRecordCount(searchKeyword);
+		} catch (RuntimeException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getTotalRecordCount(searchKeyword) : ",e);
+			return 0;
+		}
+	}
+	
+	// 디바이스 등록
+	@Override
+	public void insertDeviceInfo(String dvName, String dvAddr, String dvIp, Integer dvStatus) {
+		
+		try {
+			
+			Integer rows1 = deviceListMapper.insertDeviceInfo(dvName,dvAddr,dvIp,dvStatus);
+			if(rows1 != 1) {
+				logger.error("deviceListMapper.insertDeviceInfo SQL문에서 오류 발생");
+				throw new IllegalStateException("deviceListMapper.insertDeviceInfo SQL문에서 오류 발생");
+			}
+			
+		} catch (IllegalStateException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.insertDeviceInfo : ",e);
+		}
+		
+	}
+
+	// 디바이스 삭제
+	@Override
+	public void deleteDeviceInfo(List<Integer> dvIds) {
+		
+		try {
+			
+			for (Integer dvId : dvIds) {
+				Integer rows1 = deviceListMapper.deleteDeviceInfo(dvId);
+				if(rows1 != 1) {
+					logger.error("deviceListMapper.deleteDeviceInfo SQL문에서 오류 발생");
+					throw new IllegalStateException("deviceListMapper.deleteDeviceInfo SQL문에서 오류 발생");
+				}
+			}
+		} catch (IllegalStateException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.deleteDeviceInfo : ",e);
+		}
+		
+	}
+
+	// 디바이스 수정
+	@Override
+	public void updateDeviceInfo(Integer dvId, String dvName, String dvAddr, String dvIp, Integer dvStatus) {
+		try {
+			
+			Integer rows1 = deviceListMapper.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus);
+			if(rows1 != 1) {
+				logger.error("deviceListMapper.updateDeviceInfo SQL문에서 오류 발생");
+				throw new IllegalStateException("deviceListMapper.updateDeviceInfo SQL문에서 오류 발생");
+			}
+			
+		} catch (IllegalStateException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.updateDeviceInfo : ",e);
+		}
+		
+	}
+	
+	// dvId를 검색조건으로 디바이스 1개 정보 가져오기
+	@Override
+	public Map<String,Object> getDeviceInfo(Integer dvId) {
+		try {
+			
+			return deviceListMapper.getOneDeviceInfo(dvId);
+			
+		} catch (IllegalStateException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDeviceInfo : ",e);
+			return null;
+		}
+		
 	}
 
 }
