@@ -5,12 +5,22 @@
 <mapper namespace="com.disabled.mapper.LoginMapper">
 	
 	<!-- id와 pw값을 비교하여 둘 다 같은 경우, 해당 column의 수를 리턴 -->
-	<select id="cntUsrByIdAndPwd" resultType="int">
-		SELECT COUNT(*) 
+	<select id="cntUsrByIdAndPwd" parameterType="map" resultType="map">
+		SELECT u_id, u_pwd_changed 
 		FROM tbl_user
 		WHERE 1=1 
 			AND u_login_id = #{id}
 			AND u_login_pwd = #{pwd}		
 	</select>
+	
+	<!-- 최초 사용자 로그인시 비밀번호 변경 -->
+	<update id="updateNewPwd">
+		UPDATE tbl_user
+		SET	
+			u_login_pwd = #{encryptPwd}
+			, u_pwd_changed = 1
+		WHERE u_id = #{uId}	
+	
+	</update>
 
 </mapper>

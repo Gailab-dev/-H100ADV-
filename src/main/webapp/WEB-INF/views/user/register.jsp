@@ -4,7 +4,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>관리자로그인</title> <!-- 페이지 제목 설정 -->
+<title>회원가입</title> <!-- 페이지 제목 설정 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 뷰포트 설정 (모바일 대응) -->
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css"> <!-- CSS 불러오기 -->
 </head>
@@ -15,13 +15,16 @@
 <script>
 	
 	/**
-	* 엔터키 감지하여 로그인 버튼 클릭
+	* 엔터키 감지하여 = 회원가입 버튼 클릭
 	*/
 	function enterKeyEvent(event){
 		if(event.key == 'Enter'){
 			const id = document.getElementById('id').value;
 			const pwd = document.getElementById('pwd').value;
-			login(id, pwd);
+			const phone = document.getElementById('phone').value;
+			const region = document.getElementById('region').value;
+			
+			register(id, pwd);
 		}
 	}
 	
@@ -31,9 +34,17 @@
 	$(document).ready(function(){
 		const id = document.getElementById('id');
 		const pwd = document.getElementById('pwd');
+		const phone = document.getElementById('phone');
+		const region = document.getElementById('region');
+		const tnc = document.getElementById('tnc');
+		const usePi = document.getElementById('usePi');
 		
 		id.addEventListener('keyup',enterKeyEvent);
 		pwd.addEventListener('keyup',enterKeyEvent);
+		phone.addEventListener('keyup',enterKeyEvent);
+		region.addEventListener('keyup',enterKeyEvent);
+		tnc.addEventListener('keyup',enterKeyEvent);
+		usePi.addEventListener('keyup',enterKeyEvent);
 
 	})
 	
@@ -116,6 +127,10 @@
 	        <div class="fields">
 	          <input id="id"  class="line-input" type="text"     placeholder="아이디를 입력하세요" autocomplete="username">
 	          <input id="pwd" class="line-input" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+	          <input id="phone" class="line-input" type="text" placeholder="전화번호를 입력하세요" autocomplete="current-password">
+	          <input id="region" class="line-input" type="text" placeholder="지역를 입력하세요" autocomplete="current-password">
+	          <input id="tnc" class="line-input" type="text" placeholder="본인인증를 입력하세요" autocomplete="current-password">
+	          <input id="usePi" class="line-input" type="text" placeholder="개인정보 동의를 입력하세요" autocomplete="current-password">
 	
 	          <button class="primary-btn"
 	                  onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
