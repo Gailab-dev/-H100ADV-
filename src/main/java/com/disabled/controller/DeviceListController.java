@@ -89,6 +89,7 @@ public class DeviceListController {
 		Map<String, Object> paramMap = new HashMap<String, Object>();
 		paramMap.put("firstIndex", firstIndex);
 		paramMap.put("recordCountPerPage", recordCountPerPage);
+		paramMap.put("page", page);
 		paramMap.put("searchKeyword", searchKeyword == null ? "" : searchKeyword );
 		
 		// 디바이스 리스트 가져오기
@@ -378,7 +379,7 @@ public class DeviceListController {
 		try {
 			
 			// device 상태 확인
-			conn = apiService.createPostConnection(dvAddr, "", "application/json");
+			conn = apiService.createPostConnection(dvIp, "", "application/json");
 			if(conn == null || conn.getResponseCode() != 200) {
 				dvStatus = 0;
 			}
