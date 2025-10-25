@@ -13,13 +13,6 @@
 			<p class="modal-title">디바이스 수정</p>
 		</c:otherwise>
 	</c:choose>
-
-	<c:if test="${empty dvId}">
-		<P> 디바이스 등록</P>
-	</c:if>
-	<c:if test="${not empty dvId}">
-		<P> 디바이스 수정</P>
-	</c:if>
 	
 	<div class="modal-content">
 		<label>디바이스명 <span class="required">*</span></label>
