@@ -14,10 +14,6 @@
 		</c:otherwise>
 	</c:choose>
 
-<<<<<<< Updated upstream
-
-=======
-<div>
 	<c:if test="${empty dvId}">
 		<P> 디바이스 등록</P>
 	</c:if>
