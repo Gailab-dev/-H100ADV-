@@ -12,6 +12,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/deviceList.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/popup/deleteDevicePopup.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/popup/deleteDevicePopup.css">
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 	<script
 	  src="https://code.jquery.com/jquery-3.7.1.js"
@@ -94,63 +96,74 @@
 
 	    
 		// -----------------------------  디바이스 삭제 팝업 ------------------------------------------
+		function viewDeleteDevicePopup() {
+		  // 1️⃣ 선택된 디바이스 확인
+		  const checkedRows = document.querySelectorAll(".row-check:checked");
+		  if (checkedRows.length === 0) {
+		    alert("삭제할 디바이스를 선택하세요.");
+		    return;
+		  }
 		
-	    // 디바이스 삭제 팝업
-		function viewDeleteDevicePopup(){
-			
-			axios.post('${pageContext.request.contextPath}/deviceList/viewDeleteDevicePopup')
-			.then(function(r){
-				console.log(r);
-				
-				let rtDiv = document.getElementById("deleteDeivcePopup");
-				
-				rtDiv.innerHTML = r.data;
-				
-				rtDiv.style.display = 'block';
-				
-			})
-			.catch(function(error) {
-				console.log(error);
-			})
-		}
+		  // 2️⃣ 선택된 디바이스 ID 모으기
+		  const dvIds = Array.from(checkedRows).map(cb =>
+		    cb.closest("tr").getAttribute("data-dv-id")
+		  );
+		  console.log("삭제 대상 dvIds:", dvIds);
+		
+		  // 3️⃣ 서버에서 삭제 팝업 JSP 가져오기
+		  axios
+		    .post("${pageContext.request.contextPath}/deviceList/viewDeleteDevicePopup", { dvIds })
+		    .then(function (r) {
+		      console.log("삭제 팝업 JSP 응답:", r);
+		      const popupDiv = document.getElementById("deleteDevicePopup");
+		      popupDiv.innerHTML = r.data;
+		      popupDiv.style.display = "block";
+		    })
+		    .catch(function (e) {
+		      console.error("삭제 팝업 로드 실패:", e);
+		    });
+		}		
+
 		
 	    // 삭제 버튼 클릭 
-	    function deleteSelectedRows() {
-			
-	    	const table = document.getElementById('deviceTable');
-	    	const checkedRows = Array.from(table.querySelectorAll('tbody .row-check:checked'))
-	        .map(cb => cb.closest('tr'));
-		      if (checkedRows.length === 0) return;
-	
-		      const dvIds = checkedRows.map(tr => tr.getAttribute('data-dv-id')); // 서버에 보낼 PK들
-		      console.log('삭제 요청 보낼 dvIds:', dvIds);
-				
-				axios.post('${pageContext.request.contextPath}/deviceList/deleteDevicePopup',{
-					dvIds : dvIds,
-				})
-				.then(function(r){
-					
-					console.log(r);
-					
-					if(r.ok){
-						removeDeletePopup();
-						
-					}else{
-						alert(r.msg);
-					}
-					
-				})
-				.catch(function(e) {
-					console.log(e);
-				})
-	    }
+		function deleteSelectedRows() {
+		  const table = document.getElementById("deviceTable");
+		  const checkedRows = Array.from(table.querySelectorAll("tbody .row-check:checked"))
+		    .map(cb => cb.closest("tr"));
+		
+		  if (checkedRows.length === 0) {
+		    alert("삭제할 디바이스를 선택하세요.");
+		    return;
+		  }
+		
+		  const dvIds = checkedRows.map(tr => tr.getAttribute("data-dv-id"));
+		  console.log("삭제 요청 보낼 dvIds:", dvIds);
+		
+		  axios.post("${pageContext.request.contextPath}/deviceList/deleteDeviceInfo", {
+		      dvIds: dvIds
+		    })
+		    .then(function (r) {
+		      console.log("서버 응답:", r);
+		
+		      if (r.data?.ok) {
+		        alert("삭제가 완료되었습니다.");
+		        removeDeletePopup(); // 팝업 닫기
+		        location.reload();   // 리스트 갱신
+		      } else {
+		        alert(r.data?.msg || "삭제 중 오류가 발생했습니다.");
+		      }
+		    })
+		    .catch(function (e) {
+		      console.error("삭제 요청 실패:", e);
+		      alert("서버 통신 오류가 발생했습니다.");
+		    });
+		}
 	    
 	    // 삭제 팝업 삭제
 	    function removeDeletePopup() {
-	    	let rdDiv = document.getElementById("deletedevicePopup");
-	    	rdDiv.innerHTML = "";
-	    	rdDiv.style.display = 'none';
-	    	location.reload();
+	    	const popupDiv = document.getElementById("deleteDevicePopup");
+	    	popupDiv.innerHTML = ""; 
+	    	popupDiv.style.display = "none";
 	    }
 	    
 	 // ------------------------------------- 디바이스 삭제 팝업 ------------------------------------------
@@ -158,7 +171,7 @@
 
 	    
 	    // -------------------------------- 디바이스 등록, 수정 ------------------------------
-	    
+
 	    // 디바이스 정보 팝업 열기
 		function viewDeviceInfoPopup(dvId){
 			axios.post('${pageContext.request.contextPath}/deviceList/viewDeviceInfoPopup', { dvId })
@@ -216,55 +229,43 @@
     	}
     	
     	// 디바이스 등록
-    	function insertDeviceInfo(){
-    		
-    		let dvName = document.getElementById("dvName").value;
-    		if(dvName == null || dvName == undefined || dvName == ""){
-    			alert("디바이스명은 필수입니다.");
-    			return;
-    		}
-    		let dvAddr = document.getElementById("dvAddr").value;
-    		if(dvAddr == null || dvAddr == undefined || dvAddr == ""){
-    			alert("주소는 필수입니다.");
-    			return;
-    		}
-    		let dvIp = document.getElementById("dvIp").value;
-    		if(dvIp == null || dvIp == undefined || dvIp == ""){
-    			alert("ip는 필수입니다.");
-    			return;
-    		}
-    		
-    		axios.post('${pageContext.request.contextPath}/deviceList/updateDeviceInfo',
-   			    new URLSearchParams({
-   			        dvId: dvId,
-   			        dvName: dvName,
-   			        dvAddr: dvAddr,
-   			        dvIp: dvIp
-   			    })
-   			)
-    		.then(function(r){
-    			console.log(r);
-    			
-    			if(r.data?.ok){
-    				removeDeviceInfoPopup();
-    			}else{
-    				alert(r.data?.msg);
-    			}
-    			
-    		})
-    		.error(function(e){
-    			console.log(e);
-    			alert("등록 중 오류가 발생했습니다.");
-    		});
-    	}
+		function insertDeviceInfo() {
+		  let dvName = document.getElementById("dvName").value.trim();
+		  let dvAddr = document.getElementById("dvAddr").value.trim();
+		  let dvIp = document.getElementById("dvIp").value.trim();
+		
+		  if (!dvName) { alert("디바이스명은 필수입니다."); return; }
+		  if (!dvAddr) { alert("주소는 필수입니다."); return; }
+		  if (!dvIp) { alert("IP는 필수입니다."); return; }
+		
+		  axios.post("${pageContext.request.contextPath}/deviceList/insertDeviceInfo",
+		      new URLSearchParams({
+		        dvName: dvName,
+		        dvAddr: dvAddr,
+		        dvIp: dvIp
+		      })
+		    )
+		    .then(function(r) {
+		      if (r.data?.ok) {
+		        alert("디바이스가 등록되었습니다.");
+		        closeDeviceInfoPopup();
+		        location.reload();
+		      } else {
+		        alert(r.data?.msg || "등록 중 오류가 발생했습니다.");
+		      }
+		    })
+		    .catch(function(e) {
+		      console.error("등록 오류:", e);
+		      alert("서버 통신 오류가 발생했습니다.");
+		    });
+		}
     	
     	// 디바이스 등록, 수정 팝업창 닫기
-    	function removeDeviceInfoPopup(){
-			diDiv = document.getElementById("deviceInfoPopup");
-			diDiv.innerHTML = "";
-			diDiv.style.display = none;
-			location.reload();
-    	}
+		function closeDeviceInfoPopup(){
+			const popup = document.getElementById("deviceInfoPopup");
+			popup.innerHTML = "";
+			popup.style.display = "none";
+		}
 	    	
     	// -------------------------------- 디바이스 등록, 수정 ------------------------------
     	
@@ -296,7 +297,6 @@
 		
 		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------  		
 		    window.onload = function() {
-        const clearSelectionBtn = document.getElementById("clearSelectionBtn"); // SVG 버튼
         const checkAll = document.getElementById("checkAll"); // 테이블 헤더 체크박스
         const rowChecks = document.querySelectorAll(".row-check"); // 각 행 체크박스
         const selectedText = document.querySelector(".selected-text");
@@ -314,13 +314,6 @@
         // ✅ 전체선택 (표 헤더 체크박스 클릭 시)
         checkAll.addEventListener("change", function() {
             rowChecks.forEach(chk => chk.checked = checkAll.checked);
-            updateSelectedCount();
-        });
-
-        // ✅ SVG 버튼 클릭 시 → 전체 해제
-        clearSelectionBtn.addEventListener("click", function() {
-            rowChecks.forEach(chk => chk.checked = false);
-            checkAll.checked = false;
             updateSelectedCount();
         });
 
@@ -363,22 +356,30 @@
 				  
 				  <!-- 첫 번째 줄: 등록 버튼 + 검색창 -->
 				  <div class="top-row">
-				    <button class="add-btn">+ 디바이스 등록</button>
-				
-				    <form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList(); return false;">
-				      <input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
-				      <button type="submit" class="search-btn">🔍</button>
-				    </form>
+				    <button class="add-btn" onclick="viewInsertDevicePopup()">+ 디바이스 등록</button>
+						<form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList(); return false;">
+						  <input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
+						  <button type="submit" class="search-btn" title="검색">
+						    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+						         xmlns="http://www.w3.org/2000/svg">
+						      <path d="M8.75065 14.1673C11.7422 14.1673 14.1673 11.7422 14.1673 8.75065C14.1673 5.75911 11.7422 3.33398 8.75065 3.33398C5.75911 3.33398 3.33398 5.75911 3.33398 8.75065C3.33398 11.7422 5.75911 14.1673 8.75065 14.1673Z"
+						            stroke="#767676" stroke-width="1.5" stroke-miterlimit="10"/>
+						      <path d="M16.1363 17.197C16.4292 17.4899 16.9041 17.4899 17.197 17.197C17.4899 16.9041 17.4899 16.4292 17.197 16.1363L16.6667 16.6667L16.1363 17.197ZM12.5 12.5L11.9697 13.0303L16.1363 17.197L16.6667 16.6667L17.197 16.1363L13.0303 11.9697L12.5 12.5Z"
+						            fill="#767676"/>
+						    </svg>
+						  </button>
+						</form>
 				  </div>
 				
-				  <!-- 두 번째 줄: 전체선택 / 삭제 / 선택 개수 -->
 				  <div class="bulk-actions">
 				    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
 				         xmlns="http://www.w3.org/2000/svg">
 				      <rect width="16" height="16" rx="4" fill="#6955A2"/>
 				      <path d="M4 9V7H12V9H4Z" fill="white"/>
 				    </svg>
+				    
 				    <span class="selected-text">0개 선택됨</span>
+				    
 				    <button type="button" class="delete-btn" onclick="viewDeleteDevicePopup()" title="삭제">
 				      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 				           xmlns="http://www.w3.org/2000/svg">
@@ -438,7 +439,7 @@
 				<!-- 팝업 placeholder -->
 				<div id="realTimeVideoPopup" style="display:none;"></div>
 				<div id="deviceInfoPopup" style="display:none;"></div>
-				<div id="deletedevicePopup" style="display:none;"></div>
+				<div id="deleteDevicePopup" style="display:none;"></div>
 			</main>
 		</div>
 	</div>

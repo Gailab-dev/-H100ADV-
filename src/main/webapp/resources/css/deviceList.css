@@ -54,10 +54,19 @@ button {
 }
 
 /* ================= 전체 레이아웃 ================= */
-.container { display: flex; margin-top: 60px; height: calc(100vh - 60px); }
+.container {
+  display: flex;
+  margin-top: 60px;
+  height: calc(100vh - 60px);
+  width: 100vw; /* 브라우저 전체 너비 */
+  overflow-x: hidden;
+  background: #fff;
+}
 .sidebar {
-	width: 220px; border-right: 1px solid #ddd;
-	padding: 20px; background: #fff;
+	width: 220px; 
+	border-right: 1px solid #ddd;
+	padding: 20px; 
+	background: #fff;
 }
 .menu { list-style: none; }
 .menu li { margin-bottom: 12px; }
@@ -70,31 +79,48 @@ button {
 .menu-icon { width: 18px; }
 
 /* ================= 메인 콘텐츠 ================= */
+/* 콘텐츠 래퍼 */
+.content {
+  flex: 1;
+  width: calc(100% - 220px);
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+} 
+
+/* 메인 영역 */
 .main {
-    flex: 1;
-    padding: 30px;
-    overflow-x: auto;
-    background: #fff;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 40px;
+  overflow-x: auto;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ================= 상단 영역 ================= */
 .device-top {
   display: flex;
   flex-direction: column;
-  width: 100%; /* 전체 너비 사용 */
+  width: 100%;
   gap: 12px;
   margin-bottom: 16px;
+  box-sizing: border-box;
 }
 
+/* 첫 줄: 등록 버튼 + 검색창 */
 .top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%; /* 좌우 꽉 채우기 */
-  flex-wrap: wrap;
+  width: 100%;
+  flex-wrap: nowrap;
   gap: 12px;
 }
 
+/* + 디바이스 등록 버튼 */
 .add-btn {
   display: flex;
   align-items: center;
@@ -119,11 +145,11 @@ button {
   display: flex;
   align-items: center;
   flex: 1;
-  max-width: 420px; /* 너무 길어지지 않게 제한 */
   border: 1px solid #E0E0E0;
   border-radius: 8px;
   padding: 6px 10px;
   background: #fff;
+  max-width: 500px;
 }
 .search-box input {
   flex: 1;
@@ -174,7 +200,8 @@ button {
   border: 1px solid #E0E0E0;
   border-radius: 8px;
   overflow: hidden;
-  table-layout: auto; /* 열 폭 자동 */
+  box-sizing: border-box;
+  table-layout: fixed; /* 균일한 열 폭 */
 }
 .device-table th,
 .device-table td {
@@ -192,8 +219,6 @@ button {
 .device-table tbody tr:hover {
   background-color: #F9F9F9;
 }
-
-/* 버튼 */
 .device-table td button {
   border: 1px solid #E0E0E0;
   border-radius: 6px;
@@ -210,9 +235,9 @@ button {
 }
 
 /* ================= 반응형 ================= */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .main {
-    padding: 20px;
+    padding: 16px 20px;
   }
   .top-row {
     flex-direction: column;
@@ -222,14 +247,7 @@ button {
     width: 100%;
     max-width: none;
   }
-  .device-table {
-    font-size: 13px;
-  }
-  .device-table th, .device-table td {
-    padding: 10px 12px;
-  }
 }
-
 /* ================= 푸터 ================= */
 .footer {
     background-color: #f9f9f9;
