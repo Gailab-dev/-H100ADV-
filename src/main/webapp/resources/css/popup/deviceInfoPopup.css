@@ -1,63 +1,114 @@
+/* ✅ 배경 오버레이 */
 .modal-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background: rgba(0, 0, 0, 0.3);
-	z-index: 998;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(2px);
+  z-index: 998;
 }
 
+/* ✅ 팝업 본체 */
 .modal {
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	background: #fff;
-	padding: 32px 40px;
-	border-radius: 12px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	z-index: 999;
-	min-width: 360px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 32px 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  width: 400px;
+  font-family: "Pretendard", "Noto Sans KR", sans-serif;
 }
 
+/* ✅ 타이틀 */
 .modal-title {
-	font-size: 1.1rem;
-	font-weight: 600;
-	margin-bottom: 1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #222;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+/* ✅ 입력 영역 */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .modal-content label {
-	display: block;
-	margin: 8px 0 4px;
-	font-weight: 500;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
 }
 
+/* 별표 색상 */
+.modal-content .required {
+  color: #ff3b3b;
+  margin-left: 4px;
+}
+
+/* input 스타일 */
 .modal-content input {
-	width: 100%;
-	padding: 10px;
-	border: 1px solid #ccc;
-	border-radius: 6px;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dcdcdc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
 }
 
+.modal-content input:focus {
+  border-color: #6955a2;
+}
+
+/* ✅ 버튼 영역 */
 .modal-buttons {
-	display: flex;
-	justify-content: flex-end;
-	margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
 }
 
+/* 공통 버튼 */
 .modal-btn {
-	padding: 8px 16px;
-	border: none;
-	border-radius: 6px;
-	cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
+/* 취소 버튼 */
 .modal-btn.cancel {
-	background: #f1f1f1;
+  background: #fff;
+  color: #333;
+  border: 1px solid #dcdcdc;
 }
 
+.modal-btn.cancel:hover {
+  background: #f9f9f9;
+}
+
+/* 등록/수정 버튼 */
 .modal-btn.save {
-	background: #6955A2;
-	color: #fff;
+  background: #6955a2;
+  color: #fff;
+}
+
+.modal-btn.save:hover {
+  background: #57489b;
 }
