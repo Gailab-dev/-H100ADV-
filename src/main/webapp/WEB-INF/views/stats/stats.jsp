@@ -176,6 +176,11 @@
         	<img src="${pageContext.request.contextPath}/resources/images/user.png" alt="유저" class="user-image">
         	<span class="user-name">hskim</span>
         </div>
+        <div class="logout">
+        	<button onclick="location.href = '/gov-disabled-web-gs/stats/logout'">
+        		로그아웃
+        	</button>
+        </div>
     </header>
     <div class="container">
         <aside class="sidebar">

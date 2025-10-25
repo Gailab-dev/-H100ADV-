@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.component.SessionManager;
 import com.disabled.service.CryptoARIAService;
 import com.disabled.service.UserService;
 
@@ -31,9 +32,12 @@ public class UserController {
 	
 	@Autowired
 	UserService userService;
-	
+
 	@Autowired
 	CryptoARIAService cryptoARIAService;
+
+	@Autowired
+	SessionManager sessionManager;
 	
 	// 로그인 화면으로 redirect
 	@RequestMapping("")
@@ -45,17 +49,30 @@ public class UserController {
 	// 로그인 화면 이동
 	@RequestMapping("/login.do")
 	private String viewLogin(HttpServletRequest request, HttpServletResponse response) {
-		
-		// 세션 확인하여 옛날 세션이 남아 있다면 세션 없애기
+
+		// 세션 확인 - 이미 로그인되어 있다면 메인 화면으로 이동
 	    HttpSession s = request.getSession(false);
-	    if (s != null) {
+	    if (s != null && s.getAttribute("id") != null) {
+	    	String userId = (String) s.getAttribute("id");
+	    	
+	    	// sessionManager에 등록된 유효한 세션인지 확인
+	    	HttpSession registeredSession = sessionManager.getSession(userId);
+	    	if (registeredSession != null && registeredSession.getId().equals(s.getId())) {
+	    		// 유효한 세션이면 메인 화면으로 리다이렉트 (필요시 변경)
+	    		return "redirect:/stats/viewStat.do";
+	    	} else {
+	    		// sessionManager에 없거나 다른 세션이면 기존 세션 무효화
+	    		try { s.invalidate(); } catch (IllegalStateException ignore) {logger.debug("",ignore);}
+	    	}
+	    } else if (s != null) {
+	    	// 세션은 있지만 id가 없으면 무효화
 	        try { s.invalidate(); } catch (IllegalStateException ignore) {logger.debug("",ignore);}
 	    }
 	    // 캐시 방지 (뒤로가기 시 로그인 화면이 캐시로 보이는 현상 방지)
 	    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
 	    response.setHeader("Pragma", "no-cache");
 	    response.setDateHeader("Expires", 0L);
-		
+
 		return "user/login";
 	}
 	
@@ -94,20 +111,26 @@ public class UserController {
 				resultMap.put("msg", "아이디 또는 비밀번호가 다릅니다.");
 				return resultMap;
 			}else {
-				
+
 				if( Integer.parseInt(checkErr.get("u_pwd_changed").toString()) == 0 ) {
 					resultMap.put("pwdChanged", false);
 					resultMap.put("uId", checkErr.get("u_id"));
 				}else {
 					resultMap.put("pwdChanged", true);
 				}
-				
+
 				resultMap.put("success", true); // 로그인 성공하면 true 반환
-				
+
+				// 중복 로그인 체크 및 기존 세션 무효화
+				boolean hadDuplicateSession = sessionManager.addSession(id, session);
+				if (hadDuplicateSession) {
+					logger.warn("{} 사용자의 중복 로그인 감지. 기존 세션이 무효화되었습니다.", id);
+				}
+
 				// 세션에 계정 정보 추가
 				logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
 				session.setAttribute("id", id);
-				
+
 				return resultMap;
 			}
 		} catch (IllegalArgumentException e) {
@@ -143,6 +166,23 @@ public class UserController {
 		return "user/pwdChanged";
 	}
 	
+	/*
+	 * 로그아웃
+	 */
+	@RequestMapping("/logout")
+	public String logout(HttpSession session) {
+		String userId = (String) session.getAttribute("id");
+		logger.info("{} 사용자가 {}에 로그아웃하였습니다.", userId, LocalDateTime.now());
+
+		// 세션 매니저에서 사용자 세션 제거
+		if (userId != null) {
+			sessionManager.removeSession(userId);
+		}
+
+		session.invalidate(); // 세션 만료
+		return "redirect:/user/login.do";
+	}
+
 	// 비밀번호 변경시 변경 내용 반영
 	@ResponseBody
 	@PostMapping("/updateNewPwd")
