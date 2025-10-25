@@ -174,9 +174,8 @@
 
 	    // 디바이스 정보 팝업 열기
 		function viewDeviceInfoPopup(dvId){
-			axios.post('${pageContext.request.contextPath}/deviceList/viewDeviceInfoPopup', { dvId })
+			axios.get('${pageContext.request.contextPath}/deviceList/viewDeviceInfoPopup', { params : {dvId} })
 			.then(function(r) {
-			  console.log("팝업 데이터:", r);
 			  const riDiv = document.getElementById("deviceInfoPopup");
 			  riDiv.innerHTML = r.data;
 			  riDiv.style.display = "block";
@@ -356,6 +355,7 @@
 				  
 				  <!-- 첫 번째 줄: 등록 버튼 + 검색창 -->
 				  <div class="top-row">
+<<<<<<< Updated upstream
 				    <button class="add-btn" onclick="viewInsertDevicePopup()">+ 디바이스 등록</button>
 						<form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList(); return false;">
 						  <input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
@@ -369,6 +369,14 @@
 						    </svg>
 						  </button>
 						</form>
+=======
+				    <button type="button" class="add-btn" onclick="viewDeviceInfoPopup(null)">+ 디바이스 등록</button>
+				
+				    <form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList(); return false;">
+				      <input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
+				      <button type="submit" class="search-btn">🔍</button>
+				    </form>
+>>>>>>> Stashed changes
 				  </div>
 				
 				  <div class="bulk-actions">

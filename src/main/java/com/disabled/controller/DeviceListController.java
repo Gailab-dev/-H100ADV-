@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -284,7 +285,7 @@ public class DeviceListController {
 	}
 	
 	// 디바이스 등록, 수정 팝업창
-	@PostMapping("/viewDeviceInfoPopup")
+	@GetMapping("/viewDeviceInfoPopup")
 	public String viewDeviceInfoPopup(
 			@RequestParam(value = "dvId", required = false) Integer dvId
 			, Model model
