@@ -1,5 +1,4 @@
-/* 공통 요소 스타일 */
-/* 초기화: 모든 요소의 margin/padding 제거 */
+/* ================= 공통 ================= */
 * {
     margin: 0;
 	padding: 0;
@@ -14,7 +13,7 @@ button {
     cursor: pointer;
     outline: none;
 }
-/* 헤더영역 */
+/* ================= 헤더 ================= */
 .header {
     display: flex;
     justify-content: space-between;
@@ -53,201 +52,189 @@ button {
     color: #444;
     padding-right: 50px;
 }
-/* 헤더와 푸터 사이영역 */
-.container {
-    display: flex;
-    margin-top: 70px;
-    height: calc(100vh - 70px);
-}
-/* 헤더와 푸터 사이영역-sidebar(홈, 디바이스리스트, 불법주차리스트) */
+
+/* ================= 전체 레이아웃 ================= */
+.container { display: flex; margin-top: 60px; height: calc(100vh - 60px); }
 .sidebar {
-    width: 200px;
-    background: #fff;
-    padding: 20px;
-    border-right: 1px solid #ddd;
+	width: 220px; border-right: 1px solid #ddd;
+	padding: 20px; background: #fff;
 }
-.menu {
-    list-style-type: none;
-    padding: 0;
+.menu { list-style: none; }
+.menu li { margin-bottom: 12px; }
+.menu a {
+	display: flex; align-items: center; gap: 10px;
+	text-decoration: none; color: #000;
+	padding: 8px 10px; border-radius: 6px;
 }
-.menu > li {
-    margin-bottom: 12px;
-}
-.menu > li > a {
-    display: block;
-    padding: 10px;
-    background: #fff;
-    text-decoration: none;
-    color: #000;
-    transition: background 0.2s ease;
-}
-.menu > li:nth-child(2) > a {
-    background: #f8f8fa; 
-    font-weight: bold;
-}
-.menu > li > a:hover {
-    background: #eee;
-}
-.menu-icon {
-    width: 18px;
-    height: 18px;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-/* 헤더와 푸터 사이영역-디바이스리스트(아코디언), 동영상화면 및 컨트롤러 */
-.content {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-}
-/* 헤더와 푸터 사이영역-디바이스리스트(아코디언) */
-.device-navi {
-    width: 350px;
-    background: #fff;
-    padding: 20px;
-    border-right: 1px solid #ccc;
-    overflow-y: auto;
-}
-.device-navi h3 {
-	padding-bottom: 20px;
-    margin: 0;
-	border-bottom: 1px solid #ccc;
-}
-.accordion {
-    display: flex;
-    justify-content: space-between;
-    cursor: pointer;
-    padding: 12px 16px;
-    width: 100%;
-    border-bottom: 1px solid #ccc;
-    font-size: 14px;
-}
-.accordion.active {
-    background-color: #f8f8fa;
-    border-bottom: 0px solid #ccc;
-}
-.accordion-label {
-    flex: 1;
-    text-align: left;
-}
-.accordion-arrow {
-    font-size: 12px;
-    margin-left: 10px;
-}
-		/* 아코디언 펼쳐졌을 때 내용 스타일 */
-.accordion-content {
-	display: none;
-    background-color: #f9f9fb;
-    border-bottom: 1px solid #ccc;
-    padding: 10px 20px;
-    margin-bottom: 10px;
-}
-.accordion-content ul {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-.device-item {
-    padding: 8px 0;
-    font-size: 13px;
-    color: #222;
-}
-.device-item:last-child {
-    border-bottom: none;
-}
-/* 헤더와 푸터 사이영역- 동영상화면 및 컨트롤러 */
+.menu a:hover, .menu .active a { background: #f3f1ff; color: #7c5cfc; font-weight: 600; }
+.menu-icon { width: 18px; }
+
+/* ================= 메인 콘텐츠 ================= */
 .main {
     flex: 1;
     padding: 30px;
-    overflow-y: auto;
+    overflow-x: auto;
+    background: #fff;
 }
-.main h1 {
-    font-size: 22px;
-    margin-bottom: 20px;
+
+/* ================= 상단 영역 ================= */
+.device-top {
+  display: flex;
+  flex-direction: column;
+  width: 100%; /* 전체 너비 사용 */
+  gap: 12px;
+  margin-bottom: 16px;
 }
-.controller-button {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    background: transparent;
-    color: black;
-    font-size: 20px;
-    text-align: center;
-    line-height: 30px;
-    cursor: pointer;
+
+.top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%; /* 좌우 꽉 채우기 */
+  flex-wrap: wrap;
+  gap: 12px;
 }
-.controller-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #2e2f35;
-    color: white;
-    font-size: 20px;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
+
+.add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #6955A2;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  height: 44px;
+  border-radius: 8px;
+  padding: 0 20px;
+  white-space: nowrap;
+  border: none;
+  transition: background 0.2s ease;
 }
-		/* 방향 위치 */
-.controller-button.up {
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+.add-btn:hover {
+  background-color: #57448c;
 }
-.controller-button.down {
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+
+/* 검색창 */
+.search-box {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 420px; /* 너무 길어지지 않게 제한 */
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
 }
-.controller-button.left {
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
 }
-.controller-button.right {
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+.search-btn {
+  font-size: 16px;
+  color: #6955A2;
 }
-.controller-button:hover {
-    background-color: #e0e0e0;
-    border-radius: 50%;
-    box-shadow: 0 0 5px rgba(0,0,0,0.2);
-    transition: background-color 0.2s, box-shadow 0.2s;
+
+/* 두 번째 줄: 선택 / 삭제 */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #555;
+  font-size: 13px;
+  padding-left: 2px;
 }
-.controller-button:active {
-    background-color: #d0d0d0;
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+
+/* 삭제 버튼 */
+.delete-btn {
+  width: 44px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border: 1px solid #DBDBDB;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
-.video-controller-group {
-    display: flex;
+.delete-btn svg {
+  width: 18px;
+  height: 18px;
+}
+.delete-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #bfbfbf;
+}
+
+/* ================= 테이블 ================= */
+.device-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: auto; /* 열 폭 자동 */
+}
+.device-table th,
+.device-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #EAEAEA;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.device-table th {
+  background-color: #FAFAFA;
+  font-weight: 600;
+  color: #555;
+}
+.device-table tbody tr:hover {
+  background-color: #F9F9F9;
+}
+
+/* 버튼 */
+.device-table td button {
+  border: 1px solid #E0E0E0;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.device-table td button:hover {
+  background-color: #f3f1ff;
+  color: #6955A2;
+  border-color: #b5a7f3;
+}
+
+/* ================= 반응형 ================= */
+@media (max-width: 1024px) {
+  .main {
+    padding: 20px;
+  }
+  .top-row {
     flex-direction: column;
-    align-items: flex-start; /* 전체는 왼쪽 정렬 */
-    gap: 50px;
-    margin-bottom: 20px;
+    align-items: stretch;
+  }
+  .search-box {
+    width: 100%;
+    max-width: none;
+  }
+  .device-table {
+    font-size: 13px;
+  }
+  .device-table th, .device-table td {
+    padding: 10px 12px;
+  }
 }
 
-.controller-center-wrapper {
-    width: 720px; /* 비디오 너비와 정확히 맞추기 */
-    display: flex;
-    justify-content: center; /* 가운데 정렬 */
-    position: relative;
-}
-
-.controller-wrapper {
-    width: 200px;
-    height: 200px;
-    background: #f6f6fb;
-    border-radius: 50%;
-    position: relative;
-}
-/* 푸터영역 */
+/* ================= 푸터 ================= */
 .footer {
-    background-color: #f1f1f1;
-    padding: 10px;
+    background-color: #f9f9f9;
+    padding: 12px;
     text-align: center;
+    font-size: 13px;
+    color: #777;
 }

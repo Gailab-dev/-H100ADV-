@@ -11,32 +11,15 @@
 	<title>diviceList</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/deviceList.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 	<script
-  src="https://code.jquery.com/jquery-3.7.1.js"
-  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
-  crossorigin="anonymous"></script>
-  
+	  src="https://code.jquery.com/jquery-3.7.1.js"
+	  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+	  crossorigin="anonymous">
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 	<script>
-			
-	    const table = document.getElementById('boardTable');
-	    const countEl = document.getElementById('selectedCount');
-	    const btnClear = document.getElementById('btnClear');
-	    const btnDelete = document.getElementById('btnDelete');
-	
-	    // 아코디언 토글 기능: 정상작동하도록 유지
-	    document.addEventListener('DOMContentLoaded', () => {
-	        const accordions = document.getElementsByClassName("accordion");
-	        for (let acc of accordions) {
-	            acc.addEventListener("click", function () {
-	                this.classList.toggle("active");
-	                const content = this.nextElementSibling;
-	                content.style.display = content.style.display === "block" ? "none" : "block";
-	            });
-	        }
-	    });
-		
-		
 	 // -------------------------------- pagination 활용한 페이지 이동 ----------------------------
 	    
 		// 디바이스 및 주소 검색
@@ -108,43 +91,14 @@
 		
 		// -------------------------------- pagination 활용한 페이지 이동 ----------------------------
 		
-		// ----------------------------- 디바이스 리스트에서 리스트 복수 선택, 갱신 -------------------
-		
-	    // 전체 선택 해제
-	    function clearAllSelection() {
-	      table.querySelectorAll('tbody .row-check:checked').forEach(cb => cb.checked = false);
-	      updateSelectedCount();
-	    }
-	    
-	    // 공통: 선택 수 갱신
-	    function updateSelectedCount() {
-	      const checked = table.querySelectorAll('tbody .row-check:checked').length;
-	      countEl.textContent = `${checked}개 선택됨`;
-	      btnDelete.disabled = checked === 0; // 아무것도 없으면 삭제 비활성화(선택)
-	    }
 
-	    // 행 체크박스 변경(실시간 카운트 갱신) - 이벤트 위임
-	    table.addEventListener('change', (e) => {
-	      if (e.target.classList.contains('row-check')) {
-	        updateSelectedCount();
-	      }
-	    });
-
-	    // 버튼 핸들러 바인딩
-	    btnClear.addEventListener('click', clearAllSelection);
-	    btnDelete.addEventListener('click', deleteSelectedRows);
-
-	    // 초기 상태 동기화
-	    updateSelectedCount();
-	    
-	 // ----------------------------- 디바이스 리스트에서 리스트 복수 선택, 갱신 -------------------------
 	    
 		// -----------------------------  디바이스 삭제 팝업 ------------------------------------------
 		
 	    // 디바이스 삭제 팝업
 		function viewDeleteDevicePopup(){
 			
-			axios.post('/deviceList/viewDeleteDevicePopup')
+			axios.post('${pageContext.request.contextPath}/deviceList/viewDeleteDevicePopup')
 			.then(function(r){
 				console.log(r);
 				
@@ -171,7 +125,7 @@
 		      const dvIds = checkedRows.map(tr => tr.getAttribute('data-dv-id')); // 서버에 보낼 PK들
 		      console.log('삭제 요청 보낼 dvIds:', dvIds);
 				
-				axios.post('/deviceList/deleteDevicePopup',{
+				axios.post('${pageContext.request.contextPath}/deviceList/deleteDevicePopup',{
 					dvIds : dvIds,
 				})
 				.then(function(r){
@@ -207,21 +161,16 @@
 	    
 	    // 디바이스 정보 팝업 열기
 		function viewDeviceInfoPopup(dvId){
-			axios.post('/deviceList/viewDeviceInfoPopup',{
-				dvId : dvId
-    		})
-    		.then(function(r)){
-    			console.log(r);
-    			
-				let riDiv = document.getElementById("deviceInfoPopup");
-				
-				riDiv.innerHTML = r.data;
-				
-				riDiv.style.display = 'block';
-    		}
-    		.error(function(e)){
-    			console.log(e);
-    		}
+			axios.post('${pageContext.request.contextPath}/deviceList/viewDeviceInfoPopup', { dvId })
+			.then(function(r) {
+			  console.log("팝업 데이터:", r);
+			  const riDiv = document.getElementById("deviceInfoPopup");
+			  riDiv.innerHTML = r.data;
+			  riDiv.style.display = "block";
+			})
+			.catch(function(e) {
+			  console.error("팝업 로드 중 오류 발생:", e);
+			});
 	    }
 	 
     	// 디바이스 수정
@@ -243,13 +192,15 @@
     			return;
     		}
     		
-    		axios.post('/deviceList/updateDeviceInfo',{
-    			new URLSearchParams(dvId : dvid
-    			, dvName : dvName
-    			, dvAddr : dvAddr
-    			, dvIp : dvIp)
-    		})
-    		.then(function(r)){
+    		axios.post('${pageContext.request.contextPath}/deviceList/updateDeviceInfo',
+  			    new URLSearchParams({
+  			        dvId: dvId,
+  			        dvName: dvName,
+  			        dvAddr: dvAddr,
+  			        dvIp: dvIp
+  			    })
+  			)
+    		.then(function(r){
     			console.log(r);
     			if(r.data?.ok){
     				removeDeviceInfoPopup();
@@ -257,11 +208,11 @@
     				alert(r.data?.msg);
     			}
     			
-    		}
-    		.error(function(e)){
+    		})
+    		.error(function(e){
     			console.log(e);
     			alert("수정 중 오류가 발생했습니다.");
-    		}
+    		});
     	}
     	
     	// 디바이스 등록
@@ -283,12 +234,15 @@
     			return;
     		}
     		
-    		axios.post('deviceList/insertDeviceInfo',{
-    			new URLSearchParams(dvName : dvName
-    			, dvAddr : dvAddr
-    			, dvIp : dvIp)
-    		})
-    		.then(function(r)){
+    		axios.post('${pageContext.request.contextPath}/deviceList/updateDeviceInfo',
+   			    new URLSearchParams({
+   			        dvId: dvId,
+   			        dvName: dvName,
+   			        dvAddr: dvAddr,
+   			        dvIp: dvIp
+   			    })
+   			)
+    		.then(function(r){
     			console.log(r);
     			
     			if(r.data?.ok){
@@ -297,11 +251,11 @@
     				alert(r.data?.msg);
     			}
     			
-    		}
-    		.error(function(e)){
+    		})
+    		.error(function(e){
     			console.log(e);
     			alert("등록 중 오류가 발생했습니다.");
-    		}
+    		});
     	}
     	
     	// 디바이스 등록, 수정 팝업창 닫기
@@ -319,7 +273,7 @@
 	    
 	    // 실시간 영상 팝업
 		function viewRealTimeVideoPopup(dvId){
-			axios.post('/deviceList/viewRealTimeVideo',{
+			axios.post('${pageContext.request.contextPath}/deviceList/viewRealTimeVideo',{
 				dvId : dvId,
 			})
 			.then(function(r){
@@ -338,8 +292,42 @@
 		}
 		
 		// ---------------------------- 실시간 영상 팝업 -------------------------------   
-	 
-	  	
+		
+		
+		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------  		
+		    window.onload = function() {
+        const clearSelectionBtn = document.getElementById("clearSelectionBtn"); // SVG 버튼
+        const checkAll = document.getElementById("checkAll"); // 테이블 헤더 체크박스
+        const rowChecks = document.querySelectorAll(".row-check"); // 각 행 체크박스
+        const selectedText = document.querySelector(".selected-text");
+
+        // ✅ 선택 개수 갱신 함수
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll(".row-check:checked").length;
+            selectedText.textContent = `\${checked}개 선택됨`;
+            checkAll.checked = (checked === rowChecks.length); // 전체선택 상태 반영
+        }
+
+        // ✅ 개별 체크박스 클릭 시 갱신
+        rowChecks.forEach(chk => chk.addEventListener("change", updateSelectedCount));
+
+        // ✅ 전체선택 (표 헤더 체크박스 클릭 시)
+        checkAll.addEventListener("change", function() {
+            rowChecks.forEach(chk => chk.checked = checkAll.checked);
+            updateSelectedCount();
+        });
+
+        // ✅ SVG 버튼 클릭 시 → 전체 해제
+        clearSelectionBtn.addEventListener("click", function() {
+            rowChecks.forEach(chk => chk.checked = false);
+            checkAll.checked = false;
+            updateSelectedCount();
+        });
+
+        // 초기 표시
+        updateSelectedCount();
+    };
+	// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------  
     </script>
 </head>
 <body>
@@ -358,149 +346,102 @@
         	</button>
         </div>
     </header>
-    <div class="container">
-        <aside class="sidebar">
-            <ul class="menu">
-                <li><a href="/gov-disabled-web-gs/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
-                <li><a href="/gov-disabled-web-gs/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
-                <li><a href="/gov-disabled-web-gs/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
-            </ul>
-        </aside>
-        <div class="content">
-            <!--  
-            <div class="device-navi">
-                <h3>디바이스 리스트</h3>
-				<c:forEach var="addr" items="${groupAddrByDeviceList}">
-				    <button class="accordion">
-				        <span class="accordion-label">${addr.key}</span>
-				        <span class="accordion-arrow">&#9662;</span> <%-- ▼ (열림 표시) --%>
-				    </button>
-				    <div class="accordion-content">
-				        <ul>
-				            <c:forEach var="device" items="${addr.value}">
-				                <li class="device-item" >
-				                	<a href="javascript:void(0);" onclick="deviceBtnClick('start','${device.dv_id}')">${device.dv_name}</a>
-				                </li>
-				            </c:forEach>
-				        </ul>
-				    </div>
-				</c:forEach>
-            </div>
-            -->
+    <div class="container">    
+		<!-- 사이드바 -->
+		<aside class="sidebar">
+			<ul class="menu">
+				<li><a href="/gov-disabled-web-gs/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
+				<li><a href="/gov-disabled-web-gs/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
+				<li><a href="/gov-disabled-web-gs/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+			</ul>
+		</aside>
+		
+		<!-- 메인 콘텐츠 -->
+		<div class="content">
 			<main class="main">
-				<h1>실시간 영상</h1>	
-			    <!-- 
-			    <div class="video-controller-group">
-				    <video id="video" width="720" controls autoplay>
-				    	<source src="https://www.geyeparking.shop/index.m3u8" type="application/x-mpegURL">
-				    </video>
-					
-					// 디바이스 컨트롤러 
-					  
-				    <div class="controller-center-wrapper">
-				        <div class="controller-wrapper">
-				            <div class="controller-button up" onclick="tiltingBtnClick('U')">▲</div>
-				            <div class="controller-button left" onclick="tiltingBtnClick('L')">◀</div>
-				            <div class="controller-center" onclick="deviceBtnClick('stop')">⏸</div>
-				            <div class="controller-button right" onclick="tiltingBtnClick('R')">▶</div>
-				            <div class="controller-button down" onclick="tiltingBtnClick('D')">▼</div>
-				        </div>
-				    </div>
-				    
+				<div class="device-top">
+				  
+				  <!-- 첫 번째 줄: 등록 버튼 + 검색창 -->
+				  <div class="top-row">
+				    <button class="add-btn">+ 디바이스 등록</button>
+				
+				    <form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList(); return false;">
+				      <input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
+				      <button type="submit" class="search-btn">🔍</button>
+				    </form>
+				  </div>
+				
+				  <!-- 두 번째 줄: 전체선택 / 삭제 / 선택 개수 -->
+				  <div class="bulk-actions">
+				    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+				         xmlns="http://www.w3.org/2000/svg">
+				      <rect width="16" height="16" rx="4" fill="#6955A2"/>
+				      <path d="M4 9V7H12V9H4Z" fill="white"/>
+				    </svg>
+				    <span class="selected-text">0개 선택됨</span>
+				    <button type="button" class="delete-btn" onclick="viewDeleteDevicePopup()" title="삭제">
+				      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+				           xmlns="http://www.w3.org/2000/svg">
+				        <path d="M11.75 9.11111V14.4444M8.25 9.11111V14.4444M4.75 5.55556V16.2222C4.75 16.6937 4.93437 17.1459 5.26256 17.4793C5.59075 17.8127 6.03587 18 6.5 18H13.5C13.9641 18 14.4092 17.8127 14.7374 17.4793C15.0656 17.1459 15.25 16.6937 15.25 16.2222V5.55556M3 5.55556H17M5.625 5.55556L7.375 2H12.625L14.375 5.55556"
+				              stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+				      </svg>
+				    </button>
+				  </div>
 				</div>
+				
+				<table id="deviceTable" class="device-table">
+					<thead>
+						<tr>
+							<th><input type="checkbox" id="checkAll" /></th>
+							<th>디바이스명</th>
+							<th>디바이스 주소</th>
+							<th>실시간 영상</th>
+							<th>디바이스 수정</th>
+						</tr>
+					</thead>
+					<tbody>
+						<c:forEach var="item" items="${deviceList}">
+				<tr data-dv-id="${item.dv_id}">
+				<td><input type="checkbox" class="row-check" /></td>
+				<td>${item.dv_name}</td>
+				<td>${item.dv_addr}</td>
+				<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 								
+				<td>
+					<c:choose>
+						<c:when test="${item.dv_status eq 0}">OFF</c:when>
+						<c:when test="${item.dv_status eq 1}">ON</c:when>
+					</c:choose>
+				</td>
+				
+				<td>
+					<c:choose>
+						<c:when test="${item.dv_status eq 0}">Jetson 통신 불가</c:when>
+						<c:when test="${item.dv_status eq 1}">정상 </c:when>
+						<c:when test="${item.dv_status eq 2}">CCTV 통신 불가</c:when>
+						<c:when test="${item.dv_status eq 3}">전광판 통신 불가</c:when>
+						<c:when test="${item.dv_status eq 4}">알림소리 통신 불가</c:when>
+						<c:when test="${item.dv_status eq 5}">안전버튼 통신 불가</c:when>
+					</c:choose>
+				</td>
 				 -->
-				<!-- 컨트롤러 버튼 -->
-				<!-- 
-			    <div class="controller-buttons">
-			        <button onclick="tiltingBtnClick('zoomIn')">zoomIn</button>
-			        <button onclick="tiltingBtnClick('zoomOut')">zoomOut</button>
-			    </div>
-			     -->
-			     
-			     <!-- 디바이스 리스트 -->
-			     <div>
-			     	<div>
-			     		<button>+ 디바이스 등록</button>
-				     	<form id="deviceListSearchForm">
-				     		<button class="search-btn" onclick="searchDeviceList()"> </button>
-				     		<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
-				     	</form>
-			     	</div>
-					<div>
-						<input type="checkbox">
-						
-						<button type="button" onclick="viewDeleteDevicePopup()"> 삭제 버튼</button>
-					</div>
-					<table id="deviceTable" class="event-table">
-						<thead>
-							<tr>
-								<th><input type="checkbox" id="checkAllHeader" /></th>
-								<th>디바이스명</th>
-								<th>디바이스주소</th>
-								<th>디바이스상태</th>
-								<th>실시간영상</th>
-								<th>디바이스수정</th>
-							</tr>
-						</thead>
-						<tbody>
-							<c:forEach var="item" items="${deviceList}">
-								<tr data-dv-id="${item.dv_id}">
-									<td>
-										<input type="checkbox" class="row-check" />
-									</td>
-									<td>${item.dv_name}</td>
-									<td>${item.dv_addr}</td>
-									
-									<td>
-										<c:choose>
-											<c:when test="${item.dv_status eq 0}">OFF</c:when>
-											<c:when test="${item.dv_status eq 1}">ON</c:when>
-										</c:choose>
-									</td>
-									<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 
-									<td>
-										<c:choose>
-											<c:when test="${item.dv_status eq 0}">Jetson 통신 불가</c:when>
-											<c:when test="${item.dv_status eq 1}">정상 </c:when>
-											<c:when test="${item.dv_status eq 2}">CCTV 통신 불가</c:when>
-											<c:when test="${item.dv_status eq 3}">전광판 통신 불가</c:when>
-											<c:when test="${item.dv_status eq 4}">알림소리 통신 불가</c:when>
-											<c:when test="${item.dv_status eq 5}">안전버튼 통신 불가</c:when>
-										</c:choose>
-									</td>
-									 -->
-									<td>
-										<button type="button" onclick="viewRealTimeVideoPopup(${item.dv_id})"> 📽 </button>
-									</td>
-									<td><button type="button" onclick="viewDeviceInfoPopup(${item.dv_id})"> 수정 </button></td>
-								</tr>
-							</c:forEach>
-						</tbody>
-					</table>
-					<div class="pagination">
-						<ui:pagination paginationInfo="${paginationInfo}" type="text" jsFunction="goPage"/>
-					</div>
-					
-					<!-- 실시간 영상 버튼 클릭시 위 div 하단에 팝업 창 -->
-					<div id="realTimeVideoPopup" style="display:none">
-					
-					</div>
-					
-					<!-- 수정 버튼 클릭시 위 div 하단에 팝업 창 -->
-					<div id="deviceInfoPopup" style="display:none">
-					
-					</div>
-					
-					<!-- 삭제 버튼 클릭시 위 div 하단에 팝업 창 -->
-					<div id="deletedevicePopup" style="display:none">
-					
-					</div>
-					
-			     </div>
-			     
+				<td><button type="button" onclick="viewRealTimeVideoPopup(${item.dv_id})">📹</button></td>
+				<td><button type="button" onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button></td>
+				</tr>
+				</c:forEach>
+					</tbody>
+				</table>
+				
+				<div class="pagination">
+					<ui:pagination paginationInfo="${paginationInfo}" type="text" jsFunction="goPage"/>
+				</div>
+				
+				<!-- 팝업 placeholder -->
+				<div id="realTimeVideoPopup" style="display:none;"></div>
+				<div id="deviceInfoPopup" style="display:none;"></div>
+				<div id="deletedevicePopup" style="display:none;"></div>
 			</main>
 		</div>
-	</div>	
+	</div>
     <footer class="footer">
         <p>&copy; 2025 GAILAB</p>
     </footer>

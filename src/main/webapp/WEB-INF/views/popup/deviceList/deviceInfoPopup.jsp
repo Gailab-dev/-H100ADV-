@@ -6,8 +6,8 @@
 	// 팝업창 닫기
 	function closeDeviceInfoPopup(){
 		 let deviceInfoPopup = document.getElementById("deviceInfoPopup");
-		 deviceInfoPopup.style.display = none;
-		 location.reload; 
+		 deviceInfoPopup.style.display = "none";
+		 location.reload(); 
 	}
 	
 	function 
@@ -25,15 +25,15 @@
 	<div>
 		<div>
 			<p>디바이스명</p>
-			<input type="text" id="dvName" placeholder="디바이스명" value="${dvName}">
+			<input type="text" id="dvName" placeholder="디바이스명" value="${dvInfo.dv_name}">
 		</div>
 		<div>
 			<p>디바이스 주소</p>
-			<input type="text" id="dvAddr" placeholder="디바이스명" value="${dvAddr}">
+			<input type="text" id="dvAddr" placeholder="디바이스 주소" value="${dvInfo.dv_addr}">
 		</div>
 		<div>
 			<p>디바이스 IP</p>
-			<input type="text" id="dvIp" placeholder="디바이스명" value="${dvIp}">
+			<input type="text" id="dvIp" placeholder="디바이스 IP" value="${dvInfo.dv_ip}">
 		</div>
 		
 		<button onclick="closeDeviceInfoPopup()">취소</button>
