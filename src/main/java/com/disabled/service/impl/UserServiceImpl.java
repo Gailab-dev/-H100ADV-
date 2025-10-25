@@ -40,15 +40,17 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateNewPwd(Integer uId, String encryptPwd) {
+	public Integer updateNewPwd(Integer uId, String encryptPwd) {
 		try {
 			Integer rows1 = loginMapper.updateNewPwd(uId, encryptPwd);
 			if(rows1 != 1) {
 				logger.error("loginMapper.updateNewPwd SQL문에서 오류 발생");
 				throw new IllegalStateException("loginMapper.updateNewPwd SQL문에서 오류 발생");
 			}
+			return rows1;
 		} catch (IllegalStateException e) {
 			logger.error("loginMapper.updateNewPwd SQL문에서 오류 발생",e);
+			return 0;
 		}
 		
 	}

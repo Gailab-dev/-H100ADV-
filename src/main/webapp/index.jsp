@@ -2,5 +2,5 @@
     pageEncoding="UTF-8"%>
     
 <%
-	response.sendRedirect("/gov-disabled-web-gs/stats/login.do");
+	response.sendRedirect("/gov-disabled-web-gs/user/login.do");
 %>

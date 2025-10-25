@@ -35,7 +35,10 @@ public class LoginInterceptor implements HandlerInterceptor{
         String uri = request.getRequestURI();
         
         // 로그인 페이지와 정적 자원은 제외
-        if (uri.contains("/login.do") 
+        if (uri.contains("/login.do")
+        		|| uri.contains("/user/login")
+        		|| uri.contains("/viewPwdChanged.do")
+        		|| uri.contains("/updateNewPwd")
         		|| uri.contains("/css") 
         		|| uri.contains("/js") 
         		|| uri.contains("/images")

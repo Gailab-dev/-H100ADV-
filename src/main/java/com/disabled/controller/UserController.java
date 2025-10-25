@@ -11,6 +11,7 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,7 +54,7 @@ public class UserController {
 		// 세션 확인 - 이미 로그인되어 있다면 메인 화면으로 이동
 	    HttpSession s = request.getSession(false);
 	    if (s != null && s.getAttribute("id") != null) {
-	    	String userId = (String) s.getAttribute("id");
+	    	String userId = s.getAttribute("id").toString();
 	    	
 	    	// sessionManager에 등록된 유효한 세션인지 확인
 	    	HttpSession registeredSession = sessionManager.getSession(userId);
@@ -78,7 +79,7 @@ public class UserController {
 	
 	// 사용자 ID,PW를 확인하여 가입되었다면 통계 화면으로, 그렇지 않다면 로그인 화면으로 이동
 	@ResponseBody
-	@PostMapping("/login")
+	@PostMapping( value = "/login", produces = "application/json; charset=UTF-8")
 	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session) {
 		
 		// resultMap
@@ -119,7 +120,7 @@ public class UserController {
 					resultMap.put("pwdChanged", true);
 				}
 
-				resultMap.put("success", true); // 로그인 성공하면 true 반환
+				resultMap.put("ok", true); // 로그인 성공하면 true 반환
 
 				// 중복 로그인 체크 및 기존 세션 무효화
 				boolean hadDuplicateSession = sessionManager.addSession(id, session);
@@ -186,7 +187,7 @@ public class UserController {
 	// 비밀번호 변경시 변경 내용 반영
 	@ResponseBody
 	@PostMapping("/updateNewPwd")
-	public Map<String,Object> updateNewPwd(@RequestBody Map<String,Object> body) {
+	public Map<String,Object> updateNewPwd(@RequestBody Map<String,Object> body, HttpSession session ) {
 		
 		Map<String,Object> res = new HashMap<>();
 		
@@ -206,10 +207,30 @@ public class UserController {
 			
 			// 평문 암호화
 			String encryptPwd = cryptoARIAService.encryptPassword(newPwd);
+			if(encryptPwd == null || encryptPwd.isEmpty()) {
+				res.put("ok", false); 
+				res.put("msg", "암호화 실패.");
+				return res;
+			}
+			
 			
 			// 비밀번호 update
-			userService.updateNewPwd(uId, encryptPwd);
+			Integer result = userService.updateNewPwd(uId, encryptPwd);
+			if(result != 1) {
+				res.put("ok", false); 
+				res.put("msg", "비밀번호 업데이트 실패.");
+				return res;
+			}
 			
+			// session에 id값 추가
+			logger.info("{} 사용자가 {}에 로그인하였습니다.",uId,LocalDateTime.now());
+			session.setAttribute("id", uId.toString());
+			
+		} catch(DataAccessException e2) {
+	        logger.error("DB 처리 중 오류(updateNewPwd): ", e2);
+	        res.put("ok", false);
+	        res.put("msg", "데이터베이스 처리 중 오류가 발생했습니다.");
+	        return res;
 		} catch (RuntimeException e) {
 			logger.error("updateNewPwd에서 오류 발생 : ",e);
 	        res.put("ok", false);

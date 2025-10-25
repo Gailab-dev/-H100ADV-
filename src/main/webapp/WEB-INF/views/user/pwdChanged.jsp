@@ -5,15 +5,15 @@
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 	
 	//비번 규칙: 6~20글자 / 영문+숫자+특수문자 각 1개 이상 / 공백 불가
 	const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^\w\s])\S{6,20}$/;
 	
-	function updatePwd(uId){
+	window.updatePwd = async function(uId){
 		
-		let newPwd = documnet.getElementById("newPwd").value;
+		let newPwd = document.getElementById("newPwd").value;
 		if(newPwd == null || newPwd == undefined || newPwd == ""){
 			alert("새 비밀번호를 입력해 주세요.");
 			return;
@@ -29,25 +29,29 @@
 			return;
 		}
 		
-		axios.post('/gov-disabled-web-gs/user/updateNewPwd',{
-			uId : uId
-			, newPwd : newPwd
-		})
-		.then(function(r){
+		try{
+			const r = await axios.post('/gov-disabled-web-gs/user/updateNewPwd',{
+				uId : uId
+				, newPwd : newPwd
+			});
+			
 			if(r.data?.ok){
 				window.location.href = "/gov-disabled-web-gs/stats/viewStat.do";
 			}
 			else{
 				alert(r.data?.msg);
 			}
-		})
-		.catch(function(e)){
-			alert("비밀번호를 확인해주세요.");
+			
+		}
+		catch(e){
+			alert(e);
 		}
 			
 	}
 
 </script>
+</head>
+
 <body>
 	<div>
 		<h3>비밀번호 재설정</h3>

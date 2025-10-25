@@ -46,7 +46,7 @@
 
 		try{
 			// validation
-			if(id == null || id == "" || id == "undefinded"){
+			if(id == null || id == "" || id == "undefined"){
 				alert("아이디를 입력해주세요");
 				return;
 			}
@@ -64,32 +64,41 @@
 		  	}
 			
 		    // 동기 통신으로 로그인
-			const response = await fetch('/gov-disabled-web-gs/user/login',{
+			const r = await fetch('/gov-disabled-web-gs/user/login',{
 				method: 'POST',
 		  		headers: {
 		    		'Content-Type': 'application/json'
+		    		, 'Accept': 'application/json'
 		  		},
-		  		body: JSON.stringify({id,pwd
-	  			})
+		        credentials: 'same-origin'
+		        , cache: 'no-store'
+		  		, body: JSON.stringify({id,pwd})
 			});
-			
-	        if (!response.ok) {
-	            alert("서버 응답 오류 " + response.status);
-	        }
 		    
-			const result = await response.json();
+		    console.log(r);
 			
-			if(result.success){
+		    // response 객체의 ok값(200~299)
+	        if (!r.ok) {
+	    		alert(r.ok +"error");
+	            return;
+	        }
+			
+	        // fetch는 반드시 json으로 parsing해야만 resultmap의 값을 사용할 수 있음
+	        const result = await r.json();
+	        
+	        if(result.ok){
 				if(result.pwdChanged){
 					window.location.href = "/gov-disabled-web-gs/stats/viewStat.do";
+				}else{
+					window.location.href = "/gov-disabled-web-gs/user/viewPwdChanged.do?uId="+result.uId;
 				}
-				
-				window.location.href = "/gov-disabled-web-gs/user/viewPwdChanged.do?uId="+result.uId;
-			}else {
-				alert("ID 또는 비밀번호가 다릅니다.");
-			}
-		}catch (err){
-			alert("로그인 오류: " + err);
+	        }else{
+	        	alert(result.msg);
+	        	return;
+	        }
+
+		}catch (e){
+			alert("로그인 오류: " + e);
 	        
 		}
 	}
