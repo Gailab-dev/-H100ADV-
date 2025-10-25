@@ -5,7 +5,7 @@
 
 ==============================================================
 
-0. SSL 설치
+0. SSL 설치 (현재 SSL 자동 설치되므로 이 부분 skip. 1번부터 작업하면 됨.)
 	1) sudo apt update && sudo apt install -y openssl
 	2) sudo mkdir -p /etc/ssl/example.com
 	3) sudo openssl req -x509 -nodes -newkey rsa:2048 \
@@ -48,6 +48,10 @@
 
 	8) /app 디렉토리 안에 h100_module_d 업로드
 
+	9) start, stop 쉘스크립트에 권한 부여
+	$ chmod +x start.sh
+	$ chmod +x stop.sh
+
 2. go 설치
 	1) 서버 아키텍처 확인
 	$ uname -m
@@ -71,19 +75,13 @@
 	$ sudo tar -C /usr/local -xzf go1.24.3.linux-arm64.tar.gz
 
 	5) go PATH 설정
-	$ echo "export PATH=$PATH:/usr/local/go/bin" >> .bashrc
+	$ echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
 
 	6) PATH 변경사항 적용
-	$ source .bashrc
-
-	7) PATH 잘 적용되었는지 확인
-	$ echo $PATH
+	$ source /etc/profile
 
 	8) go 설치 확인(버전 확인)
 	$ go version
-
-	9) PATH가 자꾸 풀린다면
-	$ echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
 
 
 3. ffmpeg 설치 
@@ -103,8 +101,11 @@
 	2) 사용하지 않는 의존성 제거
 	$ go mod tidy
 
-	3) 
-	$ go run ./cmd/server
+	3) 모듈 실행
+	$ ./start.sh
+
+	4) 모듈 종료
+	$ ./stop.sh
 
 
 ==============================================================
