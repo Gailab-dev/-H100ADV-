@@ -71,7 +71,7 @@ public class StatsController {
 	    // 캐시 방지 (뒤로가기 시 로그인 화면이 캐시로 보이는 현상 방지)
 	    request.setAttribute("noCache", true);
 
-		return "stats/login2";
+		return "stats/login";
 	}
 	
 	// 사용자 ID,PW를 확인하여 가입되었다면 통계 화면으로, 그렇지 않다면 로그인 화면으로 이동
