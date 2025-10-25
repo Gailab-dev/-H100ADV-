@@ -178,6 +178,25 @@ func FileSendScheduler() {
 					if entry2.IsDir() {
 						continue // 하위 파일은 무시
 					} else {
+						// 어제 날짜 계산
+						yesterday := time.Now().AddDate(0, 0, -1)
+						yesterdayStart := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, yesterday.Location())
+						yesterdayEnd := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 23, 59, 59, 999999999, yesterday.Location())
+
+						// 파일 정보 가져오기
+						fileInfo, err := entry2.Info()
+						if err != nil {
+							logger.Log.Error(fmt.Sprintf("파일 정보 가져오기 실패: %s", entry2.Name()), zap.Error(err))
+							continue
+						}
+
+						// 파일 수정 시간이 어제인지 확인
+						modTime := fileInfo.ModTime()
+						if modTime.Before(yesterdayStart) || modTime.After(yesterdayEnd) {
+							logger.Log.Info(fmt.Sprintf("어제 날짜가 아닌 파일 건너뜀: %s (수정 시간: %s)", entry2.Name(), modTime.Format("2006-01-02 15:04:05")))
+							continue
+						}
+
 						if name == "output_images" {
 							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_images/"), entry2.Name(), fmt.Sprintf("http://%s/imageFileReceive", cloudReceiveIp))))
 						} else if name == "output_videos" {
