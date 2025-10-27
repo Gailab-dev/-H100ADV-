@@ -112,20 +112,23 @@
 </head>
 <body>
 	<!-- 헤더 -->
-    <header class="header">
-        <div class="logo">
-        	<img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png" alt="GAILAB" class="header-icon">
-        </div>
-        <div class="user">
-        	<img src="${pageContext.request.contextPath}/resources/images/user.png" alt="유저" class="user-image">
-        	<span class="user-name">hskim</span>
-        </div>
-        <div class="logout">
-        	<button onclick="location.href = '/gov-disabled-web-gs/stats/logout'">
-        		로그아웃
-        	</button>
-        </div>
-    </header>
+	<header class="header">
+	  <div class="logo">
+	    <img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png"
+	         alt="GAILAB" class="header-icon">
+	  </div>
+	
+	  <div class="right-group">
+	    <div class="user">
+	      <img src="${pageContext.request.contextPath}/resources/images/user.png"
+	           alt="유저" class="user-image">
+	      <span class="user-name">hskim</span>
+	    </div>
+	    <div class="logout">
+	      <button onclick="location.href='/gov-disabled-web-gs/stats/logout'">로그아웃</button>
+	    </div>
+	  </div>
+	</header>
     <div class="container">
 		<aside class="sidebar">
             <ul class="menu">

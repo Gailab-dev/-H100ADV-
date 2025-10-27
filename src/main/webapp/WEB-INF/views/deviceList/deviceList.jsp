@@ -13,9 +13,10 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/deviceList.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/popup/deleteDevicePopup.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/popup/deleteDevicePopup.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/popup/deviceInfoPopup.css">
+        <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/popup/realTimeVideoPopup.css">
 	<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-	<script
+	<script>
 	  src="https://code.jquery.com/jquery-3.7.1.js"
 	  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
 	  crossorigin="anonymous">
@@ -681,20 +682,24 @@
 </head>
 <body>
 	<!-- 헤더 -->
-    <header class="header">
-        <div class="logo">
-        	<img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png" alt="GAILAB" class="header-icon">
-        </div>
-        <div class="user">
-        	<img src="${pageContext.request.contextPath}/resources/images/user.png" alt="유저" class="user-image">
-        	<span class="user-name">hskim</span>
-        </div>
-        <div class="logout">
-        	<button onclick="location.href = '/gov-disabled-web-gs/stats/logout'">
-        		로그아웃
-        	</button>
-        </div>
-    </header>
+	<header class="header">
+	  <div class="logo">
+	    <img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png"
+	         alt="GAILAB" class="header-icon">
+	  </div>
+	
+	  <div class="right-group">
+	    <div class="user">
+	      <img src="${pageContext.request.contextPath}/resources/images/user.png"
+	           alt="유저" class="user-image">
+	      <span class="user-name">hskim</span>
+	    </div>
+	    <div class="logout">
+	      <button onclick="location.href='/gov-disabled-web-gs/stats/logout'">로그아웃</button>
+	    </div>
+	  </div>
+	</header>
+	<!-- 사이드바 -->
     <div class="container">    
 		<!-- 사이드바 -->
 		<aside class="sidebar">

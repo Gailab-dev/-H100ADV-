@@ -14,45 +14,72 @@ button {
     cursor: pointer;
     outline: none;
 }
-/* 헤더영역 */
+/* ================= 헤더 ================= */
+/* 헤더 전체 레이아웃 */
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #fff;
-    border-bottom: 1px solid #ccc;
-    padding: 10px 40px;
-    position: fixed;
-    width: 100%;
-    top: 0;
-    z-index: 10;
+  display: flex;
+  justify-content: space-between;  /* 좌측: 로고 / 우측: 유저+로그아웃 */
+  align-items: center;
+  background-color: #fff;
+  border-bottom: 1px solid #ccc;
+  padding: 10px 40px;
+  box-sizing: border-box; /* padding 포함 폭 계산 */
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 10;
 }
-.logo { /* 로고 영역 */
-    display: flex;
-    align-items: center;
+
+/* 로고 */
+.logo {
+  display: flex;
+  align-items: center;
 }
-.header-icon{
-	width:150px;
-    vertical-align: middle;
+.header-icon {
+  width: 150px;
+  vertical-align: middle;
 }
+
+/* 오른쪽 그룹 (유저 + 로그아웃) */
+.right-group {
+  display: flex;
+  align-items: center;
+  gap: 24px; /* 유저와 로그아웃 버튼 간격 */
+}
+
+/* 유저 */
 .user {
-    display: flex;
-    align-items: center;
-    min-width: 80px;
-    padding-right: 10px;
+  display: flex;
+  align-items: center;
 }
 .user-image {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    object-fit: cover;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 .user-name {
-    margin-left: 8px;
-    font-size: 14px;
-    color: #444;
-    padding-right: 50px;
+  margin-left: 8px;
+  font-size: 14px;
+  color: #444;
 }
+
+/* 로그아웃 버튼 */
+.logout button {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.logout button:hover {
+  background: #f6f6f6;
+  border-color: #aaa;
+}
+
 /* 헤더와 푸터 사이영역 */
 .container {
     display: flex;
