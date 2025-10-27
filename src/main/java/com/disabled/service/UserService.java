@@ -6,4 +6,6 @@ public interface UserService {
 	Map<String,Object> loginCheck(String id, String pwd);
 
 	Integer updateNewPwd(Integer uId, String encryptPwd);
+
+	String getPwd(Integer uId);
 }

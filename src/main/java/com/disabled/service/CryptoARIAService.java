@@ -40,4 +40,13 @@ public class CryptoARIAService {
 		return encryptText;
 	}
 
+	public boolean match(String newPwd, String oldPwd) {
+		try {
+			 return passwordEncoder.checkPassword(newPwd, oldPwd);
+		} catch (RuntimeException e) {
+			logger.error("CrypoARIAService의 비밀번호 match 중 오류 발생: ",e);
+			return false;
+		}
+	}
+
 }

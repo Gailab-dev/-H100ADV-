@@ -213,6 +213,20 @@ public class UserController {
 				return res;
 			}
 			
+			// 비밀번호 업데이트 전 비밀번호 비교하여 같으면 재입력 요청
+			String oldPwd = userService.getPwd(uId);
+			if(oldPwd == null || oldPwd.equals("") ) {
+				res.put("ok", false); 
+				res.put("msg", "비밀번호 업데이트 전 오류 발생.");
+				return res;
+			}
+			
+			boolean result2 = cryptoARIAService.match(newPwd, oldPwd);
+			if(result2) {
+				res.put("ok", false); 
+				res.put("msg", "새 비밀번호는 이전 비밀번호와 달라야 합니다.");
+				return res;
+			}
 			
 			// 비밀번호 update
 			Integer result = userService.updateNewPwd(uId, encryptPwd);

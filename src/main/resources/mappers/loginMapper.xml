@@ -22,5 +22,12 @@
 		WHERE u_id = #{uId}	
 	
 	</update>
+	
+	<!-- 기존 비밀번호 가져오기 -->
+		<select id="getPwd" resultType="string">
+		SELECT u_login_pwd
+		FROM tbl_user
+		WHERE u_id = #{uId}	
+	</select>
 
 </mapper>
