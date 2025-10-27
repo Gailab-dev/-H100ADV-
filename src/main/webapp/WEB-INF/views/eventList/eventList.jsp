@@ -153,7 +153,7 @@
 			<table class="event-table">
 				<thead>
 					<tr>
-						<th>  </th>
+						<th></th>
 						<th>날짜</th>
 						<th>위치</th>
 						<th>차량번호</th>
@@ -162,6 +162,12 @@
 					</tr>
 				</thead>
 				<tbody>
+					<c:if test="${empty eventList}">
+						<tr>
+							<td colspan="6" style="text-align:center;">조회된 불법주차 내역이 없습니다.</td>
+						</tr>
+					</c:if>
+			
 					<c:forEach var="item" items="${eventList}">
 						<tr>
 							<td>${item.ev_id}</td>
