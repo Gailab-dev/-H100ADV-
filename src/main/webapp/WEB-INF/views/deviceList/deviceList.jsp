@@ -215,7 +215,9 @@
     		.then(function(r){
     			
     			if(r.data?.ok){
-    				closeDeviceInfoPopup();
+    		        alert("디바이스가 수정되었습니다.");
+    		        closeDeviceInfoPopup();
+    		        location.reload();
     			}else{
     				alert(r.data?.msg);
     			}
