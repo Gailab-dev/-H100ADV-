@@ -762,35 +762,55 @@
 						</tr>
 					</thead>
 					<tbody>
-						<c:forEach var="item" items="${deviceList}">
-				<tr data-dv-id="${item.dv_id}">
-				<td><input type="checkbox" class="row-check" /></td>
-				<td>${item.dv_name}</td>
-				<td>${item.dv_addr}</td>
-				<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 								
-				<td>
-					<c:choose>
-						<c:when test="${item.dv_status eq 0}">OFF</c:when>
-						<c:when test="${item.dv_status eq 1}">ON</c:when>
-					</c:choose>
-				</td>
-				
-				<td>
-					<c:choose>
-						<c:when test="${item.dv_status eq 0}">Jetson 통신 불가</c:when>
-						<c:when test="${item.dv_status eq 1}">정상 </c:when>
-						<c:when test="${item.dv_status eq 2}">CCTV 통신 불가</c:when>
-						<c:when test="${item.dv_status eq 3}">전광판 통신 불가</c:when>
-						<c:when test="${item.dv_status eq 4}">알림소리 통신 불가</c:when>
-						<c:when test="${item.dv_status eq 5}">안전버튼 통신 불가</c:when>
-					</c:choose>
-				</td>
-				 -->
-				<td><button type="button" onclick="viewRealTimeVideoPopup(${item.dv_id})">📹</button></td>
-				<td><button type="button" onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button></td>
-				</tr>
-				</c:forEach>
-					</tbody>
+					  <c:choose>
+					    <c:when test="${empty deviceList}">
+					      <tr>
+					        <td colspan="5" style="text-align:center; padding:40px 0; color:#777;">
+					          조회된 디바이스가 없습니다.
+					        </td>
+					      </tr>
+					    </c:when>
+					    <c:otherwise>
+					      <c:forEach var="item" items="${deviceList}">
+					        <tr data-dv-id="${item.dv_id}">
+					          <td><input type="checkbox" class="row-check" /></td>
+					          <td>${item.dv_name}</td>
+					          <td>${item.dv_addr}</td>
+								<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 								
+								<td>
+									<c:choose>
+										<c:when test="${item.dv_status eq 0}">OFF</c:when>
+										<c:when test="${item.dv_status eq 1}">ON</c:when>
+									</c:choose>
+								</td>
+								
+								<td>
+									<c:choose>
+										<c:when test="${item.dv_status eq 0}">Jetson 통신 불가</c:when>
+										<c:when test="${item.dv_status eq 1}">정상 </c:when>
+										<c:when test="${item.dv_status eq 2}">CCTV 통신 불가</c:when>
+										<c:when test="${item.dv_status eq 3}">전광판 통신 불가</c:when>
+										<c:when test="${item.dv_status eq 4}">알림소리 통신 불가</c:when>
+										<c:when test="${item.dv_status eq 5}">안전버튼 통신 불가</c:when>
+									</c:choose>
+								</td>
+								 -->
+					          <td>
+					            <button type="button" class="video-btn" onclick="viewRealTimeVideoPopup(${item.dv_id})">
+					              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					                <path d="M17 12V8C17 7.47 16.79 6.96 16.41 6.59C16.04 6.21 15.53 6 15 6H5C4.47 6 3.96 6.21 3.59 6.59C3.21 6.96 3 7.47 3 8V16C3 16.53 3.21 17.04 3.59 17.41C3.96 17.79 4.47 18 5 18H15C15.53 18 16.04 17.79 16.41 17.41C16.79 17.04 17 16.53 17 16V12ZM17 12L21 8V16L17 12Z"
+					                      stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+					              </svg>
+					            </button>
+					          </td>
+					          <td>
+					            <button class="edit-btn" type="button" onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>
+					          </td>
+					        </tr>
+					      </c:forEach>
+					    </c:otherwise>
+					  </c:choose>
+					</tbody>					
 				</table>
 				
 				<div class="pagination">

@@ -232,7 +232,7 @@ button {
 .device-table th,
 .device-table td {
   padding: 12px 16px;
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid #EAEAEA;
   font-size: 14px;
   white-space: nowrap;
@@ -245,7 +245,7 @@ button {
 .device-table tbody tr:hover {
   background-color: #F9F9F9;
 }
-.device-table td button {
+.device-table td .edit-btn {
   border: 1px solid #E0E0E0;
   border-radius: 6px;
   padding: 4px 10px;
@@ -254,11 +254,22 @@ button {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.device-table td button:hover {
+.device-table td .edit-btn:hover {
   background-color: #f3f1ff;
   color: #6955A2;
   border-color: #b5a7f3;
 }
+
+.device-table th:nth-child(1),
+.device-table td:nth-child(1) { width: 10%; }
+.device-table th:nth-child(2),
+.device-table td:nth-child(2) { width: 30%; }
+.device-table th:nth-child(3),
+.device-table td:nth-child(3) { width: 40%; }
+.device-table th:nth-child(4),
+.device-table td:nth-child(4) { width: 10%; }
+.device-table th:nth-child(5),
+.device-table td:nth-child(5) { width: 10%; }
 
 /* ================= 반응형 ================= */
 @media (max-width: 1200px) {
