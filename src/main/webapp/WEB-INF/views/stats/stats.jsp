@@ -181,7 +181,7 @@
 	      <span class="user-name">hskim</span>
 	    </div>
 	    <div class="logout">
-	      <button onclick="location.href='/gov-disabled-web-gs/stats/logout'">로그아웃</button>
+	      <button onclick="location.href='/gov-disabled-web-gs/user/logout'">로그아웃</button>
 	    </div>
 	  </div>
 	</header>

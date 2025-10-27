@@ -42,6 +42,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public Integer updateNewPwd(Integer uId, String encryptPwd) {
 		try {
+			
 			Integer rows1 = loginMapper.updateNewPwd(uId, encryptPwd);
 			if(rows1 != 1) {
 				logger.error("loginMapper.updateNewPwd SQL문에서 오류 발생");
@@ -53,6 +54,17 @@ public class UserServiceImpl implements UserService {
 			return 0;
 		}
 		
+	}
+
+	@Override
+	public String getPwd(Integer uId) {
+		
+		try {
+			return loginMapper.getPwd(uId);
+		} catch (IllegalStateException e) {
+			logger.error("loginMapper.getPwd SQL문에서 오류 발생",e);
+			return "";
+		}
 	}
 
 }
