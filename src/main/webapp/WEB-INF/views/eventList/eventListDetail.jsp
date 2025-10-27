@@ -23,7 +23,7 @@
 	      <span class="user-name">hskim</span>
 	    </div>
 	    <div class="logout">
-	      <button onclick="location.href='/gov-disabled-web-gs/stats/logout'">로그아웃</button>
+	      <button onclick="location.href='/gov-disabled-web-gs/user/logout'">로그아웃</button>
 	    </div>
 	  </div>
 	</header>
@@ -84,7 +84,7 @@
 		
 			<!-- 돌아가기 버튼 -->
 			<div class="back-btn-wrapper">
-				<button onclick="goToEventList()" class="back-btn">← 돌아가기</button>
+				<button type="button" onclick="goToEventList()" class="back-btn">← 돌아가기</button>
 			</div>   
         </div>    
     </div>    
@@ -95,7 +95,7 @@
 	<div id="photoModal" class="lb-modal" aria-hidden="true" role="dialog">
 		 <div class="lb-backdrop" data-close></div>
 		 <div class="lb-dialog" role="document">
-			<button class="lb-close" type="button" aria-label="닫기" data-close>&times;</button>
+			<button class="lb-close" type="button" aria-label="닫기" onclick="closeModal()" style="z-index:1" data-close >&times;</button>
 
 			<!-- ✅ 동영상 -->
 			<video id="lbVideo" class="lb-video" controls playsinline></video>
@@ -103,7 +103,8 @@
 	</div>
 	
 	<script>
-	  // 불법 주차 리스트 화면으로 이동
+	  
+	// 불법 주차 리스트 화면으로 이동
 	  function goToEventList(){
 	    location.href ="viewEventList.do?&page=${page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}";
 	  }
@@ -198,7 +199,20 @@
 	    document.addEventListener('keydown', function(e){
 	      if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
 	    });
+	    
+	    // 마우스 클릭시 닫기
+      	document.addEventListener('click', function(e) {
+    		// 닫기(버튼/배경 모두)
+    		const closer = e.target.closest('[data-close]');
+    		if (closer) {
+      			e.preventDefault();
+      			closeModal();
+      			return;
+    		}
+	  	});
+	    
 	  });
+	  
 	</script>
 	
 </body>

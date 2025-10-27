@@ -74,8 +74,6 @@
 		        , cache: 'no-store'
 		  		, body: JSON.stringify({id,pwd})
 			});
-		    
-		    console.log(r);
 			
 		    // response 객체의 ok값(200~299)
 	        if (!r.ok) {

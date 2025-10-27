@@ -109,19 +109,18 @@
 		  const dvIds = Array.from(checkedRows).map(cb =>
 		    cb.closest("tr").getAttribute("data-dv-id")
 		  );
-		  console.log("삭제 대상 dvIds:", dvIds);
 		
 		  // 3️⃣ 서버에서 삭제 팝업 JSP 가져오기
 		  axios
 		    .post("${pageContext.request.contextPath}/deviceList/viewDeleteDevicePopup", { dvIds })
 		    .then(function (r) {
-		      console.log("삭제 팝업 JSP 응답:", r);
+		      
 		      const popupDiv = document.getElementById("deleteDevicePopup");
 		      popupDiv.innerHTML = r.data;
 		      popupDiv.style.display = "block";
 		    })
 		    .catch(function (e) {
-		      console.error("삭제 팝업 로드 실패:", e);
+		      
 		    });
 		}		
 
@@ -138,13 +137,13 @@
 		  }
 		
 		  const dvIds = checkedRows.map(tr => tr.getAttribute("data-dv-id"));
-		  console.log("삭제 요청 보낼 dvIds:", dvIds);
+		  
 		
 		  axios.post("${pageContext.request.contextPath}/deviceList/deleteDeviceInfo", {
 		      dvIds: dvIds
 		    })
 		    .then(function (r) {
-		      console.log("서버 응답:", r);
+		      
 		
 		      if (r.data?.ok) {
 		        alert("삭제가 완료되었습니다.");
@@ -155,7 +154,7 @@
 		      }
 		    })
 		    .catch(function (e) {
-		      console.error("삭제 요청 실패:", e);
+		      
 		      alert("서버 통신 오류가 발생했습니다.");
 		    });
 		}
@@ -182,7 +181,7 @@
 			  riDiv.style.display = "block";
 			})
 			.catch(function(e) {
-			  console.error("팝업 로드 중 오류 발생:", e);
+			  
 			});
 	    }
 	 
@@ -214,7 +213,7 @@
   			    })
   			)
     		.then(function(r){
-    			console.log(r);
+    			
     			if(r.data?.ok){
     				closeDeviceInfoPopup();
     			}else{
@@ -223,7 +222,7 @@
     			
     		})
     		.error(function(e){
-    			console.log(e);
+    			
     			alert("수정 중 오류가 발생했습니다.");
     		});
     	}
@@ -255,7 +254,7 @@
 		      }
 		    })
 		    .catch(function(e) {
-		      console.error("등록 오류:", e);
+		      
 		      alert("서버 통신 오류가 발생했습니다.");
 		    });
 		}
@@ -278,7 +277,7 @@
 				dvId : dvId,
 			})
 			.then(function(r){
-				console.log(r);
+				
 				
 				let rtDiv = document.getElementById("realTimeVideoPopup");
 				
@@ -293,7 +292,7 @@
 				
 			})
 			.catch(function(e) {
-				console.log(e);
+				c
 			})
 		}
     	
