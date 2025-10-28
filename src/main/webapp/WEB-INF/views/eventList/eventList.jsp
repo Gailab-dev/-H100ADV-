@@ -176,8 +176,8 @@
 							<td>${item.ev_car_num}</td>
 							<td>
 								<c:choose>
-									<c:when test="${item.ev_cd == 1}">비장애인 주차</c:when>
-									<c:when test="${item.ev_cd == 2}">장애인 미등록차량</c:when>
+									<c:when test="${item.ev_cd == 1}">불법주차(미등록차량)</c:when>
+									<c:when test="${item.ev_cd == 2}">불법주차(장애인미탑승)</c:when>
 									<c:when test="${item.ev_cd == 3}">스티커 불법 사용</c:when>
 									<c:when test="${item.ev_cd == 4}">위험상황</c:when>
 									<c:when test="${item.ev_cd == 5}">물건적재</c:when>
