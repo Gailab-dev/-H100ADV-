@@ -4,7 +4,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>동구 종합민원이력관리시스템</title>
+<title></title>
 <link type="image/x-icon" rel="shortcut icon"
 	href="${path}/resources/images/favicon.ico">
 <link href="${path}/resources/css/main_style.css" rel="stylesheet">

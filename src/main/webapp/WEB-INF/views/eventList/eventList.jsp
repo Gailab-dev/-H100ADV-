@@ -177,14 +177,14 @@
 							<td>
 								<!-- 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가 -->
 								<c:choose>
-									<c:when test="${item.ev_cd == 1}">불법주차(미등록차량)</c:when>
-									<!-- 
+									<c:when test="${item.ev_cd eq 1}">불법주차(미등록차량)</c:when>
+									<%-- 
 									<c:when test="${item.ev_cd == 2}">불법주차(장애인미탑승)</c:when>
 									<c:when test="${item.ev_cd == 3}">스티커 불법 사용</c:when>
-									-->
-									<c:when test="${item.ev_cd == 4}">위험상황</c:when>
-									<c:when test="${item.ev_cd == 5}">물건적재</c:when>
-									<c:when test="${item.ev_cd == 6}">이중주차</c:when>
+									--%>
+									<c:when test="${item.ev_cd eq 4}">위험상황</c:when>
+									<c:when test="${item.ev_cd eq 5}">물건적재</c:when>
+									<c:when test="${item.ev_cd eq 6}">이중주차</c:when>
 									<c:otherwise>기타</c:otherwise>
 								</c:choose>
 							</td>
