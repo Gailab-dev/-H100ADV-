@@ -57,7 +57,7 @@
 			}); 
 			
 			if(r.data?.ok){ 
-				window.location.href = "/gov-disabled-web-gs/stats/viewStat.do"; 
+				window.location.replace("/gov-disabled-web-gs/stats/viewStat.do"); 
 			} 
 			else{ 
 				alert(r.data?.msg); 
@@ -67,7 +67,10 @@
 		catch(e){ 
 			alert(e); 
 		} 
-	} 
+	}
+	
+
+  
 </script> 
 </head> 
 <body> 
@@ -120,5 +123,43 @@
 			</section>
 		</main> 
 	<footer class="login-footer"></footer> 
-</body> 
+</body>
+<script>
+(function () {
+	  // 1) 동일 URL에서 히스토리 트릭: replaceState로 현재 엔트리를 표식으로 바꾸고, 이어서 pushState
+	  try {
+	    history.replaceState({ pwdChanged: true, mark: 'current' }, "", location.href);
+	    history.pushState({ pwdChanged: true, mark: 'stacked' }, "", location.href);
+	  } catch (_) {}
+
+	  // 2) 뒤로가기(popstate) 발생 시, 로그인으로 이동 (히스토리 흔적 남기지 않음)
+	  window.addEventListener("popstate", function () {
+	    location.replace("/gov-disabled-web-gs/user/login.do");
+	  });
+
+	  // 3) bfcache로 복귀되는 경우(브라우저가 페이지를 메모리에서 복원) 강제 이동
+	  window.addEventListener("pageshow", function (e) {
+	    // e.persisted === true 이면 bfcache 복원
+	    if (e.persisted) {
+	      location.replace("/gov-disabled-web-gs/user/login.do");
+	      return;
+	    }
+	    // 일부 브라우저는 navigation API로 back/forward 구분이 가능
+	    try {
+	      const nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+	      if (nav && nav.type === "back_forward") {
+	        location.replace("/gov-disabled-web-gs/user/login.do");
+	      }
+	    } catch (_) {}
+	  });
+
+	  // 4) 캐시/히스토리 무효화(안전망)
+	  try {
+	    if (window.performance && performance.navigation && performance.navigation.type === 2) {
+	      // type 2: back/forward (구형)
+	      location.replace("/gov-disabled-web-gs/user/login.do");
+	    }
+	  } catch (_) {}
+	})();
+</script> 
 </html>

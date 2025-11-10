@@ -8,17 +8,14 @@ import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
 
-import com.disabled.component.ConnectionPoolManager;
-
+@Component
 public class LoginInterceptor implements HandlerInterceptor{
     
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
-	
-	@Autowired
-	ConnectionPoolManager connectionPoolManager;
 	
 	/*
 	 * 세션이 사라지면 자동으로 로그아웃하여 로그인 페이지로 이동
@@ -30,15 +27,23 @@ public class LoginInterceptor implements HandlerInterceptor{
 	@Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
         throws RuntimeException {
-
+		
+		// 컨텍스트 패스
+		String ctx = request.getContextPath(); 
+		
+		// 화면 이동 등 요청 uri
+		String uri = request.getRequestURI();
+		
         HttpSession session = request.getSession(false);
-        String uri = request.getRequestURI();
+        
+        //session의 로그인 id 값
+        Object uId = (session != null) ? session.getAttribute("uId") : null;
+        
         
         // 로그인 페이지와 정적 자원은 제외
-        if (uri.contains("/login.do")
+        if (uri.contains("/user/login.do")
         		|| uri.contains("/user/login")
-        		|| uri.contains("/viewPwdChanged.do")
-        		|| uri.contains("/updateNewPwd")
+        		|| uri.contains("/logout")
         		|| uri.contains("/css") 
         		|| uri.contains("/js") 
         		|| uri.contains("/images")
@@ -47,17 +52,73 @@ public class LoginInterceptor implements HandlerInterceptor{
         }
         
         // id 값이 session에 없다면 login 화면으로 이동
-        if (session == null || session.getAttribute("id") == null) {
-            if (!uri.contains("/login.do")) {
-                try {
-					response.sendRedirect("/gov-disabled-web-gs");
+        if (uId == null) {
+        	
+        	setNoStore(response);
+            
+            try {
+                response.sendRedirect(ctx + "/user/login.do"); // 실제 로그인 엔드포인트로
+            } catch (IOException e) {
+                logger.error("LoginInterceptor에서 session에 id값이 없어 login 화면으로 이동하는 중 오류: ", e);
+            }
+            return false;
+        }
+        
+        // 최초 비밀번호 미변경시 비밀번호 변경 관련 url 허용
+        Boolean pwdChanged = (session == null) ? null : (Boolean) session.getAttribute("pwdChanged");
+        boolean isPwdEndpoints =
+                uri.equals(ctx + "/user/viewPwdChanged.do") ||
+                uri.equals(ctx + "/user/updateNewPwd");
+        
+        if (Boolean.FALSE.equals(pwdChanged)) {
+            if (isPwdEndpoints) {
+            	return true;
+            }else {
+            	
+            	setNoStore(response);
+            	
+            	try {
+					response.sendRedirect(ctx + "/user/viewPwdChanged.do?uId="+uId);
 				} catch (IOException e) {
-					logger.error("LoginInterceptor 처리 중 오류 발생 : ",e);
+					logger.error("LoginInterceptor에서 비밀번호 변경 페이지로 이동 중 오류: ", e);
 				}
-                return false;
+            	return false;
             }
         }
-
+        
+        // 비밀번호 변경 확인시 메인 화면으로 이동 허용
+        if (Boolean.TRUE.equals(pwdChanged) && isPwdEndpoints) {
+            try {
+            	setNoStore(response);
+				response.sendRedirect(ctx + "/stats/viewStat.do");
+			} catch (IOException e) {
+				logger.error("LoginInterceptor에서 로그인 되었고, 비밀번호까지 변경한 사용자가 메인 페이지로 이동 중 오류: ", e);
+			}
+            return false;
+        }
+        
+        // 그 외 허용
         return true;
+    }
+	
+    @Override
+    public void postHandle(HttpServletRequest req, HttpServletResponse res, Object handler,
+                           ModelAndView modelAndView) {
+        // 민감 화면에는 캐시 금지(뒤/앞으로 가기 시 재요청 유도)
+        final String uri = req.getRequestURI();
+        final String ctx = req.getContextPath();
+        if (uri.equals(ctx + "/user/login.do")
+         || uri.equals(ctx + "/user/viewPwdChanged.do")
+         || uri.startsWith(ctx + "/stats/")) {
+            setNoStore(res);
+        }
+    }
+	
+	
+    // 캐시 금지 헤더
+    private static void setNoStore(HttpServletResponse res) {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        res.setHeader("Pragma", "no-cache");
+        res.setDateHeader("Expires", 0L);
     }
 }

@@ -51,28 +51,16 @@ public class UserController {
 	@RequestMapping("/login.do")
 	private String viewLogin(HttpServletRequest request, HttpServletResponse response) {
 
-		// 세션 확인 - 이미 로그인되어 있다면 메인 화면으로 이동
-	    HttpSession s = request.getSession(false);
-	    if (s != null && s.getAttribute("id") != null) {
-	    	String userId = s.getAttribute("id").toString();
-	    	
-	    	// sessionManager에 등록된 유효한 세션인지 확인
-	    	HttpSession registeredSession = sessionManager.getSession(userId);
-	    	if (registeredSession != null && registeredSession.getId().equals(s.getId())) {
-	    		// 유효한 세션이면 메인 화면으로 리다이렉트 (필요시 변경)
-	    		return "redirect:/stats/viewStat.do";
-	    	} else {
-	    		// sessionManager에 없거나 다른 세션이면 기존 세션 무효화
-	    		try { s.invalidate(); } catch (IllegalStateException ignore) {logger.debug("",ignore);}
-	    	}
-	    } else if (s != null) {
-	    	// 세션은 있지만 id가 없으면 무효화
-	        try { s.invalidate(); } catch (IllegalStateException ignore) {logger.debug("",ignore);}
-	    }
 	    // 캐시 방지 (뒤로가기 시 로그인 화면이 캐시로 보이는 현상 방지)
 	    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
 	    response.setHeader("Pragma", "no-cache");
 	    response.setDateHeader("Expires", 0L);
+	    
+		// 세션 확인하여 남은 세션 정리
+	    HttpSession s = request.getSession(false);
+	    if (s != null) {
+	    	s.invalidate();
+	    }	
 
 		return "user/login";
 	}
@@ -114,56 +102,77 @@ public class UserController {
 			}else {
 
 				if( Integer.parseInt(checkErr.get("u_pwd_changed").toString()) == 0 ) {
+					
+					// session에 uId와 비밀번호 변경 하지 않음(false)로 저장
+					session.setAttribute("uId", checkErr.get("u_id"));
+					session.setAttribute("pwdChanged", false);
+					
+					// resultMap에 uId와 비밀번호 변경 하지 않음(false)로 저장
 					resultMap.put("pwdChanged", false);
 					resultMap.put("uId", checkErr.get("u_id"));
 				}else {
+					// session에 uId와 비밀번호 변경함(true)로 저장
+					session.setAttribute("uId", checkErr.get("u_id"));
+					session.setAttribute("pwdChanged", true);
+					
+					// resultMap에 uId와 비밀번호 변경함(true)로 저장
 					resultMap.put("pwdChanged", true);
+					resultMap.put("uId", checkErr.get("u_id"));
 				}
 
 				resultMap.put("ok", true); // 로그인 성공하면 true 반환
 
 				// 중복 로그인 체크 및 기존 세션 무효화
-				boolean hadDuplicateSession = sessionManager.addSession(id, session);
+				boolean hadDuplicateSession = sessionManager.addSession(checkErr.get("u_id").toString(), session);
 				if (hadDuplicateSession) {
 					logger.warn("{} 사용자의 중복 로그인 감지. 기존 세션이 무효화되었습니다.", id);
 				}
 
 				// 세션에 계정 정보 추가
 				logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
-				session.setAttribute("id", id);
 
 				return resultMap;
 			}
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalStateException e) {
 			
-			logger.error("잘못된 인자 전달",e);
+			logger.error("아이디 또는 비밀번호가 다릅니다",e);
 			resultMap.put("ok", false); // 로그인 실패하면 false 반환
-			resultMap.put("msg", "로그인 처리 중 오류 발생.");
-			
+			resultMap.put("msg", "아이디 또는 비밀번호가 다릅니다.");
+			return resultMap;
 		} catch (NullPointerException e) {
 			
 			logger.error("NullPointerException => ",e);
 			resultMap.put("ok", false); // 로그인 실패하면 false 반환
 			resultMap.put("msg", "로그인 처리 중 오류 발생.");
-			
+			return resultMap;
 		} catch (RuntimeException e) {
 			
 			logger.error("RuntimeException => ",e);
 			resultMap.put("ok", false); // 로그인 실패하면 false 반환
 			resultMap.put("msg", "로그인 처리 중 오류 발생.");
-			
+			return resultMap;
 		} 
-		
-		return resultMap;
 	}
-	
 	// 초기 사용자 로그인 변경 화면
 	@RequestMapping("/viewPwdChanged.do")
 	public String viewPwdChanged( 
 			@RequestParam("uId") Integer uId,
+			HttpServletResponse response,
+			HttpSession session,
 			Model model) {
 		
+		// 아이디가 없거나 비밀번호 변경상태 관련 세션 없는 상태에서 접근시 로그인 화면으로 이동
+		if(session.getAttribute("uId") == null || session.getAttribute("pwdChanged") == null) {
+			return "redirect:/user/login.do";
+		}
+		
+		// 캐시 금지 헤더
+	    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+	    response.setHeader("Pragma", "no-cache");
+	    response.setDateHeader("Expires", 0L);
+		
 		model.addAttribute("uId", uId);
+	    
 		return "user/pwdChanged";
 	}
 	
@@ -171,13 +180,19 @@ public class UserController {
 	 * 로그아웃
 	 */
 	@RequestMapping("/logout")
-	public String logout(HttpSession session) {
-		String userId = (String) session.getAttribute("id");
-		logger.info("{} 사용자가 {}에 로그아웃하였습니다.", userId, LocalDateTime.now());
+	public String logout(HttpSession session, Model model) {
+		String uId = (String) session.getAttribute("uId");
+		
+		String loginId = userService.getLoginId(Integer.parseInt(uId));
+		if(loginId == null) {
+			model.addAttribute("errorMsg", "로그아웃 중 오류가 발생했습니다.");
+		}
+		
+		logger.info("{} 가 {}에 로그아웃하였습니다.", loginId, LocalDateTime.now());
 
 		// 세션 매니저에서 사용자 세션 제거
-		if (userId != null) {
-			sessionManager.removeSession(userId);
+		if (uId != null) {
+			sessionManager.removeSession(uId);
 		}
 
 		session.invalidate(); // 세션 만료
@@ -201,7 +216,7 @@ public class UserController {
 
             if (uId == null || newPwd == null || newPwd.trim().isEmpty()) {
                 res.put("ok", false);
-                res.put("msg", "요청 값이 올바르지 않습니다.");
+                res.put("msg", "새 비밀번호를 입력해주세요.");
                 return res;
             }
 			
@@ -217,7 +232,7 @@ public class UserController {
 			String oldPwd = userService.getPwd(uId);
 			if(oldPwd == null || oldPwd.equals("") ) {
 				res.put("ok", false); 
-				res.put("msg", "비밀번호 업데이트 전 오류 발생.");
+				res.put("msg", "이전 비밀번호를 가져오는 도중 오류 발생.");
 				return res;
 			}
 			
@@ -236,9 +251,10 @@ public class UserController {
 				return res;
 			}
 			
-			// session에 id값 추가
+			// session에 id값, 비밀번호 변경 추가
 			logger.info("{} 사용자가 {}에 로그인하였습니다.",uId,LocalDateTime.now());
-			session.setAttribute("id", uId.toString());
+			session.setAttribute("uId", uId.toString());
+			session.setAttribute("pwdChanged", true);
 			
 		} catch(DataAccessException e2) {
 	        logger.error("DB 처리 중 오류(updateNewPwd): ", e2);
@@ -256,4 +272,124 @@ public class UserController {
 		return res;
 		
 	}
+	
+	// 내 정보 수정 페이지 이동
+	/*
+	@RequestMapping("/viewMyInfo")
+	public String viewMyInfo(@RequestParam("uId") Integer uId, Model model, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+		
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			resultMap = userService.getMyInfo(uId);
+			if(resultMap == null) {
+				logger.error("내 정보 가져오기 실패, resultMap이 null");
+				
+	            // 사용자에게 알림을 주고 싶다면(선택)
+	            redirectAttributes.addFlashAttribute("myInfoErrorMsg", "내 정보를 가져오지 못했습니다.");
+
+	            String referer = request.getHeader("Referer");
+	            return "redirect:" + referer;   // 바로 직전 페이지로
+				
+			}
+		} catch (RuntimeException e) {
+			logger.error("viewMyInfo에서 오류 발생 : ",e);
+			
+			redirectAttributes.addFlashAttribute("myInfoErrorMsg", "내 정보 수정 페이지 이동 중 오류가 발생했습니다.");
+
+            String referer = request.getHeader("Referer");
+            return "redirect:" + referer;   // 바로 직전 페이지로
+		}
+		
+		model.addAttribute("myInfo", resultMap);
+		return "/user/myInfo";
+	}
+	
+	// 개인정보 수정(비번 수정은 비번 수정 함수에서)
+	@ResponseBody
+	@PostMapping("/updateMyInfo")
+	public Map<String,Object> updateMyInfo(
+			@RequestParam("uId") Integer uId
+			// 지역 , @RequestParam("")
+			){
+		
+		Map<String, Object> res = new HashMap<String, Object>();
+		
+		try {
+			
+			// 비밀번호 제외한 내 정보 수정
+			Integer row1 = userService.updateMyInfoExceptPwd(uId);
+			if(row1 != 1) {
+				res.put("ok", false);
+				res.put("msg","내 정보 수정중 오류가 발생했습니다.");
+				return res;
+			}
+			
+			res.put("ok", true);
+			return res;
+		} catch (RuntimeException e) {
+			logger.error("updateMyInfo에서 오류 발생 : ",e);
+			res.put("ok", false);
+			res.put("msg","내 정보 수정중 오류가 발생했습니다.");
+			return res;
+		}
+		
+	}
+	
+	// 회원관리 화면으로 이동
+	@RequestMapping("/viewManageUsers")
+	public String viewManageUsers(
+			@RequestParam("uId") Integer uId
+			, @RequestParam(value="startDate", required=false) String startDate
+			, @RequestParam(value="endDate", required=false) String endDate
+			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
+			, @RequestParam(value="page", defaultValue = "1") Integer page
+			, @RequestParam(value="size", defaultValue = "10") Integer size
+			, Model model
+			, HttpSession session
+			, HttpServletRequest request
+			) {
+		
+		List<Map<String,Object>> resultMap = new ArrayList<Map<String,Object>>();
+		
+		try {
+			Map<String, Object> paramMap = new HashMap<String, Object>();
+			paramMap.put("startDate", startDate);
+			paramMap.put("endDate", endDate);
+			paramMap.put("searchKeyword", searchKeyword);
+			
+			Integer totalRecordCount = userService.getTotalRecordCountByManaegUsers(paramMap);
+			
+			Paging paging = new Paging(page, size, totalRecordCount);
+			
+			paging.computeWithTotal(totalRecordCount);
+			
+			// 세션과 비교해 검색 결과가 달라졌다면 검색 결과 1로 설정(필터 변경으로 페이징 수가 줄어들었을 경우 빈 화면이 나오는 것 방지)
+			
+			String prevSig = (String) session.getAttribute("userListSearchSig");
+			String sig = startDate + "|" + endDate + "|" + searchKeyword;
+			if (!sig.equals(prevSig)) {
+				page = 1;
+			    session.setAttribute("userListSearchSig", sig);
+			}
+			
+			
+		    // 마지막 페이지 계산 후 page 보정
+			paging.currectionPage();
+			
+			paramMap.put("offset", paging.getOffset());
+			paramMap.put("limit", paging.getLimit());
+			resultMap = userService.getUserListManage(paramMap);
+		} catch (IllegalStateException e) {
+			logger.error("viewManageUsers에서 오류 발생",e);
+			
+			String referer = request.getHeader("Referer");
+			return "redirect:" + referer;
+		}
+		
+		model.addAttribute("page", page);
+		model.addAttribute("userList", resultMap);
+		return "/user/manageUsers";
+	}
+	*/
 }

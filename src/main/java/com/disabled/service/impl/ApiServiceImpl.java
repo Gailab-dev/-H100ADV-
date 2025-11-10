@@ -278,7 +278,7 @@ public class ApiServiceImpl implements ApiService{
 	        if(type.equals("start") | type.equals("end")) {
 	        	
 	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + path;
+	        	targetUrl = "https://" + dvIp + "/video";
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
@@ -304,7 +304,7 @@ public class ApiServiceImpl implements ApiService{
 	        } else if(type.equals("U") | type.equals("D") | type.equals("L") | type.equals("R")) {
 	        	// 추후 고도화
 	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + path;
+	        	targetUrl = "https://" + dvIp + "/tilting";
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
@@ -324,7 +324,7 @@ public class ApiServiceImpl implements ApiService{
 	        } else if(type.equals("image") | type.equals("video")) {
 	        	
 	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + path;
+	        	targetUrl = "https://" + dvIp + "/video";
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성
@@ -359,7 +359,7 @@ public class ApiServiceImpl implements ApiService{
 	        // 디바이스 줌 인, 줌 아웃 기능	
 	        } else if(type.equals("zoomIn") | type.equals("zoomOut")) {
 	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + path;
+	        	targetUrl = "https://" + dvIp + "/tilting";
 	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
 	        	
 	        	// 3-1. connection pool 생성

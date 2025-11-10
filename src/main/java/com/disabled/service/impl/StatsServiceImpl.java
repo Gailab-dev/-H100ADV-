@@ -28,32 +28,6 @@ public class StatsServiceImpl implements StatsService{
 	private static final Logger logger = LoggerFactory.getLogger(StatsServiceImpl.class);
 	
 	/*
-	 * 아이디와 비밀번호를 통해 DB에 해당 계정이 있는지 확인
-	 * @Param
-	 * - id: 아이디(String)
-	 * - pw: 비밀번호(String)
-	 */
-	@Override
-	public Map<String,Object> loginCheck(String id, String pwd) {
-		
-		Map<String,Object> resultMap = new HashMap<String, Object>();
-		
-		try {
-			resultMap = loginMapper.cntUsrByIdAndPwd(id,pwd);
-			
-			if(resultMap == null) {
-				return null;
-			}else {
-				return resultMap;
-			}
-		} catch (RuntimeException e) {
-			
-			logger.error("로그인 체크 오류 : ",e);
-			throw e;
-		} 
-	}
-	
-	/*
 	 * 월별 통계 데이터를 조회하여 리스트로 반환
 	 * @Param
 	 * - startDate: 검색 시작일(String)

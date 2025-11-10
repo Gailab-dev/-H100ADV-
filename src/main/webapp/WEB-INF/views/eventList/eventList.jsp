@@ -12,13 +12,27 @@
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
 <title>eventList</title>
 
-<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+<!-- 상세 보기 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
 <c:if test="${not empty param.errorMsg}">
 <script>
 	alert('<c:out value="${param.errorMsg}" />');
 </script>
 </c:if>
-<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+<!-- 상세 보기 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+<!-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+<script>
+  <c:if test="${not empty myInfoErrorMsg}">
+    alert('<c:out value="${myInfoErrorMsg}" />');
+  </c:if>
+</script>
+<!-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
+<script>
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) location.reload(); // BFCache에서 복원되면 강제 새로고침
+  });
+</script>
+<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
 <script>
 	 
 	// pagination 객체를 활용한 페이지 이동
@@ -56,6 +70,9 @@
 			alert("날짜를 확인해주세요.");
 			return;
 		}
+		
+	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
+	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 		
 		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword;
 		

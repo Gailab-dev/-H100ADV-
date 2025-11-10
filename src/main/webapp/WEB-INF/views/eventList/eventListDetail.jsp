@@ -102,6 +102,20 @@
 		 </div>
 	</div>
 	
+	<!-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+	<script>
+	  <c:if test="${not empty myInfoErrorMsg}">
+	    alert('<c:out value="${myInfoErrorMsg}" />');
+	  </c:if>
+	</script>
+	<!-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+	<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
+	<script>
+	  window.addEventListener('pageshow', function (e) {
+	    if (e.persisted) location.reload(); // BFCache에서 복원되면 강제 새로고침
+	  });
+	</script>
+	<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
 	<script>
 	  
 	// 불법 주차 리스트 화면으로 이동

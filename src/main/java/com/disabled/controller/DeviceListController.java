@@ -329,10 +329,12 @@ public class DeviceListController {
 		try {
 			
 			// device 상태 확인
+			// 추후 고도화 필요
 			conn = apiService.createPostConnection(dvIp, "", "application/json");
 			if(conn == null || conn.getResponseCode() != 200) {
 				dvStatus = 0;
 			}
+			
 			
 			// 디바이스 등록
 			deviceListService.insertDeviceInfo(dvName,dvAddr,dvIp,dvStatus);
@@ -341,11 +343,11 @@ public class DeviceListController {
 		} catch (RuntimeException e) {
 			logger.error("디바이스 등록 중 오류 발생 : ",e);
 			res.put("ok", false);
-			res.put("msg", "디바이스 수정 중 오류 발생");
+			res.put("msg", "디바이스 등록 중 오류 발생");
 			return res;
 			
-		} catch (IOException e) {
-			logger.error("디바이스 등록 중 connection 객체 생성 중 오류 발생 : ",e);
+		} catch (IOException e2) {
+			logger.error("디바이스 등록 중 connection 객체 생성 중 오류 발생 : ",e2);
 			res.put("ok", false);
 			res.put("msg", "connection 생성 중 오류 발생");
 			return res;
@@ -394,8 +396,8 @@ public class DeviceListController {
 			res.put("msg", "디바이스 수정 중 오류 발생");
 			return res;
 			
-		} catch (IOException e) {
-			logger.error("디바이스 수정 중 connection 객체 생성 중 오류 발생 : ",e);
+		} catch (IOException e2) {
+			logger.error("디바이스 수정 중 connection 객체 생성 중 오류 발생 : ",e2);
 			res.put("ok", false);
 			res.put("msg", "connection 생성 중 오류 발생");
 			return res;

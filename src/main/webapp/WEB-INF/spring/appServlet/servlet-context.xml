@@ -7,7 +7,8 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
-		
+	
+	<!-- annotation 기반 MVC -->	
 	<mvc:annotation-driven />
 	
 	<!-- 
@@ -20,13 +21,18 @@
 	<mvc:interceptors>
 	    <mvc:interceptor>
 	        <mvc:mapping path="/**" />
-	        <mvc:exclude-mapping path="/stats/login.do" />
-	        <mvc:exclude-mapping path="/stats/login" />
-	        <mvc:exclude-mapping path="/logout.do" />
+	        <mvc:exclude-mapping path="/user/login.do" />
+	        <mvc:exclude-mapping path="/user/login" />
+	        <mvc:exclude-mapping path="/user/viewPwdChanged.do" />
+	        <mvc:exclude-mapping path="/user/logout.do" />
+	        <mvc:exclude-mapping path="/user/logout" />
+	        <mvc:exclude-mapping path="/user/updateNewPwd" />
 	        <mvc:exclude-mapping path="/crypto/**" />
+	        <mvc:exclude-mapping path="/resources/**" />
 	        <mvc:exclude-mapping path="/resources/css/**" />
 			<mvc:exclude-mapping path="/resources/images/**" />
 			<mvc:exclude-mapping path="/resources/js/**" />
+			<mvc:exclude-mapping path="/resources/font/**" />
 	        <beans:bean class="com.disabled.interceptor.LoginInterceptor" />
 	    </mvc:interceptor>
 	</mvc:interceptors>

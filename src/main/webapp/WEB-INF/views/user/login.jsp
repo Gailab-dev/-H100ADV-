@@ -86,9 +86,9 @@
 	        
 	        if(result.ok){
 				if(result.pwdChanged){
-					window.location.href = "/gov-disabled-web-gs/stats/viewStat.do";
+					window.location.replace("/gov-disabled-web-gs/stats/viewStat.do");
 				}else{
-					window.location.href = "/gov-disabled-web-gs/user/viewPwdChanged.do?uId="+result.uId;
+					window.location.replace("/gov-disabled-web-gs/user/viewPwdChanged.do?uId="+result.uId);
 				}
 	        }else{
 	        	alert(result.msg);
