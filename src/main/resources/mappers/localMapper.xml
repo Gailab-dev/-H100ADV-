@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 지역관리 화면 SQL -->
+<mapper namespace="com.disabled.mapper.LocalMapper">
+	
+	<select id="getLocalList" resultType="map">
+		SELECT rg_id, rg_name, rg_depth, rg_p_id
+		FROM tbl_region
+		ORDER BY rg_org DESC;
+	
+	</select>
+	
+	<select id="getFourDepRgNames" resultType="String">
+		<![CDATA[WITH RECURSIVE cte AS (
+		  SELECT rg_id, rg_name, rg_p_id
+		  FROM   tbl_region
+		  WHERE  rg_id = #{rg_id}
+		
+		  UNION ALL
+		  SELECT t.rg_id, t.rg_name, t.rg_p_id
+		  FROM   tbl_region t
+		  JOIN   cte ON t.rg_p_id = cte.rg_id
+		)
+		
+		SELECT c.rg_name
+		FROM   cte c
+		LEFT JOIN tbl_region ch ON ch.rg_p_id = c.rg_id
+		WHERE  ch.rg_id IS NULL
+		AND    c.rg_id <> #{rg_id}]]>
+	</select>
+	
+	<select id = "getUserUsingLocal" resultType="String">
+		SELECT u_name
+		FROM tbl_user
+		WHERE u_region IN 
+	      <foreach collection="list" item="rgName" open="(" separator="," close=")">
+        		#{rg_name}
+     	  </foreach>
+	</select>
+	
+		<select id = "getCountUserUsingLocal" resultType="String">
+		SELECT COUNT(1)
+		FROM tbl_user
+		WHERE u_region IN 
+	      <foreach collection="list" item="rgName" open="(" separator="," close=")">
+        		#{rg_name}
+     	  </foreach>
+	</select>
+	
+	<insert id="InsertLocalTreeNode" parameterType="map">
+		INSERT INTO tbl_region(
+			rg_name
+			, rg_depth
+			, rg_p_id
+			, rg_org
+			, rg_reg_user
+			, rg_mod_user
+			, rg_reg_date
+			, rg_mod_date
+		)
+		VALUES(
+			#{rg_name}
+			, #{rg_depth}
+			, #{rg_p_id}
+			, #{rg_org}
+			, 1
+			, 1
+			, NOW()
+			, NOW()
+		)
+	</insert>
+
+	<delete id="deleteLocalTreeNode">
+	  <![CDATA[
+
+	  DELETE r FROM tbl_region r
+	  JOIN (
+		  WITH RECURSIVE cte AS (
+	    	SELECT rg_id
+	    	FROM tbl_region
+	    	WHERE rg_id = #{rg_id}
+	    	UNION ALL
+	    	SELECT t.rg_id
+	    	FROM tbl_region t
+	    	JOIN cte ON t.rg_p_id = cte.rg_id
+	  		)
+		SELECT rg_id
+    	FROM cte
+	  ) AS x ON x.rg_id = r.rg_id
+	  ]]>
+	</delete>	
+</mapper>

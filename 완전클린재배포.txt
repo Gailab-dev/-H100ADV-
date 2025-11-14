@@ -1,0 +1,48 @@
+“완전 클린 재배포” (Eclipse/STS 기준)
+
+Servers 뷰에서 Tomcat Stop
+
+Tomcat 우클릭 → Clean… (Clean server workspace metadata 체크)
+
+Tomcat 우클릭 → Add and Remove…
+
+해당 모듈을 Remove → Apply
+
+다시 Add → Finish
+
+(옵션) Clean Tomcat Work Directory
+
+Servers 뷰 상단 메뉴 또는 Tomcat 우클릭 메뉴
+
+프로젝트 Maven → Update Project / Project → Clean
+
+프로젝트 Run As → Maven build… → clean package (새 WAR 생성)
+
+Servers 뷰에서 Tomcat Start (또는 Publish 후 Start)
+
+"톰캣 캐시 제거"
+C:\{워크스페이스 경로}\.metadata
+.\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\Catalina\localhost
+
+프로젝트 명에 해당하는 폴더 삭제
+
+서버 - clean
+서버 - clean tomcat work directory
+서버 - publish
+
+"프로젝트 빌드/퍼블리시 경로 점검"
+프로젝트 우클릭 → Properties → Deployment Assembly
+여기에 다음 항목이 반드시 있어야 합니다:
+
+/src/main/java → WEB-INF/classes
+
+/src/main/resources → WEB-INF/classes
+
+/src/main/webapp → /
+하나라도 없으면 Add… → Folder/Project/Archive로 추가.
+
+"톰켓 작업 폴더 정리 & 서버 초기화"
+Eclipse 종료 후 아래 폴더를 수동 정리(있으면 삭제):
+C:\Users\지아이랩\eclipse-workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\ (프로젝트 폴더 통째로)
+
+C:\Users\지아이랩\eclipse-workspace\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\work\

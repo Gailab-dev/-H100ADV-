@@ -64,7 +64,7 @@
 		  	}
 			
 		    // 동기 통신으로 로그인
-			const r = await fetch('/gov-disabled-web-gs/user/login',{
+			const r = await fetch('${pageContext.request.contextPath}/user/login',{
 				method: 'POST',
 		  		headers: {
 		    		'Content-Type': 'application/json'
@@ -86,9 +86,9 @@
 	        
 	        if(result.ok){
 				if(result.pwdChanged){
-					window.location.replace("/gov-disabled-web-gs/stats/viewStat.do");
+					window.location.replace("${pageContext.request.contextPath}/stats/viewStat.do");
 				}else{
-					window.location.replace("/gov-disabled-web-gs/user/viewPwdChanged.do?uId="+result.uId);
+					window.location.replace("${pageContext.request.contextPath}/user/viewPwdChanged.do?uId="+result.uId);
 				}
 	        }else{
 	        	alert(result.msg);

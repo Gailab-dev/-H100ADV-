@@ -2,5 +2,5 @@
     pageEncoding="UTF-8"%>
     
 <%
-	response.sendRedirect("/gov-disabled-web-gs/user/login.do");
+	response.sendRedirect(request.getContextPath() + "/user/login.do");
 %>

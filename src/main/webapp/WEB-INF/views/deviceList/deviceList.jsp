@@ -311,7 +311,7 @@
 				
 			})
 			.catch(function(e) {
-				c
+				
 			})
 		}
     	
@@ -468,7 +468,7 @@
 			};
 			
 			try{
-		    	const response = await fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
+		    	const response = await fetch('${pageContext.request.contextPath}/deviceList/sendCommandToJSON', {
 		      		method: 'POST'
 		      		, headers: { 'Content-Type': 'application/json' }
 		      		, body: JSON.stringify(body)
@@ -530,13 +530,13 @@
     	    try {
     	    	// 1) sendBeacon 방식으로 브라우저 중도 요청 취소 방지
     	        const ok = navigator.sendBeacon(
-    	          '/gov-disabled-web-gs/deviceList/sendCommandToJSON',
+    	          '${pageContext.request.contextPath}/deviceList/sendCommandToJSON',
     	          new Blob([body], { type: 'application/json' })
     	        );
     	    	
     	        if (!ok) {
     	          // 2) sendBeacon 실패시 fetch에 keepalive true 속성 사용하여 실시간 스트리밍 종료 요청
-    	          fetch('/gov-disabled-web-gs/deviceList/sendCommandToJSON', {
+    	          fetch('${pageContext.request.contextPath}/deviceList/sendCommandToJSON', {
     	            method: 'POST',
     	            headers: { 'Content-Type': 'application/json' },
     	            body,
@@ -713,7 +713,7 @@
 	      <span class="user-name">hskim</span>
 	    </div>
 	    <div class="logout">
-	      <button onclick="location.href='/gov-disabled-web-gs/user/logout'">로그아웃</button>
+	      <button onclick="location.href='${pageContext.request.contextPath}/user/logout'">로그아웃</button>
 	    </div>
 	  </div>
 	</header>
@@ -722,9 +722,10 @@
 		<!-- 사이드바 -->
 		<aside class="sidebar">
 			<ul class="menu">
-				<li><a href="/gov-disabled-web-gs/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
-				<li><a href="/gov-disabled-web-gs/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
-				<li><a href="/gov-disabled-web-gs/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+				<li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
+				<li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
+				<li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+				<li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
 			</ul>
 		</aside>
 		
