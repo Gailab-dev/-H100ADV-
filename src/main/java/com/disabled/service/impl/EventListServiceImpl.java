@@ -292,7 +292,7 @@ public class EventListServiceImpl implements EventListService{
 				// 이미지 파일 가져오기
 				String streamCheck = "";
 				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
-				if("error".equals(streamCheck)) {
+				if(!"true".equals(streamCheck)) {
 					
 					// 실패 처리
 					logger.error("디바이스에서 이미지 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);
@@ -302,8 +302,6 @@ public class EventListServiceImpl implements EventListService{
 					// 이미지 파일 전송 성공시 ev_has_Img update
 					eventListMapper.updateEvHasImgOne(evId);
 				}
-				
-
 				
 			}
 			
@@ -318,7 +316,7 @@ public class EventListServiceImpl implements EventListService{
 				// 영상 파일 가져오기
 				String streamCheck = "";
 				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
-				if("error".equals(streamCheck)) {
+				if(!"true".equals(streamCheck)) {
 					
 					// 실패 처리
 					logger.error("디바이스에서 영상 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);

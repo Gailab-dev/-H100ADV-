@@ -40,6 +40,7 @@ public class ApiServiceImpl implements ApiService{
 	private static final int BUFFER_SIZE = 4096;
 	
 	//context path
+	@SuppressWarnings("unused")
 	@Autowired
 	private ServletContext servletContext;
 	
@@ -255,15 +256,42 @@ public class ApiServiceImpl implements ApiService{
 		String targetUrl = "";
 		
 		try {
-
-	        // 1. JSON → 문자열
+			
+			// 1. 입력 값 검증
+			if(json == null || dvIp == null || dvIp.isBlank()) {
+				logger.error("입력 값 검증시 오류!");
+				return "error";
+			}
+			
+	        // 2. JSON → 문자열(오류 방어 => catch문)
 	        ObjectMapper mapper = new ObjectMapper();
 	        String body = mapper.writeValueAsString(json);
 			
-	        // 2. type 값 추출 
+        	// 3. 디바이스 Url 검증
+        	targetUrl = "https://" + dvIp + path;
+        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
+        	if(isValidUrl(targetUrl)) {
+        		logger.error("targetUrl이 잘못되었습니다. : " + targetUrl);
+        		return "error";
+        	}
+        	
+        	// 4. connection pool 생성
+    		conn = createPostConnection(targetUrl, body, contentType);
+    		if(conn == null) {
+    			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
+    			return "error";
+    		}	
+    		
+    		// 5. device와 통신 중 오류 발생시 오류코드
+        	Integer code = conn.getResponseCode();
+        	if(code != 200) {
+        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
+        		return "error";
+        	}
+	        
+	        
+	        // 6. type 값 추출 
 	        Object obj = json.get("type");
-	        
-	        
 	        String type = "";
 	        
 	        if(obj != null) {
@@ -274,67 +302,24 @@ public class ApiServiceImpl implements ApiService{
 	        	return "error";
 	        }
 	        
-	        // 3. type 값 별 분기 실행
+	        // 7. type 값 별 분기 실행
+	        // 7-1. 실시간 영상 스트리밍 
 	        if(type.equals("start") | type.equals("end")) {
-	        	
-	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + "/video";
-	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
-	        	
-	        	// 3-1. connection pool 생성
-        		conn = createPostConnection(targetUrl, body, contentType);
-        		if(conn == null) {
-        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-        			return "error";
-        		}
-
-        		// device와 통신 중 오류 발생시 오류코드
-	        	Integer code = conn.getResponseCode();
-	        	if(code != 200) {
-	        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
-	        		return "error";
-	        	}
 	        	
 	        	// tokenId 수신
 	            try (InputStream in = conn.getInputStream()) {
 	                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
 	            }
 				
-				// 디바이스 화각 변경
+			// 7-2. 디바이스 화각 변경
 	        } else if(type.equals("U") | type.equals("D") | type.equals("L") | type.equals("R")) {
 	        	// 추후 고도화
-	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + "/tilting";
-	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
-	        	
-	        	// 3-1. connection pool 생성
-        		conn = createPostConnection(targetUrl, body, contentType);
-        		if(conn == null) {
-        			logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-        			return "error";
-        		}	
-        		
-        		// device와 통신 중 오류 발생시 오류코드
-	        	Integer code = conn.getResponseCode();
-	        	if(code != 200) {
-	        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
-	        		return "error";
-	        	}
-	        	
+
+	        	return "true";
+	        
+	        // 7-3. 이벤트 발생시 이미지, 영상 파일 송수신	
 	        } else if(type.equals("image") | type.equals("video")) {
 	        	
-	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + "/video";
-	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
-	        	
-	        	// 3-1. connection pool 생성
-	        	conn = createPostConnection(targetUrl, body, contentType);
-	        	if(conn == null) {
-	        		logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-	        		return "error";
-	        	}
-	        	
-	        	// 3-2. filePath 설정
 	        	String filePath = "";
 	        	if(type.equals("image")) {
 	        		filePath = imgFilePath + "/" + json.get("fileName");
@@ -356,27 +341,7 @@ public class ApiServiceImpl implements ApiService{
 	        	
 	        	return "true";
 	        	
-	        // 디바이스 줌 인, 줌 아웃 기능	
-	        } else if(type.equals("zoomIn") | type.equals("zoomOut")) {
-	        	//디바이스 Url
-	        	targetUrl = "https://" + dvIp + "/tilting";
-	        	logger.info("통신할 디바이스 주소 : "+ targetUrl);
-	        	
-	        	// 3-1. connection pool 생성
-	        	conn = createPostConnection(targetUrl, body, contentType);
-	        	if(conn == null) {
-	        		logger.error("connection이 생성되지 않았습니다. / targetUrl : " + targetUrl + "body : " + body + "contentType : " + contentType);
-	        		return "error";
-	        	}
-	        	
-        		// device와 통신 중 오류 발생시 오류코드
-	        	Integer code = conn.getResponseCode();
-	        	if(code != 200) {
-	        		logger.error("device와 통신중 오류 발생, 오류코드 : "+code);
-	        		return "error";
-	        	}
-	        	
-	        } else {
+	        }  else {
 	        	logger.error("잘못된 type 값 전송");
 	        	return "error";
 	        }
@@ -395,11 +360,38 @@ public class ApiServiceImpl implements ApiService{
 				}
 			} catch (RuntimeException e2) {
 				logger.error("connection 객체 disconnect 실패 : ",e2);
+				return "error";
 			}
 		}
 		
-		return "true";
+	}
+	
+	// url 검증
+	private boolean isValidUrl(String Url) {
+		
+		if(Url == null) return false;
+		return isValidIPv4(Url) || isValidDomain(Url);
 		
 	}
+	
+	// ip 검증
+	private boolean isValidIPv4(String ip) {
+	    String regex = 
+	        "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.)){3}"
+	        + "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+
+	    return ip != null && ip.matches(regex);
+	}
+	
+	// 도메인 검증
+	private boolean isValidDomain(String domain) {
+	    String regex =
+	        "^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)\\."
+	        + "([A-Za-z]{2,6}|[A-Za-z0-9-]{2,30}\\.[A-Za-z]{2,6})$";
+
+	    return domain != null && domain.matches(regex);
+	}
+	
+	
 	
 }
