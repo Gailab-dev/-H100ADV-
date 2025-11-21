@@ -3,10 +3,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.gailab</groupId>
-	<artifactId>gov-disabled-web-gs</artifactId>
+	<artifactId>gov-disabled-web-adv</artifactId>
 	<packaging>war</packaging>
 	<version>1.0.0</version>
-	<name>gov-disabled-web-gs</name>
+	<name>gov-disabled-web-adv</name>
 	<url>http://www.egovframe.go.kr</url>
 	<licenses>
 		<license>
@@ -42,6 +42,17 @@
 			</snapshots>
 		</repository>
 	</repositories>
+	<dependencyManagement>
+	  <dependencies>
+	    <dependency>
+	      <groupId>org.apache.logging.log4j</groupId>
+	      <artifactId>log4j-bom</artifactId>
+	      <version>2.20.0</version>
+	      <type>pom</type>
+	      <scope>import</scope>
+	    </dependency>
+	  </dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<!-- 표준프레임워크 실행환경 -->
 		<dependency>
@@ -193,25 +204,23 @@
 			<scope>system</scope>
 			<systemPath>${basedir}/src/main/webapp/WEB-INF/lib/gpkisecurewebkeyboard-1.0.0.1.jar</systemPath>
 		</dependency>
+
 		<!-- log4j Core -->
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>2.20.0</version>
 		</dependency>
 
 		<!-- log4j API -->
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.20.0</version>
 		</dependency>
 
 		<!-- SLF4J Bridge (optional) -->
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-slf4j-impl</artifactId>
-			<version>2.20.0</version>
 		</dependency>
 		
 		<!-- tiles 3 -->
@@ -274,6 +283,14 @@
 		    <artifactId>json-simple</artifactId>
 		    <version>1.1</version>
 		</dependency>
+		
+		<!-- lombok -->
+	    <dependency>
+    		<groupId>org.projectlombok</groupId>
+    		<artifactId>lombok</artifactId>
+    		<version>1.18.28</version>
+    		<scope>provided</scope>
+  		</dependency>
 					
 	</dependencies>
 	<build>
@@ -292,6 +309,14 @@
 						<systemProperties>
 							<JAVA_OPTS>-Xms256m -Xmx768m -XX:MaxPermSize=256m</JAVA_OPTS>
 						</systemProperties>
+						        <!-- Lombok annotation processor 경로 명시 -->
+				        <annotationProcessorPaths>
+				          <path>
+				            <groupId>org.projectlombok</groupId>
+				            <artifactId>lombok</artifactId>
+				            <version>1.18.34</version>
+				          </path>
+				        </annotationProcessorPaths>
 					</configuration>
 				</plugin>
 				<plugin>
