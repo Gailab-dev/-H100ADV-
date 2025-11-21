@@ -12,6 +12,22 @@ public interface UserService {
 
 	String getLoginId(Integer uId);
 
+	boolean checkNewUserId(String uLoginId);
+
+	Integer insertUser(Map<String, Object> paramMap);
+
+	List<Map<String, Object>> getAllLocals();
+
+	boolean isDuplicatedId(String id);
+
+	String maskMyId(String myId);
+
+	String findId(Map<String, Object> body);
+
+	boolean authPwd(Map<String, Object> body);
+
+	boolean resetPwd(Map<String, Object> body);
+
 	// Map<String, Object> getMyInfo(Integer uId);
 
 	// Integer updateMyInfoExceptPwd(Integer uId);

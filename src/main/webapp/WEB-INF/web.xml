@@ -48,6 +48,7 @@
         <error-code>404</error-code>
         <location>/WEB-INF/views/error.jsp</location>
  	</error-page> 
+
  	
  	<!-- servlet context 설정 -->
 	<servlet>

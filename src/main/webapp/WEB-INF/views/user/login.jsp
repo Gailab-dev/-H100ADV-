@@ -132,6 +132,8 @@
 	                  onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
 	            로그인
 	          </button>
+	          <P>아직 회원이 아니신가요? <a href="${pageContext.request.contextPath}/user/register.do">회원가입</a></P>
+	          <P>아이디 또는 비밀번호를 잊어버렸나요? <a href="${pageContext.request.contextPath}/user/findIdPwd.do">아이디/비밀번호찾기</a></P>
 	        </div>
 	      </div>
 	    </section>

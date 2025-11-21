@@ -2,6 +2,7 @@ package com.disabled.controller;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -272,6 +274,262 @@ public class UserController {
 		return res;
 		
 	}
+	
+	/**
+	 * 회원가입 화면 이동
+	 * @return
+	 */
+	@RequestMapping("/register.do")
+	public String viewRegister(Model model) {
+		
+		//  지역정보 가져오기
+		List<Map<String,Object>> resultList = userService.getAllLocals();
+		
+		model.addAttribute("resultList", resultList);
+		return "user/register";
+	}
+	
+	/**
+	 * 회원가입
+	 * @param body
+	 * @return
+	 */
+	@ResponseBody
+	@PostMapping(value = "/register", produces = "application/json; charset=UTF-8")
+	public Map<String,Object> register(
+			@RequestBody Map<String,Object> body
+			){
+		
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {		
+			
+			// 신규 아이디인지 확인
+			String uLoginId = body.get("u_login_id").toString();
+			boolean isNewId = userService.checkNewUserId(uLoginId);
+			if(!isNewId) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "이미 존재하는 ID입니다.");
+				return resultMap;
+			}
+			
+			// 암호화
+			String uLoignPwd = body.get("u_login_pwd").toString();
+			String encryptPwd = cryptoARIAService.encryptPassword(uLoignPwd);
+			if(encryptPwd == null || encryptPwd.isEmpty()) {
+				resultMap.put("ok", false); 
+				resultMap.put("msg", "암호화 실패.");
+				return resultMap;
+			}
+			
+			// 데이터 insert
+			body.put("encryptPwd", encryptPwd);
+			Integer rows1 = userService.insertUser(body);
+			if(rows1 != 1){
+				resultMap.put("ok",false);
+				resultMap.put("msg","회원가입 도중 오류 발생");
+				return resultMap;
+			}
+			
+			resultMap.put("ok",true);
+			return resultMap;
+		} catch (RuntimeException e) {
+			logger.error("회원가입 중 오류 발생 : ",e);
+			resultMap.put("ok",false);
+			resultMap.put("msg","회원가입 도중 오류 발생");
+			return resultMap;
+		}
+		
+		
+	}
+	
+	/**
+	 * 아이디 중복 체크
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("checkId")
+	@ResponseBody
+	public Map<String,Object> checkId(String id){
+		
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			
+			boolean isDuplicated = userService.isDuplicatedId(id);
+			if(isDuplicated) {
+				resultMap.put("ok", false);
+				return resultMap;
+			}
+			
+			resultMap.put("ok", true);
+			return resultMap;
+			
+		} catch (RuntimeException e) {
+			logger.error("아이디 체크 도중 오류 발생");
+			resultMap.put("ok",false);
+			return resultMap;
+		}
+		
+	}
+	
+	/**
+	 * 아이디 비번 찾기 화면 이동
+	 * @return
+	 */
+	@RequestMapping("findIdPwd.do")
+	public String viewfindIdPwd() {
+		return "/user/findIdPwd";
+	}
+	
+	/**
+	 * 아이디 찾기
+	 * @param body
+	 * @return
+	 */
+	@ResponseBody
+	@PostMapping(value = "/findId", produces = "application/json; charset=UTF-8")
+	public Map<String, Object> findId(
+			@RequestBody Map<String,Object> body){
+		
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			
+			String myId = userService.findId(body);
+			if(myId == null || myId.toString().trim().isEmpty()) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "입력한 정보에 해당하는 아이디가 없습니다.");
+			}
+			
+			// 아이디 결과 값 중간 * 처리
+			String maskMyId = userService.maskMyId(myId);
+			if(maskMyId == null || maskMyId.length() <= 0) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "아이디 마스킹 처리 실패");
+			}
+			
+			resultMap.put("ok", true);
+			resultMap.put("maskMyId", maskMyId);
+			return resultMap;
+		} catch (RuntimeException e) {
+			logger.error("아이디 찾기 도중 오류 발생",e);
+			resultMap.put("ok", false);
+			resultMap.put("msg", "아이디 찾는 도중 오류 발생");
+			return resultMap;
+		}
+		
+	}
+	
+	/**
+	 * 아이디 찾기 서브페이지
+	 */
+	@RequestMapping("/viewfindIdSubpage.do")
+	public String viewFindIdSubpage() {
+		
+		return "/subpage/user/findIdSubpage";
+	}
+	
+	/**
+	 * 비밀번호 찾기 서브페이지
+	 */
+	@RequestMapping("viewfindPwdSubpage.do")
+	public String viewfindPwdSubpage() {
+		return "/subpage/user/findPwdSubpage";
+	}
+	
+	/**
+	 * 마스크 된 아이디를 보여주는 서브페이지 출력
+	 */
+	@RequestMapping("viewShowMaskedIdSubpage.do")
+	public String viewShowMaskedIdSubpage(
+			@RequestParam("maskedId") String maskedId
+			, Model model) {
+		
+		model.addAttribute("maskedId", maskedId);
+		return "/subpage/user/showMaskedIdSubpage";
+		
+	}
+	
+	
+	/**
+	 * 이름, 전번, 아이디로 비밀번호 인증하기
+	 */
+	@ResponseBody
+	@PostMapping(value = "/authPwd", produces = "application/json; charset=UTF-8")
+	public Map<String,Object> authPwd(
+			@RequestBody Map<String,Object> body
+			){
+		
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			
+			boolean isAuthPwd = userService.authPwd(body);
+			if(isAuthPwd) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "인증 중 오류 발생");
+				return resultMap;
+			}
+			
+			resultMap.put("ok", true);
+			return resultMap;
+		} catch (RuntimeException e) {
+			logger.error("인증 중 오류 발생 : ",e);
+			resultMap.put("ok", false);
+			resultMap.put("msg", "인증 중 오류 발생");
+			return resultMap;
+		}
+	}
+	
+	/**
+	 * 비밀번호 리셋 서브페이지 보여주기
+	 */
+	@RequestMapping("viewResetPwdSubpage.do")
+	public String viewResetPwdSubpage() {
+		return "/subpage/user/resetPwdSubpage";
+	}
+	
+	/**
+	 * 비밀번호 리셋
+	 */
+	@PostMapping(value = "/resetPwd", produces = "application/json; charset=UTF-8")
+	public Map<String,Object> resetPwd(
+			@RequestBody Map<String, Object> body
+			){
+		
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			
+			// 암호화
+			String uLoignPwd = body.get("u_login_pwd").toString();
+			String encryptPwd = cryptoARIAService.encryptPassword(uLoignPwd);
+			if(encryptPwd == null || encryptPwd.isEmpty()) {
+				resultMap.put("ok", false); 
+				resultMap.put("msg", "암호화 실패.");
+				return resultMap;
+			}
+			
+			// 비밀번호 리셋
+			body.put("encryptPwd", encryptPwd);
+			boolean isResetPwd = userService.resetPwd(body);
+			if(!isResetPwd) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "비밀번호 리셋 중 오류 발생");
+				return resultMap;
+			}
+			
+			resultMap.put("ok", true);
+			return resultMap;
+		} catch (RuntimeException e) {
+			logger.error("비밀번호 리셋 중 오류 발생 : ",e);
+			resultMap.put("ok", false);
+			resultMap.put("msg", "비밀번호 리셋 중 오류 발생");
+			return resultMap;
+		}
+	}
+	
 	
 	// 내 정보 수정 페이지 이동
 	/*

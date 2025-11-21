@@ -41,8 +41,23 @@ public class LoginInterceptor implements HandlerInterceptor{
         
         
         // 로그인 페이지와 정적 자원은 제외
-        if (uri.contains("/user/login.do")
+        /*
+         * 
+         */
+        if (uri.contains("/user/login.do") 
         		|| uri.contains("/user/login")
+        		|| uri.contains("/user/register.do")
+        		|| uri.contains("/user/register")
+        		|| uri.contains("/user/checkId")
+        		|| uri.contains("/user/findIdPwd.do")
+        		|| uri.contains("/user/findId")
+        		|| uri.contains("/user/findPwd")
+        		|| uri.contains("/user/viewfindIdSubpage.do")
+        		|| uri.contains("/user/viewfindPwdSubpage.do")
+        		|| uri.contains("/user/viewShowMaskedIdSubpage.do")
+        		|| uri.contains("/user/authPwd")
+        		|| uri.contains("/user/viewResetPwdSubpage.do")
+        		|| uri.contains("/user/resetPwd")
         		|| uri.contains("/logout")
         		|| uri.contains("/css") 
         		|| uri.contains("/js") 
@@ -109,6 +124,7 @@ public class LoginInterceptor implements HandlerInterceptor{
         final String ctx = req.getContextPath();
         if (uri.equals(ctx + "/user/login.do")
          || uri.equals(ctx + "/user/viewPwdChanged.do")
+         || uri.equals(ctx + "/user/register.do")
          || uri.startsWith(ctx + "/stats/")) {
             setNoStore(res);
         }

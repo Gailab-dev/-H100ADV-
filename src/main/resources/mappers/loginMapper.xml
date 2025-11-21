@@ -42,5 +42,67 @@
 		FROM tbl_user
 		WHERE u_id = #{uId}
 	</select>
+	
+	<select id = "getLoginIdByNameAndPhone" resultType="string">
+		SELECT u_login_id
+		FROM tbl_user
+		WHERE u_name = #{u_name}
+		AND u_phone = #{u_phone}
+	</select>
+	
+	<select id="getCountUserIdAsParam" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_user
+		WHERE u_login_id = #{uLoginId}
+	
+	</select>
+	
+	<insert id="insertUser">
+		INSERT INTO tbl_user(
+			u_org_id
+			, u_login_id 
+			, u_login_pwd
+			, u_name
+			, u_email
+			, u_phone
+			, u_grade
+			, u_region
+			, u_pwd_changed
+			, u_req_user
+			, u_mod_user
+			, u_req_date
+			, u_mod_date
+			
+		) VALUES(
+			1
+			, #{u_login_id}
+			, #{encryptPwd}
+			, #{u_name}
+			, #{u_email}
+			, #{u_phone}
+			, 1
+			, #{u_region}
+			, 1
+			, 1
+			, 1
+			, NOW()
+			, NOW()
+		)
+	
+	</insert>
+	
+	<!-- 아이디, 이름, 전번으로 비밀번호의 수 가져오기  -->
+	<select id="getCountPwd" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_user
+		WHERE 
+			1=1
+			AND u_login_id = #{u_login_id}
+			AND u_name = #{u_name}
+			AND u_phone = #{u_phone}
+	
+	</select>
+	
+	
 
 </mapper>

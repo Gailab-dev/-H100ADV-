@@ -24,6 +24,10 @@
     <put-attribute name="body" value="" /> 
   </definition>
   
+  <definition name="subpage" template="/WEB-INF/views/layout/subpage.jsp"> <!-- 서브페이지 -->
+  	<put-attribute name="body" value=""/>
+  </definition>
+  
   <!-- 
   	실제 페이지 정의 
   	실제 페이지에 템플릿 기본 정의를 적용하려면 아래 페이지 정의 부분에 레이아웃을 정의해주어야 한다.
@@ -48,6 +52,12 @@
   <!-- 실시간영상 -->
   <definition name="popup" extends="popup">
     <put-attribute name="body" value="/WEB-INF/views/popup/*/*Popup.jsp" />
+  </definition>
+  
+  
+    <!-- 서브페이지 -->
+  <definition name="subpage" extends="subpage">
+    <put-attribute name="body" value="/WEB-INF/views/subpage/*/*Subpage.jsp" />
   </definition>
   
 </tiles-definitions>

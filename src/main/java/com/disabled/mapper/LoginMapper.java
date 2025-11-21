@@ -12,6 +12,10 @@ public interface LoginMapper {
 	Map<String,Object> existUsrByIdAndPwd(@Param("id") String id, @Param("pwd") String pwd) throws IllegalStateException;
 	Integer updateNewPwd(@Param("uId") Integer uId, @Param("encryptPwd") String encryptPwd) throws IllegalStateException;
 	String getPwd(@Param("uId") Integer uId) throws IllegalStateException;
-	Map<String, Object> getMyInfo(@Param("uId") Integer uId);
-	String getLoginId(@Param("uId") Integer uId);
+	Map<String, Object> getMyInfo(@Param("uId") Integer uId) throws IllegalStateException;
+	String getLoginId(@Param("uId") Integer uId) throws IllegalStateException;
+	Integer getCountUserIdAsParam(@Param("uLoginId") String uLoginId) throws IllegalStateException;
+	Integer insertUser(Map<String, Object> paramMap) throws IllegalStateException;
+	String getLoginIdByNameAndPhone(Map<String, Object> body) throws IllegalStateException;
+	int getCountPwd(Map<String, Object> body) throws IllegalStateException;
 }
