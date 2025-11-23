@@ -28,6 +28,10 @@ public interface UserService {
 
 	boolean resetPwd(Map<String, Object> body);
 
+	boolean authWithAuthNumber(Map<String, Object> json);
+
+	Integer getLoginIdWithNameAndIdAndPhone(Map<String, Object> body);
+
 	// Map<String, Object> getMyInfo(Integer uId);
 
 	// Integer updateMyInfoExceptPwd(Integer uId);

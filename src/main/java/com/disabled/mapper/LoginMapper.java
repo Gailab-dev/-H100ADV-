@@ -18,4 +18,5 @@ public interface LoginMapper {
 	Integer insertUser(Map<String, Object> paramMap) throws IllegalStateException;
 	String getLoginIdByNameAndPhone(Map<String, Object> body) throws IllegalStateException;
 	int getCountPwd(Map<String, Object> body) throws IllegalStateException;
+	Integer getLoginIdWithNameAndIdAndPhone(Map<String, Object> body);
 }

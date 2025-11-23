@@ -7,5 +7,5 @@
 		<input id="rePwd" type="password" placeholder="새 비밀번호를 다시 한 번 입력하세요.">
 	</div>
 	<p id="alert" style="color:red;"></p>
-	<button type="button" onclick="resetPwd()"></button>
+	<button type="button" onclick="resetPwd(${uId})">비밀번호 재설정하기</button>
 </div>

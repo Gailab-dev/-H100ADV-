@@ -103,6 +103,16 @@
 	
 	</select>
 	
+	<!-- 이름, 아이디, 전화번호로 식별번호 가져오기 -->
+	<select id="getLoginIdWithNameAndIdAndPhone" resultType="int">
+		SELECT u_id
+		FROM tbl_user
+		WHERE
+			1=1
+			AND u_login_id = #{u_login_id}
+			AND u_name = #{u_name}
+			AND u_phone = #{u_phone}
+	</select>
 	
 
 </mapper>

@@ -57,6 +57,8 @@ public class LoginInterceptor implements HandlerInterceptor{
         		|| uri.contains("/user/viewShowMaskedIdSubpage.do")
         		|| uri.contains("/user/authPwd")
         		|| uri.contains("/user/viewResetPwdSubpage.do")
+        		|| uri.contains("/user/viewInputAuthNumberSubpage.do")
+        		|| uri.contains("/user/authNumber")
         		|| uri.contains("/user/resetPwd")
         		|| uri.contains("/logout")
         		|| uri.contains("/css") 

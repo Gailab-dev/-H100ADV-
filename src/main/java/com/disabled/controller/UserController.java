@@ -462,16 +462,24 @@ public class UserController {
 			){
 		
 		Map<String,Object> resultMap = new HashMap<String, Object>();
+		Integer uId = null;
 		
 		try {
 			
 			boolean isAuthPwd = userService.authPwd(body);
-			if(isAuthPwd) {
+			if(!isAuthPwd) {
 				resultMap.put("ok", false);
-				resultMap.put("msg", "인증 중 오류 발생");
+				resultMap.put("msg", "해당 정보에 맞는 회원을 찾을 수 없습니다. 이름 또는 아이디 또는 전화번호를 다시 확인해주세요.");
 				return resultMap;
+			}else {
+				uId = userService.getLoginIdWithNameAndIdAndPhone(body);
+				if(uId == null) {
+					resultMap.put("ok", false);
+					resultMap.put("msg", "해당 정보에 맞는 회원을 찾을 수 없습니다. 이름 또는 아이디 또는 전화번호를 다시 확인해주세요.");
+				}
 			}
 			
+			resultMap.put("uId", uId);
 			resultMap.put("ok", true);
 			return resultMap;
 		} catch (RuntimeException e) {
@@ -483,10 +491,56 @@ public class UserController {
 	}
 	
 	/**
+	 * 인증번호로 인증하는 서브페이지 보여주기
+	 */
+	@RequestMapping("viewInputAuthNumberSubpage.do")
+	public String viewInputAuthNumberSubpage(
+			@RequestParam("uId") Integer uId
+			, Model model
+			) {
+		
+		model.addAttribute("uId", uId);
+		return "/subpage/user/inputAuthNumberSubpage";
+	}
+	
+	/**
+	 * 인증번호 인증
+	 */
+	@PostMapping(value = "/authNumber", produces = "application/json; charset=UTF-8")
+	@ResponseBody
+	public Map<String,Object> authNumber(@RequestBody Map<String,Object> json){
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			
+			boolean isAuthWithNumber = userService.authWithAuthNumber(json);
+			if(!isAuthWithNumber) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "인증번호를 확인해주세요.");
+				return resultMap;
+			}
+			
+			resultMap.put("ok", true);
+			return resultMap;
+		} catch (RuntimeException e) {
+			logger.error("인증번호로 인증 중 오류 발생 : ",e);
+			resultMap.put("ok", false);
+			resultMap.put("msg", "인증번호로 인증 중 오류 발생");
+			return resultMap;
+		}
+		
+	}
+	
+	/**
 	 * 비밀번호 리셋 서브페이지 보여주기
 	 */
 	@RequestMapping("viewResetPwdSubpage.do")
-	public String viewResetPwdSubpage() {
+	public String viewResetPwdSubpage(
+			@RequestParam("uId") Integer uId
+			, Model model
+			) {
+		
+		model.addAttribute("uId", uId);
 		return "/subpage/user/resetPwdSubpage";
 	}
 	
@@ -494,6 +548,7 @@ public class UserController {
 	 * 비밀번호 리셋
 	 */
 	@PostMapping(value = "/resetPwd", produces = "application/json; charset=UTF-8")
+	@ResponseBody
 	public Map<String,Object> resetPwd(
 			@RequestBody Map<String, Object> body
 			){

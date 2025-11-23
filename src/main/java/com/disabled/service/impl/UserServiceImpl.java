@@ -247,10 +247,12 @@ public class UserServiceImpl implements UserService {
 		
 		try {
 			
+			System.out.println(body);
+			
 			int rows1 = loginMapper.getCountPwd(body);
 			if(rows1 != 1) {
-				logger.error("loginMapper.getCountPwd 함수 실행 중 SQL 오류 발생");
-				throw new IllegalStateException("loginMapper.getCountPwd  SQL문에서 오류 발생");
+				logger.error("loginMapper.getCountPwd 함수 실행 중 SQL 오류 발생 : rows1 : "+rows1);
+				throw new IllegalStateException("loginMapper.getCountPwd  SQL문에서 오류 발생: rows1 : "+rows1);
 			}
 			
 			return true;
@@ -268,19 +270,54 @@ public class UserServiceImpl implements UserService {
 	public boolean resetPwd(Map<String, Object> body) {
 		try {
 			
-			Integer uId = Integer.parseInt(body.get("u_login_id").toString()) ;
+			Integer uId = Integer.parseInt(body.get("u_id").toString()) ;
 			String encryptPwd = body.get("encryptPwd").toString();
 			
+			// 비밀번호 리셋
 			int rows1 = loginMapper.updateNewPwd(uId,encryptPwd);
 			if(rows1 != 1) {
 				logger.error("resetPwd 함수 실행 중 오류 발생");
 				throw new IllegalStateException("loginMapper.updatePwd SQL문에서 오류 발생");
 			}
+			
+			return true;
 		} catch (RuntimeException e) {
 			logger.error("resetPwd 함수 실행 중 SQL 오류 발생 : ",e);
 			return false;
 		}
-		return false;
+	}
+	
+	/**
+	 * 인증번호로 인증
+	 * 2025.11.27. 인증번호 인증은 구현하지 않음, 추후 고도화시 논의
+	 */
+	@Override
+	public boolean authWithAuthNumber(Map<String, Object> json) {
+		
+		return true;
+	}
+
+	/**
+	 * 이름, 아이디, 전화번호로 고유번호 식별
+	 */
+	@Override
+	public Integer getLoginIdWithNameAndIdAndPhone(Map<String, Object> body) {
+		
+		Integer uId = null;
+		
+		try {
+			uId = loginMapper.getLoginIdWithNameAndIdAndPhone(body);
+			if(uId == null) {
+				logger.error("loginMapper.getLoginIdWithNameAndIdAndPhone SQL문에서 오류 발생");
+				throw new IllegalStateException("loginMapper.getLoginIdWithNameAndIdAndPhone SQL문에서 오류 발생");
+			}
+			
+			return uId;
+		} catch (RuntimeException e) {
+			logger.error("getLoginIdWithNameAndIdAndPhone 함수 실행 중 오류 발생 : ",e);
+			return null;
+		}
+		
 	}
 	
 	
