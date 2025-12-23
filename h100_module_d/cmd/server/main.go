@@ -1,20 +1,22 @@
 package main
 
 import (
-        "crypto/tls"
-        "net/http"
-        "os"
-       // "fmt"
+	"crypto/tls"
+	"net/http"
+	"os"
 
-        "github.com/robfig/cron/v3"
-        "github.com/joho/godotenv"
-        "go.uber.org/zap"
-        "golang.org/x/crypto/acme/autocert"
+	// "fmt"
 
+	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
+	"go.uber.org/zap"
+	"golang.org/x/crypto/acme/autocert"
+
+	"local.dev/h100_module_d/internal/handlers/fileSend"
+	"local.dev/h100_module_d/internal/handlers/tilting"
+	"local.dev/h100_module_d/internal/handlers/video"
 	"local.dev/h100_module_d/internal/middlewares"
-        "local.dev/h100_module_d/internal/handlers/video"
-        "local.dev/h100_module_d/internal/handlers/fileSend"
-        "local.dev/h100_module_d/logger"
+	"local.dev/h100_module_d/logger"
 )
 
 var oCmdManager = video.CreateCmdManager()
@@ -90,6 +92,7 @@ func main() {
         // ===== [S] 서버 설정 ====== //
         mux.HandleFunc("/video", middlewares.WithCORS(video.VideoHandler(oCmdManager)))
         mux.HandleFunc("/fileSend", middlewares.WithCORS(fileSend.FileSendHandler))
+        mux.HandleFunc("/tilting", middlewares.WithCORS(tilting.TiltingCmdHandler))
 
         // HLS 파일 제공을 위한 HTTP 서버설정
         fileServer := http.FileServer(http.Dir(os.Getenv("HLS_DIR")))
