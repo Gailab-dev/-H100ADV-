@@ -14,7 +14,13 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jstree@3.3.15/dist/jstree.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
+<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+<script>
+  <c:if test="${not empty errorMsg}">
+    alert('<c:out value="${errorMsg}" />');
+  </c:if>
+</script>
+<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
 
 <body>
 	<div class="container">

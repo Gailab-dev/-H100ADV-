@@ -64,7 +64,7 @@ public class UserServiceImpl implements UserService {
 			return rows1;
 		} catch (RuntimeException e) {
 			logger.error("loginMapper.updateNewPwd SQL문에서 오류 발생",e);
-			return 0;
+			throw e;
 		}
 		
 	}
@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
 			return loginMapper.getPwd(uId);
 		} catch (IllegalStateException e) {
 			logger.error("loginMapper.getPwd SQL문에서 오류 발생",e);
-			return null;
+			throw e;
 		}
 	}
 	
@@ -93,7 +93,7 @@ public class UserServiceImpl implements UserService {
 			return loginMapper.getLoginId(uId);
 		} catch (IllegalStateException e) {
 			logger.error("loginMapper.getLoginId SQL문에서 오류 발생",e);
-			return null;
+			throw e;
 		}
 	}
 	
@@ -113,7 +113,7 @@ public class UserServiceImpl implements UserService {
 			return true;
 		} catch (RuntimeException e) {
 			logger.error("checkNewUserId에서 오류 발생 : ",e);
-			return false;
+			throw e;
 		}
 	}
 	
@@ -134,7 +134,7 @@ public class UserServiceImpl implements UserService {
 			
 		} catch (IllegalStateException e) {
 			logger.error("insertUser에서 SQL 오류 발생 : ",e);
-			return -1;
+			throw e;
 		}
 	}
 	
@@ -150,7 +150,7 @@ public class UserServiceImpl implements UserService {
 			
 		} catch (IllegalStateException e) {
 			logger.error("getAllLocals에서 SQL 오류 발생 : ",e);
-			return null;
+			throw e;
 		}
 		
 	}
@@ -171,7 +171,7 @@ public class UserServiceImpl implements UserService {
 			return true;
 		} catch (RuntimeException e) {
 			logger.error("isDuplicatedId 함수 실행 중 오류 발생");
-			return false;
+			throw e;
 		}
 		
 		
@@ -252,14 +252,15 @@ public class UserServiceImpl implements UserService {
 			int rows1 = loginMapper.getCountPwd(body);
 			if(rows1 != 1) {
 				logger.error("loginMapper.getCountPwd 함수 실행 중 SQL 오류 발생 : rows1 : "+rows1);
-				throw new IllegalStateException("loginMapper.getCountPwd  SQL문에서 오류 발생: rows1 : "+rows1);
+				return false;			
 			}
 			
 			return true;
 			
 		} catch (RuntimeException e) {
 			logger.error("authPwd 함수 실행 중 오류 발생 : ",e);
-			return false;
+			
+			throw e;
 		}
 	}
 	
@@ -277,13 +278,13 @@ public class UserServiceImpl implements UserService {
 			int rows1 = loginMapper.updateNewPwd(uId,encryptPwd);
 			if(rows1 != 1) {
 				logger.error("resetPwd 함수 실행 중 오류 발생");
-				throw new IllegalStateException("loginMapper.updatePwd SQL문에서 오류 발생");
+				return false;
 			}
 			
 			return true;
 		} catch (RuntimeException e) {
 			logger.error("resetPwd 함수 실행 중 SQL 오류 발생 : ",e);
-			return false;
+			throw e;
 		}
 	}
 	
@@ -309,13 +310,14 @@ public class UserServiceImpl implements UserService {
 			uId = loginMapper.getLoginIdWithNameAndIdAndPhone(body);
 			if(uId == null) {
 				logger.error("loginMapper.getLoginIdWithNameAndIdAndPhone SQL문에서 오류 발생");
-				throw new IllegalStateException("loginMapper.getLoginIdWithNameAndIdAndPhone SQL문에서 오류 발생");
+				return null;
 			}
 			
 			return uId;
 		} catch (RuntimeException e) {
 			logger.error("getLoginIdWithNameAndIdAndPhone 함수 실행 중 오류 발생 : ",e);
-			return null;
+			throw e;
+			
 		}
 		
 	}

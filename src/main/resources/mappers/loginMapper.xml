@@ -6,7 +6,7 @@
 	
 	<!-- id와 pw값을 비교하여 둘 다 같은 경우, 해당 map을 리턴 -->
 	<select id="existUsrByIdAndPwd" resultType="map">
-		SELECT u_id, u_pwd_changed 
+		SELECT u_id, u_pwd_changed, u_grade, u_login_fail_count 
 		FROM tbl_user
 		WHERE 1=1 
 			AND u_login_id = #{id}

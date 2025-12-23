@@ -46,7 +46,7 @@
 		
 		let reNewPwd = document.getElementById("reNewPwd").value; 
 		if(reNewPwd == null || reNewPwd == undefined || newPwd !== reNewPwd){ 
-			alert("새 비밀번호 값과 다시 입력한 새 비밀변호 값이 다릅니다."); 
+			alert("새 비밀번호 값과 다시 입력한 새 비밀번호 값이 다릅니다."); 
 			return; 
 		} 
 		

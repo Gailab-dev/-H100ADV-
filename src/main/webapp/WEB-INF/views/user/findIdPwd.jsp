@@ -25,11 +25,12 @@
 <script>
 	
 	// 서브페이지 출력하는 div
-	subpageDiv = document.getElementById("subpage");
+	const subpageDiv = document.getElementById("subpage");
 	
 	// 오류 출력 함수
 	function showAlert(msg){
 		const p = document.getElementById("alert");
+		if(!p) return;
 		p.innerHTML = "";
 		p.innerHTML = msg;
 	}
@@ -44,68 +45,80 @@
 				},
 				credentials : options.credentials || 'same-origin',
 				cache: options.cache || 'no-store',	
-			});	
-		}
+			};
+		
+			// GET이 아니라면 body 추가
+			if(fetchOptions.method !== 'GET' && body != null){
+				fetchOptions.body = body;
+			}
+			
+			const res = await fetch("${pageContext.request.contextPath}"+url,fetchOptions);
 	
-		// GET이 아니라면 body 추가
-		if(fetchOptions.emthod !== 'GET' && body != null){
-			fetchOption.body = body;
-		}
-		
-		const res = await fetch("${pageContext.request.contextPath}"+url,fetchOptions);
-
-		if(!res.ok){			
-			return null;
-		}
-		
-		return await res.text();
+			if(!res.ok){
+				
+				return null;
+			}
+			
+			return res;
 	}
 	
+	// json 변환
 	function makeJson(body){
 		return JSON.stringify(body);
 	}
 	
+	// 페이지 이동
 	function goPage(url){
 		window.location.href = "${pageContext.request.contextPath}" + url;
 	} 
 	
+	// 페이지 이동(replace)
 	function replacePage(url){
 		window.location.replace("${pageContext.request.contextPath}" + url);
 	}
 	
-	function loadSubpage(div,res){
-		div.innerHTML = "";
-		div.inntrHTML = res;
+	// 서브페이지 적용
+	function loadSubpage(subpageDiv,res){
+		subpageDiv.innerHTML = "";
+		subpageDiv.innerHTML = res;
 	}
 	
 	// 아이디 찾기 서브페이지
-	function showFindIdSubpage(){
+	async function showFindIdSubpage(){
 		
 		//url
 		url = "/user/viewfindIdSubpage.do";
 		
 		// subpage 받아오기
-		res = apiService(url);
+		res = await apiService(url);
+		
+		if(!res) return;
+		
+		const html = await res.text();
 		
 		// 결과 출력
-		loadSubpage(loadSubpage,res);
+		loadSubpage(subpageDiv,html);
 		
 	}
 	
 	// 비밀번호 찾기 서브페이지
-	function showFindPwdSubpage(){
+	async function showFindPwdSubpage(){
 		//url
 		url = "/user/viewfindPwdSubpage.do";
 		
 		// subpage 받아오기
-		res = apiService(url);
+		res = await apiService(url);
+		
+		if(!res) return;
+		
+		const html = await res.text();
 		
 		// 결과 출력
-		loadSubpage(loadSubpage,res);
+		loadSubpage(subpageDiv,html);
 	}
 	
 	// 아이디 찾기 로직
-	function findId(){
+	async function findId(){
 		const name = document.getElementById("name")?.value;
 		const phone = document.getElementById("phone")?.value;
 		
@@ -121,7 +134,7 @@
 				{
 					method : 'POST',
 					headers : {
-						'Content-Type':'aplication/json'
+						'Content-Type':'application/json'
 					},
 					credentials : 'same-origin',
 					cache: 'no-store',	
@@ -147,17 +160,19 @@
 	}
 	
 	// 마스크 된 아이디를 보여주는 서브페이지 출력
-	function viewShowMaskedIdSubpage(maskedId){
+	async function viewShowMaskedIdSubpage(maskedId){
 		
 		url = "/user/viewShowMaskedIdSubpage.do?maskedId="+maskedId;
 		
 		res = await apiService(url);
 		
-		if(!res.ok){
+		if(!res){
 			return;
 		}
 		
-		loadSubpage(res);
+		const html = await res.text();
+		
+		loadSubpage(subpageDiv, html);
 	}
 	
 	// 로그인 화면으로 돌아가기.
@@ -167,7 +182,7 @@
 	}
 	
 	//비밀번호 인증하기
-	function authPwd(){
+	async function authPwd(){
 		const name = document.getElementById("name")?.value;
 		const phone = document.getElementById("phone")?.value;
 		const id = document.getElementById("id")?.value;
@@ -185,7 +200,7 @@
 				{
 					method : 'POST',
 					headers : {
-						'Content-Type':'aplication/json'
+						'Content-Type':'application/json'
 					},
 					credentials : 'same-origin',
 					cache: 'no-store',	
@@ -203,35 +218,91 @@
 			showAlert(result.msg);
 			return;
 		}else{
-			viewResetPwdSubpage();
+			viewInputAuthNumberSubpage(result.uId);
 			return;
 		}
 		
 	}
 	
-	// 비밀번호 리셋 서브페이지 보여주기
-	function viewResetPwdSubpage(){
-		
-		url = "/user/viewResetPwdSubpage.do";
+	// 인증번호 전송 페이지 보여주기
+	async function viewInputAuthNumberSubpage(uId){
+		url = "/user/viewInputAuthNumberSubpage.do?uId="+uId;
 		
 		res = await apiService(url);
 		
-		if(!res.ok){
+		if(!res){
 			return;
 		}
 		
-		loadSubpage(res);
+		const html = await res.text();
+		
+		loadSubpage(subpageDiv, html);
+	}
+	
+	// 인증번호 인증하기
+	async function authNumber(uId){
+		const authNumber = document.getElementById("authNumber")?.value;
+		
+		url = "/user/authNumber";
+		
+		body = makeJson({
+			authNumber : authNumber
+		});
+		
+		res = await apiService(
+				url,
+				{
+					method : 'POST',
+					headers : {
+						'Content-Type':'application/json'
+					},
+					credentials : 'same-origin',
+					cache: 'no-store',	
+				},
+				body
+			);
+		
+		if(!res){
+			return;
+		}
+		
+		const result = await res.json();
+		
+		if(!result.ok){
+			showAlert(result.msg);
+			return;
+		}else{
+			viewResetPwdSubpage(uId);
+			return;
+		}
+	}
+	
+	// 비밀번호 리셋 서브페이지 보여주기
+	async function viewResetPwdSubpage(uId){
+		
+		url = "/user/viewResetPwdSubpage.do?uId="+uId;
+		
+		res = await apiService(url);
+		
+		if(!res){
+			return;
+		}
+		
+		const html = await res.text();
+		
+		loadSubpage(subpageDiv, html);
 	}
 	
 	// 비밀번호 리셋
-	function resetPwd(){
+	async function resetPwd(uId){
 		const pwd = document.getElementById("pwd")?.value;
 		const rePwd = document.getElementById("rePwd")?.value;
 		
 		url = "/user/resetPwd";
 		
 		body = makeJson({
-			u_login_pwd : pwd
+			u_id : uId
+			, u_login_pwd : pwd
 
 		});
 		
@@ -240,7 +311,7 @@
 				{
 					method : 'POST',
 					headers : {
-						'Content-Type':'aplication/json'
+						'Content-Type':'application/json'
 					},
 					credentials : 'same-origin',
 					cache: 'no-store',	

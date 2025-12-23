@@ -40,6 +40,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 			deviceList = deviceListMapper.getDeviceInfo(paramMap);
 		} catch (DataAccessException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDeviceInfo() : ",e);
+			throw e;
 		}
 		
 		return deviceList;
@@ -61,6 +62,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 			dvIp =  deviceListMapper.getDvIpByDvId(dvId);
 		} catch (DataAccessException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDvIpByDvId(dvId) : ",e);
+			throw e;
 		}
 		
 		return dvIp;
@@ -73,7 +75,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 			return deviceListMapper.getTotalRecordCount(searchKeyword);
 		} catch (RuntimeException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getTotalRecordCount(searchKeyword) : ",e);
-			return 0;
+			throw e;
 		}
 	}
 	
@@ -91,6 +93,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 			
 		} catch (IllegalStateException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.insertDeviceInfo : ",e);
+			throw e;
 		}
 		
 	}
@@ -110,6 +113,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 			}
 		} catch (IllegalStateException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.deleteDeviceInfo : ",e);
+			throw e;
 		}
 		
 	}
@@ -122,11 +126,12 @@ public class DeviceListServiceImpl implements DeviceListService{
 			Integer rows1 = deviceListMapper.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus);
 			if(rows1 != 1) {
 				logger.error("deviceListMapper.updateDeviceInfo SQL문에서 오류 발생");
-				throw new IllegalStateException("deviceListMapper.updateDeviceInfo SQL문에서 오류 발생");
+				return;
 			}
 			
 		} catch (IllegalStateException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.updateDeviceInfo : ",e);
+			throw e;
 		}
 		
 	}
@@ -140,7 +145,7 @@ public class DeviceListServiceImpl implements DeviceListService{
 			
 		} catch (IllegalStateException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDeviceInfo : ",e);
-			return null;
+			throw e;
 		}
 		
 	}

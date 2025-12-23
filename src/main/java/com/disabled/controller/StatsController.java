@@ -53,7 +53,7 @@ public class StatsController {
 	private String viewStat(Model model, HttpSession session) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 viewStat 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
+		logger.info("{} 사용자의 {}에 viewStat 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
 		
 		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
 		
@@ -63,6 +63,11 @@ public class StatsController {
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달",e);
 		}
+		
+		 // 세션에 저장된 회원의 등급(권한) 가져오기
+	    Integer uGrade = Integer.parseInt(session.getAttribute("uGrade").toString()); 
+		
+	    model.addAttribute("uGrade",uGrade);
 		model.addAttribute("statsByMonth", statsByMonth);
 		return "stats/stats";
 	}

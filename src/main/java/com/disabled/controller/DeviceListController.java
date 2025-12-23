@@ -58,7 +58,7 @@ public class DeviceListController {
 			, HttpSession session  ) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
+		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
 		
 		// 페이지 null 방지
 		if (page == null || page < 1) page = 1;
@@ -103,6 +103,11 @@ public class DeviceListController {
 		
 		//model add
 		// model.addAttribute("groupAddrByDeviceList", groupAddrByDeviceList);
+		
+		 // 세션에 저장된 회원의 등급(권한) 가져오기
+	    Integer uGrade = Integer.parseInt(session.getAttribute("uGrade").toString()); 
+		
+	    model.addAttribute("uGrade",uGrade);
 		model.addAttribute("deviceList", deviceList);
 		model.addAttribute("paginationInfo", paginationInfo);
 		model.addAttribute("searchKeyword", searchKeyword == null ? "" : searchKeyword);

@@ -66,6 +66,7 @@ public class EventListServiceImpl implements EventListService{
 			resultMap = eventListMapper.getEventListDetail(evId);
 		} catch (DataAccessException e) {
 			logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId) : ",e);
+			throw e;
 		}
 		
 		return resultMap;
@@ -93,7 +94,7 @@ public class EventListServiceImpl implements EventListService{
 		} catch (DataAccessException e) {
 			
 			logger.error("이벤트 리스트 서비스 오류 발생: {}"+e);
-			
+			throw e;
 		}
 		
 		return resultList;
@@ -331,10 +332,10 @@ public class EventListServiceImpl implements EventListService{
 			
 		} catch (DataAccessException e2) {
 			logger.error("requestFileFromModule에서 evHasMovChange 또는 evHasImgChange 오류 발생 : ",e2);
-			return false;
+			throw e2;
 		} catch (RuntimeException e) {
 			logger.error("requestFileFromModule에서 오류 발생 : ",e);
-			return false;
+			throw e;
 		}
 		
 		return true;
@@ -356,6 +357,7 @@ public class EventListServiceImpl implements EventListService{
 			dvIp = eventListMapper.getDvIpByEvId(evId);
 		} catch (DataAccessException e) {
 			logger.error("getDvIpByEvId에서 SQL문 오류 : ",e);
+			throw e;
 		}
 		return dvIp;
 	}
@@ -375,6 +377,7 @@ public class EventListServiceImpl implements EventListService{
 			totalRecordCount = eventListMapper.getTotalRecordCount(startDate, endDate, searchKeyword);
 		} catch (DataAccessException e) {
 			logger.error("getTotalRecordCount에서 오류 발생 : ",e);
+			throw e;
 		}
 		
 		return totalRecordCount;

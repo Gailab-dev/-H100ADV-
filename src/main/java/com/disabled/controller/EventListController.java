@@ -54,7 +54,7 @@ public class EventListController {
 			, HttpSession session) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
+		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
 		
 		List<Map<String, Object>> eventList = new ArrayList<Map<String,Object>>();
 		
@@ -169,7 +169,7 @@ public class EventListController {
 			, HttpSession session) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("id"),LocalDateTime.now());
+		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
 		
 		try {
 			Map<String, Object> eventListDetail = new HashMap<String, Object>();

@@ -108,6 +108,7 @@ public class UserController {
 					// session에 uId와 비밀번호 변경 하지 않음(false)로 저장
 					session.setAttribute("uId", checkErr.get("u_id"));
 					session.setAttribute("pwdChanged", false);
+					session.setAttribute("uGrade", checkErr.get("u_grade"));
 					
 					// resultMap에 uId와 비밀번호 변경 하지 않음(false)로 저장
 					resultMap.put("pwdChanged", false);
@@ -116,6 +117,7 @@ public class UserController {
 					// session에 uId와 비밀번호 변경함(true)로 저장
 					session.setAttribute("uId", checkErr.get("u_id"));
 					session.setAttribute("pwdChanged", true);
+					session.setAttribute("uGrade", checkErr.get("u_grade"));
 					
 					// resultMap에 uId와 비밀번호 변경함(true)로 저장
 					resultMap.put("pwdChanged", true);

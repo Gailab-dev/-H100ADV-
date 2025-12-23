@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.servlet.http.HttpSession;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +51,7 @@ public class LocalController {
 		 * @return
 		 */
 		@RequestMapping("/viewLocalManage.do")
-		public String viewLocalManage(Model model) {
+		public String viewLocalManage(HttpSession session, Model model) {
 			
 			// 결과 map
 			List<Map<String,Object>> resultMap = localService.getLocalList();
@@ -68,6 +70,10 @@ public class LocalController {
 				logger.error("viewLocalManage.do 에서 오류 발생, ",e);
 			} // ★ 유효한 JSON 문자열
 		    
+			 // 세션에 저장된 회원의 등급(권한) 가져오기
+		    Integer uGrade = Integer.parseInt(session.getAttribute("uGrade").toString()); 
+			
+		    model.addAttribute("uGrade",uGrade);
 		    model.addAttribute("resultJson", resultJson);
 			return "/local/localManage";
 		}

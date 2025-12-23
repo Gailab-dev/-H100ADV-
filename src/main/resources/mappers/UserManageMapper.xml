@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.disabled.mapper.UserManageMapper">
+	
+	<select id="getTotalRecordCount" resultType="int">
+		
+		SELECT COUNT(1)
+		FROM tbl_user
+		<where>
+			<if test="#{startDate != null and endDate != null}">
+				reg_date BETWEEN TO_DATE(#{startDate) AND TO_DATE(#{endDate)
+			</if>
+			<if test="searchKeyword != null">
+				LIKE CONCAT('%',#{searchKeyword},'%')
+			</if>
+		</where>
+		
+		
+	</select>
+	
+	<select id="getUserManageList" resultType="List">
+		
+		<!-- 최고 관리자의 u_region값을 파라미터로 하여 해당 지역을 최상위 루트로 하는 지역 트리구조 리턴 -->
+		WITH RECURSIVE region_tree AS (
+    
+		    SELECT r.rg_id
+		    FROM tbl_region r
+		    WHERE r.rg_id = #{uRegion}          
+		
+		    UNION ALL
+	
+		    SELECT c.rg_id
+		    FROM tbl_region c
+		    JOIN region_tree p ON c.rg_p_id = p.rg_id  
+		)
+		
+		
+		SELECT u.u_id, u.u_login_id, u.reg_date, u.u_grade, u.u_email, u.u_phone
+		FROM tbl_user u
+		JOIN region_tree rt ON u.u_region = rt.rg_id
+		WHERE 1=1
+			<if test="#{startDate != null and endDate != null}">
+				OR u.reg_date BETWEEN TO_DATE(#{startDate) AND TO_DATE(#{endDate)
+			</if>
+			<if test="searchKeyword != null">
+				OR(
+					u.u_login_id LIKE CONCAT('%',#{searchKeyword},'%')
+					OR u.u_email LIKE CONCAT('%',#{searchKeyword},'%')
+					OR u.u_phone LIKE CONCAT('%',#{searchKeyword},'%')
+				)
+			</if>
+			
+		
+		ORDER BY u.reg_date DESC,u.u_login_id DESC	
+        LIMIT #{recordCountPerPage} 
+        OFFSET #{firstIndex}	
+	</select>
+	
+	<select id="getRegionByAdmin">
+		SELECT u_region
+		FROM tbl_user
+		WHERE u_id = #{uId}
+	</select>
+	
+</mapper>
