@@ -1,7 +1,0 @@
-1. 실행
-$ go mod tidy
-$ go run ./cmd/server
-
-2. 종료
-ctrl + c
-
