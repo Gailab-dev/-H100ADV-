@@ -14,91 +14,6 @@
   src="https://code.jquery.com/jquery-3.7.1.js"
   integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
   crossorigin="anonymous"></script>
-
-<body>
-	<!-- 상단 헤더 공간 (투명, 고정 높이) -->
-    <header class="login-header"></header>
-
-	<main class="login-wrap">
-	  <!-- 좌측: 제품 사진 -->
-		<section class="bg-panel">
-		    <img src="${pageContext.request.contextPath}/resources/images/product.png"
-		         alt="제품 이미지"
-		         class="bg-img">
-		</section>
-	
-	    <!-- 우측: 로그인 카드 -->
-	    <section class="form-panel">
-	      <div class="login-card">
-	        <p class="product-ver">G.Eye-Parking H100 V1.0</p>
-	
-	        <div class="title-row" role="heading" aria-level="1">
-				<img src="${pageContext.request.contextPath}/resources/images/simbol.png"
-				     alt="아이콘" class="title-icon">
-	          <span class="title-text">관리자 로그인</span>
-	        </div>
-	
-	        <div class="fields">
-	          <input id="id"  class="line-input" type="text"     placeholder="아이디를 입력하세요" autocomplete="username">
-	          <input id="pwd" class="line-input" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
-	          <input id="name" class="line-input" type="text" placeholder="이름를 입력하세요" autocomplete="current-password">
-	          <input id="phone" class="line-input" type="text" placeholder="전화번호를 입력하세요" autocomplete="current-password">
-	          <input id="email" class="line-input" type="text" placeholder="이메일을 입력하세요" autocomplete="current-password">
-	          <select id = "region">
-	          	<option id="region-default" selected>지역</option>
-	          	<c:forEach items="${resultList}" var="region" varStatus="status1">
-	          		<c:if test="${region.rg_depth eq 1 }">
-	          			<option class="option-region" data-rgid="${region.rg_id}">${region.rg_name }</option>
-	          		</c:if>
-	          	</c:forEach>
-	          </select>
-	          <select id = "gu">
-		        <option id="gu-default" selected>구</option>
-	          	<c:forEach items="${resultList}" var="gu" varStatus="status2">
-	          		<c:if test="${gu.rg_depth eq 2 }">
-	          			<option class="option-gu" data-pid="${gu.rg_p_id}" data-rgid="${gu.rg_id}">${gu.rg_name }</option>
-	          		</c:if>	
-	          	</c:forEach>
-	          </select>
-	          <select id = "dong">
-	            <option id="dong-default" selected>동</option>
-	          	<c:forEach items="${resultList}" var="dong" varStatus="status1">
-	          		<c:if test="${dong.rg_depth eq 3 }">
-	          			<option class="option-dong" data-pid="${dong.rg_p_id}" data-rgid="${dong.rg_id}">${dong.rg_name }</option>
-	          		</c:if>
-	          	</c:forEach>
-	          </select>
-	          <select id = "parkingLot">
-	            <option id="parking-default" selected>주차장</option>
-	          	<c:forEach items="${resultList}" var="parking" varStatus="status4">
-        			<c:if test="${parking.rg_depth eq 4 }">
-	          			<option class="option-parking" data-pid="${parking.rg_p_id}" >${parking.rg_name }</option>
-	          		</c:if>
-	          	</c:forEach>
-	          </select>
-	          <label>
-	          	<input id="allAgree" class="line-input" type="checkbox" value="">전체동의
-	          </label>
-	          <label>
-	          	<input id="tnc" class="line-input" type="checkbox" value="">(필수) 이용약관 동의
-	          	<a href="#">전문보기</a>
-	          </label>
-	          <label>
-	          	<input id="usePi" class="line-input" type="checkbox"  value="" >(필수) 개인정보 수집 및 이용 동의
-			  <a href="#">전문보기</a>
-	          </label>
-			  <p id="alert" style="color:red;"></p>
-	          <button class="primary-btn"
-	                  onclick="register()">
-	            회원가입
-	          </button>
-	        </div>
-	      </div>
-	    </section>
-	</main>
-
-    <footer class="login-footer"></footer>
-</body>
 <script>
 	
 	// 공통: 특정 select를 default option으로 되돌리는 함수
@@ -235,11 +150,17 @@
 		const pwd = document.getElementById('pwd');
 		const phone = document.getElementById('phone');
 		const email = document.getElementById('email');
+		const region = document.getElementById('region');
+		const tnc = document.getElementById('tnc');
+		const usePi = document.getElementById('usePi');
 		
 		id.addEventListener('keyup',enterKeyEvent);
 		pwd.addEventListener('keyup',enterKeyEvent);
 		phone.addEventListener('keyup',enterKeyEvent);
 		email.addEventListener('keyup',enterKeyEvent);
+		region.addEventListener('keyup',enterKeyEvent);
+		tnc.addEventListener('keyup',enterKeyEvent);
+		usePi.addEventListener('keyup',enterKeyEvent);
 
 	})
 	
@@ -415,9 +336,7 @@
 		*/
 	}
 	
-
-	
-	// 1) region 의 모든 option은 항상 block
+	// region 의 모든 option은 항상 block
 	  function updateRegionOptions() {
 	    const regionSel = document.getElementById('region');
 	    Array.from(regionSel.options).forEach(function (opt) {
@@ -425,7 +344,93 @@
 	    });
 	  }
 	 
-	
 </script>
+<body>
+	<!-- 상단 헤더 공간 (투명, 고정 높이) -->
+    <header class="login-header"></header>
+
+	<main class="login-wrap">
+	  <!-- 좌측: 제품 사진 -->
+		<section class="bg-panel">
+		    <img src="${pageContext.request.contextPath}/resources/images/product.png"
+		         alt="제품 이미지"
+		         class="bg-img">
+		</section>
+	
+	    <!-- 우측: 로그인 카드 -->
+	    <section class="form-panel">
+	      <div class="login-card">
+	        <p class="product-ver">G.Eye-Parking H100 V1.0</p>
+	
+	        <div class="title-row" role="heading" aria-level="1">
+				<img src="${pageContext.request.contextPath}/resources/images/simbol.png"
+				     alt="아이콘" class="title-icon">
+	          <span class="title-text">관리자 로그인</span>
+	        </div>
+	
+	        <div class="fields">
+	          <input id="id"  class="line-input" type="text"     placeholder="아이디를 입력하세요" autocomplete="username">
+	          <input id="pwd" class="line-input" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+	          <input id="name" class="line-input" type="text" placeholder="이름를 입력하세요" autocomplete="current-password">
+	          <input id="phone" class="line-input" type="text" placeholder="전화번호를 입력하세요" autocomplete="current-password">
+	          <input id="email" class="line-input" type="text" placeholder="이메일을 입력하세요" autocomplete="current-password">
+	          <!--
+	          <select id = "region">
+	          	<option id="region-default" selected>지역</option>
+	          	<c:forEach items="${resultList}" var="region" varStatus="status1">
+	          		<c:if test="${region.rg_depth eq 1 }">
+	          			<option class="option-region" data-rgid="${region.rg_id}">${region.rg_name }</option>
+	          		</c:if>
+	          	</c:forEach>
+	          </select>
+	          <select id = "gu">
+		        <option id="gu-default" selected>구</option>
+	          	<c:forEach items="${resultList}" var="gu" varStatus="status2">
+	          		<c:if test="${gu.rg_depth eq 2 }">
+	          			<option class="option-gu" data-pid="${gu.rg_p_id}" data-rgid="${gu.rg_id}">${gu.rg_name }</option>
+	          		</c:if>	
+	          	</c:forEach>
+	          </select>
+	          <select id = "dong">
+	            <option id="dong-default" selected>동</option>
+	          	<c:forEach items="${resultList}" var="dong" varStatus="status1">
+	          		<c:if test="${dong.rg_depth eq 3 }">
+	          			<option class="option-dong" data-pid="${dong.rg_p_id}" data-rgid="${dong.rg_id}">${dong.rg_name }</option>
+	          		</c:if>
+	          	</c:forEach>
+	          </select>
+	          <select id = "parkingLot">
+	            <option id="parking-default" selected>주차장</option>
+	          	<c:forEach items="${resultList}" var="parking" varStatus="status4">
+        			<c:if test="${parking.rg_depth eq 4 }">
+	          			<option class="option-parking" data-pid="${parking.rg_p_id}" >${parking.rg_name }</option>
+	          		</c:if>
+	          	</c:forEach>
+	          </select>
+	          -->
+	          <label>
+	          	<input id="allAgree" class="line-input" type="checkbox" value="">전체동의
+	          </label>
+	          <label>
+	          	<input id="tnc" class="line-input" type="checkbox" value="">(필수) 이용약관 동의
+	          	<a href="#">전문보기</a>
+	          </label>
+	          <label>
+	          	<input id="usePi" class="line-input" type="checkbox"  value="" >(필수) 개인정보 수집 및 이용 동의
+			  <a href="#">전문보기</a>
+	          </label>
+			  <p id="alert" style="color:red;"></p>
+	          <button class="primary-btn"
+	                  onclick="register()">
+	            회원가입
+	          </button>
+	        </div>
+	      </div>
+	    </section>
+	</main>
+
+    <footer class="login-footer"></footer>
+</body>
+
 
 </html>

@@ -6,7 +6,9 @@
 
 	<!-- 검색조건에 따른 이벤트 리스트 -->
 	<select id="getEventList" parameterType="map" resultType="map">
-		SELECT A.*
+		SELECT ROW_NUMBER() OVER (ORDER BY A.ev_id DESC) AS rn 
+			, A.*
+			, ev_dv_id as dv_id			
 			, CONCAT(B.dv_addr,' ',B.dv_name) AS dv_addr
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
@@ -32,6 +34,49 @@
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
+			</if>
+			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
+			</if>
+		</where>
+	</select>
+	
+	<!-- 디바이스 테이블의 디바이스 ID값과 조인한 검색 조건에 따른 불법주차 리스트 -->
+	<select id="getEventListJoinSerial" resultType="map">
+		SELECT 
+			ROW_NUMBER() OVER (ORDER BY A.ev_id DESC) AS rn
+			, A.*
+			, CONCAT(B.dv_addr,' ',B.dv_name) AS dv_addr
+			, B.dv_id AS dv_id
+		FROM tbl_event_data A
+		RIGHT JOIN tbl_device B
+		ON A.ev_serial_number = B.dv_serial_number
+		<where>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
+			</if>
+			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
+			</if>
+		</where>
+        ORDER BY A.ev_id DESC
+        LIMIT #{recordCountPerPage} 
+        OFFSET #{firstIndex}
+	</select>
+	
+	<!-- 디바이스 테이블의 디바이스 ID값과 조인한 검색 조건에 따른 불법주차 리스트의 수 -->
+	<select id="getTotalRecordCountJoinSerial" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_event_data A
+		RIGHT JOIN tbl_device B
+		ON A.ev_serial_number = B.dv_serial_number
 		<where>
 			<if test="searchKeyword != null and searchKeyword != ''">
 				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')

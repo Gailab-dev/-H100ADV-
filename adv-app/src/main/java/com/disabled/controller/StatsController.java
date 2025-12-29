@@ -33,10 +33,16 @@ public class StatsController {
 	StatsMapper statsMapper;
 	
 	@Autowired
+	LoginMapper loginMapper;
+	
+	@Autowired
 	CryptoARIAService cryptoARIAService;
 
 	@Autowired
 	SessionManager sessionManager;
+	
+	@Autowired
+	LogDiskManager logDiskManager;
 	
 	// 통계 화면으로 redirect
 	@RequestMapping("")
@@ -45,31 +51,50 @@ public class StatsController {
 		return "redirect:/stats/viewStat.do";
 	}
 	
-	/*
+	/**
 	 * 통계 화면으로 이동
-	 * 
+	 * @param model
+	 * @param session
+	 * @return
 	 */
 	@RequestMapping("/viewStat.do")
 	private String viewStat(Model model, HttpSession session) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 viewStat 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
-		
+		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		if(uIdStr != null) {
+			logger.info("{}(" + loginMapper.getLoginId( Integer.parseInt(uIdStr)) + ") 사용자의 {}에 홈 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+		}
+
+		// ====== 변수 선언부 [S] ======
 		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
+		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
+		// ====== 변수 선언부 [E] ======
 		
 		try {
+			// ====== 서비스 [S] ======
+			// 최근 1년간 월별 불법주차 통계 데이터 조회 
 			statsByMonth = statsService.getEventByMonth();
+			
+			// 로그 스토리지 사용 가능 여부 조회
+			useTblLog = logDiskManager.hasEnoughLogSpace();
+			
+			 // 세션에 저장된 회원의 등급(권한) 조회
+		    Integer uGrade = Integer.parseInt(session.getAttribute("uGrade").toString()); 
+			// ====== 서비스 [E] ======
+			
+		    // ====== model add [S] ======
+		    model.addAttribute("uGrade",uGrade);
+			model.addAttribute("statsByMonth", statsByMonth);
+			model.addAttribute("useTblLog", useTblLog);
+			// ====== model add [E] ======
+			
+			return "stats/stats";
 			
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달",e);
 		}
-		
-		 // 세션에 저장된 회원의 등급(권한) 가져오기
-	    Integer uGrade = Integer.parseInt(session.getAttribute("uGrade").toString()); 
-		
-	    model.addAttribute("uGrade",uGrade);
-		model.addAttribute("statsByMonth", statsByMonth);
-		return "stats/stats";
+
 	}
 	
 }

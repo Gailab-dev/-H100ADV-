@@ -33,6 +33,12 @@ public class EventListController {
 	@Autowired
 	EventListService eventListService;
 	
+	@Autowired
+	LogDiskManager logDiskManager;
+	
+	@Autowired
+	LoginMapper loginMapper;
+	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(EventListController.class);
 	
@@ -43,6 +49,17 @@ public class EventListController {
 		return "redirect:/eventList/viewEventList.do";
 	}
 	
+	/**
+	 * 불법주차 리스트 화면 이동
+	 * @param startDate 	검색 시작 날짜(String)
+	 * @param endDate 		검색 종료 날짜(String)
+	 * @param searchKeyword	검색어(String)
+	 * @param page			페이지 수(Integer)
+	 * @param pageSize		한 화면에 보여줄 컬럼의 크기(Integer)
+	 * @param model
+	 * @param session
+	 * @return
+	 */
 	// 불법주차 리스트
 	@RequestMapping("/viewEventList.do")
 	public String viewEventList(
@@ -50,13 +67,67 @@ public class EventListController {
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
 			, @RequestParam(value="page", required=false) Integer page
+			, @RequestParam(value="pageSize", defaultValue = "10" ) Integer pageSize
 			, Model model
 			, HttpSession session) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		if(uIdStr != null) {
+			logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자의 {}에 불법주차 리스트 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+		}
+		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
 		
 		List<Map<String, Object>> eventList = new ArrayList<Map<String,Object>>();
+		
+		int totalRecordCount = 0;
+
+		// ====== 유효성 검증 [S] ====== //
+		// startDate 검증 (날짜 형식 및 SQL Injection 방어)
+		if (startDate != null && !startDate.isEmpty()) {
+			if (!isValidDate(startDate) || containsDangerousPattern(startDate)) {
+				logger.warn("유효하지 않은 startDate 요청: {}", startDate);
+				model.addAttribute("errorMessage", "유효하지 않은 시작 날짜 형식입니다.");
+				return "error";
+			}
+		}
+
+		// endDate 검증 (날짜 형식 및 SQL Injection 방어)
+		if (endDate != null && !endDate.isEmpty()) {
+			if (!isValidDate(endDate) || containsDangerousPattern(endDate)) {
+				logger.warn("유효하지 않은 endDate 요청: {}", endDate);
+				model.addAttribute("errorMessage", "유효하지 않은 종료 날짜 형식입니다.");
+				return "error";
+			}
+		}
+
+		// searchKeyword 검증 (XSS, SQL Injection 방어)
+		if (searchKeyword != null && !searchKeyword.isEmpty()) {
+			if (searchKeyword.length() > 100 || containsDangerousPattern(searchKeyword)) {
+				logger.warn("유효하지 않은 searchKeyword 요청: {}", searchKeyword);
+				model.addAttribute("errorMessage", "유효하지 않은 검색어입니다.");
+				return "error";
+			}
+		}
+
+		// page 검증 (정수 범위 검증)
+		if (page != null) {
+			if (page < 0 || page > 100000) {
+				logger.warn("유효하지 않은 page 요청: {}", page);
+				model.addAttribute("errorMessage", "유효하지 않은 페이지 번호입니다.");
+				return "error";
+			}
+		}
+
+		// pageSize 검증 (정수 범위 검증)
+		if (pageSize != null) {
+			if (pageSize < 1 || pageSize > 100) {
+				logger.warn("유효하지 않은 pageSize 요청: {}", pageSize);
+				model.addAttribute("errorMessage", "유효하지 않은 페이지 크기입니다.");
+				return "error";
+			}
+		}
+		// ====== 유효성 검증 [E] ====== //
 		
 		// 페이지 null 방지
 		if (page == null || page < 1) page = 1;
@@ -100,7 +171,7 @@ public class EventListController {
 			paginationInfo.setPageSize(10); // 페이지 블록 수
 			
 			int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
-			int totalRecordCount = eventListService.getTotalRecordCount(startDate,endDate,searchKeyword);
+			totalRecordCount = eventListService.getTotalRecordCount(startDate,endDate,searchKeyword);
 			
 			paginationInfo.setTotalRecordCount(totalRecordCount);
 			
@@ -143,6 +214,9 @@ public class EventListController {
 				convertEndDate = DateTypeInputTagFormat.format(end);
 			}
 			
+			// 로그 스토리지 사용 가능 여부 조회
+			useTblLog = logDiskManager.hasEnoughLogSpace();
+			
 		}catch (ParseException e) {
 			logger.error("데이터 타입 변환 중 오류 발생 : ",e);
 		}
@@ -153,17 +227,35 @@ public class EventListController {
 		model.addAttribute("searchKeyword", searchKeyword);
 		model.addAttribute("startDate",convertStartDate);
 		model.addAttribute("endDate", convertEndDate);
+		model.addAttribute("useTblLog", useTblLog);
+		model.addAttribute("pageSize", pageSize);
+		model.addAttribute("totalRecordCount", totalRecordCount);
 		
 		return "eventList/eventList";
 	}
 	
+	/**
+	 * 불법주라 리스트 상세 정보를 가져오는 함수
+	 * @param dvId
+	 * @param evId
+	 * @param startDate
+	 * @param endDate
+	 * @param searchKeyword
+	 * @param dvAddr
+	 * @param model
+	 * @param res
+	 * @param session
+	 * @return 오류라면 "error", 정상이라면 불법주차 리스트 상세 화면 URL
+	 */
 	// 불법주차 리스트 상세
 	@GetMapping("/eventListDetail")
 	private String eventListDetail(
-			@RequestParam(value="evId") Integer evId
+			@RequestParam(value="dvId", required=false) Integer dvId
+			, @RequestParam(value="evId") Integer evId
 			, @RequestParam(value="startDate", required=false) String startDate
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="searchKeyword",required=false) String searchKeyword
+			, @RequestParam(value="dvAddr", required = false) String dvAddr
 			, Model model
 			, HttpServletResponse res
 			, HttpSession session) {
@@ -172,16 +264,90 @@ public class EventListController {
 		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
 		
 		try {
-			Map<String, Object> eventListDetail = new HashMap<String, Object>();
 			
-			eventListDetail = eventListService.getEventListDetail(evId);
+			// ====== 유효성 검증 [S] ====== //
+			// evId 유효성 검증 (Injection 방어)
+			if (evId == null || evId <= 0) {
+				logger.warn("유효하지 않은 evId 요청: {}", evId);
+				model.addAttribute("errorMessage", "유효하지 않은 이벤트 ID입니다.");
+				return "error";
+			}
 
-			// mdoel add
-			model.addAttribute("eventListDetail", eventListDetail);
-			// 상세 화면에서 리스트 화면으로 돌아왔을 때에도 검색 조건 유지
-			model.addAttribute("searchKeyword", searchKeyword);
-			model.addAttribute("startDate", startDate);
-			model.addAttribute("endDate", endDate);
+			// evId 범위 검증 (정수 오버플로우 방지)
+			if (evId > Integer.MAX_VALUE / 2) {
+				logger.warn("범위를 벗어난 evId 요청: {}", evId);
+				model.addAttribute("errorMessage", "유효하지 않은 이벤트 ID입니다.");
+				return "error";
+			}
+
+			// startDate 검증 (날짜 형식 및 SQL Injection 방어)
+			if (startDate != null && !startDate.isEmpty()) {
+				if (!isValidDate(startDate) || containsDangerousPattern(startDate)) {
+					logger.warn("유효하지 않은 startDate 요청: {}", startDate);
+					model.addAttribute("errorMessage", "유효하지 않은 날짜 형식입니다.");
+					return "error";
+				}
+			}
+
+			// endDate 검증 (날짜 형식 및 SQL Injection 방어)
+			if (endDate != null && !endDate.isEmpty()) {
+				if (!isValidDate(endDate) || containsDangerousPattern(endDate)) {
+					logger.warn("유효하지 않은 endDate 요청: {}", endDate);
+					model.addAttribute("errorMessage", "유효하지 않은 날짜 형식입니다.");
+					return "error";
+				}
+			}
+
+			// searchKeyword 검증 (XSS, SQL Injection 방어)
+			if (searchKeyword != null && !searchKeyword.isEmpty()) {
+				if (searchKeyword.length() > 100 || containsDangerousPattern(searchKeyword)) {
+					logger.warn("유효하지 않은 searchKeyword 요청: {}", searchKeyword);
+					model.addAttribute("errorMessage", "유효하지 않은 검색어입니다.");
+					return "error";
+				}
+			}
+
+			// dvAddr 검증 (XSS, SQL Injection, Path Traversal 방어)
+			if (dvAddr != null && !dvAddr.isEmpty()) {
+				if (dvAddr.length() > 301 || containsDangerousPattern(dvAddr)) {
+					logger.warn("유효하지 않은 dvAddr 요청: {}", dvAddr);
+					model.addAttribute("errorMessage", "유효하지 않은 주소입니다.");
+					return "error";
+				}
+			}
+			
+			// ====== 유효성 검증 [E] ====== //
+			
+			// ====== 변수 선언 [S] ====== //
+			// 불법주차 리스트 상세 정보
+			Map<String, Object> eventListDetail = new HashMap<String, Object>();
+			// ====== 변수 선언 [S] ====== //
+			
+			// ====== 서비스 [S] ====== //
+			// 불법주차 리스트 상세 정보 가져오기
+			eventListDetail = eventListService.getEventListDetail(evId);
+			if(eventListDetail != null) {
+				String evCd = String.valueOf(eventListDetail.get("ev_cd"));
+				String ev_cd_name = "";
+			    switch (evCd) {
+		        case "1": ev_cd_name = "미등록차량"; break;
+		        case "4": ev_cd_name = "위험상황"; break;
+		        case "5": ev_cd_name = "물건적재"; break;
+		        case "6": ev_cd_name = "이중주차"; break;
+		        default: 
+		            logger.warn("ev_cd 값이 null 또는 정의되지 않음: {}", evCd);
+			    }
+			    
+				// 접근 로그
+			    String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+			    if(uIdStr != null) {
+				logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자의 {}에 불법주차 리스트 상세 화면 접속 - 위치: " + dvAddr 
+						+ ", 날짜: " + eventListDetail.get("ev_date") 
+						+ ", 차량번호: " + eventListDetail.get("ev_car_num") 
+						+ ", 유형: " 	+ ev_cd_name
+						, session.getAttribute("uId"),LocalDateTime.now());
+			    }
+			}
 			
 			// 이미지파일, 영상 파일 module에서 수신
 			boolean moduleCheck = false;
@@ -191,6 +357,24 @@ public class EventListController {
 				model.addAttribute("errorMsg", "상세 조회 중 오류가 발생했습니다.");
 				return "redirect:/eventList/viewEventList.do";
 			}
+			
+			// 이미지, 영상 파일 복호화
+		    boolean decCheck = false;
+		    decCheck = eventListService.requestFileDec(res, evId,eventListDetail);
+		    if(!decCheck) {
+		    	logger.error("이미지, 영상 파일 복호화 중 오류 발생 / response : " + res.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
+		    	model.addAttribute("errorMsg", "상세 조회 중 이미지, 영상 파일 복호화 오류가 발생했습니다.");
+		    	return "redirect:/eventList/viewEventList.do";
+		    }
+			
+			// ====== 서비스 [E] ====== //
+			
+			// ====== mdoel add [S] ====== //
+			model.addAttribute("eventListDetail", eventListDetail);
+			model.addAttribute("searchKeyword", searchKeyword);
+			model.addAttribute("startDate", startDate);
+			model.addAttribute("endDate", endDate);
+			// ====== mdoel add [E] ====== //
 			
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달로 인한 오류 발생 : ",e);
@@ -215,10 +399,30 @@ public class EventListController {
 		
 		try {
 			
+			// ====== 유효성 검증 [S] ====== //
 	    	if(filePath == null || filePath == "") {
 	    		throw new IllegalArgumentException("filePath는 null이거나 공백이어서는 안 됩니다.");
 	    	}
+	    	// filePath 길이 검증
+			if (filePath.length() > 500) {
+				logger.warn("유효하지 않은 filePath 길이: {}", filePath.length());
+				throw new IllegalArgumentException("파일 경로가 너무 깁니다.");
+			}
+
+			// Path Traversal 방어
+			if (isPathTraversal(filePath)) {
+				logger.warn("Path Traversal 시도 감지: {}", filePath);
+				throw new IllegalArgumentException("유효하지 않은 파일 경로입니다.");
+			}
+
+			// 이미지 확장자 검증
+			if (!isValidImageExtension(filePath)) {
+				logger.warn("유효하지 않은 이미지 확장자: {}", filePath);
+				throw new IllegalArgumentException("유효하지 않은 파일 형식입니다.");
+			}
+			// ====== 유효성 검증 [E] ====== //
 			
+			// ====== 서비스 [S] ====== //
 			// OS별 fullFilePath 반환
 			fullFilePath = eventListService.mkFullFilePath(filePath);
 	    	
@@ -242,6 +446,7 @@ public class EventListController {
 	        
 			// 외부 저장소에 저장된 image 파일의 외부 경로로 웹 화면에 이미지 송출
 			eventListService.viewImageOfFilePath(file, res);
+			// ====== 서비스ㅜ [E] ====== //
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달 : ",e);
 		}
@@ -263,10 +468,32 @@ public class EventListController {
 
 	    try {
 	    	
-	    	if(filePath == null || filePath == "") {
+			// ====== 유효성 검증 [S] ====== //
+	    	if(filePath == null || filePath.isEmpty()) {
+				logger.warn("filePath 값 없음: {}", filePath);
 	    		throw new IllegalArgumentException("filePath는 null이거나 공백이어서는 안 됩니다.");
 	    	}
+
+			// filePath 길이 검증
+			if (filePath.length() > 500) {
+				logger.warn("유효하지 않은 filePath 길이: {}", filePath.length());
+				throw new IllegalArgumentException("파일 경로가 너무 깁니다.");
+			}
+
+			// Path Traversal 방어
+			if (isPathTraversal(filePath)) {
+				logger.warn("Path Traversal 시도 감지: {}", filePath);
+				throw new IllegalArgumentException("유효하지 않은 파일 경로입니다.");
+			}
+
+			// 비디오 확장자 검증
+			if (!isValidVideoExtension(filePath)) {
+				logger.warn("유효하지 않은 비디오 확장자: {}", filePath);
+				throw new IllegalArgumentException("유효하지 않은 파일 형식입니다.");
+			}
+			// ====== 유효성 검증 [E] ====== //
 	    	
+			// ====== 서비스 [S] ====== //
 			// OS별 fullFilePath 반환
 			fullFilePath = eventListService.mkFullFilePath(filePath);
 	    	
@@ -290,7 +517,8 @@ public class EventListController {
 	        
 	    	// 외부 저장소에 저장된 video 파일의 외부 경로로 웹 화면에 비디오 파일 스트리밍
 	    	eventListService.viewVideoOfFilePath(file, req, res);
-	        
+	    	// ====== 서비스 [E] ====== //
+	    	
 	    } catch (IllegalArgumentException e) {
 	        logger.error("잘못된 인자 전달 오류 발생: ",e);
 	    } catch (IndexOutOfBoundsException e2) {
@@ -299,4 +527,135 @@ public class EventListController {
 	}
 
 
+	/**
+	 * 날짜 형식 검증 (yyyy-MM-dd)
+	 * @param dateStr 날짜 문자열
+	 * @return 유효한 날짜 형식이면 true
+	 */
+	private boolean isValidDate(String dateStr) {
+		if (dateStr == null || dateStr.isEmpty()) {
+			return false;
+		}
+
+		// 날짜 형식 정규식 검증 (yyyy-MM-dd)
+		if (!dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+			return false;
+		}
+
+		// 실제 날짜 유효성 검증
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		sdf.setLenient(false);
+		try {
+			sdf.parse(dateStr);
+			return true;
+		} catch (ParseException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * 위험한 패턴 검사 (SQL Injection, XSS, Path Traversal 방어)
+	 * @param input 검사할 문자열
+	 * @return 위험한 패턴이 포함되어 있으면 true
+	 */
+	private boolean containsDangerousPattern(String input) {
+		if (input == null || input.isEmpty()) {
+			return false;
+		}
+
+		// 위험한 패턴 목록
+		String[] dangerousPatterns = {
+			"<script", "</script>", "javascript:", "onerror=", "onload=",  // XSS
+			"'", "\"", "--", ";", "/*", "*/", "xp_", "sp_",  // SQL Injection
+			"../", "..\\", "%2e%2e", "~",  // Path Traversal
+			"<", ">", "&lt;", "&gt;",  // HTML 태그
+			"union", "select", "insert", "update", "delete", "drop", "exec", "execute"  // SQL 키워드
+		};
+
+		String lowerInput = input.toLowerCase();
+		for (String pattern : dangerousPatterns) {
+			if (lowerInput.contains(pattern.toLowerCase())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Path Traversal 공격 감지
+	 * @param filePath 파일 경로
+	 * @return Path Traversal 패턴이 포함되어 있으면 true
+	 */
+	private boolean isPathTraversal(String filePath) {
+		if (filePath == null || filePath.isEmpty()) {
+			return false;
+		}
+
+		// Path Traversal 패턴 목록
+		String[] pathTraversalPatterns = {
+			"../", "..\\",           // 기본 패턴
+			"%2e%2e/", "%2e%2e\\",   // URL 인코딩
+			"..%2f", "..%5c",        // URL 인코딩 (혼합)
+			"%2e%2e%2f", "%2e%2e%5c" // 완전 URL 인코딩
+		};
+
+		String lowerPath = filePath.toLowerCase();
+		for (String pattern : pathTraversalPatterns) {
+			if (lowerPath.contains(pattern.toLowerCase())) {
+				return true;
+			}
+		}
+
+		// null 바이트 검사
+		if (filePath.contains("\0") || filePath.contains("%00")) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * 이미지 파일 확장자 검증
+	 * @param filePath 파일 경로
+	 * @return 유효한 이미지 확장자이면 true
+	 */
+	private boolean isValidImageExtension(String filePath) {
+		if (filePath == null || filePath.isEmpty()) {
+			return false;
+		}
+
+		String lowerPath = filePath.toLowerCase();
+		String[] validExtensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp"};
+
+		for (String ext : validExtensions) {
+			if (lowerPath.endsWith(ext)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * 비디오 파일 확장자 검증
+	 * @param filePath 파일 경로
+	 * @return 유효한 비디오 확장자이면 true
+	 */
+	private boolean isValidVideoExtension(String filePath) {
+		if (filePath == null || filePath.isEmpty()) {
+			return false;
+		}
+
+		String lowerPath = filePath.toLowerCase();
+		String[] validExtensions = {".mp4", ".webm", ".avi", ".mov", ".wmv", ".flv"};
+
+		for (String ext : validExtensions) {
+			if (lowerPath.endsWith(ext)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

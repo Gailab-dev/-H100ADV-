@@ -10,6 +10,13 @@
 <meta charset="UTF-8">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/stats.css">
 <title>home</title>
+<%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
+<script>
+   	window.SESSION_TIMEOUT_SECONDS = <%= session.getMaxInactiveInterval() %>;
+   	const CONTEXT_PATH = "${pageContext.request.contextPath}";
+</script>
+<script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
+<%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
 </head>
 <style>
 
@@ -29,6 +36,18 @@
   .c3-chart {
     fill: none !important;
   }
+  
+    /* 기본: 보이는 시리즈의 이름은 진한 검은색 */
+	.c3-legend-item text {
+	  fill: #000000;
+	  opacity: 1;
+	}
+
+	/* 숨겨진 시리즈: 그래프도 안 보이고, 이름도 회색/옅게 */
+	.c3-legend-item-hidden text {
+	  fill: #aaaaaa;
+	  opacity: 0.5;
+	}
 </style>
 
 <!-- 
@@ -45,20 +64,20 @@
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
-	<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
-	<script>
-	  <c:if test="${not empty errorMsg}">
-	    alert('<c:out value="${errorMsg}" />');
-	  </c:if>
-	</script>
-	<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
-<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
+<%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
+<script>
+  <c:if test="${not empty errorMsg}">
+    alert('<c:out value="${errorMsg}" />');
+  </c:if>
+</script>
+<%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
+<%--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) --%>
 <script>
   window.addEventListener('pageshow', function (e) {
     if (e.persisted) location.reload(); // BFCache에서 복원되면 강제 새로고침
   });
 </script>
-<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
+<%--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) --%>
 <script>
 	$(document).ready(function () {
 		
@@ -158,6 +177,10 @@
 		    		label: {
 		    			text: '건수',
 		    			position: 'outer-middle'
+		    		},
+		    		min: 0,
+		    		padding : {
+		    			bottom: 0
 		    		}
 		    	}
 		    },
@@ -189,6 +212,11 @@
 	  </div>
 	
 	  <div class="right-group">
+  	  	<c:if test="${useTblLog == false}">
+			<div class="alert alert-warning">
+		    	현재 로그 데이터 저장 공간이 매우 부족합니다. 관리자에게 문의해주세요.
+		    </div>
+		</c:if>
 	    <div class="user">
 	      <img src="${pageContext.request.contextPath}/resources/images/user.png"
 	           alt="유저" class="user-image">
@@ -205,7 +233,9 @@
                 <li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
                 <li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
                 <li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+                <!-- 
                 <li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
+            	 -->
             </ul>
         </aside>    
     	<div class="content">
@@ -224,7 +254,7 @@
 							<c:forEach var="row" items="${statsByMonth}"  varStatus="month">
 								<c:if test="${month.index % 6 == 0}">
 									<td>
-										${fn:substring(row.st_date,5,7)}월
+										<c:out value="${fn:substring(row.st_date,5,7)}" escapeXml ="true"/>월
 									</td>
 								</c:if>
 							</c:forEach>
@@ -236,7 +266,7 @@
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '1'}" >
 									<td>	
-										${row.st_cnt}
+										<c:out value="${row.st_cnt}" escapeXml ="true"/>
 									</td>
 								</c:if>
 							</c:forEach>
@@ -250,7 +280,7 @@
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '2'}">
 									<td>
-										${row.st_cnt}
+										<c:out value="${row.st_cnt}" escapeXml ="true"/>
 									</td>
 								</c:if>	
 							</c:forEach>
@@ -265,7 +295,7 @@
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '3'}">
 									<td>
-										${row.st_cnt}
+										<c:out value="${row.st_cnt}" escapeXml ="true"/>
 									</td>
 								</c:if>	
 							</c:forEach>
@@ -278,7 +308,7 @@
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '4'}">
 									<td>
-										${row.st_cnt}
+										<c:out value="${row.st_cnt}" escapeXml ="true"/>
 									</td>
 								</c:if>	
 							</c:forEach>
@@ -290,7 +320,7 @@
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '5'}">
 									<td>
-										${row.st_cnt}
+										<c:out value="${row.st_cnt}" escapeXml ="true"/>
 									</td>
 								</c:if>	
 							</c:forEach>
@@ -302,7 +332,7 @@
 							<c:forEach var="row" items="${statsByMonth}">
 								<c:if test="${row.st_cd == '6'}">
 									<td>
-										${row.st_cnt}
+										<c:out value="${row.st_cnt}" escapeXml ="true"/>
 									</td>
 								</c:if>	
 							</c:forEach>

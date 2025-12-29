@@ -1,0 +1,342 @@
+==============================================================
+* 해당 문서는 아래와 같은 조건을 기준으로 명령어를 작성하였습니다.
+
+- 개발자 계정 ID : shinlip
+
+==============================================================
+
+0. SSL 설치 (현재 SSL 자동 설치되므로 이 부분 skip. 1번부터 작업하면 됨.)
+	1) sudo apt update && sudo apt install -y openssl
+	2) sudo mkdir -p /etc/ssl/example.com
+	3) sudo openssl req -x509 -nodes -newkey rsa:2048 \
+  -keyout /etc/ssl/example.com/privkey.pem \
+  -out    /etc/ssl/example.com/fullchain.pem \
+  -days 365 \
+  -subj "/CN=example.com"
+  4) 발급 후 파일 경로(자동 갱신 포함):
+
+인증서: /home/dsic/h100_module_c/ssl/privkey.pem
+프라이빗키: /home/dsic/h100_module_c/ssl/fullchain.pem
+	6) cd /home/dsic/h100_module_c
+	7) mkdir ssl
+	8) sudo cp /etc/ssl/example.com/fullchain.pem /home/dsic/h100_module_c/ssl/
+	9) sudo cp /etc/ssl/example.com/privkey.pem /home/dsic/h100_module_c/ssl/
+	10) cd ssl
+	11) sudo chown -R dsic:dsic /home/dsic/h100_module_c/ssl
+
+
+1. 소스 업로드
+	1) 개발자 계정으로 서버 접속
+
+	2) root 계정으로 변경
+	$ sudo -i
+
+	3) / 디렉토리로 이동
+	$ cd /
+
+	4) app 디렉토리 생성
+	$ mkdir app
+
+	5) app 디렉토리의 소유자를 개발자 계정으로 변경
+	$ chown -R shinlip:shinlip app
+
+	6) 개발자 계정으로 변경
+	$ exit
+
+	7) /app 디렉토리로 이동
+	$ cd /app
+
+	8) /app 디렉토리 안에 h100_module_d 업로드
+
+	9) start, stop 쉘스크립트에 권한 부여
+	$ chmod +x start.sh
+	$ chmod +x stop.sh
+
+2. go 설치
+	1) 서버 아키텍처 확인
+	$ uname -m
+
+	| 출력값		| 의미
+	--------------------------------------------------------
+	| x86_64	| 64비트 x86 (AMD64/Intel64)
+	| i686		| 32비트 x86
+	| aarch64	| 64비트 ARM (예: Raspberry Pi 4, M1/M2 Mac)
+	| armv7l	| 32비트 ARM
+	| ppc64le	| PowerPC 64-bit Little Endian
+	| riscv64	| RISC-V 64비트 아키텍처
+
+	2) 출력값에 맞는 go 버전 다운로드
+	$ wget https://go.dev/dl/go1.24.3.linux-arm64.tar.gz
+
+	3) go 설치 파일 다운로드 확인
+	$ ls -al go1.24.3.linux-arm64.tar.gz
+
+	4) go 설치 파일 압축 풀기
+	$ sudo tar -C /usr/local -xzf go1.24.3.linux-arm64.tar.gz
+
+	5) go PATH 설정
+	$ echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
+
+	6) PATH 변경사항 적용
+	$ source /etc/profile
+
+	8) go 설치 확인(버전 확인)
+	$ go version
+
+
+3. ffmpeg 설치 
+	1) apt 업데이트
+	$ sudo apt update
+	
+	2) ffmpeg 다운로드
+	$ sudo apt install ffmpeg
+	
+	3) 설치 버전 확인
+	$ ffmpeg -version
+
+4. h100_module_d 모듈 실행
+	1) 모듈 디렉토리로 이동
+	$ cd /app/h100_module_d
+
+	2) 사용하지 않는 의존성 제거
+	$ go mod tidy
+
+	3) 모듈 실행
+	$ ./start.sh
+
+	4) 모듈 종료
+	$ ./stop.sh
+
+
+==============================================================
+mariadb 설치
+
+==============================================================
+
+1.    설치 전 패키지 업데이트
+
+Sudo apt update
+
+Sudo apt upgrade
+
+ 
+
+2.    서버, 클라이언트 설치
+
+sudo apt install mariadb-server  # MariaDB 서버 설치
+
+sudo apt install mariadb-client # MariaDB 클라이언트 설치
+
+ 
+
+3.    클라이언트 설치 후 설정
+
+sudo mysql_secure_installation  #설정
+
+ 
+
+4.    Root 비밀번호를 입력해 준다.
+
+root 접속을 위한 비밀번호를 입력하세요.
+
+Enter current password for root (enter for none):
+
+ 
+
+5.    나머지 설정은 취향이지만 처음이라면 N을 추천한다.
+
+6.   설정이 끝나면 아래와 같은 명령어가 나온다.
+
+All done!  If you've completed all of the above steps, your MariaDB
+
+7. 기본적인 MariaDB 명령어
+
+systemctl enable mariadb # MariaDB 활성화
+
+모두 크리티컬 하여 비밀번호를 입력해 주어야 한다.
+
+ 
+
+systemctl start mariadb # MariaDB 시작
+
+systemctl status mariadb # MariaDB 상태 확인
+
+(정상 동작 중이다.)
+
+sudo systemctl stop mysql # MariaDB 중지
+
+sudo systemctl restart mysql # MariaDB 재시작
+
+sudo service mariadb start #systemctl를 못 쓰는 상황이라면 service 명령어를 사용
+
+
+mariaDB를 외부에서 접근하게 해 주려면 설정이 필요하다
+/etc/mysql/mariadb.conf.d/50-server.cnf 파일에서 bind-address를 localhost에서 0.0.0.0인 모든 host로 바꾸어주자
+
+grant all privileges on *.* to 'root'@'192.168.%.%' identified by 'root';
+grant all privileges on *.* to 'root'@'localhost' identified by 'root';
+
+FLUSH PRIVILEGES;
+
+
+
+==============================================================
+java 설치
+
+==============================================================
+
+
+
+
+
+(1) 패키지 목록 갱신
+sudo apt update
+
+(2) 원하는 버전 설치
+
+Java 17 (LTS, 권장)
+
+sudo apt install -y openjdk-17-jdk
+
+
+Java 11 (구버전 LTS 필요 시)
+
+sudo apt install -y openjdk-11-jdk
+
+
+최신 버전(예: 21)도 가능
+
+sudo apt install -y openjdk-21-jdk
+
+(3) 설치 확인
+java -version
+
+
+출력 예시:
+
+openjdk version "17.0.13" 2025-01-14
+OpenJDK Runtime Environment (build 17.0.13+11-Ubuntu-122.04)
+OpenJDK 64-Bit Server VM (build 17.0.13+11, mixed mode, sharing)
+
+==============================================================
+톰캣 설치
+
+==============================================================
+
+
+✅ 1. 패키지로 Tomcat 설치 (간단, 다만 버전이 약간 구버전일 수 있음)
+sudo apt update
+sudo apt install -y tomcat9 tomcat9-admin
+
+
+서비스 자동 등록됨
+
+기본 웹 루트: /var/lib/tomcat9/webapps/
+
+설정 파일: /etc/tomcat9/
+
+서비스 관리:
+
+sudo systemctl status tomcat9
+sudo systemctl start tomcat9
+sudo systemctl enable tomcat9
+
+JDK 경로 확인
+
+readlink -f $(which java)
+# 예: /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+
+
+→ JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+Tomcat 환경파일에 설정
+
+sudo nano /etc/default/tomcat9
+
+
+다음 줄을 추가(또는 주석 해제/수정):
+
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+
+
+재시작
+
+sudo systemctl restart tomcat9
+sudo systemctl status tomcat9
+
+
+→ 브라우저에서 확인:
+http://<서버IP>:8080
+
+✅ 2. 최신 Tomcat 다운로드 & 수동 설치 (실무에서 자주 사용)
+
+Java 설치 확인 (JDK 필요)
+(예: OpenJDK 17)
+
+java -version
+
+
+Tomcat 다운로드
+공식 다운로드 페이지
+에서 원하는 버전 확인 후, wget으로 다운로드:
+
+cd /opt
+sudo wget https://downloads.apache.org/tomcat/tomcat-10/v10.1.31/bin/apache-tomcat-10.1.31.tar.gz
+
+
+압축 해제 & 디렉토리 정리
+
+sudo tar xzvf apache-tomcat-10.1.31.tar.gz
+sudo mv apache-tomcat-10.1.31 tomcat10
+
+
+실행 권한 부여
+
+cd tomcat10/bin
+sudo chmod +x *.sh
+
+
+Tomcat 실행/중지
+
+./startup.sh   # 실행
+./shutdown.sh  # 중지
+
+
+서비스 등록 (선택)
+/etc/systemd/system/tomcat.service 파일 생성:
+
+[Unit]
+Description=Apache Tomcat 10
+After=network.target
+
+[Service]
+Type=forking
+
+User=ubuntu
+Group=ubuntu
+
+Environment=JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+Environment=CATALINA_HOME=/opt/tomcat10
+
+ExecStart=/opt/tomcat10/bin/startup.sh
+ExecStop=/opt/tomcat10/bin/shutdown.sh
+
+[Install]
+WantedBy=multi-user.target
+
+
+서비스 등록 후:
+
+sudo systemctl daemon-reexec
+sudo systemctl enable tomcat
+sudo systemctl start tomcat
+sudo systemctl status tomcat
+
+✅ 3. 확인
+
+브라우저에서:
+
+http://<서버IP>:8080
+
+
+→ Tomcat 시작 페이지가 보이면 성공 🎉

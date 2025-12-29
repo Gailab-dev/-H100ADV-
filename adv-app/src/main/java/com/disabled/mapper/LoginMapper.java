@@ -19,4 +19,10 @@ public interface LoginMapper {
 	String getLoginIdByNameAndPhone(Map<String, Object> body) throws IllegalStateException;
 	int getCountPwd(Map<String, Object> body) throws IllegalStateException;
 	Integer getLoginIdWithNameAndIdAndPhone(Map<String, Object> body);
+	
+	Map<String, Object> getUserByULoginId(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	void increaseFailCount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	Integer lockAccount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	Integer resetFailCount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	int updateLoginFailCountZero(@Param("u_login_id") String uLoginId) throws IllegalStateException;
 }

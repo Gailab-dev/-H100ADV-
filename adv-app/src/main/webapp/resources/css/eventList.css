@@ -138,7 +138,8 @@ button {
     margin-bottom: 20px;
 }
 .filter-input-group input[type="date"],
-.filter-input-group input[type="text"] {
+.filter-input-group input[type="text"], 
+.filter-input-group select {
     height: 36px;
     padding: 0 12px;
     border: 1px solid #ccc;
@@ -172,6 +173,8 @@ button {
     border-collapse: collapse;
     background-color: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    table-layout: fixed;
+    
 }
 .event-table th, .event-table td {
     border-bottom: 1px solid #eee;
@@ -191,6 +194,16 @@ button {
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 13px;
+}
+
+/* 셀 안에서 ... 처리 + tooltip 원본 유지용 */
+.event-table td .cell-ellipsis {
+  display: inline-block;
+  max-width: 100%;          /* td 너비 안에서만 잘림 */
+  overflow: hidden;    /* 넘치는 부분 숨김 */
+  white-space: nowrap; /* 줄바꿈 안 함 */
+  text-overflow: ellipsis;  /* ... 으로 표시 */
+  vertical-align: middle;
 }
 
 /* 페이지네이션 영역 */

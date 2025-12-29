@@ -42,6 +42,12 @@ public class DeviceListController {
 	@Autowired
 	ApiService apiService;
 	
+	@Autowired
+	LoginMapper loginMapper;
+	
+	@Autowired
+	LogDiskManager logDiskManager;
+	
 	// 디바이스 리스트 화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
@@ -54,11 +60,46 @@ public class DeviceListController {
 	private String viewDeviceList(
 			@RequestParam(value="searchKeyword", required=false) String searchKeyword
 			, @RequestParam(value="page", required=false) Integer page
+			, @RequestParam(value="pageSize", defaultValue="10") Integer pageSize
 			, Model model
 			, HttpSession session  ) {
 		
 		// 접근 로그
-		logger.info("{} 사용자의 {}에 deviceList 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		if(uIdStr != null) {
+			logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자의 {}에 디바이스 리스트 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+		}
+		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
+
+		// ====== 유효성 검증 [S] ====== //
+				// searchKeyword 검증 (XSS, SQL Injection 방어)
+				if (searchKeyword != null && !searchKeyword.isEmpty()) {
+					if (searchKeyword.length() > 100 || containsDangerousPattern(searchKeyword)) {
+						logger.warn("유효하지 않은 searchKeyword 요청: {}", searchKeyword);
+						model.addAttribute("errorMessage", "유효하지 않은 검색어입니다.");
+						return "error";
+					}
+				}
+
+				// page 검증 (정수 범위 검증)
+				if (page != null) {
+					if (page < 0 || page > 100000) {
+						logger.warn("유효하지 않은 page 요청: {}", page);
+						model.addAttribute("errorMessage", "유효하지 않은 페이지 번호입니다.");
+						return "error";
+					}
+				}
+
+				// pageSize 검증 (정수 범위 검증)
+				if (pageSize != null) {
+					if (pageSize < 1 || pageSize > 100) {
+						logger.warn("유효하지 않은 pageSize 요청: {}", pageSize);
+						model.addAttribute("errorMessage", "유효하지 않은 페이지 크기입니다.");
+						return "error";
+					}
+				}
+				// ====== 유효성 검증 [E] ====== //
+		
 		
 		// 페이지 null 방지
 		if (page == null || page < 1) page = 1;
@@ -68,7 +109,7 @@ public class DeviceListController {
 		
 		// 페이징 설정
 		paginationInfo.setCurrentPageNo(page); // 현제 페이지 번호
-		paginationInfo.setRecordCountPerPage(15);  // 한 페이지에 출력할 게시글 수
+		paginationInfo.setRecordCountPerPage(pageSize);  // 한 페이지에 출력할 게시글 수
 		paginationInfo.setPageSize(10); // 페이지 블록 수
 		
 		int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
@@ -84,13 +125,16 @@ public class DeviceListController {
 
 	    // offset 재계산
 	    int firstIndex = (currentPage - 1) * recordCountPerPage;
-		
+
 		// DB 검색을 위한 파라미터 설정
 		Map<String, Object> paramMap = new HashMap<String, Object>();
 		paramMap.put("firstIndex", firstIndex);
 		paramMap.put("recordCountPerPage", recordCountPerPage);
 		paramMap.put("page", page);
 		paramMap.put("searchKeyword", searchKeyword == null ? "" : searchKeyword );
+		
+		// 로그 스토리지 사용 가능 여부 조회
+		useTblLog = logDiskManager.hasEnoughLogSpace();
 		
 		// 디바이스 리스트 가져오기
 		List<Map<String, Object>> deviceList = deviceListService.getDeviceList(paramMap);
@@ -111,6 +155,8 @@ public class DeviceListController {
 		model.addAttribute("deviceList", deviceList);
 		model.addAttribute("paginationInfo", paginationInfo);
 		model.addAttribute("searchKeyword", searchKeyword == null ? "" : searchKeyword);
+		model.addAttribute("useTblLog", useTblLog);
+		model.addAttribute("pageSize", pageSize);
 		// model.addAttribute("deviceId", firstDeviceId);
 		
 		return "/deviceList/deviceList";
@@ -284,7 +330,16 @@ public class DeviceListController {
 	
 	//실시간 영상 팝업창
 	@PostMapping("/viewRealTimeVideoPopup")
-	public String viewRealTimeVideoPopup(Integer dvId, Model model) {
+	public String viewRealTimeVideoPopup(@RequestParam("dvId") Integer dvId, Model model) {
+		
+		// ====== 유효성 검증 [S] ====== //
+		// dvId 유효성 검증 (Injection 방어)
+		if(dvId == null || dvId <= 0) {
+			logger.warn("유효하지 않은 dvId 요청: {}", dvId);
+			model.addAttribute("errorMessage", "유효하지 않은 디바이스 ID입니다.");
+			return "error";
+		}
+		// ====== 유효성 검증 [E] ====== //
 		
 		model.addAttribute("deviceId", dvId);
 		return "/popup/deviceList/realTimeVideoPopup";
@@ -297,10 +352,19 @@ public class DeviceListController {
 			, Model model
 			) {
 		
+		// ====== 유효성 검증 [S] ====== //
+		// dvId 유효성 검증 (Injection 방어)
+		if(dvId != null && dvId <= 0) {
+			logger.warn("유효하지 않은 dvId 요청: {}", dvId);
+			model.addAttribute("errorMessage", "유효하지 않은 디바이스 ID입니다.");
+			return "error";
+		}
+
 		if(dvId != null) {
 			Map<String,Object> dvInfo = deviceListService.getDeviceInfo(dvId);
 			model.addAttribute("dvInfo",dvInfo);
-		}	
+		}
+		// ====== 유효성 검증 [E] ====== //	
 		
 		model.addAttribute("dvId", dvId);
 		return "/popup/deviceList/deviceInfoPopup";
@@ -320,6 +384,7 @@ public class DeviceListController {
 			@RequestParam("dvName") String dvName
 			, @RequestParam("dvAddr") String dvAddr
 			, @RequestParam("dvIp") String dvIp
+			, @RequestParam("dvSerialNumber") String dvSerialNumber
 			) {
 		
 		// connetion 객체
@@ -333,8 +398,61 @@ public class DeviceListController {
 		
 		try {
 			
+			// ====== 유효성 검증 [S] ====== //
+			// dvName 검증 (XSS, SQL Injection 방어)
+			if (dvName == null || dvName.isEmpty()) {
+				logger.warn("디바이스명이 비어있습니다.");
+				res.put("ok", false);
+				res.put("msg", "디바이스명은 필수입니다.");
+				return res;
+			}
+			if (dvName.length() > 100 || containsDangerousPattern(dvName)) {
+				logger.warn("유효하지 않은 dvName 요청: {}", dvName);
+				res.put("ok", false);
+				res.put("msg", "유효하지 않은 디바이스명입니다.");
+				return res;
+			}
+
+			// dvAddr 검증 (XSS, SQL Injection 방어)
+			if (dvAddr == null || dvAddr.isEmpty()) {
+				logger.warn("디바이스 주소가 비어있습니다.");
+				res.put("ok", false);
+				res.put("msg", "디바이스 주소는 필수입니다.");
+				return res;
+			}
+			if (dvAddr.length() > 200 || containsDangerousPattern(dvAddr)) {
+				logger.warn("유효하지 않은 dvAddr 요청: {}", dvAddr);
+				res.put("ok", false);
+				res.put("msg", "유효하지 않은 디바이스 주소입니다.");
+				return res;
+			}
+
+			// dvIp 검증
+			if (dvIp == null || dvIp.isEmpty()) {
+				logger.warn("도메인 값이 비어있습니다.");
+				res.put("ok", false);
+				res.put("msg", "도메인은 필수입니다.");
+				return res;
+			}
+
+			// serial number 검증 (XSS, SQL Injection 방어)
+			if (dvSerialNumber == null || dvSerialNumber.isEmpty()) {
+				logger.warn("SerialNumber가 비어있습니다.");
+				res.put("ok", false);
+				res.put("msg", "SerialNumber는 필수입니다.");
+				return res;
+			}
+			if (dvSerialNumber.length() > 200 || containsDangerousPattern(dvSerialNumber)) {
+				logger.warn("유효하지 않은 dvSerialNumber 요청: {}", dvSerialNumber);
+				res.put("ok", false);
+				res.put("msg", "유효하지 않은 SerialNumber입니다.");
+				return res;
+			}
+			// ====== 유효성 검증 [E] ====== //
+			
 			// device 상태 확인
 			// 추후 고도화 필요
+			// conn = apiService.createPostConnection("https://" + dvIp, "", "application/json");
 			conn = apiService.createPostConnection(dvIp, "", "application/json");
 			if(conn == null || conn.getResponseCode() != 200) {
 				dvStatus = 0;
@@ -372,6 +490,7 @@ public class DeviceListController {
 			, @RequestParam("dvName") String dvName
 			, @RequestParam("dvAddr") String dvAddr
 			, @RequestParam("dvIp") String dvIp
+			, @RequestParam("dvSerialNumber") String dvSerialNumber
 			) {
 		
 		// connetion 객체
@@ -385,14 +504,77 @@ public class DeviceListController {
 		
 		try {
 			
+			// ====== 유효성 검증 [S] ====== //
+						// dvId 유효성 검증 (Injection 방어)
+						if(dvId == null || dvId <= 0) {
+							logger.warn("유효하지 않은 dvId 요청: {}", dvId);
+							res.put("ok", false);
+							res.put("msg", "유효하지 않은 디바이스 ID입니다.");
+							return res;
+						}
+
+						// dvName 검증 (XSS, SQL Injection 방어)
+						if (dvName == null || dvName.isEmpty()) {
+							logger.warn("디바이스명이 비어있습니다.");
+							res.put("ok", false);
+							res.put("msg", "디바이스명은 필수입니다.");
+							return res;
+						}
+						if (dvName.length() > 100 || containsDangerousPattern(dvName)) {
+							logger.warn("유효하지 않은 dvName 요청: {}", dvName);
+							res.put("ok", false);
+							res.put("msg", "유효하지 않은 디바이스명입니다.");
+							return res;
+						}
+
+						// dvAddr 검증 (XSS, SQL Injection 방어)
+						if (dvAddr == null || dvAddr.isEmpty()) {
+							logger.warn("디바이스 주소가 비어있습니다.");
+							res.put("ok", false);
+							res.put("msg", "디바이스 주소는 필수입니다.");
+							return res;
+						}
+						if (dvAddr.length() > 200 || containsDangerousPattern(dvAddr)) {
+							logger.warn("유효하지 않은 dvAddr 요청: {}", dvAddr);
+							res.put("ok", false);
+							res.put("msg", "유효하지 않은 디바이스 주소입니다.");
+							return res;
+						}
+
+						// dvIp 검증 (IP 형식 검증)
+						if (dvIp == null || dvIp.isEmpty()) {
+							logger.warn("디바이스 IP가 비어있습니다.");
+							res.put("ok", false);
+							res.put("msg", "디바이스 IP는 필수입니다.");
+							return res;
+						}
+
+						// serial number 검증 (XSS, SQL Injection 방어)
+						if (dvSerialNumber == null || dvSerialNumber.isEmpty()) {
+							logger.warn("SerialNumber가 비어있습니다.");
+							res.put("ok", false);
+							res.put("msg", "SerialNumber는 필수입니다.");
+							return res;
+						}
+						if (dvSerialNumber.length() > 200 || containsDangerousPattern(dvSerialNumber)) {
+							logger.warn("유효하지 않은 dvSerialNumber 요청: {}", dvSerialNumber);
+							res.put("ok", false);
+							res.put("msg", "유효하지 않은 SerialNumber입니다.");
+							return res;
+						}
+						// ====== 유효성 검증 [E] ====== //
+			
+			
 			// device 상태 확인
+			// 추후 고도화 필요
+			// conn = apiService.createPostConnection("https://" + dvIp, "", "application/json");
 			conn = apiService.createPostConnection(dvIp, "", "application/json");
 			if(conn == null || conn.getResponseCode() != 200) {
 				dvStatus = 0;
 			}
 			
 			// 디바이스 수정
-			deviceListService.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus);
+			deviceListService.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus,dvSerialNumber);
 			
 			
 		} catch (RuntimeException e) {
@@ -426,12 +608,33 @@ public class DeviceListController {
 		
 		try {
 			
+			// ====== 유효성 검증 [S] ====== //
 			List<Integer> dvIds = body.get("dvIds");
 			if(dvIds == null || dvIds.isEmpty()) {
 				res.put("ok", false);
 				res.put("msg","삭제할 데이터가 없습니다.");
 				return res;
 			}
+
+			// dvIds 리스트 크기 검증
+			if(dvIds.size() > 1000) {
+				logger.warn("너무 많은 삭제 요청: {} 개", dvIds.size());
+				res.put("ok", false);
+				res.put("msg","한 번에 삭제할 수 있는 최대 개수를 초과했습니다.");
+				return res;
+			}
+
+			// 각 dvId 유효성 검증
+			for(Integer dvId : dvIds) {
+				if(dvId == null || dvId <= 0) {
+					logger.warn("유효하지 않은 dvId 포함: {}", dvId);
+					res.put("ok", false);
+					res.put("msg","유효하지 않은 디바이스 ID가 포함되어 있습니다.");
+					return res;
+				}
+			}
+			// ====== 유효성 검증 [E] ====== //
+			
 			
 			// 디바이스 삭제
 			deviceListService.deleteDeviceInfo(dvIds);
@@ -448,6 +651,63 @@ public class DeviceListController {
 		return res;
 	}
 
+	/**
+	 * 디바이스명과 주소 중복 확인
+	 * @param raw
+	 * @return
+	 */
+	@PostMapping("/duplicatedNameAndAddr")
+	@ResponseBody
+	public Map<String,Object> duplicatedNameAndAddr(@RequestBody Map<String,Object> body){
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+
+		try {
+			// ====== 유효성 검증 [S] ====== //
+			// dvName 검증
+			String dvName = (String) body.get("dvName");
+			if (dvName == null || dvName.isEmpty()) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "디바이스명은 필수입니다.");
+				return resultMap;
+			}
+			if (dvName.length() > 100 || containsDangerousPattern(dvName)) {
+				logger.warn("유효하지 않은 dvName 요청: {}", dvName);
+				resultMap.put("ok", false);
+				resultMap.put("msg", "유효하지 않은 디바이스명입니다.");
+				return resultMap;
+			}
+
+			// dvAddr 검증
+			String dvAddr = (String) body.get("dvAddr");
+			if (dvAddr == null || dvAddr.isEmpty()) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "디바이스 주소는 필수입니다.");
+				return resultMap;
+			}
+			if (dvAddr.length() > 200 || containsDangerousPattern(dvAddr)) {
+				logger.warn("유효하지 않은 dvAddr 요청: {}", dvAddr);
+				resultMap.put("ok", false);
+				resultMap.put("msg", "유효하지 않은 디바이스 주소입니다.");
+				return resultMap;
+			}
+			// ====== 유효성 검증 [E] ====== //
+
+			boolean isDuplicated = deviceListService.duplicatedNameAndAddr(body);
+			if(isDuplicated) {
+				resultMap.put("ok",false);
+				resultMap.put("msg","이미 같은 디바이스 명과 주소를 가진 디바이스가 등록되어 있습니다");
+				return resultMap;
+			}
+			
+			resultMap.put("ok", true);
+			return resultMap;
+		} catch (RuntimeException e) {
+			logger.error("디바이스명과 주소를 중복체크하는 도중 오류 발생");
+			resultMap.put("msg","디바이스명과 주소를 중복체크하는 도중 오류 발생");
+			resultMap.put("ok",false);
+			return resultMap;
+		}
+	}
 	
 	// 문자열 자르기
 	@SuppressWarnings("unused")
@@ -496,6 +756,35 @@ public class DeviceListController {
 	        }
 	    }
 	    return sb.toString();
+	}
+	
+	/**
+	 * 위험한 패턴 검사 (SQL Injection, XSS, Path Traversal 방어)
+	 * @param input 검사할 문자열
+	 * @return 위험한 패턴이 포함되어 있으면 true
+	 */
+	private boolean containsDangerousPattern(String input) {
+		if (input == null || input.isEmpty()) {
+			return false;
+		}
+
+		// 위험한 패턴 목록
+		String[] dangerousPatterns = {
+			"<script", "</script>", "javascript:", "onerror=", "onload=",  // XSS
+			"'", "\"", "--", ";", "/*", "*/", "xp_", "sp_",  // SQL Injection
+			"../", "..\\", "%2e%2e", "~",  // Path Traversal
+			"<", ">", "&lt;", "&gt;",  // HTML 태그
+			"union", "select", "insert", "update", "delete", "drop", "exec", "execute"  // SQL 키워드
+		};
+
+		String lowerInput = input.toLowerCase();
+		for (String pattern : dangerousPatterns) {
+			if (lowerInput.contains(pattern.toLowerCase())) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
 

@@ -42,6 +42,9 @@ public class UserController {
 	@Autowired
 	SessionManager sessionManager;
 	
+	@Autowired
+	LoginMapper loginMapper;
+	
 	// 로그인 화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
@@ -49,9 +52,23 @@ public class UserController {
 		return "redirect:/user/login.do";
 	}
 	
-	// 로그인 화면 이동
+	/**
+	 * 로그인 화면으로 이동
+	 * @param request
+	 * @param response
+	 * @return
+	 */
 	@RequestMapping("/login.do")
 	private String viewLogin(HttpServletRequest request, HttpServletResponse response) {
+		
+		// ====== 유효성 검증 [S] ====== //
+		// 오류 메시지
+		if(errorMsg == "") {
+			errorMsg = null;
+		}
+		// ====== 유효성 검증 [S] ====== //
+		
+		// ====== 서비스 [S] ====== //
 
 	    // 캐시 방지 (뒤로가기 시 로그인 화면이 캐시로 보이는 현상 방지)
 	    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
@@ -63,28 +80,75 @@ public class UserController {
 	    if (s != null) {
 	    	s.invalidate();
 	    }	
+		// ====== 서비스 [E] ====== //
 
 		return "user/login";
 	}
 	
-	// 사용자 ID,PW를 확인하여 가입되었다면 통계 화면으로, 그렇지 않다면 로그인 화면으로 이동
+	
+	
+	/**
+	 * 사용자 ID,PW를 확인하여 가입되었다면 통계 화면으로, 그렇지 않다면 로그인 화면으로 이동 
+	 * @param body		사용자 정보(map)
+	 * 			id		아이디(String)
+	 * 			pwd		비밀번호(String)  
+	 * @param session
+	 * @return
+	 */
 	@ResponseBody
 	@PostMapping( value = "/login", produces = "application/json; charset=UTF-8")
 	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session) {
 		
+		// ====== 변수 선언부 [S] ====== //
 		// resultMap
 		Map<String, Object> resultMap = new HashMap<String, Object>();
-		
+		// ====== 변수 선언부 [E] ====== //
+
 		try {
 			
+			// ====== 변수 선언부 [S] ====== //
 			String id  = (body.get("id")  == null) ? "" : body.get("id").trim();
 	        String pwd = (body.get("pwd") == null) ? "" : body.get("pwd").trim();
-			
+			// ====== 변수 선언부 [E] ====== //
+
+			// ====== 유효성 검사 [S] ====== //
 			if(id.isEmpty() || pwd.isEmpty()) {
 				resultMap.put("ok", false); // 로그인 실패하면 false 반환
 				resultMap.put("msg", "아이디/비밀번호를 입력하세요.");
 				return resultMap;
 			}
+			// ====== 유효성 검사 [E] ====== //
+
+			// ====== 서비스 [S] ====== //
+			//id 기준 계정 조회하여 계정 잠금 로직 수행
+			AccountLockStatus status = userService.checkLockedAccount(id);
+			switch (status) {
+			case NO_ACCOUNT:
+				resultMap.put("ok", false);
+				resultMap.put("msg", "아이디 또는 비밀번호가 다릅니다.");
+				logger.info("{} 사용자가 {}에 로그인 실패하였습니다. - 아이디 또는 비밀번호가 다름",id,LocalDateTime.now());
+				return resultMap;
+			case LOCKED_UNDER_TERM:
+				resultMap.put("ok", false);
+				resultMap.put("msg", "5회 이상 비밀번호가 틀렸음으로 계정이 잠금 처리되었습니다. 5분 이후에 다시 시도하세요.");
+				logger.info("{} 사용자가 {}에 로그인 실패하였습니다. - 5회 이상 비밀번호가 틀림",id,LocalDateTime.now());
+				return resultMap;
+			
+			case LOCKED_UNLOCKABLE:
+				boolean isUpdated = userService.resetFailCount(id);
+				if(!isUpdated) {
+					resultMap.put("ok", false); // 로그인 성공하면 true 반환
+					resultMap.put("msg", "로그인 성공 후 계정 정보 update 실패.");
+					logger.info("{} 사용자가 {}에 로그인 실패하였습니다. - 로그인 성공 후 계정 정보 update 실패",id,LocalDateTime.now());
+					return resultMap;
+				}
+				break;
+			case NOT_LOCKED:	
+				break;
+				
+			default:
+				break;
+			}		
 			
 			// 암호화
 			String encryptPwd = cryptoARIAService.encryptPassword(pwd);
@@ -97,14 +161,28 @@ public class UserController {
 			if(checkErr == null) {
 				
 				// 로그인 실패
+				// 로그인 실패 로직 수행
+				userService.loginFailService(id);
+				
+				// 로그인 실패 메시지 리턴
 				logger.info("{} 사용자가 {}에 로그인 실패하였습니다.",id,LocalDateTime.now());
 				resultMap.put("ok", false); // 로그인 실패하면 false 반환
 				resultMap.put("msg", "아이디 또는 비밀번호가 다릅니다.");
 				return resultMap;
 			}else {
-
+				
+				// 로그인 성공
+				// 로그인 실패한 count값 0으로 초기화
+				userService.resetLoginFailCount(id);
+				
+				// 최초 사용자라면 비밀변호 변경 또는 비밀번호 변경일이 180일 이상이라면 비밀번호 변경
+		        Object obj = checkErr.get("pwdPassedDays");
+		        Integer passedDays = 0;
+		        if(obj != null) passedDays = ((Number) obj).intValue(); 
+				
 				if( Integer.parseInt(checkErr.get("u_pwd_changed").toString()) == 0 ) {
 					
+					// 최초 로그인한 경우(비밀번호 변경 화면으로 이동)
 					// session에 uId와 비밀번호 변경 하지 않음(false)로 저장
 					session.setAttribute("uId", checkErr.get("u_id"));
 					session.setAttribute("pwdChanged", false);
@@ -114,6 +192,8 @@ public class UserController {
 					resultMap.put("pwdChanged", false);
 					resultMap.put("uId", checkErr.get("u_id"));
 				}else {
+					
+					// 최초로 로그인하지 않은 경우(비밀번호를 이미 변경한 경우, 통계 화면으로 이동)
 					// session에 uId와 비밀번호 변경함(true)로 저장
 					session.setAttribute("uId", checkErr.get("u_id"));
 					session.setAttribute("pwdChanged", true);
@@ -124,8 +204,6 @@ public class UserController {
 					resultMap.put("uId", checkErr.get("u_id"));
 				}
 
-				resultMap.put("ok", true); // 로그인 성공하면 true 반환
-
 				// 중복 로그인 체크 및 기존 세션 무효화
 				boolean hadDuplicateSession = sessionManager.addSession(checkErr.get("u_id").toString(), session);
 				if (hadDuplicateSession) {
@@ -134,30 +212,40 @@ public class UserController {
 
 				// 세션에 계정 정보 추가
 				logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
-
+				resultMap.put("ok", true); // 로그인 성공하면 true 반환
 				return resultMap;
 			}
+			// ====== 서비스 [E] ====== //
+
 		} catch (IllegalStateException e) {
-			
+			logger.info("{} 사용자가 {}에 로그인 실패하였습니다.", body.get("id"), LocalDateTime.now());
 			logger.error("아이디 또는 비밀번호가 다릅니다",e);
 			resultMap.put("ok", false); // 로그인 실패하면 false 반환
 			resultMap.put("msg", "아이디 또는 비밀번호가 다릅니다.");
 			return resultMap;
 		} catch (NullPointerException e) {
-			
+			logger.info("{} 사용자가 {}에 로그인 실패하였습니다.", body.get("id"), LocalDateTime.now());
 			logger.error("NullPointerException => ",e);
 			resultMap.put("ok", false); // 로그인 실패하면 false 반환
 			resultMap.put("msg", "로그인 처리 중 오류 발생.");
 			return resultMap;
 		} catch (RuntimeException e) {
-			
+			logger.info("{} 사용자가 {}에 로그인 실패하였습니다.", body.get("id"), LocalDateTime.now());
 			logger.error("RuntimeException => ",e);
 			resultMap.put("ok", false); // 로그인 실패하면 false 반환
 			resultMap.put("msg", "로그인 처리 중 오류 발생.");
 			return resultMap;
 		} 
 	}
-	// 초기 사용자 로그인 변경 화면
+	
+	/**
+	 * 초기 사용자 로그인 변경 화면
+	 * @param uId		아이디(String)
+	 * @param response
+	 * @param session
+	 * @param model
+	 * @return
+	 */
 	@RequestMapping("/viewPwdChanged.do")
 	public String viewPwdChanged( 
 			@RequestParam("uId") Integer uId,
@@ -165,6 +253,9 @@ public class UserController {
 			HttpSession session,
 			Model model) {
 		
+		logger.info("{}(" + loginMapper.getLoginId((int)session.getAttribute("uId")) + ") 사용자가 {}에 초기 사용자 비밀번호 변경을 진행합니다.",uId,LocalDateTime.now());
+		
+		// ====== 서비스 [S] ======
 		// 아이디가 없거나 비밀번호 변경상태 관련 세션 없는 상태에서 접근시 로그인 화면으로 이동
 		if(session.getAttribute("uId") == null || session.getAttribute("pwdChanged") == null) {
 			return "redirect:/user/login.do";
@@ -174,18 +265,24 @@ public class UserController {
 	    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
 	    response.setHeader("Pragma", "no-cache");
 	    response.setDateHeader("Expires", 0L);
-		
-		model.addAttribute("uId", uId);
+	    // ====== 서비스 [E] ======
 	    
+	    // ====== model add [S] ======
+		model.addAttribute("uId", uId);
+		// ====== model add [E] ======
+		
 		return "user/pwdChanged";
 	}
 	
-	/*
+	/**
 	 * 로그아웃
+	 * @param session
+	 * @param model
+	 * @return
 	 */
 	@RequestMapping("/logout")
 	public String logout(HttpSession session, Model model) {
-		String uId = (String) session.getAttribute("uId");
+		String uId = session.getAttribute("uId").toString();
 		
 		String loginId = userService.getLoginId(Integer.parseInt(uId));
 		if(loginId == null) {
@@ -196,22 +293,31 @@ public class UserController {
 
 		// 세션 매니저에서 사용자 세션 제거
 		if (uId != null) {
-			sessionManager.removeSession(uId);
+			sessionManager.removeSession(uId, loginId);
 		}
 
 		session.invalidate(); // 세션 만료
 		return "redirect:/user/login.do";
 	}
 
-	// 비밀번호 변경시 변경 내용 반영
+	/**
+	 * 비밀번호 변경시 변경 내용 반영 
+	 * @param body
+	 * @param session
+	 * @return
+	 */
 	@ResponseBody
 	@PostMapping("/updateNewPwd")
 	public Map<String,Object> updateNewPwd(@RequestBody Map<String,Object> body, HttpSession session ) {
 		
+		// ====== 변수 선언부 [S] ====== //
 		Map<String,Object> res = new HashMap<>();
+		// ====== 변수 선언부 [E] ====== //
 		
+
 		try {
 			
+			// ====== 유효성 검사 [S] ====== //
 			// body 값 검증
 	        Integer uId = (body.get("uId") instanceof Number)
 	                ? ((Number) body.get("uId")).intValue()
@@ -223,12 +329,15 @@ public class UserController {
                 res.put("msg", "새 비밀번호를 입력해주세요.");
                 return res;
             }
-			
+    		// ====== 유효성 검사 [E] ====== //
+            
+    		// ====== 서비스 [S] ====== //
 			// 평문 암호화
 			String encryptPwd = cryptoARIAService.encryptPassword(newPwd);
 			if(encryptPwd == null || encryptPwd.isEmpty()) {
 				res.put("ok", false); 
 				res.put("msg", "암호화 실패.");
+				logger.info("{}(" + loginMapper.getLoginId(uId) + ") 사용자가 {}에 로그인 실패하였습니다. - 암호화 실패",uId,LocalDateTime.now());
 				return res;
 			}
 			
@@ -237,6 +346,7 @@ public class UserController {
 			if(oldPwd == null || oldPwd.equals("") ) {
 				res.put("ok", false); 
 				res.put("msg", "이전 비밀번호를 가져오는 도중 오류 발생.");
+				logger.info("{}(" + loginMapper.getLoginId(uId) + ") 사용자가 {}에 로그인 실패하였습니다. - 이전 비밀번호를 가져오는 도중 오류 발생",uId,LocalDateTime.now());
 				return res;
 			}
 			
@@ -254,26 +364,31 @@ public class UserController {
 				res.put("msg", "비밀번호 업데이트 실패.");
 				return res;
 			}
+    		// ====== 서비스 [E] ====== //
 			
+			// ====== 세션에 값 추가 [S] ====== //
 			// session에 id값, 비밀번호 변경 추가
 			logger.info("{} 사용자가 {}에 로그인하였습니다.",uId,LocalDateTime.now());
 			session.setAttribute("uId", uId.toString());
 			session.setAttribute("pwdChanged", true);
+			// ====== 세션에 값 추가 [E] ====== //
+			
+			res.put("ok", true);
+			return res;
 			
 		} catch(DataAccessException e2) {
-	        logger.error("DB 처리 중 오류(updateNewPwd): ", e2);
+			logger.info("{}(" + loginMapper.getLoginId((int)body.get("uId")) + ") 사용자가 {}에 로그인 실패하였습니다.",body.get("uId"),LocalDateTime.now());
+			logger.error("DB 처리 중 오류(updateNewPwd): ", e2);
 	        res.put("ok", false);
 	        res.put("msg", "데이터베이스 처리 중 오류가 발생했습니다.");
 	        return res;
 		} catch (RuntimeException e) {
+			logger.info("{}(" + loginMapper.getLoginId((int)body.get("uId")) + ") 사용자가 {}에 로그인 실패하였습니다.",body.get("uId"),LocalDateTime.now());
 			logger.error("updateNewPwd에서 오류 발생 : ",e);
 	        res.put("ok", false);
 	        res.put("msg", "비밀번호 변경 중 오류가 발생했습니다.");
 			return res;
 		}
-		
-		res.put("ok", true);
-		return res;
 		
 	}
 	
@@ -302,10 +417,12 @@ public class UserController {
 			@RequestBody Map<String,Object> body
 			){
 		
+		// ====== 변수 선언부 [S] ====== //
 		Map<String,Object> resultMap = new HashMap<String, Object>();
+		// ====== 변수 선언부 [S] ====== //
 		
 		try {		
-			
+			// ====== 서비스 [S] ====== //
 			// 신규 아이디인지 확인
 			String uLoginId = body.get("u_login_id").toString();
 			boolean isNewId = userService.checkNewUserId(uLoginId);
@@ -332,6 +449,7 @@ public class UserController {
 				resultMap.put("msg","회원가입 도중 오류 발생");
 				return resultMap;
 			}
+			// ====== 서비스 [E] ====== //
 			
 			resultMap.put("ok",true);
 			return resultMap;

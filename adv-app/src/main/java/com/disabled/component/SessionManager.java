@@ -23,19 +23,20 @@ public class SessionManager {
     /**
      * 사용자 세션 등록
      * @param userId 사용자 ID
+     * @param id 	 회원 계정 ID
      * @param session 현재 세션
      * @return 기존 세션이 있었다면 true, 없었다면 false
      */
-    public boolean addSession(String userId, HttpSession session) {
+    public boolean addSession(String userId, String id, HttpSession session) {
         HttpSession oldSession = userSessionMap.get(userId);
 
         // 기존 세션이 존재하면 무효화
         if (oldSession != null && !oldSession.getId().equals(session.getId())) {
             try {
-                logger.info("중복 로그인 감지 - 사용자: {}, 기존 세션 무효화", userId);
+                logger.info("중복 로그인 감지 - 사용자: {}({}), 기존 세션 무효화", userId, id);
                 oldSession.invalidate();
             } catch (IllegalStateException e) {
-                logger.debug("이미 무효화된 세션 - 사용자: {}", userId, e);
+                logger.debug("이미 무효화된 세션 - 사용자: " + userId + " (" + id + ") ", e);
             }
             userSessionMap.put(userId, session);
             return true; // 기존 세션이 있었음
@@ -43,21 +44,21 @@ public class SessionManager {
 
         // 새로운 세션 등록
         userSessionMap.put(userId, session);
-        logger.info("새 세션 등록 - 사용자: {}, 세션ID: {}", userId, session.getId());
+        logger.info("새 세션 등록 - 사용자: " + userId + "(" + id + "), 세션ID: {}", session.getId());
         return false; // 기존 세션이 없었음
     }
 
     /**
      * 사용자 세션 제거
      * @param userId 사용자 ID
+     * @param uLoginId 회원 계정 ID
      */
-    public void removeSession(String userId) {
+    public void removeSession(String userId, String uLoginId) {
         HttpSession session = userSessionMap.remove(userId);
         if (session != null) {
-            logger.info("세션 제거 - 사용자: {}, 세션ID: {}", userId, session.getId());
+            logger.info("세션 제거 - 사용자: " + userId + "(" + uLoginId + "), 세션ID: {}", session.getId());
         }
     }
-
     /**
      * 세션 ID로 사용자 세션 제거
      * @param sessionId 세션 ID

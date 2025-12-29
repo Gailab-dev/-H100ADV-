@@ -19,48 +19,93 @@
 	<script>
 	  src="https://code.jquery.com/jquery-3.7.1.js"
 	  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
-	  crossorigin="anonymous">
+	  crossorigin="anonymous"
 	</script>
 	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-	<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
+	<%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 	<script>
 	  <c:if test="${not empty errorMsg}">
 	    alert('<c:out value="${errorMsg}" />');
 	  </c:if>
 	</script>
-	<!-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 -->
-	<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
+	<%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
+	<%--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) --%>
 	<script>
 	  window.addEventListener('pageshow', function (e) {
 	    if (e.persisted) location.reload(); // BFCache에서 복원되면 강제 새로고침
 	  });
 	</script>
-	<!--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) -->
+	<%--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) --%>
+	<%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
+	<script>
+   		window.SESSION_TIMEOUT_SECONDS = <%= session.getMaxInactiveInterval() %>;
+   		const CONTEXT_PATH = "${pageContext.request.contextPath}";
+	</script>
+	<script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
+	<%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
 	<script>
 	 // -------------------------------- pagination 활용한 페이지 이동 ----------------------------
-	    
+	 
+ 		// 검색 input에서 100자 이상 입력시 알림 출력
+	 	document.addEventListener('DOMContentLoaded', function () {
+		  const MAX_LEN = 100;
+		
+		  // 1) 폼 찾기
+		  const searchForm = document.getElementById('deviceListSearchForm');
+		  if (!searchForm) {
+		    // 이 페이지에는 검색 폼이 없으면 그냥 조용히 종료
+		    return;
+		  }
+		
+		  // 2) input 요소 찾기 (name="searchKeyword" 기준)
+		  const searchElement = searchForm.elements['searchKeyword'];
+		  if (!searchElement) {
+		    // 요소 없으면 종료
+		    return;
+		  }
+		
+		  // 3) 길이 제한 + 경고 로직
+		  let warnedOnce = false; // 계속 알람 뜨는 것 방지용
+		
+		  searchElement.addEventListener('input', function () {
+		    const val = this.value || '';
+		
+		    if (val.length > MAX_LEN) {
+		      // 초과 입력 잘라내기
+		      this.value = val.slice(0, MAX_LEN);
+		      alert("검색어는 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
+		    } 
+		  });
+		});
+	 
 		// 디바이스 및 주소 검색
 		window.searchDeviceList = function(pageNo){
 			
 			let form = document.getElementById('deviceListSearchForm');
-		  	const searchKeyword   = form.elements['searchKeyword'].value;
+		  	let val = form.elements['searchKeyword'].value;
+		  	let searchKeyword = encodeURIComponent(val);
+		  	let pageSize = document.getElementById('pageSize')?.value;
 		  	
 		  	if( searchKeyword.length >= 100 ){
-		  		alert("검색어는 100자를 넘을 수 없습니다.");
+		  		alert("검색어는 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
 		  		return;
 		  	}
 		  	
 		  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 		  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 			
-			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword;
+			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
 			
 		}
 		
 		// pagination 객체를 활용한 페이지 이동
 		window.goPage = function(pageNo){
-	    	let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
-			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword;
+			let form = document.getElementById('deviceListSearchForm');
+		  	let val = form.elements['searchKeyword'].value;
+		  	let searchKeyword = encodeURIComponent(val);
+			let pageSize = document.getElementById('pageSize')?.value;
+
+			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
 		}
 		
 		//  Pagination 
@@ -165,7 +210,7 @@
 		      if (r.data?.ok) {
 		        alert("삭제가 완료되었습니다.");
 		        removeDeletePopup(); // 팝업 닫기
-		        location.reload();   // 리스트 갱신
+		        window.location.href = "${pageContext.request.contextPath}/deviceList/viewDeviceList.do";   // 리스트 갱신
 		      } else {
 		        alert(r.data?.msg || "삭제 중 오류가 발생했습니다.");
 		      }
@@ -189,6 +234,134 @@
 	    
 	    // -------------------------------- 디바이스 등록, 수정 ------------------------------
 
+   	    // 디바이스 등록, 수정 화면에서 한계 값 이상 초과 입력 시도시 오류
+		const INPUT_LIMITS = {
+		  dvName: {
+		    max: 100,
+		    message: "디바이스명은 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다."
+		  },
+		  serialNumber: {
+		    max: 15,
+		    message: "시리얼 넘버는 15자를 넘을 수 없습니다. \n 한글을 제외한 모든 문자 입력 가능합니다."
+		  },
+		  dvAddr: {
+		    max: 200,
+		    message: "주소는 200자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다."
+		  },
+		  dvIp: {
+		    max: 30,
+		    message: "도메인은 30자를 넘을 수 없습니다. \n 숫자, '.' 이외의 문자(예: 한글, 영문 등)를 최소 1자 이상 포함한 값만 입력 가능합니다."
+		  }
+		};
+	    
+	    document.addEventListener('DOMContentLoaded', function(){
+			
+			let dvNameWarnedOnce = false; // 계속 알람 뜨는 것 방지용
+			document.addEventListener('input', function (e) {
+		    
+			const el = e.target;
+			if(!el.id) return;
+				
+		    const config = INPUT_LIMITS[el.id];
+		    if (!config) return;   // 우리가 관리하는 필드가 아니면 무시
+			
+		    const max = config.max;
+		    const val = el.value || "";
+	
+		    if (val.length > max) {
+			      // 1) 초과 입력 취소 (초과분 잘라내기)
+			      el.value = val.slice(0, max-1);
+			      alert(config.message);
+			     }
+			  }); 
+		});
+	    
+	    // 디바이스 등록 수정시 디바이스명과 주소 중복 체크
+	    async function duplicatedNameAndAddr(dvId,dvName,dvAddr ){
+		    
+		 	const body = {
+		 		dvId : dvId,	
+		 		dvName : dvName,
+		 		dvAddr : dvAddr
+		 	}
+		 	
+		 	const res = await fetch('${pageContext.request.contextPath}/deviceList/duplicatedNameAndAddr',{
+		    	method : 'POST',
+		    	headers : {
+		    		'Content-Type' : 'application/json'
+		    	},
+				credentials : 'same-origin',
+				cache: 'no-store',
+				body : JSON.stringify(body)
+		    });
+
+		 	if(!res.ok){
+    			return false;
+    		}
+		 	
+		 	const result = await res.json();
+		 	if(!result.ok){
+		 		alert(result.msg);
+		 		return false;
+		 	}else{
+		 		return true;
+		 	}
+		 	
+	 	}
+	 
+	 	// 디바이스 등록, 수정시 중복 체크
+	 	async function validateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvSerialNumber){
+	  		
+    		if(!dvName){
+    			alert("디바이스명은 필수입니다.");
+    			return false;
+    		}
+    		if(dvName.length > 100){
+    			alert("디바이스명은 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
+    			return false;
+    		}
+    		
+    		if(!dvAddr){
+    			alert("주소는 필수입니다.");
+    			return false;
+    		}
+    		if(dvAddr.length > 200){
+    			alert("주소는 200자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
+    			return false;
+    		}
+    		const isDuplicatedNameAndAddr = await duplicatedNameAndAddr(dvId,dvName,dvAddr);
+    		if(!isDuplicatedNameAndAddr){
+    			return false;
+    		}
+    		if(!dvIp){
+    			alert("도메인은 필수입니다.");
+    			return false;
+    		}
+    		if(dvIp.length > 30){
+    			alert("도메인은 30자를 넘을 수 없습니다. \n 숫자, '.' 이외의 문자(예: 한글, 영문 등)를 최소 1자 이상 포함한 값만 입력 가능합니다");
+    			return false;
+    		}
+    		if (/^[0-9.]+$/.test(dvIp)) {
+    			alert("도메인에는 '.'과 숫자만으로 이루어진 값을 넣을 수 없습니다. \n 숫자, '.' 이외의 문자(예: 한글, 영문 등)를 최소 1자 이상 포함해 주세요.");
+    			return false;
+    		}
+    		if(!dvSerialNumber){
+    			alert("시리얼 넘버는 필수입니다.");
+    			return false;
+    		}
+    		if(dvSerialNumber.lengh > 15){
+    			alert("시리얼 넘버는 15자를 넘을 수 없습니다. \n 한글을 제외한 모든 문자 입력 가능합니다.");
+
+    			return false;
+    		}
+    		if (/[ㄱ-ㅎ가-힣]/.test(dvSerialNumber)) {
+    			alert("시리얼 넘버는 15자를 넘을 수 없습니다. \n 한글을 제외한 모든 문자 입력 가능합니다.");
+
+    			return false;
+    		}
+    		return true;
+	 	}   
+	 
 	    // 디바이스 정보 팝업 열기
 		function viewDeviceInfoPopup(dvId){
 			axios.get('${pageContext.request.contextPath}/deviceList/viewDeviceInfoPopup', { params : {dvId} })
@@ -196,6 +369,7 @@
 			  const riDiv = document.getElementById("deviceInfoPopup");
 			  riDiv.innerHTML = r.data;
 			  riDiv.style.display = "block";
+			  document.getElementById('dvName').focus();
 			})
 			.catch(function(e) {
 			  
@@ -203,21 +377,15 @@
 	    }
 	 
     	// 디바이스 수정
-    	function updateDeviceInfo(dvId){
+    	async function updateDeviceInfo(dvId){
     		
     		let dvName = document.getElementById("dvName").value;
-    		if(dvName == null || dvName == undefined || dvName == ""){
-    			alert("디바이스명은 필수입니다.");
-    			return;
-    		}
     		let dvAddr = document.getElementById("dvAddr").value;
-    		if(dvAddr == null || dvAddr == undefined || dvAddr == ""){
-    			alert("주소는 필수입니다.");
-    			return;
-    		}
     		let dvIp = document.getElementById("dvIp").value;
-    		if(dvIp == null || dvIp == undefined || dvIp == ""){
-    			alert("ip는 필수입니다.");
+    		let dvSerialNumber = document.getElementById("serialNumber").value.trim();	
+		
+    		const validateCheck = await validateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvSerialNumber);
+    		if(!validateCheck){
     			return;
     		}
     		
@@ -226,7 +394,8 @@
   			        dvId: dvId,
   			        dvName: dvName,
   			        dvAddr: dvAddr,
-  			        dvIp: dvIp
+  			        dvIp: dvIp,
+    			    dvSerialNumber : dvSerialNumber
   			    })
   			)
     		.then(function(r){
@@ -234,7 +403,7 @@
     			if(r.data?.ok){
     		        alert("디바이스가 수정되었습니다.");
     		        closeDeviceInfoPopup();
-    		        location.reload();
+    		        window.location.href = "${pageContext.request.contextPath}/deviceList/viewDeviceList.do";
     			}else{
     				alert(r.data?.msg);
     			}
@@ -251,23 +420,26 @@
 		  let dvName = document.getElementById("dvName").value.trim();
 		  let dvAddr = document.getElementById("dvAddr").value.trim();
 		  let dvIp = document.getElementById("dvIp").value.trim();
-		
-		  if (!dvName) { alert("디바이스명은 필수입니다."); return; }
-		  if (!dvAddr) { alert("주소는 필수입니다."); return; }
-		  if (!dvIp) { alert("IP는 필수입니다."); return; }
+		  let dvSerialNumber = document.getElementById("serialNumber").value.trim();	
+
+  		  const validateCheck = await validateDeviceInfo(null,dvName,dvAddr,dvIp,dvSerialNumber);
+		  if(!validateCheck){
+			  return;
+		  }
 		
 		  axios.post("${pageContext.request.contextPath}/deviceList/insertDeviceInfo",
 		      new URLSearchParams({
 		        dvName: dvName,
 		        dvAddr: dvAddr,
-		        dvIp: dvIp
+		        dvIp: dvIp,
+		        dvSerialNumber : dvSerialNumber
 		      })
 		    )
 		    .then(function(r) {
 		      if (r.data?.ok) {
 		        alert("디바이스가 등록되었습니다.");
 		        closeDeviceInfoPopup();
-		        location.reload();
+		        window.location.href = "${pageContext.request.contextPath}/deviceList/viewDeviceList.do";
 		      } else {
 		        alert(r.data?.msg || "등록 중 오류가 발생했습니다.");
 		      }
@@ -292,11 +464,13 @@
 	    
 	    // 실시간 영상 팝업
 		async function viewRealTimeVideoPopup(dvId){
-			axios.post('${pageContext.request.contextPath}/deviceList/viewRealTimeVideoPopup',{
-				dvId : dvId,
-			})
+			
+			// URLSearchParams를 사용하여 form data로 전송
+			const formData = new URLSearchParams();
+			formData.append('dvId', dvId);
+    		
+    		axios.post('${pageContext.request.contextPath}/deviceList/viewRealTimeVideoPopup', formData)
 			.then(function(r){
-				
 				
 				let rtDiv = document.getElementById("realTimeVideoPopup");
 				
@@ -314,7 +488,6 @@
 				
 			})
 		}
-    	
 		
 		// 현재 스트리밍 중인 deviceId
 		let deviceId = null;
@@ -322,7 +495,7 @@
 		// 현재 스트리밍중인지 아닌지 여부
 		let isStreamingActive = false;
 		
-		
+		// ?
 		let teardownSent = false;
 		
 		// 전역 토큰 ID
@@ -671,31 +844,31 @@
 		
 		
 		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------  		
-		    window.onload = function() {
-        const checkAll = document.getElementById("checkAll"); // 테이블 헤더 체크박스
-        const rowChecks = document.querySelectorAll(".row-check"); // 각 행 체크박스
-        const selectedText = document.querySelector(".selected-text");
+	    window.onload = function() {
+        	const checkAll = document.getElementById("checkAll"); // 테이블 헤더 체크박스
+        	const rowChecks = document.querySelectorAll(".row-check"); // 각 행 체크박스
+        	const selectedText = document.querySelector(".selected-text");
 
-        // ✅ 선택 개수 갱신 함수
-        function updateSelectedCount() {
-            const checked = document.querySelectorAll(".row-check:checked").length;
-            selectedText.textContent = `\${checked}개 선택됨`;
-            checkAll.checked = (checked === rowChecks.length); // 전체선택 상태 반영
-        }
+	        // ✅ 선택 개수 갱신 함수
+	        function updateSelectedCount() {
+	            const checked = document.querySelectorAll(".row-check:checked").length;
+	            selectedText.textContent = `\${checked}개 선택됨`;
+	            checkAll.checked = (checked === rowChecks.length); // 전체선택 상태 반영
+	        }
 
-        // ✅ 개별 체크박스 클릭 시 갱신
-        rowChecks.forEach(chk => chk.addEventListener("change", updateSelectedCount));
+	        // ✅ 개별 체크박스 클릭 시 갱신
+	        rowChecks.forEach(chk => chk.addEventListener("change", updateSelectedCount));
 
-        // ✅ 전체선택 (표 헤더 체크박스 클릭 시)
-        checkAll.addEventListener("change", function() {
-            rowChecks.forEach(chk => chk.checked = checkAll.checked);
-            updateSelectedCount();
-        });
+	        // ✅ 전체선택 (표 헤더 체크박스 클릭 시)
+	        checkAll.addEventListener("change", function() {
+	            rowChecks.forEach(chk => chk.checked = checkAll.checked);
+	            updateSelectedCount();
+	        });
 
-        // 초기 표시
-        updateSelectedCount();
-    };
-	// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------  
+	        // 초기 표시
+	        updateSelectedCount();
+    	};
+		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------  
     </script>
 </head>
 <body>
@@ -725,7 +898,9 @@
 				<li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
 				<li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
 				<li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+				<!-- 
 				<li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
+				 -->
 			</ul>
 		</aside>
 		
@@ -737,37 +912,43 @@
 				  <!-- 첫 번째 줄: 등록 버튼 + 검색창 -->
 				  <div class="top-row">
 				    <button class="add-btn" onclick="viewDeviceInfoPopup()">+ 디바이스 등록</button>
+						<div class="hidden-div"></div>
+						<select id="pageSize" name="pageSize" class="select-box" onChange="searchDeviceList()">
+							<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩 보기</option>
+							<option value="20" ${pageSize == 20 ? 'selected' : ''}>20개씩 보기</option>
+							<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩 보기</option>
+						</select>
 						<form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList('${page}'); return false;">
-						  <input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="디바이스명 및 주소 검색">
-						  <button type="submit" class="search-btn" title="검색">
+						  <input type="text" name="searchKeyword" value="<c:out value='${searchKeyword}'/>" placeholder="디바이스명 및 주소 검색">
+						  	<button type="submit" class="search-btn" title="검색">
 						    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 						         xmlns="http://www.w3.org/2000/svg">
-						      <path d="M8.75065 14.1673C11.7422 14.1673 14.1673 11.7422 14.1673 8.75065C14.1673 5.75911 11.7422 3.33398 8.75065 3.33398C5.75911 3.33398 3.33398 5.75911 3.33398 8.75065C3.33398 11.7422 5.75911 14.1673 8.75065 14.1673Z"
+					      		<path d="M8.75065 14.1673C11.7422 14.1673 14.1673 11.7422 14.1673 8.75065C14.1673 5.75911 11.7422 3.33398 8.75065 3.33398C5.75911 3.33398 3.33398 5.75911 3.33398 8.75065C3.33398 11.7422 5.75911 14.1673 8.75065 14.1673Z"
 						            stroke="#767676" stroke-width="1.5" stroke-miterlimit="10"/>
-						      <path d="M16.1363 17.197C16.4292 17.4899 16.9041 17.4899 17.197 17.197C17.4899 16.9041 17.4899 16.4292 17.197 16.1363L16.6667 16.6667L16.1363 17.197ZM12.5 12.5L11.9697 13.0303L16.1363 17.197L16.6667 16.6667L17.197 16.1363L13.0303 11.9697L12.5 12.5Z"
+					      		<path d="M16.1363 17.197C16.4292 17.4899 16.9041 17.4899 17.197 17.197C17.4899 16.9041 17.4899 16.4292 17.197 16.1363L16.6667 16.6667L16.1363 17.197ZM12.5 12.5L11.9697 13.0303L16.1363 17.197L16.6667 16.6667L17.197 16.1363L13.0303 11.9697L12.5 12.5Z"
 						            fill="#767676"/>
 						    </svg>
-						  </button>
+					  		</button>
 						</form>
-				  </div>
+				  	</div>
 				
-				  <div class="bulk-actions">
-				    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+				  	<div class="bulk-actions">
+				    	<svg width="16" height="16" viewBox="0 0 16 16" fill="none"
 				         xmlns="http://www.w3.org/2000/svg">
-				      <rect width="16" height="16" rx="4" fill="#6955A2"/>
-				      <path d="M4 9V7H12V9H4Z" fill="white"/>
-				    </svg>
+				      		<rect width="16" height="16" rx="4" fill="#6955A2"/>
+				      		<path d="M4 9V7H12V9H4Z" fill="white"/>
+				    	</svg>
 				    
-				    <span class="selected-text">0개 선택됨</span>
+				    	<span class="selected-text">0개 선택됨</span>
 				    
-				    <button type="button" class="delete-btn" onclick="viewDeleteDevicePopup()" title="삭제">
-				      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
-				           xmlns="http://www.w3.org/2000/svg">
-				        <path d="M11.75 9.11111V14.4444M8.25 9.11111V14.4444M4.75 5.55556V16.2222C4.75 16.6937 4.93437 17.1459 5.26256 17.4793C5.59075 17.8127 6.03587 18 6.5 18H13.5C13.9641 18 14.4092 17.8127 14.7374 17.4793C15.0656 17.1459 15.25 16.6937 15.25 16.2222V5.55556M3 5.55556H17M5.625 5.55556L7.375 2H12.625L14.375 5.55556"
-				              stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-				      </svg>
-				    </button>
-				  </div>
+				    	<button type="button" class="delete-btn" onclick="viewDeleteDevicePopup()" title="삭제">
+					      	<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+					           xmlns="http://www.w3.org/2000/svg">
+					        	<path d="M11.75 9.11111V14.4444M8.25 9.11111V14.4444M4.75 5.55556V16.2222C4.75 16.6937 4.93437 17.1459 5.26256 17.4793C5.59075 17.8127 6.03587 18 6.5 18H13.5C13.9641 18 14.4092 17.8127 14.7374 17.4793C15.0656 17.1459 15.25 16.6937 15.25 16.2222V5.55556M3 5.55556H17M5.625 5.55556L7.375 2H12.625L14.375 5.55556"
+					              stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+					      	</svg>
+				    	</button>
+	  				</div>
 				</div>
 				
 				<table id="deviceTable" class="device-table">
@@ -776,6 +957,7 @@
 							<th><input type="checkbox" id="checkAll" /></th>
 							<th>디바이스명</th>
 							<th>디바이스 주소</th>
+							<th>디바이스 상태</th>
 							<th>실시간 영상</th>
 							<th>디바이스 수정</th>
 						</tr>
@@ -784,25 +966,32 @@
 					  <c:choose>
 					    <c:when test="${empty deviceList}">
 					      <tr>
-					        <td colspan="5" style="text-align:center; padding:40px 0; color:#777;">
+					        <td colspan="6" style="text-align:center; padding:40px 0; color:#777;">
 					          조회된 디바이스가 없습니다.
 					        </td>
 					      </tr>
 					    </c:when>
 					    <c:otherwise>
 					      <c:forEach var="item" items="${deviceList}">
-					        <tr data-dv-id="${item.dv_id}">
+					        <tr data-dv-id="<c:out value='${item.dv_id}' escapeXml ='true'/>">">
 					          <td><input type="checkbox" class="row-check" /></td>
-					          <td>${item.dv_name}</td>
-					          <td>${item.dv_addr}</td>
-								<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 								
-								<td>
-									<c:choose>
-										<c:when test="${item.dv_status eq 0}">OFF</c:when>
-										<c:when test="${item.dv_status eq 1}">ON</c:when>
-									</c:choose>
-								</td>
-								
+					          <td>
+   					          	<span class="cell-ellipsis" title="${fn:escapeXml(item.dv_name)}">
+					          		<c:out value="${item.dv_name}" escapeXml ="true"/>
+					          	</span>
+					          </td>
+					          <td>
+   					          	<span class="cell-ellipsis" title="${fn:escapeXml(item.dv_addr)}">
+					          		<c:out value="${item.dv_addr}" escapeXml ="true"/>
+					          	</span>
+					          </td>
+							  <td>
+								<c:choose>
+									<c:when test="${item.dv_status eq 0}">OFF</c:when>
+									<c:when test="${item.dv_status eq 1}">ON</c:when>
+								</c:choose>
+							  </td>	
+								<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 												
 								<td>
 									<c:choose>
 										<c:when test="${item.dv_status eq 0}">Jetson 통신 불가</c:when>
@@ -815,12 +1004,16 @@
 								</td>
 								 -->
 					          <td>
-					            <button type="button" class="video-btn" onclick="viewRealTimeVideoPopup(${item.dv_id})">
-					              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-					                <path d="M17 12V8C17 7.47 16.79 6.96 16.41 6.59C16.04 6.21 15.53 6 15 6H5C4.47 6 3.96 6.21 3.59 6.59C3.21 6.96 3 7.47 3 8V16C3 16.53 3.21 17.04 3.59 17.41C3.96 17.79 4.47 18 5 18H15C15.53 18 16.04 17.79 16.41 17.41C16.79 17.04 17 16.53 17 16V12ZM17 12L21 8V16L17 12Z"
+						        <c:choose>
+					        		<c:when test="${item.dv_status eq 1}">
+					            		<button type="button" class="video-btn" onclick="viewRealTimeVideoPopup(${item.dv_id})">
+				              			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					                		<path d="M17 12V8C17 7.47 16.79 6.96 16.41 6.59C16.04 6.21 15.53 6 15 6H5C4.47 6 3.96 6.21 3.59 6.59C3.21 6.96 3 7.47 3 8V16C3 16.53 3.21 17.04 3.59 17.41C3.96 17.79 4.47 18 5 18H15C15.53 18 16.04 17.79 16.41 17.41C16.79 17.04 17 16.53 17 16V12ZM17 12L21 8V16L17 12Z"
 					                      stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-					              </svg>
-					            </button>
+					              		</svg>
+					            		</button>
+				            		</c:when>
+								</c:choose>	
 					          </td>
 					          <td>
 					            <button class="edit-btn" type="button" onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>

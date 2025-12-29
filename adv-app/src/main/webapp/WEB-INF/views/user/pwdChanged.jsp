@@ -27,8 +27,26 @@
 	  }
 	}
 	
-	//비번 규칙: 6~20글자 / 영문+숫자+특수문자 각 1개 이상 / 공백 불가 
-	const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^\w\s])\S{6,20}$/; 
+	//비번 규칙: 6~20글자 / 영문대문자+영문소문자+숫자+특수문자 3종류 이상, 길이 9자 이상 각 1개 이상 / 공백 불가 
+	function isValidPassword(pwd) {
+	  if (typeof pwd !== 'string') return false;
+	
+	  // 1) 길이 체크
+	  if (pwd.length < 9) {
+	    return false;
+	  }
+	
+	  let types = 0;
+	
+	  // 2) 각 문자 종류별 포함 여부 체크
+	  if (/[A-Z]/.test(pwd)) types++;           // 영어 대문자
+	  if (/[a-z]/.test(pwd)) types++;           // 영어 소문자
+	  if (/[0-9]/.test(pwd)) types++;           // 숫자
+	  if (/[^A-Za-z0-9]/.test(pwd)) types++;    // 특수문자 (영문/숫자 제외)
+	
+	  // 3가지 이상 포함이면 통과
+	  return types >= 3;
+	}
 	
 	window.updatePwd = async function(uId){ 
 		
@@ -39,8 +57,8 @@
 			return; 
 		} 
 		
-		if(!PASSWORD_RULE.test(newPwd)){ 
-			alert("새 비밀번호는 6자 - 20자 사이여야 하고, 영문, 숫자, 특수문자 1개 이상을 포함하는 문자열이여야 합니다."); 
+		if(!isValidPassword(newPwd)){ 
+			alert("영문대문자, 영문소문자, 숫자, 특수문자 중 3개 이상을 포함하며, 9자 이상이어야 합니다."); 
 			return; 
 		} 
 		
@@ -104,7 +122,7 @@
 			          </svg>
 			        </span>
 			      </div>
-			      <p class="hint-text">영문, 숫자, 특수문자 6–20자</p>
+			      <p class="hint-text">영문 대문자, 영문 소문자, 숫자, 특수문자 9자 이상</p>
 			
 			      <!-- 새 비밀번호 확인 -->
 			      <div class="input-wrap">

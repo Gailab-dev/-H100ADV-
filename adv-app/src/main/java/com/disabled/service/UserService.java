@@ -11,6 +11,14 @@ public interface UserService {
 	String getPwd(Integer uId);
 
 	String getLoginId(Integer uId);
+	
+	void loginFailService(String id);
+	
+	AccountLockStatus checkLockedAccount(String id);
+	
+	boolean resetFailCount(String id);
+	
+	void resetLoginFailCount(String id);
 
 	boolean checkNewUserId(String uLoginId);
 

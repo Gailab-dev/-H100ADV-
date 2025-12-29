@@ -1,0 +1,22 @@
+package com.disabled.mapper;
+
+import java.util.Map;
+
+import org.apache.ibatis.annotations.Param;
+import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
+import org.springframework.stereotype.Repository;
+
+@Mapper
+@Repository
+public interface LoginMapper {
+	Map<String,Object> existUsrByIdAndPwd(@Param("id") String id, @Param("pwd") String pwd) throws IllegalStateException;
+	Integer updateNewPwd(@Param("uId") Integer uId, @Param("encryptPwd") String encryptPwd) throws IllegalStateException;
+	String getPwd(@Param("uId") Integer uId) throws IllegalStateException;
+	Map<String, Object> getMyInfo(@Param("uId") Integer uId) throws IllegalStateException;
+	String getLoginId(@Param("uId") Integer uId) throws IllegalStateException;
+	Map<String, Object> getUserByULoginId(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	void increaseFailCount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	Integer lockAccount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	Integer resetFailCount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	int updateLoginFailCountZero(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+}

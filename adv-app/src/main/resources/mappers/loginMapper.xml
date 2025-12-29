@@ -6,7 +6,10 @@
 	
 	<!-- id와 pw값을 비교하여 둘 다 같은 경우, 해당 map을 리턴 -->
 	<select id="existUsrByIdAndPwd" resultType="map">
-		SELECT u_id, u_pwd_changed, u_grade, u_login_fail_count 
+		SELECT u_id, u_pwd_changed, u_grade, u_login_fail_count
+			, TIMESTAMPDIFF(MINUTE, u_lock_time, SYSDATE()) AS passedMinutes
+			, u_pwd_changed_dt
+			, TIMESTAMPDIFF(DAY, u_pwd_changed_dt, NOW()) AS pwdPassedDays  
 		FROM tbl_user
 		WHERE 1=1 
 			AND u_login_id = #{id}
@@ -20,6 +23,8 @@
 		SET	
 			u_login_pwd = #{encryptPwd}
 			, u_pwd_changed = 1
+			, u_pwd_changed_dt = NOW()
+			, u_login_fail_count = 0
 		WHERE u_id = #{uId}	
 	
 	</update>
@@ -42,6 +47,52 @@
 		FROM tbl_user
 		WHERE u_id = #{uId}
 	</select>
+	
+		<!-- 로그인 실패 업데이트와 계정 잠금을 위한 유저 정보 가져오기 -->
+	<select id="getUserByULoginId" resultType="map">
+		SELECT
+			u_id
+			, u_login_id
+			, u_login_fail_count
+			, u_account_locked
+			, u_pwd_changed
+			, TIMESTAMPDIFF(MINUTE, u_lock_time, SYSDATE()) AS passedMinutes 
+		FROM tbl_user
+		WHERE u_login_id = #{u_login_id}
+	</select>
+	
+	<!-- 로그인 실패시 사용자가 입력한 loginId와 같은 열에 있는 login_fail_count 값 증가 -->
+	<update id="increaseFailCount" >
+		UPDATE tbl_user
+		SET u_login_fail_count = u_login_fail_count + 1
+		WHERE u_login_id = #{u_login_id}
+	
+	</update>
+	
+	<!-- 계정 잠금 -->
+	<update id="lockAccount">
+	    UPDATE tbl_user
+	    SET u_account_locked = 'Y'
+	   	    , u_lock_time = NOW()
+	    WHERE u_login_id = #{u_login_id}
+	    AND u_login_fail_count >= 5
+	</update>
+	
+	<!-- 로그인 성공, 5분 경과 → 실패 횟수 초기화 -->
+	<update id="resetFailCount">
+	    UPDATE tbl_user
+	    SET u_login_fail_count = 0
+	        , u_lock_time = NULL
+	        , u_account_locked = 'N'
+	    WHERE u_login_id = #{u_login_id}
+	</update>
+	
+	<!-- 로그인 성공시 로그인 실패 카운트를 0으로 초기화 -->
+	<update id="updateLoginFailCountZero">
+		UPDATE tbl_user
+		SET u_login_fail_count = 0
+		WHERE u_login_id = #{u_login_id}
+	</update>
 	
 	<select id = "getLoginIdByNameAndPhone" resultType="string">
 		SELECT u_login_id

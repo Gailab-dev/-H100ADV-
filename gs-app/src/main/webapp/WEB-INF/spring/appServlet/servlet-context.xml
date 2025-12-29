@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<!-- annotation 기반 MVC -->	
+	<mvc:annotation-driven />
+	
+	<!-- 
+		로그인 전 session값이 없으면 interceptor 동작하여 해당 페이지로 바로 접근을 방지하는 설정
+		 mvc:exclude-mapping path: interceptor 예외 경로
+		 beans:bean class: interceptor 기능이 정의된 class 경로
+		 
+	-->
+	<beans:bean id="loginInterceptor" class="com.disabled.interceptor.LoginInterceptor" />
+	<mvc:interceptors>
+	    <mvc:interceptor>
+	        <mvc:mapping path="/**" />
+	        <mvc:exclude-mapping path="/user/login.do" />
+	        <mvc:exclude-mapping path="/user/login" />
+	        <mvc:exclude-mapping path="/user/viewPwdChanged.do" />
+	        <mvc:exclude-mapping path="/user/logout.do" />
+	        <mvc:exclude-mapping path="/user/logout" />
+	        <mvc:exclude-mapping path="/user/updateNewPwd" />
+	        <mvc:exclude-mapping path="/crypto/**" />
+	        <mvc:exclude-mapping path="/resources/**" />
+	        <mvc:exclude-mapping path="/resources/css/**" />
+			<mvc:exclude-mapping path="/resources/images/**" />
+			<mvc:exclude-mapping path="/resources/js/**" />
+			<mvc:exclude-mapping path="/resources/font/**" />
+	        <beans:bean class="com.disabled.interceptor.LoginInterceptor" />
+	    </mvc:interceptor>
+	</mvc:interceptors>
+	
+	
+	<!-- css, js, xml 파일 등 적용을 위한 resources mapping -->
+	<mvc:resources mapping="/resources/**" location="/resources/" />
+	<mvc:resources mapping="/gpkisecureweb/**" location="/gpkisecureweb/" />
+	
+	<!-- bean 사용을 위한 component-scan 경로 -->
+	<context:component-scan base-package="com.disabled.*">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+	
+	
+	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<beans:property name="maxUploadSize" value="51200000" />
+		<beans:property name="defaultEncoding" value="utf-8" />
+	</beans:bean>
+	
+	<!-- TilesConfigurer: tiles 설정파일 위치 지정 -->
+	<beans:bean id="tilesConfigurer"
+	      class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
+	    <beans:property name="definitions">
+	        <beans:list>
+	            <beans:value>/WEB-INF/config/tiles/tiles-config.xml</beans:value>
+	        </beans:list>
+	    </beans:property>  
+	    <beans:property name="checkRefresh" value="true"/>
+	</beans:bean>
+
+	<!-- ViewResolver: Tiles를 ViewResolver로 설정 -->
+	<!-- 모든 .jsp는 tiles-config.xml 파일에 정의되어 있어야 함 -->	
+	<beans:bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+	    <beans:property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView"/>
+	    <beans:property name="order" value="1"/>
+	</beans:bean>
+	
+	<!-- jsp 경로 -->
+	<!-- tiles-config.xml 파일에 정의되지 않은 .jsp 파일은 해당 bean에서 처리함 -->
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="order" value="2"/>
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />	 
+	</beans:bean>
+</beans:beans>

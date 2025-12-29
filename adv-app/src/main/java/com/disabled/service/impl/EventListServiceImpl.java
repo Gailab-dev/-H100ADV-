@@ -39,8 +39,27 @@ public class EventListServiceImpl implements EventListService{
 	@Autowired
 	ApiService apiService;
 	
+	@Autowired
+	VideoDecryptionService decryptionService;
+	
+	// 암호화 된 이미지 경로
+	@Value("${image.enc.path}")
+	private String imgEncPath;
+	  
+	// 암호화 된 영상 경로
+	@Value("${video.enc.path}")
+	private String videoEncPath;
+	  
+	// 복호화 할 이미지 경로
+	@Value("${image.dec.path}")
+	private String imgDecPath;
+	  
+	// 복호화 할 영상 경로
+	@Value("${video.dec.path}")
+	private String videoDecPath;
+	
 	// 로그 기록
-	private static final Logger logger = LoggerFactory.getLogger(EventListServiceImpl.class);
+	private static final com.sun.org.slf4j.internal.Logger logger = LoggerFactory.getLogger(EventListServiceImpl.class);
 	
 	
 	@Override
@@ -64,12 +83,17 @@ public class EventListServiceImpl implements EventListService{
 		try {
 			// 이벤트 ID를 검색조건으로 하여 리스트 상세 내역을 select
 			resultMap = eventListMapper.getEventListDetail(evId);
-		} catch (DataAccessException e) {
-			logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId) : ",e);
+			
+			if(resultMap == null) {
+				logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
+				throw new IllegalStateException("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
+			}
+			return resultMap;
+			
+		} catch (IllegalStateException e) {
+			logger.error("getEventListDetail 함수 수행 도중 오류 발생",e);
 			throw e;
 		}
-		
-		return resultMap;
 	}
 
 	/**
@@ -91,14 +115,14 @@ public class EventListServiceImpl implements EventListService{
 			// 검색 조건에 부합하는 불법 주차 리스트 select
 			resultList = eventListMapper.getEventList(paramMap);
 			
-		} catch (DataAccessException e) {
+//			resultList = eventListMapper.getEventListJoinSerial(paramMap);
 			
+			return resultList;
+			
+		} catch (IllegalStateException e) {
 			logger.error("이벤트 리스트 서비스 오류 발생: {}"+e);
 			throw e;
 		}
-		
-		return resultList;
-		
 	}
 	
 	/**
@@ -268,8 +292,17 @@ public class EventListServiceImpl implements EventListService{
 
 	}
 	
+	
 	@Override
-	public boolean requestFileFromModule(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
+	/**
+	 * 디바이스 리스트에서 상세보기 버튼 클릭시, 웹에 아직 이미지와 영상이 없다면 디바이스에 이미지, 영상파일 요청
+	 * @param res
+	 * @param dvId				디바이스 ID(Integer)
+	 * @param evId				이벤트 ID(Integer)
+	 * @param eventListDetail	이벤트 정보(map)
+	 * @return true: 디바이스로부터 이미지, 영상 수신 성공, false: 디바이스로부터 이미지 영상 수신 실패
+	 */
+	public boolean requestFileFromModule(HttpServletResponse res, Integer dvId, Integer evId, Map<String, Object> eventListDetail) {
 		
 		// 디바이스 IP
 		String dvIp = "";
@@ -284,7 +317,7 @@ public class EventListServiceImpl implements EventListService{
 				
 				
 				// 이벤트 ID에 해당하는 deviceIp 가져오기
-				dvIp = getDvIpByEvId(evId);
+				dvIp = getDvIpByEvId(dvId, evId);
 				
 				
 				json.put("type", "image");
@@ -293,7 +326,7 @@ public class EventListServiceImpl implements EventListService{
 				// 이미지 파일 가져오기
 				String streamCheck = "";
 				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
-				if(!"true".equals(streamCheck)) {
+				if("error".equals(streamCheck)) {
 					
 					// 실패 처리
 					logger.error("디바이스에서 이미지 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);
@@ -310,14 +343,14 @@ public class EventListServiceImpl implements EventListService{
 			if("0".equals(eventListDetail.get("ev_has_mov").toString())) {
 				
 				// 이벤트 ID에 해당하는 deviceIp 가져오기
-				dvIp = getDvIpByEvId(evId);
+				dvIp = getDvIpByEvId(dvId, evId);
 				json.put("type", "video");
 				json.put("fileName", eventListDetail.get("ev_mov_path").toString());
 				
 				// 영상 파일 가져오기
 				String streamCheck = "";
 				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
-				if(!"true".equals(streamCheck)) {
+				if("error".equals(streamCheck)) {
 					
 					// 실패 처리
 					logger.error("디바이스에서 영상 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);
@@ -326,11 +359,9 @@ public class EventListServiceImpl implements EventListService{
 					// 영상파일 전송 성공시 ev_has_mov update
 					eventListMapper.updateEvHasMovOne(evId);
 				}
-				
-
 			}
 			
-		} catch (DataAccessException e2) {
+		} catch (IllegalStateException e2) {
 			logger.error("requestFileFromModule에서 evHasMovChange 또는 evHasImgChange 오류 발생 : ",e2);
 			throw e2;
 		} catch (RuntimeException e) {
@@ -342,12 +373,49 @@ public class EventListServiceImpl implements EventListService{
 	}
 	
 	/**
+	 * 디바이스로부터 받은 영상, 이미지 파일 복호화
+	 * @param res				ㅇ
+	 * @param evId				이벤트 ID(Integer)
+	 * @param eventListDetail	이벤트 상세 정보(map)
+	 * @return
+	 */
+	@Override
+	public boolean requestFileDec(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
+		try {
+			boolean decImgCheck = false;
+			boolean decVideoCheck = false;
+        
+			// 이미지 복호화
+			decImgCheck = decryptionService.decryptAndSaveFileAutoName(eventListDetail.get("ev_img_path").toString(), imgEncPath, imgDecPath);
+        
+			if(!decImgCheck) {
+				logger.error("[이미지파일 복호화 실패] 파일명: " + eventListDetail.get("ev_img_path").toString() + ", 암호화 된 이미지 경로: " +  imgEncPath + ", 복호화 된 이미지 경로" + imgDecPath);
+				return false;
+			}
+        
+			// 영상 복호화
+			decVideoCheck = decryptionService.decryptAndSaveFileAutoName(eventListDetail.get("ev_mov_path").toString(), videoEncPath, videoDecPath);
+        
+			if(!decVideoCheck) {
+				logger.error("[영상파일 복호화 실패] 파일명: " + eventListDetail.get("ev_mov_path").toString() + ", 암호화 된 영상 경로: " +  videoEncPath + ", 복호화 된 영상 경로" + videoDecPath);
+				return false;
+			}
+		} catch (Exception e) {
+			logger.error("requestFileDec에서 파일 복호화 오류 발생 : ",e);
+			return false;
+		}
+      
+		return true;
+	}
+	
+	/**
 	 * 이벤트를 보낸 디바이스의 IP를 조회
+	 * @param dvId : 디바이스 ID
 	 * @param evId : 이벤트 ID
 	 * @return dvIp : 디바이스 IP
 	 */
 	@Override
-	public String getDvIpByEvId(Integer evId) {
+	public String getDvIpByEvId(Integer dvId, Integer evId) {
 		
 		//dvIp
 		String dvIp = "";
@@ -355,11 +423,17 @@ public class EventListServiceImpl implements EventListService{
 		try {
 			
 			dvIp = eventListMapper.getDvIpByEvId(evId);
-		} catch (DataAccessException e) {
-			logger.error("getDvIpByEvId에서 SQL문 오류 : ",e);
+			if(dvIp == null || dvIp.isEmpty()) {
+				logger.error("eventListMapper.getDvIpByEvId(evId)에서 SQL문 오류");
+				throw new IllegalStateException("eventListMapper.getDvIpByEvId(evId)에서 SQL문 오류");
+			}
+			return dvIp;
+			
+		} catch (IllegalStateException e) {
+			logger.error("getDvIpByEvId에서 오류 발생 : ",e);
 			throw e;
 		}
-		return dvIp;
+		
 	}
 	
 	/**
@@ -367,20 +441,18 @@ public class EventListServiceImpl implements EventListService{
 	 * @param startDate : 검색 조건 중 시작일
 	 * @param endDate : 검색 조건 중 마지막일
 	 * @param searchKeyword : 검색 조건 중 검색어
-	 * @return totalRecordCount : 검색 조건에 따른 총 레코드 갯수
+	 * @return 검색 조건에 따른 총 레코드 갯수
 	 */
 	@Override
 	public int getTotalRecordCount(String startDate, String endDate, String searchKeyword) {
-		int totalRecordCount = 0;
 		
 		try {
-			totalRecordCount = eventListMapper.getTotalRecordCount(startDate, endDate, searchKeyword);
-		} catch (DataAccessException e) {
+			// 검색 조건에 따른 천제 페이지 개수 출력
+			return eventListMapper.getTotalRecordCount(startDate, endDate, searchKeyword);
+		} catch (IllegalStateException e) {
 			logger.error("getTotalRecordCount에서 오류 발생 : ",e);
 			throw e;
 		}
-		
-		return totalRecordCount;
 	}
 	
 }

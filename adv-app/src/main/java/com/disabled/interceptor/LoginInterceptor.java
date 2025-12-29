@@ -74,7 +74,15 @@ public class LoginInterceptor implements HandlerInterceptor{
         	setNoStore(response);
             
             try {
-                response.sendRedirect(ctx + "/user/login.do"); // 실제 로그인 엔드포인트로
+                if (isAjax(request)) {
+                    // AJAX 요청이면 JSON으로 타임아웃 알림
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json; charset=UTF-8");
+                    response.getWriter().write("{\"error\":\"SESSION_TIMEOUT\"}");
+                } else {
+                    // 일반 요청이면 로그인 페이지로 이동
+                    response.sendRedirect(ctx + "/user/login.do"); // 실제 로그인 엔드포인트로
+                }
             } catch (IOException e) {
                 logger.error("LoginInterceptor에서 session에 id값이 없어 login 화면으로 이동하는 중 오류: ", e);
             }
@@ -132,7 +140,11 @@ public class LoginInterceptor implements HandlerInterceptor{
         }
     }
 	
-	
+    /** AJAX 요청 여부 */
+    private boolean isAjax(HttpServletRequest request) {
+        return "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
+    }
+    
     // 캐시 금지 헤더
     private static void setNoStore(HttpServletResponse res) {
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");

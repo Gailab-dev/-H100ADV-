@@ -128,6 +128,8 @@ public class ApiServiceImpl implements ApiService{
 	        conn.setDoOutput(true);
 	        conn.setRequestProperty("Content-Type", contentType);
 	        conn.setRequestProperty("Accept", "application/octet-stream");
+	        conn.setConnectTimeout(8000);  
+	        conn.setReadTimeout(8000); 
 	        
 	        // 요청 송신
 	        try(OutputStream os = conn.getOutputStream()){
@@ -169,7 +171,6 @@ public class ApiServiceImpl implements ApiService{
 		            String line;
 		            while ((line = br.readLine()) != null) {
 		                sb.append(line);
-		                logger.debug("Device로부터 응답 수신 : " + sb.toString());
 		            }
 		            
 		            int code = conn.getResponseCode();
@@ -201,7 +202,13 @@ public class ApiServiceImpl implements ApiService{
 		java.nio.file.Path out = java.nio.file.Paths.get(filePath);
 		
 		try {
-		
+			
+			// 1. 통신상태 200 체크
+			if(conn.getResponseCode() != 200) {
+				logger.error("통신 불가 : ",conn.getResponseCode());
+				return false;
+			}
+			
 			// 2. connetion pool 객체가 연결되어 있는 동안 outputStream 객체 실행하여 데이터 수신
 			try (InputStream inputStream = conn.getInputStream();
 					FileOutputStream fileOutputStream = new FileOutputStream(filePath)) {
@@ -268,7 +275,8 @@ public class ApiServiceImpl implements ApiService{
 	        String body = mapper.writeValueAsString(json);
 			
         	// 3. 디바이스 Url 검증
-        	targetUrl = "https://" + dvIp + path;
+        	// targetUrl = "https://" + dvIp + path;
+        	targetUrl = "http://" + dvIp + path;
         	logger.info("통신할 디바이스 주소 : "+ targetUrl);
         	if(isValidUrl(targetUrl)) {
         		logger.error("targetUrl이 잘못되었습니다. : " + targetUrl);
@@ -327,7 +335,7 @@ public class ApiServiceImpl implements ApiService{
 	        		filePath = videoFilePath + "/" + json.get("fileName");
 	        	}
 	        			
-				// 3-3. file stream
+				// file stream
 	        	boolean fileResponseCheck = fileResponse(conn, filePath);
 	        	if (!fileResponseCheck) {
 	        	    try {

@@ -53,6 +53,12 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	/**
+	 * 비밀번호 변경시 새 비밀번호로 수정
+	 * @param uId
+	 * @param encryptPwd
+	 * @return
+	 */
 	public Integer updateNewPwd(Integer uId, String encryptPwd) {
 		try {
 			
@@ -71,6 +77,8 @@ public class UserServiceImpl implements UserService {
 
 	/**
 	 * uId값으로 비밀번호 가져오기 
+	 * @param uId	uId(String)
+	 * @return 		비밀번호(String)
 	 */
 	@Override
 	public String getPwd(Integer uId) {
@@ -83,9 +91,10 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 	
-
 	/**
 	 * uId값으로 loginId 가져오기 
+	 * @param uId
+	 * @return
 	 */
 	@Override
 	public String getLoginId(Integer uId) {
@@ -98,7 +107,118 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	/**
+	 * 로그인 실패 로직 
+	 * @param id	아이디(uLoginId)(String)
+	 */
+	@Override
+	public void loginFailService(String id) {
+		
+		try {
+					
+			// 잠금 count 늘리기
+			loginMapper.increaseFailCount(id);
+			
+			// 그 값이 5 이상이라면 잠금
+			loginMapper.lockAccount(id);
+			
+		} catch (IllegalStateException e2) {
+			logger.error("loginFailService 함수에서 SQL 사용시 오류 발생 : ",e2);
+			throw e2;
+		} catch (RuntimeException e) {
+			logger.error("loginFailService 함수에서 오류 발생 : ",e);
+			throw e;
+		}
+	}
+	
+	@Override
+	/**
+	 * 계정 잠금 여부 확인하여, 현재 잠금 상태를 갱신
+	 * @param id					아이디(uLoginId)(String)
+	 * @return NO_ACCOUNT			아이디가 없음
+	 * @return NOT_LOCKED			잠금상태 아님
+	 * @return LOCKED_UNDER_TERM	잠금상태이나, 잠금 후 5분이 지나 해제 가능 
+	 * @return LOCKED_UNLOCKABLE	잠금상태이고, 잠금해제 불가능한 상태
+	 */
+	public AccountLockStatus checkLockedAccount(String id) {
+		
+		try {
+			
+			// id값만 가지고 계정 여부 확인
+			Map<String,Object> resultMap = loginMapper.getUserByULoginId(id);
+			if(resultMap == null) {
+				return AccountLockStatus.NO_ACCOUNT;
+			}
+			
+			// 잠금이 아니라면 통과
+			String uAccountLocked = resultMap.get("u_account_locked").toString();
+			if("N".equals(uAccountLocked)) {
+				return AccountLockStatus.NOT_LOCKED;
+			}
+			
+			// 잠금이여도 5분 이상 지났다면 통과
+			Object passedObj = resultMap.get("passedMinutes");
+			if(passedObj == null) {
+				return AccountLockStatus.LOCKED_UNDER_TERM;
+			}
+			
+			Integer passedMin = ((Number) passedObj).intValue();
+			if(passedMin >= 5) {
+				return AccountLockStatus.LOCKED_UNLOCKABLE;
+			}else {
+				return AccountLockStatus.LOCKED_UNDER_TERM;
+			}
+
+		} catch (RuntimeException e) {
+			logger.error("checkLockedAccount 함수 실행 중 오류 발생 ",e);
+			throw e;
+		}
+	}
+
+	/**
+	 * 로그인 성공하였음으로 실패 count를 0으로 초기화
+	 * @param u_login_id 	로그인 Id(String)
+	 * @return				true: update 성공, false: 오류 발생
+	 */
+	@Override
+	public boolean resetFailCount(String u_login_id) {
+		
+		try {
+			int rows1 = loginMapper.resetFailCount(u_login_id);
+			if(rows1 != 1) {
+				logger.error("resetFailCount 함수 실행 중 update 항목 없음");
+				return false;
+			}
+			return true;
+		} catch (RuntimeException e) {
+			logger.error("resetFailCount 함수 실행 중 오류 발생 ",e);
+			throw e;
+		}
+	}
+	
+	/**
+	 * 로그인 실패 카운트 초기화
+	 * @param id	로그인Id(uLoginId)(String)
+	 */
+	@Override
+	public void resetLoginFailCount(String id) {
+		try {
+			int row1 = loginMapper.updateLoginFailCountZero(id);
+			if(row1 != 1) {
+				logger.error("resetLoginFailCount SQL 실행 도중 오류 발생");
+				throw new IllegalStateException("resetLoginFailCount SQL 실행 도중 오류 발생");
+			}
+			return;
+		} catch (RuntimeException e) {
+			logger.error("resetLoginFailCount 함수에서 오류 발생 : ",e);
+			throw e;
+		}
+		
+	}	
+	
+	/**
 	 * 새로운 사용자인지 확인
+	 * @param uLoginId	로그인 id(String)
+	 * @return true: 새로운 사용자, false: 기존 사용자
 	 */
 	@Override
 	public boolean checkNewUserId(String uLoginId) {
@@ -119,6 +239,8 @@ public class UserServiceImpl implements UserService {
 	
 	/**
 	 * 회원가입
+	 * @param paramMap	회원가입시 입력한 회원정보(map)
+	 * @return			
 	 */
 	@Override
 	public Integer insertUser(Map<String, Object> paramMap) {
@@ -224,8 +346,10 @@ public class UserServiceImpl implements UserService {
 		return prefixStr + mask + suffixStr;
 	}
 	
-	/*
-	 * 
+	/**
+	 * 이름과 전화번호로 아이디 찾기
+	 * @param body	회원 개인 정보(이름, 전화번호)(map)
+	 * @return		아이디
 	 */
 	@Override
 	public String findId(Map<String, Object> body) {
@@ -240,7 +364,9 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	/**
-	 * 이름, 전번, 아이디로 비밀번호 인증
+	 * 비밀번호 찾기에서 이름, 전번, 아이디로 비밀번호 인증
+	 * @param body	회원 개인 정보(이름, 전번, 아이디) (map)
+	 * @return		true: 비밀번호 인증 성공, false: 비밀번호 인증 실패
 	 */
 	@Override
 	public boolean authPwd(Map<String, Object> body) {

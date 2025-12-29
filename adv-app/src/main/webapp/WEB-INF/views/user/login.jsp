@@ -8,6 +8,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 뷰포트 설정 (모바일 대응) -->
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css"> <!-- CSS 불러오기 -->
 </head>
+<%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
+<c:if test="${not empty errorMsg}">
+<script>
+	alert('<c:out value="${errorMsg}" />');
+</script>
+</c:if>
+<%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 <script
   src="https://code.jquery.com/jquery-3.7.1.js"
   integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
@@ -88,16 +95,19 @@
 				if(result.pwdChanged){
 					window.location.replace("${pageContext.request.contextPath}/stats/viewStat.do");
 				}else{
+					if(result.pwdPassedDays >= 180){
+						alert("마지막 비밀번호 변경일이 180일이 지났습니다. 비밀번호를 재설정해주세요.")
+					}else{
+						alert("최초 로그인시 비밀번호를 변경해야 합니다.")	
+					}
 					window.location.replace("${pageContext.request.contextPath}/user/viewPwdChanged.do?uId="+result.uId);
 				}
 	        }else{
 	        	alert(result.msg);
 	        	return;
 	        }
-
 		}catch (e){
 			alert("로그인 오류: " + e);
-	        
 		}
 	}
 </script>
@@ -138,7 +148,6 @@
 	      </div>
 	    </section>
 	</main>
-
     <footer class="login-footer"></footer>
 </body>
 </html>

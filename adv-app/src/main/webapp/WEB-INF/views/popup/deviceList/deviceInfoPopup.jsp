@@ -16,14 +16,17 @@
 	
 	<div class="modal-content">
 		<label>디바이스명 <span class="required">*</span></label>
-		<input type="text" id="dvName" placeholder="디바이스명" value="${dvInfo.dv_name}">
+		<input type="text" id="dvName" placeholder="디바이스명" value="${dvInfo.dv_name}" >
 
 		<label>디바이스 주소 <span class="required">*</span></label>
-		<input type="text" id="dvAddr" placeholder="디바이스 주소" value="${dvInfo.dv_addr}">
+		<input type="text" id="dvAddr" placeholder="디바이스 주소" value="${dvInfo.dv_addr}" >
 
-		<label>IP <span class="required">*</span></label>
-		<input type="text" id="dvIp" placeholder="IP" value="${dvInfo.dv_ip}">
+		<label>도메인 <span class="required">*</span></label>
+		<input type="text" id="dvIp" placeholder="도메인" value="${dvInfo.dv_ip}" >
 		
+		<label>serial number <span class="required">*</span></label>
+		<input type="text" id="serialNumber" placeholder="serial number" value="${dvInfo.dv_serial_number}">
+	
 		<div class="modal-buttons">
 			<button class="modal-btn cancel" onclick="closeDeviceInfoPopup()">취소</button>
 	

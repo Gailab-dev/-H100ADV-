@@ -5,15 +5,26 @@
 <mapper namespace="com.disabled.mapper.DeviceListMapper">
 	
 	<!-- 디바이스 정보 -->
-	<select id="getDeviceInfo" resultType="map">
-		SELECT dv_id, dv_name, dv_addr
+	<select id="getDeviceInfo" parameterType="map" resultType="map">
+		SELECT dv_id, dv_name, dv_addr, dv_serial_number, dv_status
 		FROM tbl_device
 		WHERE 
 			1=1
-			AND (
-				dv_name like CONCAT('%',#{searchKeyword},'%')
-				OR dv_addr like CONCAT('%',#{searchKeyword},'%')
-			)
+	        <if test="searchKeyword != null">
+		        AND (
+		            dv_name LIKE CONCAT(
+		                '%',
+		                REPLACE(#{searchKeyword}, '_', '\\_'),
+		                '%'
+		            ) ESCAPE '\\'
+		            OR 
+		            dv_addr LIKE CONCAT(
+		                '%',
+		                REPLACE(#{searchKeyword}, '_', '\\_'),
+		                '%'
+		            ) ESCAPE '\\'
+		        )
+	        </if>
 		ORDER BY dv_addr DESC,dv_name DESC	
         LIMIT #{recordCountPerPage} 
         OFFSET #{firstIndex}	
@@ -32,10 +43,21 @@
 		FROM tbl_device
 		WHERE 
 			1=1
-			AND (
-				dv_name like CONCAT('%',#{searchKeyword},'%')
-				OR dv_addr like CONCAT('%',#{searchKeyword},'%')
-			)	
+	        <if test="searchKeyword != null">
+		        AND (
+		            dv_name LIKE CONCAT(
+		                '%',
+		                REPLACE(#{searchKeyword}, '_', '\\_'),
+		                '%'
+		            ) ESCAPE '\\'
+		            OR 
+		            dv_addr LIKE CONCAT(
+		                '%',
+		                REPLACE(#{searchKeyword}, '_', '\\_'),
+		                '%'
+		            ) ESCAPE '\\'
+		        )
+	        </if>
 	</select>
 	
 	<!-- 디바이스 등록 -->
@@ -50,6 +72,7 @@
 			, dv_mod_user
 			, dv_reg_date
 			, dv_mod_date
+			, dv_serial_number
 		)
 		VALUES(
 			1
@@ -61,6 +84,7 @@
 			, 1
 			, NOW()
 			, NOW()
+			, #{dvSerialNumber}
 		)
 	</insert>
 	
@@ -74,6 +98,7 @@
 			, dv_status = #{dvStatus}
 			, dv_mod_user = 1
 			, dv_mod_date = NOW()
+			, dv_serial_number = #{dvSerialNumber}			
 		WHERE dv_id = #{dvId}	
 	
 	</update>
@@ -86,9 +111,35 @@
 	
 	<!-- 디바이스 1개 정보 -->
 	<select id="getOneDeviceInfo" resultType="map">
-		SELECT dv_name, dv_addr, dv_ip
+		SELECT dv_name, dv_addr, dv_ip, dv_serial_number
 		FROM tbl_device
 		WHERE dv_id = #{dvId}
 	</select>
+	
+		<!-- 디바이스명과 주소로 같은 디바이스 존재하는지 조회  -->
+	<select id="getDeviceCountDvNameAndAddr" parameterType="map" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_device
+		WHERE dv_name = #{dvName}
+		AND dv_addr = #{dvAddr}
+		<if test="dvId != null">
+			AND dv_id != #{dvId}
+		</if>
+	</select>
+	
+	<!-- 모든 디바이스 ip 조회  -->
+	<select id="getAllDvIp" resultType="String">
+		SELECT DISTINCT dv_ip
+		FROM tbl_device
+	</select>
+	
+	<!-- 디바이스 IP별 상태값 수정 -->
+	<update id="updateDeviceStatus">
+		UPDATE tbl_device
+		SET dv_status = #{dvStatus}
+			, dv_mod_date = NOW()
+		WHERE dv_ip = #{dvIp}	
+	
+	</update>
 
 </mapper>
