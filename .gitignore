@@ -19,5 +19,10 @@
 .metadata/
 wtpwebapps/
 
+# key 파일
+.env
+*.key
+*.pem
+*.crt
 
 
