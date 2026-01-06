@@ -3,6 +3,8 @@ package com.disabled.service;
 import java.util.List;
 import java.util.Map;
 
+import com.disabled.model.AccountLockStatus;
+
 public interface UserService {
 	Map<String,Object> loginCheck(String id, String pwd);
 

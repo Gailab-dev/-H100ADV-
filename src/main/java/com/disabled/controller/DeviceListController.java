@@ -26,8 +26,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.component.LogDiskManager;
+import com.disabled.mapper.LoginMapper;
 import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
+
+
+
 
 @Controller
 @RequestMapping("/deviceList")
@@ -460,7 +465,7 @@ public class DeviceListController {
 			
 			
 			// 디바이스 등록
-			deviceListService.insertDeviceInfo(dvName,dvAddr,dvIp,dvStatus);
+			deviceListService.insertDeviceInfo(dvName,dvAddr,dvIp,dvStatus,dvSerialNumber);
 			
 			
 		} catch (RuntimeException e) {

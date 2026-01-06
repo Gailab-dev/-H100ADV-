@@ -18,6 +18,7 @@ import javax.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,8 @@ import com.disabled.mapper.EventListMapper;
 import com.disabled.service.ApiService;
 import com.disabled.service.EventListService;
 import com.disabled.service.FileService;
+import com.disabled.service.VideoDecryptionService;
+
 
 @Service
 @Transactional
@@ -59,7 +62,7 @@ public class EventListServiceImpl implements EventListService{
 	private String videoDecPath;
 	
 	// 로그 기록
-	private static final com.sun.org.slf4j.internal.Logger logger = LoggerFactory.getLogger(EventListServiceImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(EventListServiceImpl.class);
 	
 	
 	@Override
@@ -76,7 +79,7 @@ public class EventListServiceImpl implements EventListService{
 	 * - 이벤트 상새 내력(MAP)
 	 */
 	@Override
-	public Map<String, Object> getEventListDetail(Integer evId) {
+	public Map<String, Object> getEventListDetail(Integer dvId, Integer evId) {
 		
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		

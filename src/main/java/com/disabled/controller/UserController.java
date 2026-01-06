@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.component.SessionManager;
+import com.disabled.mapper.LoginMapper;
+import com.disabled.model.AccountLockStatus;
 import com.disabled.service.CryptoARIAService;
 import com.disabled.service.UserService;
 
@@ -59,7 +61,11 @@ public class UserController {
 	 * @return
 	 */
 	@RequestMapping("/login.do")
-	private String viewLogin(HttpServletRequest request, HttpServletResponse response) {
+	private String viewLogin(
+			HttpServletRequest request
+			, HttpServletResponse response
+			, @RequestParam(value = "errorMsg", required = false) String errorMsg
+			, Model model) {
 		
 		// ====== 유효성 검증 [S] ====== //
 		// 오류 메시지
@@ -205,7 +211,7 @@ public class UserController {
 				}
 
 				// 중복 로그인 체크 및 기존 세션 무효화
-				boolean hadDuplicateSession = sessionManager.addSession(checkErr.get("u_id").toString(), session);
+				boolean hadDuplicateSession = sessionManager.addSession(checkErr.get("u_id").toString(),id, session);
 				if (hadDuplicateSession) {
 					logger.warn("{} 사용자의 중복 로그인 감지. 기존 세션이 무효화되었습니다.", id);
 				}

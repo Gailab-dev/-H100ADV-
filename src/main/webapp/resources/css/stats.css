@@ -136,6 +136,55 @@ button {
 #chart {
     margin: 0 ; 
 }
+/* 조회 폼 스타일 */
+.filter-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.filter-input-group input[type="date"],
+.filter-input-group input[type="text"], 
+.filter-input-group select {
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #333;
+    background-color: #fff;
+    outline: none;
+}
+
+.search-field input[type="text"] {
+    padding-left: 30px; /* 돋보기 아이콘 고려 */
+    background-image: url('/images/icon-search.svg'); /* 돋보기 아이콘 */
+    background-size: 16px;
+    background-repeat: no-repeat;
+    background-position: 8px center;
+}
+.search-btn {
+    height: 36px;
+    padding: 0 16px;
+    background-color: #666;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+/* 엑셀 다운로드 버튼 */
+.excel-btn {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.excel-btn img {
+    width: 24px;      /* 필요에 맞게 조절 */
+    height: 24px;
+}
 
 /* 표 스타일 정리 */
 table {

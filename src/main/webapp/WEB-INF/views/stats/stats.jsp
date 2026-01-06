@@ -17,6 +17,13 @@
 </script>
 <script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
 <%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
+	<%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
+	<script>
+	  <c:if test="${not empty errorMsg}">
+	    alert('<c:out value="${errorMsg}" />');
+	  </c:if>
+	</script>
+	<%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 </head>
 <style>
 
@@ -239,7 +246,33 @@
             </ul>
         </aside>    
     	<div class="content">
-    		<h1>월별 불법주차 현황</h1>
+    		<h1>월별 불법주차 현황(1년)</h1>
+    		<form id="StatsExcelDownload" action="gov-disabled-web-gs/stats/excelDownload">
+    			<button type="submit" class="excel-btn" title="엑셀 다운로드">
+    				<img src="${pageContext.request.contextPath}/resources/images/icon_excel.png" alt="엑셀 다운로드">
+    			</button>
+    		</form>
+			<form id="StatsSearchForm" action="/gov-disabled-web-gs/stats/stats.do" class="filter-form">
+				<div class="filter-input-group">
+					<input type="date" name="startDate" value="${startDate}" />
+				</div>
+				<div class="filter-input-group">
+					<input type="date" name="endDate" value="${endDate}" />
+				</div>
+				<div class="filter-input-group search-field">
+					<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="검색어" maxlength="100"/>
+				</div>
+				<div class="filter-input-group">
+					<select id="pageSize" name="pageSize" onchange="searchEventList()">
+        				<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩 보기</option>
+        				<option value="20" ${pageSize == 20 ? 'selected' : ''}>20개씩 보기</option>
+        				<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩 보기</option>
+    				</select>
+				</div>
+				<button type="button" class="search-btn" onclick="searchEventList('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
+			</form>
+    	
+    		
 			<div>
 				<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
 				<div id="chart" style="width: 75%; height: 400px;">

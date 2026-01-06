@@ -51,5 +51,55 @@
 		  AND STR_TO_DATE(s.st_date, '%Y%m') = STR_TO_DATE(m.month, '%Y-%m')
 		ORDER BY m.month, c.st_cd; ]]>
 	</select>
+	
+		<!-- 검색 조건에 따른 모든 이벤트 발생 수(최대 24개, 1년) -->
+	<select id="getEventByMonthAndSearchParams" resultType="map">
+		<!-- 
+			months
+			재귀적 호출로 현재 달부터 작년 현재 달까지 해당하는 달을 구함
+		 -->
+		<![CDATA[ WITH RECURSIVE months AS (
+		  SELECT 
+		    DATE_FORMAT(DATE_SUB(DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY), INTERVAL 11 MONTH), '%Y-%m') AS month,
+		    DATE_SUB(DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY), INTERVAL 11 MONTH) AS d
+		  UNION ALL
+		  SELECT 
+		    DATE_FORMAT(d + INTERVAL 1 MONTH, '%Y-%m'),
+		    d + INTERVAL 1 MONTH
+		  FROM months
+		  WHERE d + INTERVAL 1 MONTH <= DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY)
+		),
+		codes AS (
+		  SELECT 1 AS st_cd UNION ALL SELECT 2 UNION ALL SELECT 3 
+		  UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+		)
+		/* 
+			불법주차 리스트 코드
+			이벤트 코드 ( 1: 미등록차량 / 2: 불법주차(장애인미탑승) / 3: 스티커 불법 사용 / 4: 위험상황 / 5: 물건적재 / 6: 이중주차) 
+		 */
+		
+		/* 
+			월별, 코드별 갯수를 조회
+		*/
+		SELECT
+		  m.month AS st_date,
+		  s.st_date,
+		  d,
+		  c.st_cd AS st_cd,
+		  IFNULL(s.st_cnt, 0) AS st_cnt
+		FROM months m
+		CROSS JOIN codes c
+		LEFT JOIN tbl_statistics s
+		  ON s.st_cd = c.st_cd
+		  AND STR_TO_DATE(s.st_date, '%Y%m') = STR_TO_DATE(m.month, '%Y-%m')
+		WHERE 1=1
+			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+				and st_date BETWEEN #{startDate} AND #{endDate}
+			</if>
+			<if test="stCd != null">
+				and stCd =  #{stCd};
+			</if>
+		ORDER BY m.month, c.st_cd; ]]>
+	</select>
 
 </mapper>

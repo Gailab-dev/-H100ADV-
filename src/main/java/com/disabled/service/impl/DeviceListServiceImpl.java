@@ -128,14 +128,15 @@ public class DeviceListServiceImpl implements DeviceListService{
 	
 	/**
 	 * 디바이스 수정
-	 * @param dvId		디바이스ID(String)
-	 * @param dvName	디바이스명(String)
-	 * @param dvAddr	디바이스주소(String)
-	 * @param dvIp		디바이스IP(String)
-	 * @param dvStatus	디바이스 상태(Integer), 1:정상, 0:오류
+	 * @param dvId				디바이스ID(String)
+	 * @param dvName			디바이스명(String)
+	 * @param dvAddr			디바이스주소(String)
+	 * @param dvIp				디바이스IP(String)
+	 * @param dvStatus			디바이스 상태(Integer), 1:정상, 0:오류
+	 * @param dvSerialNumber	시리얼번호(디바이스고유번호) (String)
 	 */
 	@Override
-	public void updateDeviceInfo(Integer dvId, String dvName, String dvAddr, String dvIp, Integer dvStatus) {
+	public void updateDeviceInfo(Integer dvId, String dvName, String dvAddr, String dvIp, Integer dvStatus,String dvSerialNumber) {
 		try {
 			
 			Integer rows1 = deviceListMapper.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus,dvSerialNumber);
@@ -186,5 +187,4 @@ public class DeviceListServiceImpl implements DeviceListService{
 
 		}
 	}
-
 }

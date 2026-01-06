@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.disabled.component.LogDiskManager;
+import com.disabled.mapper.LoginMapper;
 import com.disabled.service.EventListService;
 
 @Controller
@@ -325,7 +327,7 @@ public class EventListController {
 			
 			// ====== 서비스 [S] ====== //
 			// 불법주차 리스트 상세 정보 가져오기
-			eventListDetail = eventListService.getEventListDetail(evId);
+			eventListDetail = eventListService.getEventListDetail(dvId,evId);
 			if(eventListDetail != null) {
 				String evCd = String.valueOf(eventListDetail.get("ev_cd"));
 				String ev_cd_name = "";
@@ -351,7 +353,7 @@ public class EventListController {
 			
 			// 이미지파일, 영상 파일 module에서 수신
 			boolean moduleCheck = false;
-			moduleCheck = eventListService.requestFileFromModule(res, evId,eventListDetail);
+			moduleCheck = eventListService.requestFileFromModule(res, dvId,evId,eventListDetail);
 			if(!moduleCheck) {
 				logger.error("Device와 파일 송수신 도중 오류 발생 / response : " + res.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
 				model.addAttribute("errorMsg", "상세 조회 중 오류가 발생했습니다.");
