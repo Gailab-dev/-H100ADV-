@@ -22,11 +22,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.common.EmailService;
 import com.disabled.component.SessionManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.model.AccountLockStatus;
 import com.disabled.service.CryptoARIAService;
+import com.disabled.service.EmailAuthService;
 import com.disabled.service.UserService;
+import com.ibatis.sqlmap.engine.mapping.result.ResultMap;
 
 @Controller
 @RequestMapping("/user")
@@ -46,6 +49,12 @@ public class UserController {
 	
 	@Autowired
 	LoginMapper loginMapper;
+	
+	@Autowired
+	EmailAuthService emailAuthService;
+	
+	@Autowired
+	EmailService emailService;
 	
 	// 로그인 화면으로 redirect
 	@RequestMapping("")
@@ -707,6 +716,74 @@ public class UserController {
 			logger.error("비밀번호 리셋 중 오류 발생 : ",e);
 			resultMap.put("ok", false);
 			resultMap.put("msg", "비밀번호 리셋 중 오류 발생");
+			return resultMap;
+		}
+	}
+	
+	@PostMapping("/request")
+	@ResponseBody
+	public Map<String,Object> request(
+		@RequestBody Map<String,Object> body
+		, HttpSession session) {
+		
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			
+			// ======= 변수 선언부 [S] ======
+			// 시도 횟수
+			Object attemptObj = session.getAttribute("AUTH_ATTEMPT_COUNT");
+			Integer authAttemptCount = 0;
+			if (attemptObj instanceof Integer) {
+			    authAttemptCount = (Integer) attemptObj;
+			}
+			
+			// 만료 시간
+			Object expiredObj = session.getAttribute("EXPIRED_TIME");
+			LocalDateTime expiredTime = null;
+			if (expiredObj instanceof LocalDateTime) {
+			    expiredTime = (LocalDateTime) expiredObj;
+			}
+			// ======= 변수 선언부 [E] ======
+			// ======= 서비스 [S] ======
+			// 만료 여부 판단
+	        LocalDateTime now = LocalDateTime.now();
+	        boolean isExpired = (expiredTime == null || now.isAfter(expiredTime));
+	        
+	        // 5회 이상 시도한 경우
+	        if (!isExpired && authAttemptCount >= 5) {
+	            resultMap.put("ok", false);
+	            resultMap.put("msg", "인증 코드 요청 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.");
+	            return resultMap;
+	        }
+			
+	        // 만료된 경우 세션 초기화
+	        if (isExpired) {
+	            authAttemptCount = 0;
+	        }
+			
+			// 회원가입 정보 session에 저장
+			session.setAttribute("REGISTER_USER",body);
+			
+			// 인증코드 생성
+			String authCode = emailAuthService.createAuthCode();
+			
+			// 인증코드와 만료 시간 시도횟수를 세션에 저장
+			session.setAttribute("AUTH_CODE", authCode);
+			session.setAttribute("EXPIRED_TIME", LocalDateTime.now().plusMinutes(5));
+			session.setAttribute("AUTH_ATTEMPT_COUNT",authAttemptCount + 1);
+
+			
+			// 이메일 송신
+			String email = body.get("email").toString();
+			emailService.sendAuthEmail(email, authCode);
+			
+			resultMap.put("ok", true);
+			return resultMap;
+		} catch (Exception e) {
+			logger.error("이메일 인증을 위한 이메일 발송 도중 오류 발생 : ",e);
+			resultMap.put("ok", false);
+			resultMap.put("msg", "이메일 인증을 위한 이메일 발송 도중 오류 발생");
 			return resultMap;
 		}
 	}

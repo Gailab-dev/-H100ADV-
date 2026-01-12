@@ -21,12 +21,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.common.CodeConversionService;
+import com.disabled.common.CommonValidation;
+import com.disabled.common.ExcelColumn;
+import com.disabled.common.ExcelSheetSpec;
 import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.service.EventListService;
+import com.disabled.service.ExcelService;
 
 @Controller
 @RequestMapping("/eventList")
@@ -40,6 +47,15 @@ public class EventListController {
 	
 	@Autowired
 	LoginMapper loginMapper;
+	
+	@Autowired
+	CommonValidation commonValidation;
+	
+	@Autowired
+	CodeConversionService codeConversionService;
+	
+	@Autowired
+	ExcelService excelService;
 	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(EventListController.class);
@@ -58,6 +74,8 @@ public class EventListController {
 	 * @param searchKeyword	검색어(String)
 	 * @param page			페이지 수(Integer)
 	 * @param pageSize		한 화면에 보여줄 컬럼의 크기(Integer)
+	 * @param sortCol		정렬 대상이 되는 열(String)
+	 * @param sortDir		정렬방법(ASE, DESC 외 오류!) (String) 
 	 * @param model
 	 * @param session
 	 * @return
@@ -67,9 +85,12 @@ public class EventListController {
 	public String viewEventList(
 			@RequestParam(value="startDate", required=false) String startDate
 			, @RequestParam(value="endDate", required=false) String endDate
+			, @RequestParam(value="evCd", required = false) Integer evCd
 			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
 			, @RequestParam(value="page", required=false) Integer page
 			, @RequestParam(value="pageSize", defaultValue = "10" ) Integer pageSize
+	        , @RequestParam(value="sortCol", defaultValue="ev_id") String sortCol
+	        , @RequestParam(value="sortDir", defaultValue="DESC") String sortDir
 			, Model model
 			, HttpSession session) {
 		
@@ -128,6 +149,14 @@ public class EventListController {
 				model.addAttribute("errorMessage", "유효하지 않은 페이지 크기입니다.");
 				return "error";
 			}
+		}
+		
+		// sortDir 검증
+		if(!"ASC".equals(sortDir) && !"DESC".equals(sortDir)) {
+			logger.warn("유효하지 않은 sortDir 요청: {}",sortDir);
+			model.addAttribute("errorMessage", "유효하지 않은 정렬방법입니다.");
+			return "error";
+
 		}
 		// ====== 유효성 검증 [E] ====== //
 		
@@ -193,6 +222,9 @@ public class EventListController {
 			paramMap.put("searchKeyword", searchKeyword);
 			paramMap.put("startDate",startDate);
 			paramMap.put("endDate",endDate);
+			paramMap.put("evCd", evCd);
+		    paramMap.put("sortCol", sortCol);
+		    paramMap.put("sortDir", sortDir);
 			
 			// 검색 조건에 따른 이벤트 리스트 조회
 			eventList = eventListService.getEventList(paramMap);
@@ -232,6 +264,8 @@ public class EventListController {
 		model.addAttribute("useTblLog", useTblLog);
 		model.addAttribute("pageSize", pageSize);
 		model.addAttribute("totalRecordCount", totalRecordCount);
+	    model.addAttribute("sortCol", sortCol);
+	    model.addAttribute("sortDir", sortDir);
 		
 		return "eventList/eventList";
 	}
@@ -284,7 +318,7 @@ public class EventListController {
 
 			// startDate 검증 (날짜 형식 및 SQL Injection 방어)
 			if (startDate != null && !startDate.isEmpty()) {
-				if (!isValidDate(startDate) || containsDangerousPattern(startDate)) {
+				if (!commonValidation.isValidDate(startDate) || containsDangerousPattern(startDate)) {
 					logger.warn("유효하지 않은 startDate 요청: {}", startDate);
 					model.addAttribute("errorMessage", "유효하지 않은 날짜 형식입니다.");
 					return "error";
@@ -293,7 +327,7 @@ public class EventListController {
 
 			// endDate 검증 (날짜 형식 및 SQL Injection 방어)
 			if (endDate != null && !endDate.isEmpty()) {
-				if (!isValidDate(endDate) || containsDangerousPattern(endDate)) {
+				if (!commonValidation.isValidDate(endDate) || containsDangerousPattern(endDate)) {
 					logger.warn("유효하지 않은 endDate 요청: {}", endDate);
 					model.addAttribute("errorMessage", "유효하지 않은 날짜 형식입니다.");
 					return "error";
@@ -659,5 +693,63 @@ public class EventListController {
 		}
 
 		return false;
+	}
+	
+	/**
+	 * 엑셀 다운로드
+	 * @param startDate		이벤트 발생일 기준 검색 시작일(String)
+	 * @param endDate		이벤트 발생일 기준 검색 종료일(String)
+	 * @param stCd			이벤트 유형 코드(Integer)
+	 * @param searchKeyword	검색어
+	 * @param response		HttpServletResponse 객체
+	 */
+	@PostMapping("/excelDownload")
+	@ResponseBody
+	public void excelDownload(
+			@RequestParam(name="startDate", required=false) String startDate
+			, @RequestParam(name="endDate", required=false) String endDate
+			, @RequestParam(name="stCd", required=false) Integer stCd
+			, @RequestParam(name="searchKeyword", required=false) String searchKeyword
+			, HttpServletResponse response) {
+		
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		
+		try {
+			// ====== 서비스 [S] ======
+			paramMap.put("startDate", startDate);
+			paramMap.put("endDate",endDate);
+			paramMap.put("stCd",stCd);
+			paramMap.put("searchKeyword", searchKeyword);
+			
+			// 데이터 가져오기
+			List<Map<String,Object>> eventList = eventListService.getEventList(paramMap);
+			
+			// 엑셀 컬럼 추가
+		    List<ExcelColumn> columns = List.of(
+	            new ExcelColumn("ev_reg_date", "날짜"),
+	            new ExcelColumn("ev_cd", "유형"),
+	            new ExcelColumn("dv_name", "디바이스명"),
+	            new ExcelColumn("dv_addr", "디바이스 주소"),
+	            new ExcelColumn("dv_car_num", "차량번호")
+	        );
+		    
+		    // 유형 문자열로 변환
+		    eventList = codeConversionService.StCdConverstionIntToStr(eventList);
+		    
+		    // 엑셀 시트 생성
+		    ExcelSheetSpec sheet = ExcelSheetSpec.builder()
+		            .sheetName("이벤트목록")
+		            .columns(columns)
+		            .data(eventList)
+		            .build();
+		    
+		    // 엑셀 파일 생성 및 다운로드
+		    excelService.download("이벤트_목록.xlsx", sheet, response);
+			// ====== 서비스 [E] ======
+
+		} catch (Exception e) {
+			logger.error("엑셀 파일 생성 중 오류 발생",e);
+			return;
+		}
 	}
 }

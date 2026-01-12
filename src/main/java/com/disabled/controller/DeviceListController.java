@@ -26,13 +26,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.common.CommonValidation;
+import com.disabled.common.ExcelColumn;
+import com.disabled.common.ExcelSheetSpec;
 import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
-
-
-
+import com.disabled.service.ExcelService;
 
 @Controller
 @RequestMapping("/deviceList")
@@ -53,6 +54,13 @@ public class DeviceListController {
 	@Autowired
 	LogDiskManager logDiskManager;
 	
+	@Autowired
+	CommonValidation commonValidation;
+	
+	@Autowired
+	ExcelService excelService;
+	
+	
 	// 디바이스 리스트 화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
@@ -64,6 +72,8 @@ public class DeviceListController {
 	@RequestMapping("/viewDeviceList.do")
 	private String viewDeviceList(
 			@RequestParam(value="searchKeyword", required=false) String searchKeyword
+			, @RequestParam(value="startDate", required=false) String startDate
+			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="page", required=false) Integer page
 			, @RequestParam(value="pageSize", defaultValue="10") Integer pageSize
 			, Model model
@@ -82,6 +92,24 @@ public class DeviceListController {
 					if (searchKeyword.length() > 100 || containsDangerousPattern(searchKeyword)) {
 						logger.warn("유효하지 않은 searchKeyword 요청: {}", searchKeyword);
 						model.addAttribute("errorMessage", "유효하지 않은 검색어입니다.");
+						return "error";
+					}
+				}
+				
+				// startDate 검증 (날짜 형식 및 SQL Injection 방어)
+				if (startDate != null && !startDate.isEmpty()) {
+					if (!commonValidation.isValidDate(startDate) || containsDangerousPattern(startDate)) {
+						logger.warn("유효하지 않은 startDate 요청: {}", startDate);
+						model.addAttribute("errorMessage", "유효하지 않은 시작 날짜 형식입니다.");
+						return "error";
+					}
+				}
+
+				// endDate 검증 (날짜 형식 및 SQL Injection 방어)
+				if (endDate != null && !endDate.isEmpty()) {
+					if (!commonValidation.isValidDate(endDate) || containsDangerousPattern(endDate)) {
+						logger.warn("유효하지 않은 endDate 요청: {}", endDate);
+						model.addAttribute("errorMessage", "유효하지 않은 종료 날짜 형식입니다.");
 						return "error";
 					}
 				}
@@ -790,6 +818,60 @@ public class DeviceListController {
 		}
 
 		return false;
+	}
+	
+	/**
+	 * 엑셀 다운로드
+	 * @param startDate		이벤트 발생일 기준 검색 시작일(String)
+	 * @param endDate		이벤트 발생일 기준 검색 종료일(String)
+	 * @param searchKeyword	검색어
+	 * @param response		HttpServletResponse 객체
+	 */
+	@PostMapping("/excelDownload")
+	@ResponseBody
+	public void excelDownload(
+			@RequestParam(name="startDate", required=false) String startDate
+			, @RequestParam(name="endDate", required=false) String endDate
+			, @RequestParam(name="searchKeyword", required=false) String searchKeyword
+			, HttpServletResponse response) {
+		
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		
+		try {
+			
+			// ====== 서비스 [S] ======
+			paramMap.put("startDate", startDate);
+			paramMap.put("endDate",endDate);
+			paramMap.put("searchKeyword", searchKeyword);
+			
+			// 데이터 가져오기
+			List<Map<String, Object>> deviceList = deviceListService.getDeviceList(paramMap);
+			
+			// 엑셀 컬럼 추가
+		    List<ExcelColumn> columns = List.of(
+	            new ExcelColumn("dv_name", "이름"),
+	            new ExcelColumn("dv_addr", "주소"),
+	            new ExcelColumn("dv_reg_date", "등록일")
+	        );
+		    
+		    // 엑셀 시트 생성
+		    ExcelSheetSpec sheet = ExcelSheetSpec.builder()
+		            .sheetName("디바이스목록")
+		            .columns(columns)
+		            .data(deviceList)
+		            .build();
+		    
+		    // 엑셀 파일 생성 및 다운로드
+		    // 엑셀 파일명, 엑셀 시트, 다운로드를 위한 response 객체
+		    excelService.download("디바이스_목록.xlsx", sheet, response);
+			// ====== 서비스 [E] ======
+
+		    
+		} catch (Exception e) {
+			logger.error("엑셀 파일 생성 중 오류 발생",e);
+			return;
+		}
+		
 	}
 }
 

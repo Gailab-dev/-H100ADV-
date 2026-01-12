@@ -82,19 +82,27 @@
 		window.searchDeviceList = function(pageNo){
 			
 			let form = document.getElementById('deviceListSearchForm');
-		  	let val = form.elements['searchKeyword'].value;
+		  	let val1 = form.elements['searchKeyword'].value;
 		  	let searchKeyword = encodeURIComponent(val);
+		  	let val2 = form.elements['startDate'].value;
+		  	let startDate = encodeURIComponent(val2);
+		  	let val3 = form.elemntes['endDate'].vlaue;
+		  	let endDate = encodeURIComponet(val3);
 		  	let pageSize = document.getElementById('pageSize')?.value;
 		  	
 		  	if( searchKeyword.length >= 100 ){
 		  		alert("검색어는 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
 		  		return;
 		  	}
+		  	if(startDate > endDate){ 
+				alert("날짜를 확인해주세요.");
+				return;
+		  	}
 		  	
 		  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 		  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 			
-			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
+			location.href = "viewDeviceList.do?page=" + pageNo +"&startDate=" +startDate +"&endDate"+ endDate + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
 			
 		}
 		
@@ -868,7 +876,50 @@
 	        // 초기 표시
 	        updateSelectedCount();
     	};
-		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------  
+		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------
+		// --------------------------- 엑셀 다운로드 -----------------------------
+		
+		function excelDownload(){
+			
+			let form = document.getElementById('deviceListSearchForm');
+		  	let val1 = form.elements['searchKeyword'].value;
+		  	let searchKeyword = encodeURIComponent(val);
+		  	let val2 = form.elements['startDate'].value;
+		  	let startDate = encodeURIComponent(val2);
+		  	let val3 = form.elemntes['endDate'].vlaue;
+		  	let endDate = encodeURIComponet(val3);
+		  	let pageSize = document.getElementById('pageSize')?.value;
+			
+			const body = {
+					'startDate': startDate,
+					'endDate': endDate,
+					'searchKeyword':searchKeyword
+				};
+				
+				try{
+			    	const response = await fetch('${pageContext.request.contextPath}/deviceList/excelDownload', {
+			      		method: 'POST'
+			      		, headers: { 'Content-Type': 'application/json' }
+			      		, body: JSON.stringify(body)
+			      		, credentials : 'same-origin'
+			      		, cache:'no-store'
+			    		});
+			    	
+			    	// fetch는 항상 response 객체로 리턴
+			    	if (!response.ok) return;
+					
+			    	// response에서 json값 가져오기
+			    	let data = await response.json();
+			    	await sleep(2000);
+			    	
+			    	return;
+				}catch(e){
+					return;
+				}
+
+		}
+		// --------------------------- 엑셀 다운로드 -----------------------------
+
     </script>
 </head>
 <body>
@@ -919,6 +970,13 @@
 							<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩 보기</option>
 						</select>
 						<form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList('${page}'); return false;">
+						  <div class="filter-input-group">
+							<input type="date" name="startDate" value="${startDate}" />
+						  </div>
+						  <div class="filter-input-group">
+							<input type="date" name="endDate" value="${endDate}" />
+						  </div>
+					  
 						  <input type="text" name="searchKeyword" value="<c:out value='${searchKeyword}'/>" placeholder="디바이스명 및 주소 검색">
 						  	<button type="submit" class="search-btn" title="검색">
 						    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
@@ -948,6 +1006,9 @@
 					              stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
 					      	</svg>
 				    	</button>
+				    	<button type="button" class="delete-btn" onclick="excelDownload()" title="엑셀 다운로드">
+							<img src="${pageContext.request.contextPath}/resources/images/icon_excel.png" alt="엑셀 다운로드">
+				    	</button>
 	  				</div>
 				</div>
 				
@@ -955,10 +1016,18 @@
 					<thead>
 						<tr>
 							<th><input type="checkbox" id="checkAll" /></th>
-							<th>디바이스명</th>
-							<th>디바이스 주소</th>
-							<th>디바이스 상태</th>
-							<th>실시간 영상</th>
+							<th>
+								디바이스명
+								<button class="sort-btn" data-column="ev_date"></button>
+							</th>
+							<th>
+								디바이스 주소
+								<button class="sort-btn" data-column="ev_addr"></button>	
+							</th>
+							<th>
+								등록날짜
+								<button class="sort-btn" data-column="dv_reg_date"></button>	
+							</th>
 							<th>디바이스 수정</th>
 						</tr>
 					</thead>
@@ -985,13 +1054,20 @@
 					          		<c:out value="${item.dv_addr}" escapeXml ="true"/>
 					          	</span>
 					          </td>
+					          <td>
+   					          	<span class="cell-ellipsis" title="${fn:escapeXml(item.dv_reg_date)}">
+					          		<c:out value="${item.dv_reg_date}" escapeXml ="true"/>
+					          	</span>
+					          </td>
+					          
+					          <!--
 							  <td>
 								<c:choose>
 									<c:when test="${item.dv_status eq 0}">OFF</c:when>
 									<c:when test="${item.dv_status eq 1}">ON</c:when>
 								</c:choose>
 							  </td>	
-								<!-- 추후 고도화 시 이렇게 가야 함, 지금은 위에 것으로 해주기 												
+																				
 								<td>
 									<c:choose>
 										<c:when test="${item.dv_status eq 0}">Jetson 통신 불가</c:when>
@@ -1002,7 +1078,7 @@
 										<c:when test="${item.dv_status eq 5}">안전버튼 통신 불가</c:when>
 									</c:choose>
 								</td>
-								 -->
+								 
 					          <td>
 						        <c:choose>
 					        		<c:when test="${item.dv_status eq 1}">
@@ -1015,6 +1091,7 @@
 				            		</c:when>
 								</c:choose>	
 					          </td>
+					          -->
 					          <td>
 					            <button class="edit-btn" type="button" onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>
 					          </td>

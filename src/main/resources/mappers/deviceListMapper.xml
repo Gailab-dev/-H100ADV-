@@ -6,10 +6,13 @@
 	
 	<!-- 디바이스 정보 -->
 	<select id="getDeviceInfo" parameterType="map" resultType="map">
-		SELECT dv_id, dv_name, dv_addr, dv_serial_number, dv_status
+		SELECT dv_id, dv_name, dv_addr, dv_serial_number, dv_status,dv_reg_date
 		FROM tbl_device
 		WHERE 
 			1=1
+			<if test="startDate != null and endDate != null">
+				dv_reg_date BETWEEN #{startDate} AND #{endDate}
+			</if>
 	        <if test="searchKeyword != null">
 		        AND (
 		            dv_name LIKE CONCAT(
@@ -26,8 +29,13 @@
 		        )
 	        </if>
 		ORDER BY dv_addr DESC,dv_name DESC	
-        LIMIT #{recordCountPerPage} 
-        OFFSET #{firstIndex}	
+        <if test="recordCountPerPage != null">
+        	LIMIT #{recordCountPerPage} 
+        </if>
+        <if test="firstIndex != null">
+        	OFFSET #{firstIndex}
+        </if>
+        	
 	</select>
 	
 	<!-- 선택한 디바이스의 ip값에 따른 ip값  -->

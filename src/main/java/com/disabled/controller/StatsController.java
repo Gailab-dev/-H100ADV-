@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.common.CodeConversionService;
 import com.disabled.common.ExcelColumn;
 import com.disabled.common.ExcelSheetSpec;
 import com.disabled.component.LogDiskManager;
 import com.disabled.component.SessionManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.mapper.StatsMapper;
-import com.disabled.service.CodeConversionService;
 import com.disabled.service.CryptoARIAService;
 import com.disabled.service.ExcelService;
 import com.disabled.service.StatsService;
@@ -181,6 +181,7 @@ public class StatsController {
 			// ====== 서비스 [E] ======
 			
 		} catch (Exception e) {
+			logger.error("엑셀 파일 생성 중 오류 발생",e);
 			// TODO: handle exception
 		}
 		

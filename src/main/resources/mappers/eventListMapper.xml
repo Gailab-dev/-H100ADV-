@@ -6,10 +6,20 @@
 
 	<!-- 검색조건에 따른 이벤트 리스트 -->
 	<select id="getEventList" parameterType="map" resultType="map">
-		SELECT ROW_NUMBER() OVER (ORDER BY A.ev_id DESC) AS rn 
-			, A.*
-			, ev_dv_id as dv_id			
-			, CONCAT(B.dv_addr,' ',B.dv_name) AS dv_addr
+		SELECT ROW_NUMBER() OVER (
+			ORDER BY 
+			<choose>
+            	<when test="sortCol == 'ev_date'">ev_date</when>
+            	<when test="sortCol == 'ev_cd'">ev_cd</when>
+            	<when test="sortCol == 'dv_name'">dv_name</when>
+            	<when test="sortCol == 'dv_addr'">dv_addr</when>
+            	<when test="sortCol == 'ev_car_num'">ev_car_num</when>
+            	<otherwise>ev_date</otherwise>
+			</choose>	
+			${sortDir}) AS rn 
+			, A.*			
+			, B.dv_addr
+			, B.dv_name
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
@@ -22,10 +32,18 @@
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate}	
 			</if>
+			<if test="evCd != null">
+				AND A.ev_cd = #{evCd}
+			</if>
 		</where>
         ORDER BY A.ev_id DESC
-        LIMIT #{recordCountPerPage} 
-        OFFSET #{firstIndex}
+        <if test="recordCountPerPage != null">
+        	LIMIT #{recordCountPerPage}
+        </if>
+        <if test="firstIndex != null">
+        	OFFSET #{firstIndex}
+        </if>
+        
 	</select>
 	
 	<!-- 검색조건에 따른 페이징 기능을 위한 레코드 갯수 -->
@@ -34,49 +52,6 @@
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
-		<where>
-			<if test="searchKeyword != null and searchKeyword != ''">
-				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
-				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
-				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
-			</if>
-			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
-			</if>
-		</where>
-	</select>
-	
-	<!-- 디바이스 테이블의 디바이스 ID값과 조인한 검색 조건에 따른 불법주차 리스트 -->
-	<select id="getEventListJoinSerial" resultType="map">
-		SELECT 
-			ROW_NUMBER() OVER (ORDER BY A.ev_id DESC) AS rn
-			, A.*
-			, CONCAT(B.dv_addr,' ',B.dv_name) AS dv_addr
-			, B.dv_id AS dv_id
-		FROM tbl_event_data A
-		RIGHT JOIN tbl_device B
-		ON A.ev_serial_number = B.dv_serial_number
-		<where>
-			<if test="searchKeyword != null and searchKeyword != ''">
-				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
-				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
-				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
-			</if>
-			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
-			</if>
-		</where>
-        ORDER BY A.ev_id DESC
-        LIMIT #{recordCountPerPage} 
-        OFFSET #{firstIndex}
-	</select>
-	
-	<!-- 디바이스 테이블의 디바이스 ID값과 조인한 검색 조건에 따른 불법주차 리스트의 수 -->
-	<select id="getTotalRecordCountJoinSerial" resultType="int">
-		SELECT COUNT(1)
-		FROM tbl_event_data A
-		RIGHT JOIN tbl_device B
-		ON A.ev_serial_number = B.dv_serial_number
 		<where>
 			<if test="searchKeyword != null and searchKeyword != ''">
 				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
