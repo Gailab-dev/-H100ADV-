@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 480px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .code {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2b6cff;
+            letter-spacing: 6px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .footer {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+<title>H100 이메일 인증</title>
+</head>
+<body>
+<div class="container">
+    <h2>H100 시스템 이메일 인증</h2>
+    <p>아래 인증번호를 입력해 주세요.</p>
+
+    <div class="code">{{AUTH_CODE}}</div>
+
+    <p>인증번호는 <b>5분간 유효</b>합니다.</p>
+
+    <div class="footer">
+        본 메일은 발신 전용입니다.
+    </div>
+</div>
+</body>
+</html>

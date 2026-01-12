@@ -302,10 +302,8 @@
 				, u_region : region
 			}
 			
-			console.log("${pageContext.request.contextPath}/user/register");
-			
-		    // 회원가입
-			const res = await fetch('${pageContext.request.contextPath}/user/register',{
+		    // 이메일 인증을 위한 세션에 데이터 저장
+			const res = await fetch('${pageContext.request.contextPath}/user/request',{
 				method: 'POST',
 		  		headers: {
 		    		'Content-Type': 'application/json'
@@ -323,7 +321,7 @@
 			const result = await res.json();
 			
 			if(result.ok){
-				window.location.href = "${pageContext.request.contextPath}/user/login.do";
+				window.location.href = "${pageContext.request.contextPath}/user/emailAuth.do";
 			}else {
 				alert(result.msg);
 			}
