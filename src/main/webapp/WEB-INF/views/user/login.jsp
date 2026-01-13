@@ -1,30 +1,50 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
-    
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>관리자로그인</title> <!-- 페이지 제목 설정 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 뷰포트 설정 (모바일 대응) -->
-<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css"> <!-- CSS 불러오기 -->
+<title>로그인</title>
+<!-- 페이지 제목 설정 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 반응형 뷰포트 설정 (모바일 대응) -->
+<link rel="stylesheet"
+	href="${pageContext.request.contextPath}/resources/css/login.css">
+<!-- CSS 불러오기 -->
 </head>
 <%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 <c:if test="${not empty errorMsg}">
-<script>
-	alert('<c:out value="${errorMsg}" />');
+	<script>
+	showError('<c:out value="${errorMsg}" />');
 </script>
 </c:if>
 <%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
-<script
-  src="https://code.jquery.com/jquery-3.7.1.js"
-  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
-  crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.js"
+	integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+	crossorigin="anonymous"></script>
 <script>
 	
 	/**
-	* 엔터키 감지하여 로그인 버튼 클릭
+	* 에러 메시지 표시 함수
 	*/
+	function showError(message) {
+		const errorElement = document.getElementById('errorMessage');
+		errorElement.textContent = message;
+		errorElement.style.opacity = '1';
+	}
+
+	/**
+	* 에러 메시지 숨기기 함수
+	*/
+	function clearError() {
+		const errorElement = document.getElementById('errorMessage');
+		errorElement.textContent = '';
+		errorElement.style.opacity = '0';
+	}
+	
+	/**
+	* 엔터키 감지하여 로그인 버튼 클릭
+	
 	function enterKeyEvent(event){
 		if(event.key == 'Enter'){
 			const id = document.getElementById('id').value;
@@ -32,10 +52,32 @@
 			login(id, pwd);
 		}
 	}
+	*/
 	
 	/**
-	* 키보드에 반응할 수 있도록 input태그에 eventListener 추가
+	* 비밀번호 보기/숨기기 토글
 	*/
+	function togglePassword() {
+		const pwdInput = document.getElementById('pwd');
+		const eyeIcon = document.getElementById('eyeIcon');
+		
+		if (pwdInput.type === 'password') {
+			// 비밀번호 보이기
+			pwdInput.type = 'text';
+			eyeIcon.src = '${pageContext.request.contextPath}/resources/images/login/eye-open.svg';
+			eyeIcon.alt = '비밀번호 숨기기';
+		} else {
+			// 비밀번호 숨기기
+			pwdInput.type = 'password';
+			eyeIcon.src = '${pageContext.request.contextPath}/resources/images/login/eye-closed.svg';
+			eyeIcon.alt = '비밀번호 표시';
+		}
+	}
+	
+	/** form으로 수정하면서 자동처리가 가능해짐
+	 form으로 했을때 모바일 키보드(완료 가능), 비밀번호 관리자 연동,자동완성도 가능
+	* 키보드에 반응할 수 있도록 input태그에 eventListener 추가
+	
 	$(document).ready(function(){
 		const id = document.getElementById('id');
 		const pwd = document.getElementById('pwd');
@@ -44,6 +86,7 @@
 		pwd.addEventListener('keyup',enterKeyEvent);
 
 	})
+	*/
 	
 	/*
 	 * 로그인 정보를 받아서 로그인 가능한 사용자라면 로그인
@@ -55,19 +98,19 @@
 		try{
 			// validation
 			if(id == null || id == "" || id == "undefined"){
-				alert("아이디를 입력해주세요");
+				showError("아이디와 비밀번호를 정확히 입력해주세요.");
 				return;
 			}
 			if(pwd == null || pwd == "" || pwd == "undefinded"){
-				alert("비밀번호를 입력해주세요");
+				showError("아이디와 비밀번호를 정확히 입력해주세요.");
 				return;
 			}
 		  	if( id.length >= 100 ){
-		  		alert("ID는 100자를 넘을 수 없습니다.");
+		  		showError("ID는 100자를 넘을 수 없습니다.");
 		  		return;
 		  	}
 		  	if( pwd.length >= 100 ){
-		  		alert("비밀번호는 100자를 넘을 수 없습니다.");
+		  		showError("비밀번호는 100자를 넘을 수 없습니다.");
 		  		return;
 		  	}
 			
@@ -85,7 +128,7 @@
 			
 		    // response 객체의 ok값(200~299)
 	        if (!r.ok) {
-	    		alert(r.ok +"error");
+	        	showError(r.ok +"error");
 	            return;
 	        }
 			
@@ -104,51 +147,83 @@
 					window.location.replace("${pageContext.request.contextPath}/user/viewPwdChanged.do?uId="+result.uId);
 				}
 	        }else{
-	        	alert(result.msg);
+	        	showError(result.msg);
 	        	return;
 	        }
 		}catch (e){
-			alert("로그인 오류: " + e);
+			showError("로그인 오류: " + e);
 		}
 	}
 </script>
 <body>
 	<!-- 상단 헤더 공간 (투명, 고정 높이) -->
-    <header class="login-header"></header>
+	<header class="login-header"></header>
 
 	<main class="login-wrap">
-	  <!-- 좌측: 제품 사진 -->
+		<!-- 좌측: 제품 사진 -->
 		<section class="bg-panel">
-		    <img src="${pageContext.request.contextPath}/resources/images/product.png"
-		         alt="제품 이미지"
-		         class="bg-img">
+			<img
+				src="${pageContext.request.contextPath}/resources/images/product.png"
+				alt="제품 이미지" class="bg-img">
 		</section>
-	
-	    <!-- 우측: 로그인 카드 -->
-	    <section class="form-panel">
-	      <div class="login-card">
-	        <p class="product-ver">G.Eye-Parking H100 V1.0</p>
-	
-	        <div class="title-row" role="heading" aria-level="1">
-				<img src="${pageContext.request.contextPath}/resources/images/simbol.png"
-				     alt="아이콘" class="title-icon">
-	          <span class="title-text">관리자 로그인</span>
-	        </div>
-	
-	        <div class="fields">
-	          <input id="id"  class="line-input" type="text"     placeholder="아이디를 입력하세요" autocomplete="username">
-	          <input id="pwd" class="line-input" type="password" placeholder="비밀번호를 입력하세요" autocomplete="current-password">
-	
-	          <button class="primary-btn"
-	                  onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
-	            로그인
-	          </button>
-	          <P>아직 회원이 아니신가요? <a href="${pageContext.request.contextPath}/user/register.do">회원가입</a></P>
-	          <P>아이디 또는 비밀번호를 잊어버렸나요? <a href="${pageContext.request.contextPath}/user/findIdPwd.do">아이디/비밀번호찾기</a></P>
-	        </div>
-	      </div>
-	    </section>
+
+		<!-- 우측: 로그인 카드 -->
+		<section class="form-panel">
+			<div class="login-card">
+				<p class="product-ver">G.Eye-Parking H100 V1.0</p>
+
+				<div class="title-row" role="heading" aria-level="1">
+					<img
+						src="${pageContext.request.contextPath}/resources/images/simbol.png"
+						alt="아이콘" class="title-icon"> <span class="title-text">관리자
+						로그인</span>
+				</div>
+
+				<div class="fields">
+					<form
+						onsubmit="event.preventDefault(); login(document.getElementById('id').value, document.getElementById('pwd').value);"
+						class="login-content">
+						<div class="input-group">
+							<input id="id" class="line-input" type="text"
+								placeholder="아이디를 입력하세요" autocomplete="username">
+							<div class="password-wrapper">
+								<input id="pwd" class="line-input" type="password"
+									placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+								<button type="button" class="toggle-password"
+									onclick="togglePassword()">
+									<img id="eyeIcon"
+										src="${pageContext.request.contextPath}/resources/images/login/eye-closed.svg"
+										alt="비밀번호 표시">
+								</button>
+							</div>
+						</div>
+						<div class="login-state-wrapper">
+							<input type="checkbox" id="keepLogin" class="keep-login-checkbox">
+							<label for="keepLogin" class="loginState">아이디 저장</label>
+							<P class="findIdPw">
+								<a href="${pageContext.request.contextPath}/user/findIdPwd.do">아이디/비밀번호찾기</a>
+							</P>
+						</div>
+						<div class="submitgroup">
+							<p id="errorMessage" class="error-message"></p>
+
+							<button class="primary-btn"
+								onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
+								로그인</button>
+						</div>
+
+					</form>
+					<div class="login-foot">
+						<P class="joinus">
+							아직 회원이 아니신가요? <a
+								href="${pageContext.request.contextPath}/user/register.do">회원가입</a>
+						</P>
+					</div>
+				</div>
+			</div>
+		</section>
 	</main>
-    <footer class="login-footer"></footer>
+
+
 </body>
 </html>

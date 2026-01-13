@@ -280,6 +280,7 @@
 </script>
 </head>
 <body>
+	<div class=page-wrapper>
 	<!-- 헤더 -->
 	<header class="header">
 	  <div class="logo">
@@ -306,9 +307,9 @@
     <div class="container">
 		<aside class="sidebar">
             <ul class="menu">
-                <li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
+            	<li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+                <li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">통계</a></li>
                 <li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
-                <li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
                 <!-- 
                 <li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
             	 -->
@@ -340,6 +341,7 @@
 				<div class="filter-input-group search-field">
 					<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="검색어" maxlength="100"/>
 				</div>
+
 				<div class="filter-input-group">
 					<select id="pageSize" name="pageSize" onchange="searchEventList()">
         				<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩 보기</option>
@@ -454,5 +456,6 @@
 			</div>
         </div>  
     </div>
+	<</div>
 </body>
 </html>

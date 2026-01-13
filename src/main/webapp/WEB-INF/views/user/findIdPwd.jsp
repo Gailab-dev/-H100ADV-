@@ -6,21 +6,37 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<title>아이디/비밀번호 찾기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 반응형 뷰포트 설정 (모바일 대응) -->
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/login.css"> <!-- CSS 불러오기 -->
 </head>
 <body>
-	<div>
-		<div>
-			<ul>
-				<li onclick="showFindIdSubpage()"> 아이디 찾기</li>
-				<li onclick="showFindPwdSubpage()"> 비밀번호 찾기 </li>
-			</ul>
-			<div id ="subpage">
-	
+<!-- 상단 헤더 공간 (투명, 고정 높이) -->
+    <header class="login-header"></header>
+	<main class="login-wrap">
+	  <!-- 좌측: 제품 사진 -->
+		<section class="bg-panel">
+		    <img src="${pageContext.request.contextPath}/resources/images/product.png"
+		         alt="제품 이미지"
+		         class="bg-img">
+		</section>
+		<section class="form-panel">
+		<div class="login-card">
+			<div id="mainTitle" class="mainTitle" role="heading" aria-level="1">
+	          <span class="title-text">아이디/비밀번호 찾기</span>
+	        </div>
+			<div class="page-subtitle">
+			  <div class="find-id active" onclick="showFindIdSubpage(this)">아이디 찾기</div>
+			  <div class="find-pw" onclick="showFindPwdSubpage(this)">비밀번호 찾기</div>
 			</div>
-		</div>
-	
-	</div>
+			<div id="subpage">
+
+		
+				</div>
+			</div>
+		
+		 </section>
+	</main>
 </body>
 <script>
 	
@@ -83,12 +99,31 @@
 		subpageDiv.innerHTML = res;
 	}
 	
+	// 서브페이지 적용 시 title 숨기기 (특정 단계에서만)
+	function loadSubpageHideTitle(subpageDiv, res){
+	    // title 숨기기
+	    const mainTitle = document.getElementById("mainTitle");
+	    if(mainTitle) {
+	        mainTitle.style.display = "none";
+	    }
+	    
+	    subpageDiv.innerHTML = "";
+	    subpageDiv.innerHTML = res;
+	}
+	
+	// 탭 활성화 상태 변경 함수 추가
+	function setActiveTab(clickedTab) {
+	    document.querySelectorAll('.find-id, .find-pw').forEach(tab => {
+	        tab.classList.remove('active');
+	    });
+	    clickedTab.classList.add('active');
+	}
 	// 아이디 찾기 서브페이지
-	async function showFindIdSubpage(){
+	async function showFindIdSubpage(clickedTab){
+		if(clickedTab) setActiveTab(clickedTab);
 		
 		//url
 		url = "/user/viewfindIdSubpage.do";
-		
 		// subpage 받아오기
 		res = await apiService(url);
 		
@@ -102,10 +137,11 @@
 	}
 	
 	// 비밀번호 찾기 서브페이지
-	async function showFindPwdSubpage(){
+	async function showFindPwdSubpage(clickedTab){
+		if(clickedTab) setActiveTab(clickedTab);
+		
 		//url
 		url = "/user/viewfindPwdSubpage.do";
-		
 		// subpage 받아오기
 		res = await apiService(url);
 		

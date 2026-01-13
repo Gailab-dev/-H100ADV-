@@ -69,7 +69,7 @@
  -->
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/d3.v5. min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
 <%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 <script>
@@ -211,6 +211,7 @@
 	})
 </script>
 <body>
+	<div class=page-wrapper>
 	<!-- 헤더 -->
 	<header class="header">
 	  <div class="logo">
@@ -237,33 +238,34 @@
     <div class="container">
         <aside class="sidebar">
             <ul class="menu">
-                <li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
+            	<li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+                <li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">통계</a></li>
                 <li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
-                <li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
                 <!-- 
                 <li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
             	 -->
             </ul>
         </aside>    
     	<div class="content">
-    		<h1>월별 불법주차 현황(1년)</h1>
-    		<form id="StatsExcelDownload" action="gov-disabled-web-gs/stats/excelDownload">
-    			<button type="submit" class="excel-btn" title="엑셀 다운로드">
-    				<img src="${pageContext.request.contextPath}/resources/images/icon_excel.png" alt="엑셀 다운로드">
-    			</button>
-    		</form>
+    		<div class="title-box">
+    			<h1>월별 불법주차 현황(1년)</h1>
+    			<form id="StatsExcelDownload" action="gov-disabled-web-gs/stats/excelDownload">
+    				<button type="submit" class="excel-btn" title="엑셀 다운로드">
+    					<img src="${pageContext.request.contextPath}/resources/images/icon_excel.svg" alt="엑셀 다운로드">
+    				</button>
+    			</form>
+    		</div>
 			<form id="StatsSearchForm" action="/gov-disabled-web-gs/stats/stats.do" class="filter-form">
 				<div class="filter-input-group">
 					<input type="date" name="startDate" value="${startDate}" />
 				</div>
+				<p class="date-contect">~</p>
 				<div class="filter-input-group">
 					<input type="date" name="endDate" value="${endDate}" />
 				</div>
-				<div class="filter-input-group search-field">
-					<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="검색어" maxlength="100"/>
-				</div>
 				<div class="filter-input-group">
 					<select id="pageSize" name="pageSize" onchange="searchEventList()">
+						<option value="" disabled ${empty pageSize ? 'selected' : ''}>이벤트</option>
         				<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩 보기</option>
         				<option value="20" ${pageSize == 20 ? 'selected' : ''}>20개씩 보기</option>
         				<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩 보기</option>
@@ -273,19 +275,21 @@
 			</form>
     	
     		
-			<div>
+			<div class ="graph-group">
 				<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
-				<div id="chart" style="width: 75%; height: 400px;">
-			
+				<div id="chart" class="graph-table" style="height: 402px;">
+					<p class="subTitle">불법주차 유형별 통계(그래프 )</p>
 				</div>
-				<div>
-					<!-- 장애인, 비장애인 별 이벤트 발생 현황(표) -->
+				
+				<div class="graph-table">
+					<p class="subTitle">불법주차 유형별 통계(테이블)</p>
+					<!-- 불법주차 유형별 통계(테이블) -->
 					<table>
 						<tr>
-							<td> 
+							<td>  
 							</td>
 							<c:forEach var="row" items="${statsByMonth}"  varStatus="month">
-								<c:if test="${month.index % 6 == 0}">
+								<c:if test="${month.index % 1 == 0}">
 									<td>
 										<c:out value="${fn:substring(row.st_date,5,7)}" escapeXml ="true"/>월
 									</td>
@@ -373,10 +377,8 @@
 					</table>
 				</div>
 			</div>
+			</div>
     	</div>
     </div>
-    <footer class="footer">
-        <p>&copy; 2025 GAILAB</p>
-    </footer>
 </body>
 </html>

@@ -94,7 +94,12 @@ public class StatsController {
 		
 		// ====== 유효성 검사 [S] ======
 		// 이벤트 코드가 1~6까지의 숫자가 아닌 경우 오류 문자 출력하고 리턴
-		if(stCd >= 7 || stCd <= 0) {
+		//stCd가 null이면 0
+		if(stCd == null) {
+			stCd = 0; //전체지역
+		}
+		//stCd<=0 에서 stCd<0으로 변경
+		if(stCd >= 7 || stCd < 0) {
 			model.addAttribute("errorMsg", "이벤트 코드 오류");
 			return "stats/stats";
 		}

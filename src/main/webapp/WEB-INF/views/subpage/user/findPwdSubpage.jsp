@@ -1,19 +1,25 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-
+	pageEncoding="UTF-8"%>
 <div>
-    <p>
-    	비밀번호를 잊어버리셨나요? <br>
-    	하단의 정보를 상세히 입력하세요.
-    </p>	
-    <div>
-    	<input type="text" id="name" placeholder="이름을 입력하세요.">
-		<input type="text" id="id" placeholder="아이디을 입력하세요.">
-		<input type="text" id="phone" placeholder="전화 번호를 입력하세요.">	    
-    </div>
-    
-    <p id="alert" style="color:red;"></p>
-    
-    <button type="button" onclick="authPwd()">인증하기</button>	
-    
+	<p class="find-info">
+		비밀번호를 잊어버리셨나요? <br> 하단의 정보를 상세히 입력하세요.
+	</p>
+	<div class="fields">
+		<div class="input-group">
+			<input type="text" class="line-input" id="name"
+				placeholder="이름을 입력하세요."> <input type="text"
+				class="line-input" id="id" placeholder="아이디를 입력하세요.">
+
+			<!-- 이메일 + 인증 버튼 -->
+			<div class="email-wrapper">
+				<input type="email" class="line-input" id="email"
+					placeholder="이메일을 입력하세요.">
+				<button type="button" class="confirm" id="emailAuthBtn" disabled>인증</button>
+			</div>
+		</div>
+		<div class="submitgroup">
+			<p id="alert" class="error-message"></p>
+			<button class="primary-btn" type="button" onclick="authPwd()">인증하기</button>
+		</div>
+	</div>
 </div>

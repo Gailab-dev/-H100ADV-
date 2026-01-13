@@ -923,6 +923,7 @@
     </script>
 </head>
 <body>
+	<div class="page-wrapper">
 	<!-- 헤더 -->
 	<header class="header">
 	  <div class="logo">
@@ -946,13 +947,13 @@
 		<!-- 사이드바 -->
 		<aside class="sidebar">
 			<ul class="menu">
-				<li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
-				<li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
-				<li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
-				<!-- 
-				<li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
-				 -->
-			</ul>
+            	<li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
+                <li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">통계</a></li>
+                <li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
+                <!-- 
+                <li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
+            	 -->
+            </ul>
 		</aside>
 		
 		<!-- 메인 콘텐츠 -->
@@ -960,15 +961,11 @@
 			<main class="main">
 				<div class="device-top">
 				  
-				  <!-- 첫 번째 줄: 등록 버튼 + 검색창 -->
-				  <div class="top-row">
+				  <!-- 첫 번째 줄: 등록버튼
+				  	   두 번째 줄 : 날짜, 검색, 조회버튼 - 10개씩 보기 -->
 				    <button class="add-btn" onclick="viewDeviceInfoPopup()">+ 디바이스 등록</button>
+				    <div class="top-row">
 						<div class="hidden-div"></div>
-						<select id="pageSize" name="pageSize" class="select-box" onChange="searchDeviceList()">
-							<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩 보기</option>
-							<option value="20" ${pageSize == 20 ? 'selected' : ''}>20개씩 보기</option>
-							<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩 보기</option>
-						</select>
 						<form id="deviceListSearchForm" class="search-box" onsubmit="searchDeviceList('${page}'); return false;">
 						  <div class="filter-input-group">
 							<input type="date" name="startDate" value="${startDate}" />
@@ -979,6 +976,7 @@
 					  
 						  <input type="text" name="searchKeyword" value="<c:out value='${searchKeyword}'/>" placeholder="디바이스명 및 주소 검색">
 						  	<button type="submit" class="search-btn" title="검색">
+
 						    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 						         xmlns="http://www.w3.org/2000/svg">
 					      		<path d="M8.75065 14.1673C11.7422 14.1673 14.1673 11.7422 14.1673 8.75065C14.1673 5.75911 11.7422 3.33398 8.75065 3.33398C5.75911 3.33398 3.33398 5.75911 3.33398 8.75065C3.33398 11.7422 5.75911 14.1673 8.75065 14.1673Z"
@@ -987,7 +985,13 @@
 						            fill="#767676"/>
 						    </svg>
 					  		</button>
+						  <input type="text" name="searchKeyword" value="<c:out value='${searchKeyword}'/>" placeholder="디바이스명 및 주소 검색">
 						</form>
+						<select id="pageSize" name="pageSize" class="select-box" onChange="searchDeviceList()">
+							<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩 보기</option>
+							<option value="20" ${pageSize == 20 ? 'selected' : ''}>20개씩 보기</option>
+							<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩 보기</option>
+						</select>
 				  	</div>
 				
 				  	<div class="bulk-actions">
@@ -1113,8 +1117,6 @@
 			</main>
 		</div>
 	</div>
-    <footer class="footer">
-        <p>&copy; 2025 GAILAB</p>
-    </footer>
+	</div>
 </body>
 </html>
