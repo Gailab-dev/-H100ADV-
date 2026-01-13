@@ -151,4 +151,11 @@ public class LoginInterceptor implements HandlerInterceptor{
         res.setHeader("Pragma", "no-cache");
         res.setDateHeader("Expires", 0L);
     }
+
+	@Override
+	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)
+			throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
 }

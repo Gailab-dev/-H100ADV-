@@ -15,12 +15,15 @@
 		</license>
 	</licenses>
 	<properties>
-	    <java.version>1.8</java.version>
- 	    <spring.version>4.3.30.RELEASE</spring.version>
-		<spring.maven.artifact.version>5.3.6</spring.maven.artifact.version>
+	    <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+    	<maven.compiler.target>17</maven.compiler.target>
+   	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+ 	    <spring.version>5.3.39</spring.version>
 		<org.egovframe.rte.version>4.0.0</org.egovframe.rte.version>
 		<commons-fileupload-version>1.4</commons-fileupload-version>
 		<commons-io-version>2.11.0</commons-io-version>
+	    <slf4j.version>1.7.36</slf4j.version>
 	</properties>
 	<repositories>
 		<repository>
@@ -54,14 +57,12 @@
 	      <scope>import</scope>
 	    </dependency>
 	  </dependencies>
+
 	</dependencyManagement>
+	
 	<dependencies>
+	
 		<!-- 표준프레임워크 실행환경 -->
-		<dependency>
-    		<groupId>org.springframework</groupId>
-    		<artifactId>spring-context-support</artifactId>
-    		<version>${spring.version}</version>
-		</dependency>
 		<dependency>
 			<groupId>org.egovframe.rte</groupId>
 			<artifactId>org.egovframe.rte.ptl.mvc</artifactId>
@@ -73,11 +74,53 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<!-- Spring Core -->
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-context</artifactId>
+		    <version>${spring.version}</version>
+   			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
+		 <!-- Spring Web -->
+		 <dependency>
+    		<groupId>org.springframework</groupId>
+    		<artifactId>spring-web</artifactId>
+    		<version>${spring.version}</version>
+		</dependency>
+		 
+		<!-- Spring MVC -->
+		<!-- 
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-webmvc</artifactId>
+		    <version>${spring.version}</version>
+   			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		 -->
+		<!-- mail 사용시 필요 -->
 		<dependency>
     		<groupId>org.springframework</groupId>
     		<artifactId>spring-context-support</artifactId>
     		<version>${spring.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-logging</artifactId>
+					<groupId>commons-logging</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.egovframe.rte</groupId>
 			<artifactId>org.egovframe.rte.psl.dataaccess</artifactId>
@@ -145,17 +188,17 @@
 		<dependency>
 			<groupId>org.mybatis</groupId>
 			<artifactId>mybatis</artifactId>
-			<version>3.2.1</version>
+			<version>3.5.13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mybatis</groupId>
 			<artifactId>mybatis-spring</artifactId>
-			<version>1.2.0</version>
+			<version>2.1.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
-			<version>2.9.4</version>
+			<version>2.15.4</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -176,47 +219,26 @@
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi</artifactId>
-			<version>3.11</version>
+			<version>5.2.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
 			<!-- 엑셀 2007 이상 버전에서 사용 -->
-			<version>3.11</version>
+			<version>5.2.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.imgscalr</groupId>
 			<artifactId>imgscalr-lib</artifactId>
 			<version>4.2</version>
 		</dependency>
+		<!-- 
 		<dependency>
 			<groupId>org.lazyluke</groupId>
 			<artifactId>log4jdbc-remix</artifactId>
 			<version>0.2.7</version>
 		</dependency>
-		<!-- gpki -->
-		<dependency>
-			<groupId>com.gpki</groupId>
-			<artifactId>gpkisecureweb</artifactId>
-			<version>1.0.6.3</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/main/webapp/WEB-INF/lib/gpkisecureweb-1.0.6.3.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>com.gpki</groupId>
-			<artifactId>libgpkiapi_jni</artifactId>
-			<version>1.4.0.0</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/main/webapp/WEB-INF/lib/libgpkiapi_jni-1.4.0.0.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>com.gpki</groupId>
-			<artifactId>gpkisecurewebkeyboard</artifactId>
-			<version>1.0.0.1</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/main/webapp/WEB-INF/lib/gpkisecurewebkeyboard-1.0.0.1.jar</systemPath>
-		</dependency>
-
+		 -->
 		<!-- log4j Core -->
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
@@ -281,13 +303,6 @@
 		    <version>2.1</version>
 		</dependency>
 		
-		<!-- https://mvnrepository.com/artifact/commons-logging/commons-logging -->
-		<dependency>
-		    <groupId>commons-logging</groupId>
-		    <artifactId>commons-logging</artifactId>
-		    <version>1.2</version>
-		</dependency>
-		
 		<!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
 		<!-- jsonobject -->
 		<dependency>
@@ -306,18 +321,20 @@
 		
 		<!-- JavaMail -->
 		<dependency>
-		    <groupId>org.springframework</groupId>
-		    <artifactId>spring-context-support</artifactId>
-	        <version>4.3.30.RELEASE</version>
+		    <groupId>com.sun.mail</groupId>
+		    <artifactId>javax.mail</artifactId>
+		    <version>1.6.2</version>
 		</dependency>
 		
+		<!-- SLF4J API -->
 		<dependency>
-		    <groupId>com.sun.mail</groupId>
-		    <artifactId>jakarta.mail</artifactId>
-		    <version>1.6.7</version>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-api</artifactId>
+		    <version>${slf4j.version}</version>
 		</dependency>
 		
 	</dependencies>
+	
 	<build>
 		<defaultGoal>install</defaultGoal>
 		<directory>${basedir}/target</directory>
@@ -326,7 +343,7 @@
 			<plugins>
 				<plugin>
 					<groupId>org.apache.tomcat.maven</groupId>
-					<artifactId>tomcat7-maven-plugin</artifactId>
+					<artifactId>tomcat9-maven-plugin</artifactId>
 					<version>2.2</version>
 					<configuration>
 						<port>80</port>
@@ -348,8 +365,8 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<configuration>
-						<source>1.8</source>
-						<target>1.8</target>
+						<source>17</source>
+						<target>17</target>
 						<encoding>UTF-8</encoding>
 					</configuration>
 				</plugin>
