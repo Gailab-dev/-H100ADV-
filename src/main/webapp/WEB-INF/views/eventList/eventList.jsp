@@ -97,6 +97,7 @@
 		let form = document.getElementById('eventListSearchForm');
 	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate'].value;
+	  	const evCd = form.elements['evCd'].value;
 	  	const searchKeyword   = form.elements['searchKeyword'].value;
 	 	const pageSize = document.getElementById('pageSize')?.value;
 	  	
@@ -113,7 +114,7 @@
 	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 		
-		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "$evCd=" + evCd + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
 		
 	}
 	
@@ -235,7 +236,7 @@
 		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------
 		// --------------------------- 엑셀 다운로드 -----------------------------
 		
-		function excelDownload(){
+		async function excelDownload(){
 			
 			let form = document.getElementById('deviceListSearchForm');
 		  	let val1 = form.elements['searchKeyword'].value;
@@ -325,7 +326,7 @@
 				</div>
 				<div class="filter-input-group">
 					<select name="evCd">
-						<option>유형</option>
+						<option ${evCd == null ? 'selected' : '' }>유형</option>
 						<option value="1" ${evCd == 1 ? 'selected' : ''}>미등록차량</option>
 						<%-- 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가 --%>
 						<%-- 
@@ -336,7 +337,6 @@
 						<option value="5" ${evCd == 5 ? 'selected' : ''}>물건적재</option>
 						<option value="6" ${evCd == 6 ? 'selected' : ''}>이중주차</option>
 					</select>
-					<input type="date" name="endDate" value="${endDate}" />
 				</div>
 				<div class="filter-input-group search-field">
 					<input type="text" name="searchKeyword" value="${searchKeyword}" placeholder="검색어" maxlength="100"/>
@@ -367,9 +367,9 @@
 			              stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
 			      	</svg>
 		    	</button>
-		    	<button type="button" class="delete-btn" onclick="excelDownload()" title="엑셀 다운로드">
+	    		<button type="button" class="excel-btn" onclick="excelDownload()" title="엑셀 다운로드">
 					<img src="${pageContext.request.contextPath}/resources/images/icon_excel.png" alt="엑셀 다운로드">
-		    	</button>
+	    		</button>
 			</div>
 			<table class="event-table">
 				<thead>

@@ -2,6 +2,7 @@ package com.disabled.controller;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,7 @@ public class StatsController {
 			, @RequestParam(name="stCd",required=false) Integer stCd
 			, Model model, HttpSession session) {
 		
+		
 		// 접근 로그
 		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
 		if(uIdStr != null) {
@@ -88,18 +90,14 @@ public class StatsController {
 		}
 
 		// ====== 변수 선언부 [S] ======
-		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
+		Map<String,Object> paramMap = new HashMap<String, Object>();
+		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>(); // 통계 데이터
 		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
 		// ====== 변수 선언부 [E] ======
 		
 		// ====== 유효성 검사 [S] ======
 		// 이벤트 코드가 1~6까지의 숫자가 아닌 경우 오류 문자 출력하고 리턴
-		//stCd가 null이면 0
-		if(stCd == null) {
-			stCd = 0; //전체지역
-		}
-		//stCd<=0 에서 stCd<0으로 변경
-		if(stCd >= 7 || stCd < 0) {
+		if(stCd != null && (stCd > 7 || stCd < 1)) {
 			model.addAttribute("errorMsg", "이벤트 코드 오류");
 			return "stats/stats";
 		}
@@ -111,9 +109,11 @@ public class StatsController {
 			// ====== 서비스 [S] ======
 			// 최근 1년간 월별 불법주차 통계 데이터 조회 
 			//statsByMonth = statsService.getEventByMonth();
-			
 			// 검색 조건에 따른 최근 1년간 월별 불법주차 통계 데이터 조회
-			statsByMonth = statsService.getEventByMonthAndSearchParams(startDate,endDate,stCd);
+			paramMap.put("startDate", startDate);
+			paramMap.put("endDate", endDate);
+			paramMap.put("stCd", stCd);	
+			statsByMonth = statsService.getEventByMonthAndSearchParams(paramMap);
 			
 			// 로그 스토리지 사용 가능 여부 조회
 			useTblLog = logDiskManager.hasEnoughLogSpace();
@@ -154,13 +154,18 @@ public class StatsController {
 
 		// ====== 변수 선언부 [S] ======
 		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
+		
+		Map<String,Object> paramMap = new HashMap<String, Object>();
 		// ====== 변수 선언부 [E] ======
 
 		try {
 			// ====== 서비스 [S] ======
 
 			// 검색 조건에 따른 최근 1년간 월별 불법주차 통계 데이터 조회
-			statsByMonth = statsService.getEventByMonthAndSearchParams(startDate,endDate,stCd);
+			paramMap.put("startDate", startDate);
+			paramMap.put("endDate", endDate);
+			paramMap.put("stCd", stCd);	
+			statsByMonth = statsService.getEventByMonthAndSearchParams(paramMap);
 			
 			// statsByMonth의 stCd 코드를 문자열로 변환
 			statsByMonth = codeConversionService.StCdConverstionIntToStr(statsByMonth);
@@ -187,7 +192,6 @@ public class StatsController {
 			
 		} catch (Exception e) {
 			logger.error("엑셀 파일 생성 중 오류 발생",e);
-			// TODO: handle exception
 		}
 		
 		

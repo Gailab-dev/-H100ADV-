@@ -1010,9 +1010,11 @@
 					              stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
 					      	</svg>
 				    	</button>
-				    	<button type="button" class="delete-btn" onclick="excelDownload()" title="엑셀 다운로드">
+				    	<form>
+				    	<button type="button" class="excel-btn" onclick="excelDownload()" title="엑셀 다운로드">
 							<img src="${pageContext.request.contextPath}/resources/images/icon_excel.png" alt="엑셀 다운로드">
 				    	</button>
+				    	</form>
 	  				</div>
 				</div>
 				

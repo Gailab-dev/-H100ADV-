@@ -209,6 +209,33 @@
 		    
 		});
 	})
+	
+		// 검색 조건에 따른 검색
+	window.searchStatistics = function(pageNo){
+		
+		let form = document.getElementById('eventListSearchForm');
+	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
+	  	const endDate   = form.elements['endDate'].value;
+	  	const evCd = form.elements['evCd'].value;
+	  	const searchKeyword   = form.elements['searchKeyword'].value;
+	 	const pageSize = document.getElementById('pageSize')?.value;
+	  	
+	  	if( searchKeyword.length >= 100 ){
+	  		alert("검색어는 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
+	  		return;
+	  	}
+		
+		if( startDate > endDate ){
+			alert("날짜를 확인해주세요.");
+			return;
+		}
+		
+	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
+	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
+		
+		location.href = "viewStat.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "$evCd=" + evCd + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
+		
+	}
 </script>
 <body>
 	<div class=page-wrapper>
@@ -249,19 +276,31 @@
     	<div class="content">
     		<div class="title-box">
     			<h1>월별 불법주차 현황(1년)</h1>
-    			<form id="StatsExcelDownload" action="gov-disabled-web-gs/stats/excelDownload">
-    				<button type="submit" class="excel-btn" title="엑셀 다운로드">
-    					<img src="${pageContext.request.contextPath}/resources/images/icon_excel.svg" alt="엑셀 다운로드">
-    				</button>
-    			</form>
-    		</div>
-			<form id="StatsSearchForm" action="/gov-disabled-web-gs/stats/stats.do" class="filter-form">
+    			<button type="submit" class="excel-btn" title="엑셀 다운로드">
+    				<img src="${pageContext.request.contextPath}/resources/images/icon_excel.svg" alt="엑셀 다운로드">
+    			</button>
+    		</div>    	
+			<form id="StatsSearchForm" class="filter-form">
 				<div class="filter-input-group">
 					<input type="date" name="startDate" value="${startDate}" />
 				</div>
 				<p class="date-contect">~</p>
 				<div class="filter-input-group">
 					<input type="date" name="endDate" value="${endDate}" />
+				</div>
+				<div class="filter-input-group search-field">
+					<select name="stCd">
+						<option ${stCd == null ? 'selected' : '' }>유형</option>
+						<option value="1" ${stCd == 1 ? 'selected' : ''}>미등록차량</option>
+						<%-- 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가 --%>
+						<%-- 
+						<option value="2" ${stCd == 2 ? 'selected' : ''}>불법주차(장애인미탑승)</option>
+						<option value="3" ${stCd == 3 ? 'selected' : ''}>스티커 불법 사용</option>
+						 --%>
+						<option value="4" ${stCd == 4 ? 'selected' : ''}>위험상황</option>
+						<option value="5" ${stCd == 5 ? 'selected' : ''}>물건적재</option>
+						<option value="6" ${stCd == 6 ? 'selected' : ''}>이중주차</option>
+					</select>
 				</div>
 				<div class="filter-input-group">
 					<select id="pageSize" name="pageSize" onchange="searchEventList()">
@@ -271,7 +310,7 @@
         				<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩 보기</option>
     				</select>
 				</div>
-				<button type="button" class="search-btn" onclick="searchEventList('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
+				<button type="button" class="search-btn" onclick="searchStatistics('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
 			</form>
     	
     		
