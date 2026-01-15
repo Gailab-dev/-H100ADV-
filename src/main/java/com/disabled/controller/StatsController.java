@@ -107,13 +107,34 @@ public class StatsController {
 		
 		try {
 			// ====== 서비스 [S] ======
+			
+			//startDate, endDate 값 편집
+			//yyyy-MM-dd 형식의 값을 yyyyMM으로 편집
+			String startMonth = "";
+			String endMonth = "";
+			if(startDate != null && startDate != "") startMonth = startDate.replace("-", "").substring(0, 6).trim();
+			if(endDate != null && endDate != "") endMonth = endDate.replace("-", "").substring(0, 6).trim();
+			
+			System.out.println(startMonth + "  " + endMonth);
+			
 			// 최근 1년간 월별 불법주차 통계 데이터 조회 
 			//statsByMonth = statsService.getEventByMonth();
 			// 검색 조건에 따른 최근 1년간 월별 불법주차 통계 데이터 조회
-			paramMap.put("startDate", startDate);
-			paramMap.put("endDate", endDate);
+			paramMap.put("endMonth", startMonth);
+			paramMap.put("endMonth", endMonth);
 			paramMap.put("stCd", stCd);	
 			statsByMonth = statsService.getEventByMonthAndSearchParams(paramMap);
+			
+			/*
+			for (Iterator iterator = statsByMonth.iterator(); iterator.hasNext();) {
+				Map<String, Object> map = (Map<String, Object>) iterator.next();
+				System.out.println("st_date : " + map.get("st_date").toString());
+				System.out.println("d : " + map.get("d").toString());
+				System.out.println("st_cd : " + map.get("st_cd").toString());
+				System.out.println("st_cnt : " + map.get("st_cnt").toString());
+				
+			}
+			*/
 			
 			// 로그 스토리지 사용 가능 여부 조회
 			useTblLog = logDiskManager.hasEnoughLogSpace();
@@ -125,6 +146,9 @@ public class StatsController {
 		    // ====== model add [S] ======
 		    model.addAttribute("uGrade",uGrade);
 			model.addAttribute("statsByMonth", statsByMonth);
+			model.addAttribute("startDate", startDate);
+			model.addAttribute("endDate", endDate);
+			model.addAttribute("stCd", stCd);
 			model.addAttribute("useTblLog", useTblLog);
 			// ====== model add [E] ======
 			

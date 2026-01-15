@@ -94,7 +94,7 @@
 		  AND STR_TO_DATE(s.st_date, '%Y%m') = STR_TO_DATE(m.month, '%Y-%m')
 		WHERE 1=1
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-				and s.st_date BETWEEN #{startDate} AND #{endDate}
+				and s.st_date BETWEEN #{startMonth} AND #{endMonth}
 			</if>
 			<if test="stCd != null">
 				and s.st_cd =  #{stCd}
