@@ -449,6 +449,16 @@ public class UserServiceImpl implements UserService {
 		
 	}
 	
+	/**
+	 * 이메일 인증
+	 * 현재 세션 기반으로 개발하여 사용하지 않음
+	 */
+	@Override
+	public int verifyEmailByToken(Map<String, Object> param) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+	
 	
 
 	/*

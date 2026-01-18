@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -163,32 +164,45 @@ public class StatsController {
 	
 	/**
 	 * 엑셀 다운로드
-	 * @param startDate
-	 * @param endDate
-	 * @param stCd
+	 * @param paramMap
+	 * 	@param startDate
+	 * 	@param endDate
+	 * 	@param stCd
 	 * @param response
 	 */
 	@ResponseBody()
 	@PostMapping("/excelDownload")
 	public void execlDownload(
-			@RequestParam(name="startDate",required=false) String startDate
-			, @RequestParam(name ="endDate",required=false) String endDate
-			, @RequestParam(name="stCd",required=false) Integer stCd
+			@RequestBody Map<String,Object> paramMap
 			, HttpServletResponse response){
-
+		
+		// ====== 디버깅 로그 [S] ======
+		logger.info("excelDownload map ; {}",paramMap);
+		// ====== 디버깅 로그 [E] ======
+		
 		// ====== 변수 선언부 [S] ======
 		List<Map<String,Object>> statsByMonth = new ArrayList<Map<String,Object>>();
 		
-		Map<String,Object> paramMap = new HashMap<String, Object>();
+		// startDate, endDate를 startMonth, endMonth로 변환
+		// yyyy-MM-dd 형태 데이터를 yyyyMM으로 변환
+		if(paramMap.get("startDate") != null && !paramMap.get("startDate").toString().isEmpty()) {
+			paramMap.put("startMonth", paramMap.get("startDate").toString().replace("-","").substring(0, 6).trim());
+		}
+		if(paramMap.get("endDate") != null && !paramMap.get("endDate").toString().isEmpty()) {
+			paramMap.put("endMonth", paramMap.get("endDate").toString().replace("-","").substring(0, 6).trim());
+		}
+		
+		// stCd값 빈문자열이면 null값으로  변경
+		Object stCdObj = paramMap.get("stCd");
+		if (stCdObj == null || stCdObj.toString().trim().isEmpty()) {
+		    paramMap.put("stCd", null);
+		}
 		// ====== 변수 선언부 [E] ======
 
 		try {
 			// ====== 서비스 [S] ======
 
 			// 검색 조건에 따른 최근 1년간 월별 불법주차 통계 데이터 조회
-			paramMap.put("startDate", startDate);
-			paramMap.put("endDate", endDate);
-			paramMap.put("stCd", stCd);	
 			statsByMonth = statsService.getEventByMonthAndSearchParams(paramMap);
 			
 			// statsByMonth의 stCd 코드를 문자열로 변환
@@ -217,9 +231,6 @@ public class StatsController {
 		} catch (Exception e) {
 			logger.error("엑셀 파일 생성 중 오류 발생",e);
 		}
-		
-		
-		
 		
 	}
 	

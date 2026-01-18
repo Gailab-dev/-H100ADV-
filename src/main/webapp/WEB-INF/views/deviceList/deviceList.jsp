@@ -879,14 +879,14 @@
 		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------
 		// --------------------------- 엑셀 다운로드 -----------------------------
 		
-		function excelDownload(){
+		async function excelDownload(){
 			
 			let form = document.getElementById('deviceListSearchForm');
 		  	let val1 = form.elements['searchKeyword'].value;
-		  	let searchKeyword = encodeURIComponent(val);
+		  	let searchKeyword = encodeURIComponent(val1);
 		  	let val2 = form.elements['startDate'].value;
 		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elemntes['endDate'].vlaue;
+		  	let val3 = form.elemntes['endDate'].value;
 		  	let endDate = encodeURIComponet(val3);
 		  	let pageSize = document.getElementById('pageSize')?.value;
 			

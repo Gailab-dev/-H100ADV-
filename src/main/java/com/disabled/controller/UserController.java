@@ -430,10 +430,18 @@ public class UserController {
 	@PostMapping(value = "/register", produces = "application/json; charset=UTF-8")
 	public Map<String,Object> register(
 			@RequestBody Map<String,Object> body
+			, HttpSession session
 			){
 		
 		// ====== 변수 선언부 [S] ====== //
 		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		String email = body.get("u_email").toString().trim();					// 사용자의 이메일
+		
+		String sEmail = (String) session.getAttribute("REG_AUTH_EMAIL");		// 세션에 저장된 사용자 이메일
+		Boolean verified = (Boolean) session.getAttribute("REG_AUTH_VERIFIED");	// 인증여부
+		Long expireAt = (Long) session.getAttribute("REG_AUTH_EXPIRE_AT");		// 만료시간
+		
 		// ====== 변수 선언부 [S] ====== //
 		
 		try {		
@@ -445,6 +453,18 @@ public class UserController {
 				resultMap.put("ok", false);
 				resultMap.put("msg", "이미 존재하는 ID입니다.");
 				return resultMap;
+			}
+			
+			// 이메일, 인증여부, 만료시간을 확인하여 인증여부 확인
+			if (!Boolean.TRUE.equals(verified)
+			    || sEmail == null
+			    || !sEmail.equalsIgnoreCase(email)
+			    || expireAt == null
+			    || System.currentTimeMillis() > expireAt) {
+
+			    resultMap.put("ok", false);
+			    resultMap.put("msg", "이메일 인증이 필요합니다.");
+			    return resultMap;
 			}
 			
 			// 암호화
@@ -464,6 +484,13 @@ public class UserController {
 				resultMap.put("msg","회원가입 도중 오류 발생");
 				return resultMap;
 			}
+			
+			// 가입 성공후 세션 정리하여 재사용 방지
+			session.removeAttribute("REG_AUTH_EMAIL");
+			session.removeAttribute("REG_AUTH_CODE");
+			session.removeAttribute("REG_AUTH_EXPIRE_AT");
+			session.removeAttribute("REG_AUTH_VERIFIED");
+			
 			// ====== 서비스 [E] ====== //
 			
 			resultMap.put("ok",true);
@@ -720,6 +747,12 @@ public class UserController {
 		}
 	}
 	
+	/**
+	 * 이메일 인증 요청
+	 * @param body
+	 * @param session
+	 * @return
+	 */
 	@PostMapping("/request")
 	@ResponseBody
 	public Map<String,Object> request(
@@ -768,17 +801,20 @@ public class UserController {
 			// 인증코드 생성
 			String authCode = emailAuthService.createAuthCode();
 			
-			// 인증코드와 만료 시간 시도횟수를 세션에 저장
+			// 인증코드, 만료 시간, 시도횟수, 인증 여부를 세션에 저장
 			session.setAttribute("AUTH_CODE", authCode);
 			session.setAttribute("EXPIRED_TIME", LocalDateTime.now().plusMinutes(5));
 			session.setAttribute("AUTH_ATTEMPT_COUNT",authAttemptCount + 1);
-
+			session.setAttribute("REG_AUTH_VERIFIED", false);
 			
 			// 이메일 송신
+			String baseUrl = "https://";
+			String contextPath = "";
 			String email = body.get("email").toString();
-			emailService.sendAuthEmail(email, authCode);
+			emailService.sendAuthEmail(baseUrl,contextPath,email, authCode);
 			
 			resultMap.put("ok", true);
+			resultMap.put("msg", "귀하의 이메일로 인증메일을 전송하였습니다. 같은 기기, 같은 브라우저여서 인증메일을 확인해주세요.");
 			return resultMap;
 		} catch (Exception e) {
 			logger.error("이메일 인증을 위한 이메일 발송 도중 오류 발생 : ",e);
@@ -788,6 +824,166 @@ public class UserController {
 		}
 	}
 	
+	/**
+	 * 사용자가 인증메일에서 인증버튼 클릭시 처리
+	 * @param token
+	 * @param model
+	 * @return
+	 */
+	@ResponseBody
+	@PostMapping(value="/verifyEmail", produces="application/json; charset=UTF-8")
+	public Map<String,Object> verifyEmail(
+			@RequestBody Map<String,Object> body
+			, HttpSession session
+			, Model model) {
+		
+		 Map<String,Object> resultMap = new HashMap<>();
+		
+	    try {
+	        
+	    	// ====== 변수 선언부 [s] ======
+	        String email = String.valueOf(body.get("email")).trim();			// 회원 가입을 시도하는 사용자의 이메일 
+	        String code  = String.valueOf(body.get("code")).trim();				// 사용자에게 전송한 인증코드
+	        
+	        String sEmail = (String) session.getAttribute("REG_AUTH_EMAIL");	// 세션에 저장된 이메일
+	        String sCode  = (String) session.getAttribute("REG_AUTH_CODE");		// 세션에 저장된 인증코드
+	        Long expireAt = (Long) session.getAttribute("REG_AUTH_EXPIRE_AT");	// 만료시간
+	        
+	    	// ====== 변수 선언부 [e] ======
+	        
+	        // ====== 서비스 [s] ======
+	        
+	        // 인증을 하지 않은 경우
+	        if (sEmail == null || sCode == null || expireAt == null) {
+	        	resultMap.put("ok", false);
+	        	resultMap.put("msg", "인증을 먼저 진행해 주세요.");
+	            return resultMap;
+	        }
+	        
+	        // 인증 시간 5분이 만료된 경우
+	        if (System.currentTimeMillis() > expireAt) {
+	            session.setAttribute("REG_AUTH_VERIFIED", false);
+	            resultMap.put("ok", false);
+	            resultMap.put("msg", "인증번호가 만료되었습니다. 다시 발급해 주세요.");
+	            return resultMap;
+	        }
+	        
+	        // 이메일이 일치하지 않은 경우
+	        if (!sEmail.equalsIgnoreCase(email)) {
+	        	resultMap.put("ok", false);
+	        	resultMap.put("msg", "인증 이메일이 일치하지 않습니다.");
+	            return resultMap;
+	        }
+	        
+	        // 인증코드가 일치하지 않는 경우
+	        if (!sCode.equals(code)) {
+	        	resultMap.put("ok", false);
+	        	resultMap.put("msg", "인증번호가 올바르지 않습니다.");
+	            return resultMap;
+	        }
+	        
+	        // 인증 완료
+	        session.setAttribute("REG_AUTH_VERIFIED", true);
+	        resultMap.put("ok", true);
+	        resultMap.put("msg", "이메일 인증이 완료되었습니다.");
+	        return resultMap;
+	        
+	    } catch (Exception e) {
+	        logger.error("인증 처리 중 오류가 발생했습니다.",e);
+	        resultMap.put("ok", false);
+	        resultMap.put("msg", "인증 처리 중 오류가 발생했습니다.");
+	        return resultMap;
+	    }
+	}
+	
+	/**
+	 * 회원가입시 이메일 인증을 하였는지 확인
+	 * @param body
+	 * @param session
+	 * @return
+	 */
+	@ResponseBody
+	@PostMapping(value="/isRegisterEmailVerified", produces="application/json; charset=UTF-8")
+	public Map<String,Object> isRegisterEmailVerified(
+	        @RequestBody(required=false) Map<String,Object> body,
+	        HttpSession session) {
+
+	    Map<String,Object> r = new HashMap<>();
+	    
+	    // ====== 변수 선언부 [s] ======
+	    String sEmail = (String) session.getAttribute("REG_AUTH_EMAIL");		// 세션에 저장된 사용자 이메일
+	    Boolean verified = (Boolean) session.getAttribute("REG_AUTH_VERIFIED");	// 세션에 저장된 인증여부
+
+	    String email = body == null ? null : String.valueOf(body.get("email")).trim();
+
+	    boolean ok = Boolean.TRUE.equals(verified)
+	                 && sEmail != null
+	                 && email != null
+	                 && sEmail.equalsIgnoreCase(email);
+
+	    r.put("ok", true);
+	    r.put("verified", ok);
+	    return r;
+	}
+	
+	/**
+	 * 사용자가 받은 이메일의 클릭 버튼을 눌렀을 때 해당 이메일 확인
+	 */
+	@GetMapping("/verifyEmail")
+	public String verifyEmail(@RequestParam("token") String token
+			, HttpSession session
+			, Model model) {
+	    try {
+	    	
+	        String sToken = (String) session.getAttribute("REG_AUTH_TOKEN");
+	        Long expireAt = (Long) session.getAttribute("REG_AUTH_EXPIRE_AT");
+	    	
+	        // 1) 세션에 인증 정보가 없으면 실패
+	        if (sToken == null || expireAt == null) {
+	            model.addAttribute("msg", "인증 세션이 없습니다. 같은 브라우저에서 인증 메일을 다시 요청해 주세요.");
+	            return "user/verifyResult";
+	        }
+
+	        // 2) 만료 체크
+	        if (System.currentTimeMillis() > expireAt) {
+	            session.setAttribute("REG_AUTH_VERIFIED", false);
+	            model.addAttribute("msg", "인증 링크가 만료되었습니다. 인증 메일을 다시 요청해 주세요.");
+	            return "user/verifyResult";
+	        }
+
+	        // 3) 토큰 비교(타이밍 공격까지 신경쓰면 constant-time 비교 권장)
+	        if (!sToken.equals(token)) {
+	            model.addAttribute("msg", "인증 링크가 유효하지 않습니다. (토큰 불일치)");
+	            return "user/verifyResult";
+	        }
+	        
+	        // 4) 인증 완료 처리(세션 플래그)
+	        session.setAttribute("REG_AUTH_VERIFIED", true);
+	        
+	        Map<String, Object> param = new HashMap<>();
+	        param.put("token", token);
+
+	        model.addAttribute("msg", "이메일 인증이 완료되었습니다. 회원가입을 진행해 주세요.");
+	        return "user/verifyResult";
+	    } catch (Exception e) {
+	        model.addAttribute("msg", "인증 처리 중 오류가 발생했습니다.");
+	        return "user/verifyResult";
+	    }
+	}
+	
+	/**
+	 * 이메일 인증 여부 확인하는 함수
+	 * @param session
+	 * @return
+	 */
+	@ResponseBody
+	@GetMapping(value="/emailAuthStatus", produces="application/json; charset=UTF-8")
+	public Map<String,Object> emailAuthStatus(HttpSession session){
+	  Map<String,Object> r = new HashMap<>();
+	  Boolean verified = (Boolean) session.getAttribute("REG_AUTH_VERIFIED");
+	  r.put("verified", verified != null && verified);
+	  return r;
+	}
 	
 	// 내 정보 수정 페이지 이동
 	/*

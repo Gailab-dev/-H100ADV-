@@ -27,9 +27,16 @@
 		  WHERE d + INTERVAL 1 MONTH <= DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY)
 		),
 		codes AS (
-		  SELECT 1 AS st_cd UNION ALL SELECT 2 UNION ALL SELECT 3 
-		  UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+		  SELECT 1 AS st_cd UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
 		)
+		/*
+		2 장애인 미탑승, 3 스티거 불법 사용 식별 가능시 위 코드 사용
+				codes AS (
+		  SELECT 1 AS st_cd UNION ALL 
+		  SELECT 2 UNION ALL SELECT 3 UNION ALL 
+		  SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+		)
+		*/
 		/* 
 			불법주차 리스트 코드
 			이벤트 코드 ( 1: 불법주차(미등록차량) / 2: 불법주차(장애인미탑승) / 3: 스티커 불법 사용 / 4: 위험상황 / 5: 물건적재 ) 
@@ -70,10 +77,18 @@
 		  WHERE d + INTERVAL 1 MONTH <![CDATA[<=]]> DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY)
 		),
 		codes AS (
+		  SELECT 1 AS st_cd UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
+		) 
+		<!-- 
+			
+				codes AS (
 		  SELECT 1 AS st_cd UNION ALL SELECT 2 UNION ALL SELECT 3 
 		  UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6
 		) 
-		<!--  
+		
+		 -->
+		<!-- 
+			2 장애인 미탑승, 3 스티거 불법 사용 식별 가능시 위 코드 사용 
 			불법주차 리스트 코드
 			이벤트 코드 ( 1: 미등록차량 / 2: 불법주차(장애인미탑승) / 3: 스티커 불법 사용 / 4: 위험상황 / 5: 물건적재 / 6: 이중주차) 
 		  -->
@@ -92,13 +107,13 @@
 		LEFT JOIN tbl_statistics s
 		  ON s.st_cd = c.st_cd
 		  AND STR_TO_DATE(s.st_date, '%Y%m') = STR_TO_DATE(m.month, '%Y-%m')
-		WHERE 1=1
-			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+  			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
 				and s.st_date BETWEEN #{startMonth} AND #{endMonth}
 			</if>
-			<if test="stCd != null">
-				and s.st_cd =  #{stCd}
+			<if test="stCd != null and stCd != ''">
+				and c.st_cd =  #{stCd}
 			</if>
+		WHERE 1=1
 		ORDER BY m.month, c.st_cd
 	</select>
 
