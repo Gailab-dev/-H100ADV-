@@ -73,12 +73,12 @@ public class StatsServiceImpl implements StatsService{
 	}
 
 	@Override
-	public List<Map<String, Object>> getEventByMonthAndSearchParams(String startDate, String endDate, Integer stCd) {
+	public List<Map<String, Object>> getEventByMonthAndSearchParams(Map<String,Object> paramMap) {
 		List<Map<String, Object>> resultList = new ArrayList<Map<String,Object>>();
 		
 		
 		try {
-			resultList = statsMapper.getEventByMonthAndSearchParams(startDate, endDate, stCd);
+			resultList = statsMapper.getEventByMonthAndSearchParams(paramMap);
 		} catch (DataAccessException e) {
 			
 			logger.error("SQL문 처리 도중 오류 발생 getEventByMonth() : ",e);

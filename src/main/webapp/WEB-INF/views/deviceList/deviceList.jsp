@@ -892,10 +892,10 @@
 			
 			let form = document.getElementById('deviceListSearchForm');
 		  	let val1 = form.elements['searchKeyword'].value;
-		  	let searchKeyword = encodeURIComponent(val);
+		  	let searchKeyword = encodeURIComponent(val1);
 		  	let val2 = form.elements['startDate'].value;
 		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elemntes['endDate'].vlaue;
+		  	let val3 = form.elemntes['endDate'].value;
 		  	let endDate = encodeURIComponet(val3);
 		  	let pageSize = document.getElementById('pageSize')?.value;
 			
@@ -1128,7 +1128,7 @@
 														value="${item.dv_reg_date}" escapeXml="true" />
 											</span></td>
 
-											<!--
+											
 							  <td>
 								<c:choose>
 									<c:when test="${item.dv_status eq 0}">OFF</c:when>
@@ -1159,7 +1159,6 @@
 				            		</c:when>
 								</c:choose>	
 					          </td>
-					          -->
 											<td>
 												<button class="edit-btn" type="button"
 													onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>

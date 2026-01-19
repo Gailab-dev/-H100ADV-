@@ -102,6 +102,7 @@
 		let form = document.getElementById('eventListSearchForm');
 	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate'].value;
+	  	const evCd = form.elements['evCd'].value;
 	  	const searchKeyword   = form.elements['searchKeyword'].value;
 	 	const pageSize = document.getElementById('pageSize')?.value;
 	  	
@@ -118,7 +119,7 @@
 	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 		
-		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "$evCd=" + evCd + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
 		
 	}
 	
@@ -244,10 +245,10 @@
 			
 			let form = document.getElementById('deviceListSearchForm');
 		  	let val1 = form.elements['searchKeyword'].value;
-		  	let searchKeyword = encodeURIComponent(val);
+		  	let searchKeyword = encodeURIComponent(val1);
 		  	let val2 = form.elements['startDate'].value;
 		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elemntes['endDate'].vlaue;
+		  	let val3 = form.elemntes['endDate'].value;
 		  	let endDate = encodeURIComponet(val3);
 		  	let pageSize = document.getElementById('pageSize')?.value;
 			
@@ -359,9 +360,7 @@
 			<div class="content">
 				<div class="device-top">
 					<div class="top-row">
-						<form id="eventListSearchForm"
-							action="/gov-disabled-web-gs/eventList/viewEventList.do"
-							class="filter-form">
+						<form id="eventListSearchForm" class="filter-form">
 							<div class="filter-input-group">
 								<input type="date" name="startDate" value="${startDate}" />
 							</div>
@@ -371,13 +370,8 @@
 							</div>
 							<div class="filter-input-group">
 								<select name="evCd" class="selectOption">
-									<option>유형</option>
+									<option ${evCd == null ? 'selected' : '' }>유형</option>
 									<option value="1" ${evCd == 1 ? 'selected' : ''}>미등록차량</option>
-									<%-- 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가 --%>
-									<%-- 
-							<option value="2" ${evCd == 2 ? 'selected' : ''}>불법주차(장애인미탑승)</option>
-							<option value="3" ${evCd == 3 ? 'selected' : ''}>스티커 불법 사용</option>
-							 --%>
 									<option value="4" ${evCd == 4 ? 'selected' : ''}>위험상황</option>
 									<option value="5" ${evCd == 5 ? 'selected' : ''}>물건적재</option>
 									<option value="6" ${evCd == 6 ? 'selected' : ''}>이중주차</option>
@@ -386,21 +380,20 @@
 							<div class="search-box">
 								<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 									xmlns="http://www.w3.org/2000/svg">
-						      		<path
+                        <path
 										d="M8.75065 14.1673C11.7422 14.1673 14.1673 11.7422 14.1673 8.75065C14.1673 5.75911 11.7422 3.33398 8.75065 3.33398C5.75911 3.33398 3.33398 5.75911 3.33398 8.75065C3.33398 11.7422 5.75911 14.1673 8.75065 14.1673Z"
 										stroke="#767676" stroke-width="1.5" stroke-miterlimit="10" />
-						      		<path
+                        <path
 										d="M16.1363 17.197C16.4292 17.4899 16.9041 17.4899 17.197 17.197C17.4899 16.9041 17.4899 16.4292 17.197 16.1363L16.6667 16.6667L16.1363 17.197ZM12.5 12.5L11.9697 13.0303L16.1363 17.197L16.6667 16.6667L17.197 16.1363L13.0303 11.9697L12.5 12.5Z"
 										fill="#767676" />
-							    </svg>
+                    </svg>
 								<input type="text" name="searchKeyword" value="${searchKeyword}"
-									class="" placeholder="디바이스명 및 주소 검색" maxlength="100" />
+									placeholder="디바이스명 및 주소 검색" maxlength="100" />
 							</div>
 							<button type="button" class="search-btn"
 								onclick="searchEventList('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
-
-
 						</form>
+
 						<div class="filter-input-group">
 							<select id="pageSize" name="pageSize"
 								onchange="searchEventList()" class="select-box">
@@ -414,13 +407,12 @@
 						</div>
 					</div>
 
-
 					<div class="bulk-actions">
 						<svg width="16" height="16" viewBox="0 0 16 16" fill="none"
 							xmlns="http://www.w3.org/2000/svg">
-			      		<rect width="16" height="16" rx="4" fill="#6955A2" />
-			      		<path d="M4 9V7H12V9H4Z" fill="white" />
-			    		</svg>
+                <rect width="16" height="16" rx="4" fill="#6955A2" />
+                <path d="M4 9V7H12V9H4Z" fill="white" />
+            </svg>
 
 						<span class="selected-text">0개 선택됨</span>
 
@@ -428,11 +420,11 @@
 							onclick="viewDeleteDevicePopup()" title="삭제">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 								xmlns="http://www.w3.org/2000/svg">
-						        	<path
+                    <path
 									d="M11.75 9.11111V14.4444M8.25 9.11111V14.4444M4.75 5.55556V16.2222C4.75 16.6937 4.93437 17.1459 5.26256 17.4793C5.59075 17.8127 6.03587 18 6.5 18H13.5C13.9641 18 14.4092 17.8127 14.7374 17.4793C15.0656 17.1459 15.25 16.6937 15.25 16.2222V5.55556M3 5.55556H17M5.625 5.55556L7.375 2H12.625L14.375 5.55556"
 									stroke="black" stroke-width="1.4" stroke-linecap="round"
 									stroke-linejoin="round" />
-						      	</svg>
+                </svg>
 						</button>
 						<button type="button" class="delete-btn" onclick="excelDownload()"
 							title="엑셀 다운로드">
@@ -441,12 +433,10 @@
 								alt="엑셀 다운로드">
 						</button>
 					</div>
-
 				</div>
 
 				<c:choose>
 					<c:when test="${empty eventList}">
-						<!-- 데이터 없을 때: 빈 결과만 -->
 						<div class="empty-state">
 							<img
 								src="${pageContext.request.contextPath}/resources/images/result-icon.svg"
@@ -456,7 +446,6 @@
 					</c:when>
 
 					<c:otherwise>
-						<!-- 데이터 있을 때: 테이블만 -->
 						<table class="event-table">
 							<thead>
 								<tr>

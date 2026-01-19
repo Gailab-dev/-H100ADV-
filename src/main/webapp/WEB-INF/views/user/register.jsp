@@ -139,6 +139,12 @@
 		  		showAlert("이메일은 100자를 넘을 수 없습니다.");
 		  		return;
 		  	}
+			
+		  	if (!(await isVerifiedNow(email))) {
+		  	  showAlert("이메일 인증이 필요합니다.");
+		  	  return;
+		  	}
+		  	
 		  	/*
 		  	const EMAIL_RULE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 		  	if( !EMAIL_RULE.test(phone) ){
@@ -156,6 +162,7 @@
 			  return;
 			}
 		  	
+			
 			// body
 			const body = {
 				u_login_id : id
@@ -165,7 +172,7 @@
 			}
 			
 		    // 이메일 인증을 위한 세션에 데이터 저장
-			const res = await fetch('${pageContext.request.contextPath}/user/request',{
+			const res = await fetch('${pageContext.request.contextPath}/user/register',{
 				method: 'POST',
 		  		headers: {
 		    		'Content-Type': 'application/json'
@@ -183,7 +190,7 @@
 			const result = await res.json();
 			
 			if(result.ok){
-				window.location.href = "${pageContext.request.contextPath}/user/emailAuth.do";
+				window.location.href = "${pageContext.request.contextPath}/user/login.do";
 			}else {
 				alert(result.msg);
 			}
@@ -288,6 +295,48 @@
 		        }
 		    });
 		});
+		
+		// 이메일을 입력 받았을 때 인증번호 인증
+		async function request(){
+			
+			const email = document.getElementById('email')?.value;
+			if(email == null || email || undefined || email == ""){
+				alert("이메일을 입력해주세요.");
+				return;
+			}
+			
+			const r = await fetch("${pageContext.request.contextPath}/user/request",{
+				method: "POST",
+				mode: "same-origin",
+				cache:"no-cache",
+				credentials:"same-origin",
+				headers:{
+					content-Type:"application/json",
+				},
+				body: JSON.stringfy({"u_email":email}),
+			})
+			
+			if(r.ok != 200){
+				return;
+			}
+			
+			const data = await r.json();
+			
+			alert(data.msg);
+			
+		}
+		
+		// 이메일 인증했는지 확인
+		async function isVerifiedNow(email){
+			  const res = await fetch(`${CONTEXT_PATH}/user/isRegisterEmailVerified`, {
+			    method: "POST",
+			    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+			    credentials: "same-origin",
+			    body: JSON.stringify({ email })
+			  });
+			  const json = await res.json();
+			  return !!json.verified;
+			}
 	 
 </script>
 <body>
@@ -342,7 +391,7 @@
 							<div class="email-wrapper">
 								<input id="email" class="line-input" type="email"
 									placeholder="이메일을 입력하세요" autocomplete="email">
-								<button type="button" class="confirm">인증</button>
+								<button type="button" class="confirm" onclick="request()">인증</button>
 							</div>
 						</div>
 

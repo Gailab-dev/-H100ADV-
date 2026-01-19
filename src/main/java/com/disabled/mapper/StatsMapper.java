@@ -10,6 +10,6 @@ import org.springframework.dao.DataAccessException;
 @Mapper
 public interface StatsMapper {
 	List<Map<String,Object>> getEventByMonth(Map<String,Object> param) throws DataAccessException;
-	List<Map<String,Object>> getAllEvent() throws DataAccessException;
-	List<Map<String, Object>> getEventByMonthAndSearchParams(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("stCd") Integer stCd) throws IllegalStateException;
+	List<Map<String,Object>> getAllEvent() throws DataAccessException; 
+	List<Map<String, Object>> getEventByMonthAndSearchParams(Map<String, Object> paramMap) throws IllegalStateException;
 }
