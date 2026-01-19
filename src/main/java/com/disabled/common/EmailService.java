@@ -3,7 +3,6 @@ package com.disabled.common;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 import javax.mail.internet.MimeMessage;
@@ -27,12 +26,19 @@ public class EmailService {
      * @param email			이메일 주소(String)
      * @param authCode		인증 코드(String)
      */
-	public void sendAuthEmail(String baseUrl, String contextPath, String email, String authCode) {
+    /*
+     * 앱 비밀번호 설정하는 방법
+     * 구글 계정 - 구글 계정 관리
+     * 보안 및 로그인
+     * 2단계 인증( 2단계 인증 안 되어 있다면 2단계 인증 설정)
+     * (페이지 하단) 앱 비밀번호
+     * 앱 비밀번호 생성 또는 수정(h100)
+     */
+	public void sendAuthEmail(String email, String verifyUrl) {
 		try {
 	        String html = loadTemplate("templates/email-auth.html");
 	        
 	        // 인증 링크
-	        String verifyUrl = baseUrl + contextPath + "/user/verifyEmail.do?token=" + URLEncoder.encode(authCode, "UTF-8");
 	        html = html.replace("{{VERIFY_URL}}", verifyUrl);
 		
 		    MimeMessage message = mailSender.createMimeMessage();
@@ -42,13 +48,16 @@ public class EmailService {
 		    helper.setTo(email);
 		    helper.setSubject("[H100] 이메일 인증 안내");
 		    helper.setText(html, true); // true = HTML
-		    helper.setFrom("no-reply@h100.co.kr");
-		
+		    helper.setFrom("gailab.dev@gmail.com");
+		    
+		    System.out.println("mail host=" + ((org.springframework.mail.javamail.JavaMailSenderImpl)mailSender).getHost());
+		    
 		    mailSender.send(message);
 	
 		} catch (Exception e) {
 			throw new RuntimeException("이메일 발송 실패", e);
 	    }
+		
 	}
 	
 	/**
@@ -70,5 +79,7 @@ public class EmailService {
         }
         return sb.toString();
     }
+    
+
 	
 }

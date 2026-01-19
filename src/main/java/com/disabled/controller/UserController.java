@@ -29,7 +29,6 @@ import com.disabled.model.AccountLockStatus;
 import com.disabled.service.CryptoARIAService;
 import com.disabled.service.EmailAuthService;
 import com.disabled.service.UserService;
-import com.ibatis.sqlmap.engine.mapping.result.ResultMap;
 
 @Controller
 @RequestMapping("/user")
@@ -427,21 +426,48 @@ public class UserController {
 	 * @return
 	 */
 	@ResponseBody
-	@PostMapping(value = "/register", produces = "application/json; charset=UTF-8")
+	@PostMapping(
+			value = "/register",   
+			consumes="application/json",
+			produces = "application/json; charset=UTF-8")
 	public Map<String,Object> register(
 			@RequestBody Map<String,Object> body
 			, HttpSession session
 			){
 		
+		// ====== 세션에 저장된 정보 확인 [S] ====== //
+		System.out.println("=== [REGISTER] session dump start ===");
+		System.out.println("AUTH_CODE=" + session.getAttribute("AUTH_CODE"));
+		System.out.println("EXPIRED_TIME=" + session.getAttribute("EXPIRED_TIME")
+		        + " (type=" + (session.getAttribute("EXPIRED_TIME") == null ? "null" : session.getAttribute("EXPIRED_TIME").getClass()) + ")");
+		System.out.println("REG_AUTH_VERIFIED=" + session.getAttribute("REG_AUTH_VERIFIED")
+		        + " (type=" + (session.getAttribute("REG_AUTH_VERIFIED") == null ? "null" : session.getAttribute("REG_AUTH_VERIFIED").getClass()) + ")");
+		System.out.println("REG_AUTH_EMAIL=" + session.getAttribute("REG_AUTH_EMAIL"));
+		System.out.println("REQ email=" + body.get("u_email"));
+		System.out.println("=== [REGISTER] session dump end ===");
+		// ====== 세션에 저장된 정보 확인 [E] ====== //
+		
 		// ====== 변수 선언부 [S] ====== //
 		Map<String,Object> resultMap = new HashMap<String, Object>();
-		
 		String email = body.get("u_email").toString().trim();					// 사용자의 이메일
 		
-		String sEmail = (String) session.getAttribute("REG_AUTH_EMAIL");		// 세션에 저장된 사용자 이메일
-		Boolean verified = (Boolean) session.getAttribute("REG_AUTH_VERIFIED");	// 인증여부
-		Long expireAt = (Long) session.getAttribute("REG_AUTH_EXPIRE_AT");		// 만료시간
-		
+		// 세션에 저장된 정보
+		// 만료 시간, 인증 여부, 이메일을 세션에서 불러오기			
+		Object expiredObj = session.getAttribute("EXPIRED_TIME");			// 만료시간
+		LocalDateTime expiredTime = null;
+		if (expiredObj instanceof LocalDateTime) {
+		    expiredTime = (LocalDateTime) expiredObj;
+		}
+		boolean verified = false;											// 인증여부
+		Object verifiedObj = session.getAttribute("REG_AUTH_VERIFIED");		
+		if (verifiedObj != null) {
+			verified = (boolean) verifiedObj;
+		}
+		String sEmail = null;												// 이메일
+		Object sEmailObj = session.getAttribute("REG_AUTH_EMAIL");			
+		if (sEmailObj instanceof String) {
+			sEmail = sEmailObj.toString();
+		}	
 		// ====== 변수 선언부 [S] ====== //
 		
 		try {		
@@ -456,11 +482,12 @@ public class UserController {
 			}
 			
 			// 이메일, 인증여부, 만료시간을 확인하여 인증여부 확인
+			LocalDateTime now = LocalDateTime.now();
 			if (!Boolean.TRUE.equals(verified)
 			    || sEmail == null
 			    || !sEmail.equalsIgnoreCase(email)
-			    || expireAt == null
-			    || System.currentTimeMillis() > expireAt) {
+			    || expiredTime == null
+			    || now.isAfter(expiredTime)) {
 
 			    resultMap.put("ok", false);
 			    resultMap.put("msg", "이메일 인증이 필요합니다.");
@@ -477,7 +504,9 @@ public class UserController {
 			}
 			
 			// 데이터 insert
+			// 지역값 추후 고도화 필요
 			body.put("encryptPwd", encryptPwd);
+			body.put("u_region", 1);
 			Integer rows1 = userService.insertUser(body);
 			if(rows1 != 1){
 				resultMap.put("ok",false);
@@ -487,12 +516,13 @@ public class UserController {
 			
 			// 가입 성공후 세션 정리하여 재사용 방지
 			session.removeAttribute("REG_AUTH_EMAIL");
-			session.removeAttribute("REG_AUTH_CODE");
-			session.removeAttribute("REG_AUTH_EXPIRE_AT");
+			session.removeAttribute("AUTH_CODE");
+			session.removeAttribute("EXPIRED_TIME");
 			session.removeAttribute("REG_AUTH_VERIFIED");
 			
 			// ====== 서비스 [E] ====== //
 			
+			System.out.println("서비스 완료");
 			resultMap.put("ok",true);
 			return resultMap;
 		} catch (RuntimeException e) {
@@ -801,20 +831,29 @@ public class UserController {
 			// 인증코드 생성
 			String authCode = emailAuthService.createAuthCode();
 			
-			// 인증코드, 만료 시간, 시도횟수, 인증 여부를 세션에 저장
-			session.setAttribute("AUTH_CODE", authCode);
-			session.setAttribute("EXPIRED_TIME", LocalDateTime.now().plusMinutes(5));
-			session.setAttribute("AUTH_ATTEMPT_COUNT",authAttemptCount + 1);
-			session.setAttribute("REG_AUTH_VERIFIED", false);
-			
 			// 이메일 송신
-			String baseUrl = "https://";
-			String contextPath = "";
-			String email = body.get("email").toString();
-			emailService.sendAuthEmail(baseUrl,contextPath,email, authCode);
+			// 사용자가 입력한 이메일
+			String email = body.get("u_email").toString();
+			
+			// 이메일 인증하기 버튼 클릭시 이동하는 url 
+			String verifyUrl = org.springframework.web.servlet.support.ServletUriComponentsBuilder
+				    .fromCurrentContextPath()
+				    .path("/user/verifyEmail.do")
+				    .queryParam("token", authCode)
+				    .build()
+				    .toUriString();
+			emailService.sendAuthEmail(email, verifyUrl);
+			
+			// 인증코드, 만료 시간, 시도횟수, 인증 여부, 이메일을 세션에 저장
+			session.setAttribute("AUTH_CODE", authCode);								// 인증코드
+			session.setAttribute("EXPIRED_TIME", LocalDateTime.now().plusMinutes(5));	// 만료시간
+			session.setAttribute("AUTH_ATTEMPT_COUNT",authAttemptCount + 1);			// 시도횟수
+			session.setAttribute("REG_AUTH_VERIFIED", false);							// 인증여부
+			session.setAttribute("REG_AUTH_EMAIL", email); 								// 이메일
+
 			
 			resultMap.put("ok", true);
-			resultMap.put("msg", "귀하의 이메일로 인증메일을 전송하였습니다. 같은 기기, 같은 브라우저여서 인증메일을 확인해주세요.");
+			resultMap.put("msg", "귀하의 이메일로 인증메일을 전송하였습니다. 같은 기기, 같은 브라우저에서 인증메일을 확인해주세요.");
 			return resultMap;
 		} catch (Exception e) {
 			logger.error("이메일 인증을 위한 이메일 발송 도중 오류 발생 : ",e);
@@ -825,7 +864,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 사용자가 인증메일에서 인증버튼 클릭시 처리
+	 * 사용자가 인증메일에서 인증버튼 클릭시 처리(토큰과 이메일 둘 다 비교하고 싶을 경우)
 	 * @param token
 	 * @param model
 	 * @return
@@ -846,22 +885,29 @@ public class UserController {
 	        String code  = String.valueOf(body.get("code")).trim();				// 사용자에게 전송한 인증코드
 	        
 	        String sEmail = (String) session.getAttribute("REG_AUTH_EMAIL");	// 세션에 저장된 이메일
-	        String sCode  = (String) session.getAttribute("REG_AUTH_CODE");		// 세션에 저장된 인증코드
-	        Long expireAt = (Long) session.getAttribute("REG_AUTH_EXPIRE_AT");	// 만료시간
+	        String sCode  = (String) session.getAttribute("AUTH_CODE");		// 세션에 저장된 인증코드
+			Object expiredObj = session.getAttribute("EXPIRED_TIME");			// 만료시간
+			LocalDateTime expiredTime = null;
+			if (expiredObj instanceof LocalDateTime) {
+			    expiredTime = (LocalDateTime) expiredObj;
+			}	
+	        
+	        System.out.println("body { email : " + email + ", code : " + code + " }");
+	        System.out.println("session {sEmail : " + sEmail + ", sCode : " + ", expiredTime : " + expiredTime + " }");
 	        
 	    	// ====== 변수 선언부 [e] ======
 	        
 	        // ====== 서비스 [s] ======
 	        
 	        // 인증을 하지 않은 경우
-	        if (sEmail == null || sCode == null || expireAt == null) {
+	        if (sEmail == null || sCode == null || expiredTime == null) {
 	        	resultMap.put("ok", false);
 	        	resultMap.put("msg", "인증을 먼저 진행해 주세요.");
 	            return resultMap;
 	        }
 	        
 	        // 인증 시간 5분이 만료된 경우
-	        if (System.currentTimeMillis() > expireAt) {
+	        if (LocalDateTime.now().isAfter(expiredTime)) {
 	            session.setAttribute("REG_AUTH_VERIFIED", false);
 	            resultMap.put("ok", false);
 	            resultMap.put("msg", "인증번호가 만료되었습니다. 다시 발급해 주세요.");
@@ -915,12 +961,15 @@ public class UserController {
 	    Boolean verified = (Boolean) session.getAttribute("REG_AUTH_VERIFIED");	// 세션에 저장된 인증여부
 
 	    String email = body == null ? null : String.valueOf(body.get("email")).trim();
-
+	    
+	    System.out.println("sEmail : " + sEmail +" verified : " + verified + " email : "+ email);
+	    
 	    boolean ok = Boolean.TRUE.equals(verified)
 	                 && sEmail != null
 	                 && email != null
 	                 && sEmail.equalsIgnoreCase(email);
 
+	    System.out.println(ok);
 	    r.put("ok", true);
 	    r.put("verified", ok);
 	    return r;
@@ -929,23 +978,30 @@ public class UserController {
 	/**
 	 * 사용자가 받은 이메일의 클릭 버튼을 눌렀을 때 해당 이메일 확인
 	 */
-	@GetMapping("/verifyEmail")
+	@GetMapping("/verifyEmail.do")
 	public String verifyEmail(@RequestParam("token") String token
 			, HttpSession session
 			, Model model) {
 	    try {
 	    	
-	        String sToken = (String) session.getAttribute("REG_AUTH_TOKEN");
-	        Long expireAt = (Long) session.getAttribute("REG_AUTH_EXPIRE_AT");
+	        String sToken = (String) session.getAttribute("AUTH_CODE");
+			Object expiredObj = session.getAttribute("EXPIRED_TIME");			// 만료시간
+			LocalDateTime expiredTime = null;
+			if (expiredObj instanceof LocalDateTime) {
+			    expiredTime = (LocalDateTime) expiredObj;
+			}	
 	    	
+	        System.out.println("session { sToken : " + sToken + ", expiredTime : " +expiredTime + "}");
+	        System.out.println("token : " + token);
+	        
 	        // 1) 세션에 인증 정보가 없으면 실패
-	        if (sToken == null || expireAt == null) {
+	        if (sToken == null || expiredTime == null) {
 	            model.addAttribute("msg", "인증 세션이 없습니다. 같은 브라우저에서 인증 메일을 다시 요청해 주세요.");
 	            return "user/verifyResult";
 	        }
 
 	        // 2) 만료 체크
-	        if (System.currentTimeMillis() > expireAt) {
+	        if (LocalDateTime.now().isAfter(expiredTime)) {
 	            session.setAttribute("REG_AUTH_VERIFIED", false);
 	            model.addAttribute("msg", "인증 링크가 만료되었습니다. 인증 메일을 다시 요청해 주세요.");
 	            return "user/verifyResult";
@@ -959,6 +1015,12 @@ public class UserController {
 	        
 	        // 4) 인증 완료 처리(세션 플래그)
 	        session.setAttribute("REG_AUTH_VERIFIED", true);
+
+	        // ✅ 이메일도 세션에 저장해둬야 register에서 비교 가능
+	        Map<String,Object> regUser = (Map<String,Object>) session.getAttribute("REGISTER_USER");
+	        if (regUser != null && regUser.get("u_email") != null) {
+	            session.setAttribute("REG_AUTH_EMAIL", String.valueOf(regUser.get("u_email")));
+	        }
 	        
 	        Map<String, Object> param = new HashMap<>();
 	        param.put("token", token);

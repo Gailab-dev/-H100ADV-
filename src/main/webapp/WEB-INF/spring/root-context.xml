@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
-	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
-		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="
+        http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<!-- mariadb database 연동을위한 jdbc driver 설정 -->
 	<bean id="dataSource"
@@ -66,21 +69,28 @@
     	<property name="basePackage" value="com.disabled.mapper" />
 	</bean>
 	
+	<!-- 이메일 인증을 위한 Gmail SMTP 설정값 불러오기 -->
+	<context:property-placeholder
+    location="classpath:/globals.properties"
+    ignore-unresolvable="false" />
+	
 	<!-- mail sender -->
 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
-    <property name="host" value="smtp.gmail.com"/>
-    <property name="port" value="587"/>
-    <property name="username" value="your_email@gmail.com"/>
-    <property name="password" value="앱비밀번호"/>
-
-    <property name="javaMailProperties">
-        <props>
-            <prop key="mail.transport.protocol">smtp</prop>
-            <prop key="mail.smtp.auth">true</prop>
-            <prop key="mail.smtp.starttls.enable">true</prop>
-            <prop key="mail.debug">false</prop>
-        </props>
-    </property>
-</bean>
+	    <property name="host" value="${mail.host}"/>
+	    <property name="port" value="587"/>
+	    <property name="username" value="${mail.username}"/>
+	    <property name="password" value="${mail.password}"/>
+	
+	    <property name="javaMailProperties">
+	        <props>
+	            <prop key="mail.transport.protocol">smtp</prop>
+	            <prop key="mail.smtp.auth">${mail.smtp.auth}</prop>
+	            <prop key="mail.smtp.starttls.enable">${mail.smtp.starttls.enable}</prop>
+                <prop key="mail.smtp.starttls.required">${mail.smtp.starttls.required}</prop>
+	            <prop key="mail.smtp.ssl.protocols">${mail.smtp.ssl.protocols}</prop>
+	            <prop key="mail.debug">true</prop>
+	        </props>
+	    </property>
+	</bean>
 	
 </beans>

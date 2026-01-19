@@ -83,7 +83,7 @@
 	}
 		
 	// 상세보기 클릭시 불법주차 상세 화면으로 이동
-	window.eventListDetail = function(evId){
+	window.eventListDetail = function(dvId, evId, dvAddr){
 		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
 	    let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
 	    let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');

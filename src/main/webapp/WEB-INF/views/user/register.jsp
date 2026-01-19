@@ -18,7 +18,7 @@
 	integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
 	crossorigin="anonymous"></script>
 <script>
-	
+
 	
 	/**
 	* 엔터키 감지하여 = 회원가입 버튼 클릭
@@ -83,7 +83,8 @@
 		const id = document.getElementById("id")?.value;
 		const pwd = document.getElementById("pwd")?.value;
 		const name = document.getElementById("name")?.value;
-		const email = document.getElementById("email")?.value;
+		const email = document.getElementById("email")?.value.trim();
+		const pwdConfirm = document.getElementById("pwdConfirm")?.value;
 		//const parkingLot = document.getElementById("parkingLot");
 		//const selectOpt = parkingLot.options[parkingLot.selectedIndex];
 		const tnc = document.getElementById("tnc")?.checked;
@@ -120,6 +121,10 @@
 			if(!PASSWORD_RULE.test(pwd)){
 		  		showAlert("비밀번호는 6자 - 20자 사이여야 하고, 영문, 숫자, 특수문자 1개 이상을 포함하는 문자열이여야 합니다.");
 		  		return;
+			}
+			if (pwd !== pwdConfirm) { 
+				showAlert("비밀번호가 일치하지 않습니다."); 
+				return; 
 			}
 			if(!name){
 				showAlert("이름을 입력해주세요");
@@ -173,21 +178,34 @@
 			
 		    // 이메일 인증을 위한 세션에 데이터 저장
 			const res = await fetch('${pageContext.request.contextPath}/user/register',{
-				method: 'POST',
-		  		headers: {
-		    		'Content-Type': 'application/json'
-	    			, 'Accept': 'application/json'
-		  		},
-		  		body: JSON.stringify(body)
+	      		method: 'POST'
+	      		, headers: { 'Content-Type': 'application/json' }
+	      		, body: JSON.stringify(body)
+	      		, credentials : 'same-origin'
+	      		, cache:'no-store'
 			});
-			
-	        if (!res.ok) {
-	            const text = await res.text(); // 에러 페이지로 나온 경우 내용 확인
-	            console.error('서버 오류 응답:', res.status, text);
-	            return; 
-	        }
 		    
-			const result = await res.json();
+	        const contentType = res.headers.get('content-type') || '';
+	        const raw = await res.text();
+
+	        console.log('register status=', res.status);
+	        console.log('register redirected=', res.redirected, 'final url=', res.url);
+	        console.log('register contentType=', contentType);
+	        
+	        if (!contentType.includes('application/json')) {
+        	  console.error('JSON이 아닌 응답:', raw.slice(0, 500));
+        	  showAlert('서버가 JSON이 아닌 페이지(로그인/에러페이지)를 반환했습니다. 콘솔 raw 확인');
+        	  return;
+        	}
+	        
+	        let result;
+			try {
+			  result = JSON.parse(raw);
+			} catch (e) {
+			  console.error('JSON 파싱 실패 raw=', raw.slice(0, 500));
+			  showAlert('JSON 파싱 실패(콘솔 raw 확인)');
+			  return;
+			}
 			
 			if(result.ok){
 				window.location.href = "${pageContext.request.contextPath}/user/login.do";
@@ -211,7 +229,7 @@
 	    });
 	  }*/
 	  
-	  /* 에러 메시지 표시 함수*/
+	    /* 에러 메시지 표시 함수*/
 		function showError(message) {
 			const errorElement = document.getElementById('errorMessage');
 			errorElement.textContent = message;
@@ -238,7 +256,7 @@
 		  }
 		}
 	  
-	  /*전체 동의 -> 하위 약관 동의 */
+	    /* 전체 동의 -> 하위 약관 동의 */
 		function toggleAllAgree(){
 			const allAgree = document.getElementById('allAgree');
 			const tnc = document.getElementById('tnc');
@@ -300,7 +318,7 @@
 		async function request(){
 			
 			const email = document.getElementById('email')?.value;
-			if(email == null || email || undefined || email == ""){
+			if(email == null || email.trim() === ""){
 				alert("이메일을 입력해주세요.");
 				return;
 			}
@@ -309,34 +327,60 @@
 				method: "POST",
 				mode: "same-origin",
 				cache:"no-cache",
-				credentials:"same-origin",
 				headers:{
-					content-Type:"application/json",
+					"Content-Type":"application/json",
 				},
-				body: JSON.stringfy({"u_email":email}),
+				body: JSON.stringify({"u_email":email}),
 			})
 			
-			if(r.ok != 200){
-				return;
+			if(!r.ok){
+		      const text = await r.text().catch(() => "");
+		      console.error("인증메일 요청 실패:", r.status, text);
+		      showAlert("인증메일 발송에 실패했습니다.");
+		      return;
 			}
 			
 			const data = await r.json();
 			
 			alert(data.msg);
+			showAlert("인증메일을 발송했습니다.");
 			
 		}
 		
 		// 이메일 인증했는지 확인
 		async function isVerifiedNow(email){
-			  const res = await fetch(`${CONTEXT_PATH}/user/isRegisterEmailVerified`, {
-			    method: "POST",
-			    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-			    credentials: "same-origin",
-			    body: JSON.stringify({ email })
-			  });
-			  const json = await res.json();
-			  return !!json.verified;
-			}
+		  try {
+		    const res = await fetch("${pageContext.request.contextPath}/user/isRegisterEmailVerified", {
+		      method: "POST",
+		      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+		      credentials: "same-origin",
+		      body: JSON.stringify({ email })
+		    });
+		
+		    const contentType = res.headers.get("content-type") || "";
+		    const raw = await res.text();
+		
+		    console.log("[isVerifiedNow] status=", res.status);
+		    console.log("[isVerifiedNow] redirected=", res.redirected, "url=", res.url);
+		    console.log("[isVerifiedNow] contentType=", contentType);
+		    console.log("[isVerifiedNow] raw=", raw);
+		
+		    if (!res.ok) return false;
+		
+		    // 서버가 JSON이 아닌 페이지를 반환하면 무조건 false
+		    if (!contentType.includes("application/json")) return false;
+		
+		    const json = JSON.parse(raw);
+		    
+		    console.log(json.verified);
+		    
+		    return json.verified === true;
+		
+		  } catch (e) {
+		    console.error("[isVerifiedNow] error", e);
+		    return false;
+		  }
+		}
 	 
 </script>
 <body>
