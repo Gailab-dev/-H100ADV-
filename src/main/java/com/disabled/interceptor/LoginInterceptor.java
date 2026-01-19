@@ -18,11 +18,7 @@ public class LoginInterceptor implements HandlerInterceptor{
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	/*
-	 * 세션이 사라지면 자동으로 로그아웃하여 로그인 페이지로 이동
-	 * handler:
-	 * - 현재 요청을 처리한 대상 핸들러 객체
-	 * - @Controller 클래스 내의 메서드 정보를 가지고 있음
-	 * - 2025.07.31. 현재는 해당 변수 사용하고 있지 않으나 추후 기능 추가가 필요한 경우를 위해 남겨놓았음
+	 * 페이지 이동 전 세션을 체크하여, 세션이 없다면 로그인 페이지로 이동
 	 */
 	@Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -40,10 +36,8 @@ public class LoginInterceptor implements HandlerInterceptor{
         Object uId = (session != null) ? session.getAttribute("uId") : null;
         
         
-        // 로그인 페이지와 정적 자원은 제외
-        /*
-         * 
-         */
+        // 아래 contains에 포함된 url은 세션 확인 없어도 접근 가능
+        // 로그인, 회원가입, 아이디 비번 찾기 등의 페이지, 정적 자원들만 포함해야 함
         if (uri.contains("/user/login.do") 
         		|| uri.contains("/user/login")
         		|| uri.contains("/user/register.do")
@@ -60,6 +54,9 @@ public class LoginInterceptor implements HandlerInterceptor{
         		|| uri.contains("/user/viewInputAuthNumberSubpage.do")
         		|| uri.contains("/user/authNumber")
         		|| uri.contains("/user/resetPwd")
+        		|| uri.contains("/user/request")
+        		|| uri.contains("/user/verifyEmail.do")
+        		|| uri.contains("user/isRegisterEmailVerified")
         		|| uri.contains("/logout")
         		|| uri.contains("/css") 
         		|| uri.contains("/js") 

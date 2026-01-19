@@ -17,7 +17,8 @@
             	<otherwise>ev_date</otherwise>
 			</choose>	
 			${sortDir}) AS rn 
-			, A.*			
+			, A.*
+			, B.dv_id			
 			, B.dv_addr
 			, B.dv_name
 		FROM tbl_event_data A
