@@ -15,19 +15,27 @@
 	</c:choose>
 	
 	<div class="modal-content">
-		<label>디바이스명 <span class="required">*</span></label>
-		<input type="text" id="dvName" placeholder="디바이스명" value="${dvInfo.dv_name}" >
-
+		<div class="modal-labelGroup">
+			<label>디바이스명 <span class="required">*</span></label>
+			<input type="text" id="dvName" placeholder="디바이스명" value="${dvInfo.dv_name}" >
+		</div>
+		
+		<div class="modal-labelGroup">
 		<label>디바이스 주소 <span class="required">*</span></label>
 		<input type="text" id="dvAddr" placeholder="디바이스 주소" value="${dvInfo.dv_addr}" >
-
-		<label>도메인 <span class="required">*</span></label>
-		<input type="text" id="dvIp" placeholder="도메인" value="${dvInfo.dv_ip}" >
+		</div>
 		
+		<div class="modal-labelGroup">
 		<label>serial number <span class="required">*</span></label>
 		<input type="text" id="serialNumber" placeholder="serial number" value="${dvInfo.dv_serial_number}">
-	
-		<div class="modal-buttons">
+		</div>
+		
+		<div class="modal-labelGroup">
+		<label>IP <span class="required">*</span></label>
+		<input type="text" id="dvIp" placeholder="IP" value="${dvInfo.dv_ip}" >
+		</div>
+	</div>
+	<div class="modal-buttons">
 			<button class="modal-btn cancel" onclick="closeDeviceInfoPopup()">취소</button>
 	
 			<c:if test="${empty dvId}">
@@ -38,6 +46,5 @@
 				<button class="modal-btn save" onclick="updateDeviceInfo('${dvId}')">수정</button>
 			</c:if>
 		</div>
-	</div>
 
 </div>

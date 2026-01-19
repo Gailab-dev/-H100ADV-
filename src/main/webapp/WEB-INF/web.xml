@@ -12,6 +12,9 @@
                         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
     version="4.0"
     metadata-complete="true">
+    
+    <absolute-ordering />
+    
 	<!-- spring 설정 파일 위치 -->
 	<context-param>
 		<param-name>contextConfigLocation</param-name>

@@ -93,6 +93,7 @@ button {
     width: 234px;
     padding: 20px;
     border-right: 1px solid #E5E5EC;
+    background: #FCFBFF;
 }
 .menu {
     list-style-type: none;
@@ -104,21 +105,26 @@ button {
 .menu > li > a {
     display: block;
     padding: 10px;
-    background: #fff;
+    background: #FCFBFF;
     text-decoration: none;
     color: #000;
     transition: background 0.2s ease;
 }
-.menu > li:nth-child(1) > a {
-    background: #f8f8fa; 
+.menu > li:nth-child(2) > a {
+    background: #F1EDFF; 
     font-weight: bold;
+    color:#6955A2;
+}
+/* 활성화된 메뉴의 SVG 두께 증가 */
+.menu > li:nth-child(2) > a svg {
+    stroke-width: 2; 
 }
 .menu > li > a:hover {
-    background: #eee;
+    background: #FCFBFF;
 }
 .menu-icon {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     vertical-align: middle;
     margin-right: 8px;
 }
@@ -154,7 +160,7 @@ button {
 	width:220px;
     height: 44px;
     padding: 0 12px;
-    border: 1px solid #ccc;
+    border: 1px solid #E5E5EC;
     border-radius: 10px;
     font-size: 14px;
     color: #333;

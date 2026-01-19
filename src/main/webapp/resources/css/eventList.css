@@ -95,6 +95,7 @@ button {
     width: 234px;
     padding: 20px;
     border-right: 1px solid #E5E5EC;
+    background: #FCFBFF;
 }
 .menu {
     list-style-type: none;
@@ -106,21 +107,26 @@ button {
 .menu > li > a {
     display: block;
     padding: 10px;
-    background: #fff;
+    background: #FCFBFF;
     text-decoration: none;
     color: #000;
     transition: background 0.2s ease;
 }
-.menu > li:nth-child(3) > a {
-    background: #f8f8fa; 
+.menu > li:nth-child(1) > a {
+    background: #F1EDFF; 
     font-weight: bold;
+    color:#6955A2;
+}
+/* 활성화된 메뉴의 SVG 두께 증가 */
+.menu > li:nth-child(1) > a svg {
+    stroke-width: 2; 
 }
 .menu > li > a:hover {
-    background: #eee;
+    background: #FCFBFF;
 }
 .menu-icon {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     vertical-align: middle;
     margin-right: 8px;
 }
@@ -130,6 +136,10 @@ button {
     flex-direction: column;
     flex: 1;
     padding: 32px 24px 29px 24px;
+}
+.top-row{
+	display:flex;
+	justify-content:space-between;
 }
 
 /* 조회 폼 스타일 */
@@ -144,10 +154,10 @@ button {
     width:220px;
     height: 44px;
     padding: 0 12px;
-    border: 1px solid #ccc;
+    border: 1px solid #E5E5EC;
     border-radius: 10px;
     font-size: 14px;
-    color: #333;
+    color: #111111;
     background-color: #fff;
     outline: none;
 }
@@ -158,6 +168,25 @@ button {
     background-size: 16px;
     background-repeat: no-repeat;
     background-position: 8px center;
+}
+
+
+/* 검색창 */
+.search-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 11px;
+  background: #fff;
+  min-width: 340px;
+}
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  margin-left:8px;
 }
 .search-btn {
     width:56px;
@@ -170,32 +199,110 @@ button {
     font-size: 14px;
     cursor: pointer;
 }
+
+.select-box{
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin-left:auto;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  max-width: 180px;
+  height :44px;
+  font-size:16px;
+}
+/* 두 번째 줄: 선택 / 삭제 */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #555;
+  font-size: 13px;
+  margin-bottom:12px;
+}
+
+/* 삭제 버튼 */
+.delete-btn {
+  width: 44px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border: 1px solid #DBDBDB;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+.delete-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+
 /* 테이블 스타일 */
 .event-table {
     width: 100%;
     border-collapse: collapse;
     background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    table-layout: fixed;
-    
+    table-layout: fixed;   
 }
 .event-table th, .event-table td {
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #DBDBDB;
     padding: 12px;
     text-align: center;
     font-size: 14px;
 }
 .event-table th {
-    background-color: #f4f6f9;
     font-weight: 600;
 }
 
+.sort-btn{
+	margin-left:4px;
+}
+
+.table-checkBox[type="checkbox"],
+.row-check[type="checkbox"] {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.6px solid #767676;
+  border-radius: 4px; /* 둥근 사각형 */
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #fff;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* 체크된 상태 - 보라색 배경 */
+.table-checkBox[type="checkbox"]:checked,
+.row-check[type="checkbox"]:checked {
+  background-color: #6955A2;
+  border-color: #6955A2;
+}
+
+/* 체크마크 */
+.table-checkBox[type="checkbox"]:checked::after,
+.row-check[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
 /* 상세보기 버튼 */
-.event-table button {
+.event-table .detailButton{
     padding: 5px 18px;
     border: 1px solid #DBDBDB;
     border-radius: 8px;
     font-size: 14px;
+    color:#767676;
 }
 
 /* 셀 안에서 ... 처리 + tooltip 원본 유지용 */
@@ -206,6 +313,30 @@ button {
   white-space: nowrap; /* 줄바꿈 안 함 */
   text-overflow: ellipsis;  /* ... 으로 표시 */
   vertical-align: middle;
+}
+
+/* search-result 대신 empty-state 사용 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  padding: 60px 20px;
+}
+
+.empty-state .result-icon {
+  width: 60px;
+  height: 60px;
+  opacity: 0.6;
+}
+
+.empty-state .result-text {
+  font-weight: 500;
+  font-size: 16px;
+  color: #666;
+  margin: 0;
 }
 
 /* 페이지네이션 영역 */

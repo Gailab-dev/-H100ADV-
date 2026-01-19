@@ -1,4 +1,4 @@
-.modal-overlay {
+#deleteDevicePopup .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -7,31 +7,32 @@
   background: rgba(0, 0, 0, 0.4);
   z-index: 1000;
 }
-.modal {
+#deleteDevicePopup .modal {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: white;
   border-radius: 12px;
-  padding: 30px 40px;
+  padding: 40px 64px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   z-index: 1001;
   text-align: center;
   min-width: 320px;
 }
-.modal-text {
+#deleteDevicePopup .modal-text {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 20px;
+  color: #000000;
+
 }
-.modal-buttons {
+#deleteDevicePopup .modal-buttons {
   display: flex;
   justify-content: center;
   gap: 12px;
+  margin-top:40px;
 }
-.modal-btn {
+#deleteDevicePopup.modal-btn {
   font-size: 14px;
   font-weight: 600;
   border-radius: 8px;
@@ -39,17 +40,11 @@
   cursor: pointer;
   border: none;
 }
-.modal-btn.cancel {
+#deleteDevicePopup .modal-btn.cancel {
   background: #f1f1f1;
-  color: #333;
+  color: #000000;
 }
-.modal-btn.delete {
+#deleteDevicePopup .modal-btn.delete {
   background: #6955A2;
   color: white;
-}
-.modal-btn.cancel:hover {
-  background: #ddd;
-}
-.modal-btn.delete:hover {
-  background: #59489a;
 }

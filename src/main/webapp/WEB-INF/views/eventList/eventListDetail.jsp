@@ -41,6 +41,7 @@
 	    </div>
 	  </div>
 	</header>
+	
     <div class="container">
 		<aside class="sidebar">
               <ul class="menu">
@@ -109,14 +110,11 @@
 		
 			<!-- 돌아가기 버튼 -->
 			<div class="back-btn-wrapper">
-				<button type="button" onclick="goToEventList()" class="back-btn">← 돌아가기</button>
+				<button type="button" onclick="goToEventList()" class="back-btn"> 돌아가기</button>
 			</div>   
         </div>    
     </div>    
-    <footer class="footer">
-        <p>&copy; 2025 GAILAB</p>
-    </footer>
-
+   
 	<div id="photoModal" class="lb-modal" aria-hidden="true" role="dialog">
 		 <div class="lb-backdrop" data-close></div>
 		 <div class="lb-dialog" role="document">

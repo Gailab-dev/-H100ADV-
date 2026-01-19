@@ -89,19 +89,44 @@ button {
   flex: 1; 
 }
 .sidebar {
-	width: 234px;
+    width: 234px;
     padding: 20px;
     border-right: 1px solid #E5E5EC;
+    background: #FCFBFF;
 }
-.menu { list-style: none; }
-.menu li { margin-bottom: 12px; }
-.menu a {
-	display: flex; align-items: center; gap: 10px;
-	text-decoration: none; color: #000;
-	padding: 8px 10px; border-radius: 6px;
+.menu {
+    list-style-type: none;
+    padding: 0;
 }
-.menu a:hover, .menu .active a { background: #f3f1ff; color: #7c5cfc; font-weight: 600; }
-.menu-icon { width: 18px; }
+.menu > li {
+    margin-bottom: 12px;
+}
+.menu > li > a {
+    display: block;
+    padding: 10px;
+    background: #FCFBFF;
+    text-decoration: none;
+    color: #000;
+    transition: background 0.2s ease;
+}
+.menu > li:nth-child(3) > a {
+    background: #F1EDFF; 
+    font-weight: bold;
+    color:#6955A2;
+}
+/* 활성화된 메뉴의 SVG 두께 증가 */
+.menu > li:nth-child(3) > a svg {
+    stroke-width: 2; 
+}
+.menu > li > a:hover {
+    background: #FCFBFF;
+}
+.menu-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
 
 /* ================= 메인 콘텐츠 ================= */
 /* 콘텐츠 래퍼 */
@@ -120,28 +145,31 @@ button {
   overflow-x: auto;
   background: #fff;
   width: 100%;
-  box-sizing: border-box;
 }
 
 /* ================= 상단 영역 ================= */
+.buttonBox{
+	/*aling-item:left;*/
+	margin-bottom:28px;
+}
+
 .device-top {
   display: flex;
   flex-direction: column;
   width: 100%;
   gap: 12px;
-  margin-bottom: 16px;
-  box-sizing: border-box;
+  margin-bottom: 12px;
 }
 
 /* 첫 줄: 등록 버튼 + 검색창 */
 .top-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   width: 100%;
   flex-wrap: nowrap;
-  gap: 12px;
+  gap: 8px;
 }
+
 
 /* + 디바이스 등록 버튼 */
 .add-btn {
@@ -158,18 +186,40 @@ button {
   border: none;
   transition: background 0.2s ease;
 }
+/* 조회 폼 스타일 */
+.filter-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom:20px;
+}
+.date-contect{
+	font-size:14px;
+	font-weight:400;
+}
+.filter-input-group input[type="date"],
+.filter-input-group select {
+	width:220px;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid #E5E5EC;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #111111;
+    background-color: #fff;
+    outline: none;
+}
 
 
 /* 검색창 */
 .search-box {
   display: flex;
   align-items: center;
-  flex: 1;
   border: 1px solid #E0E0E0;
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 11px;
   background: #fff;
-  max-width: 500px;
+  min-width: 340px;
 }
 .search-box input {
   flex: 1;
@@ -186,22 +236,27 @@ button {
   display: flex;
   align-items: center;
   flex: 1;
+  margin-left:auto;
   border: 1px solid #E0E0E0;
   border-radius: 8px;
   padding: 6px 10px;
   background: #fff;
-  max-width: 110px;
-  height :40px;
+  max-width: 180px;
+  height :44px;
+  font-size:16px;
+}
+.search-btn {
+	width:56px;
+    height: 44px;
+    padding: 0 12 px;
+    background-color: #666;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
 }
 
-.hidden-div{
-  display: flex;
-  align-items: center;
-  flex: 1;
-  padding: 6px 10px;
-  background: #fff;
-  max-width: 1200px;
-}
 
 /* 두 번째 줄: 선택 / 삭제 */
 .bulk-actions {
@@ -226,12 +281,8 @@ button {
   transition: all 0.2s ease;
 }
 .delete-btn svg {
-  width: 18px;
-  height: 18px;
-}
-.delete-btn:hover {
-  background-color: #f5f5f5;
-  border-color: #bfbfbf;
+  width: 16px;
+  height: 16px;
 }
 
 /* ================= 테이블 ================= */
@@ -246,25 +297,23 @@ button {
 }
 .device-table th,
 .device-table td {
-  padding: 12px 16px;
+  padding: 9px 0;
   text-align: center;
   border-bottom: 1px solid #EAEAEA;
   font-size: 14px;
   white-space: nowrap;
 }
 .device-table th {
-  background-color: #FAFAFA;
   font-weight: 600;
-  color: #555;
+  color: #000000;
 }
-.device-table tbody tr:hover {
-  background-color: #F9F9F9;
-}
+
 .device-table td .edit-btn {
-  border: 1px solid #E0E0E0;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 13px;
+  height:30px;
+  min-width:85px;
+  border: 1px solid #dbdbdb;
+  border-radius: 8px;
+  font-size: 14px;
   background-color: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -285,24 +334,58 @@ button {
   vertical-align: middle;
 }
 
-.device-table td .edit-btn:hover {
+.device-table td .edit-btn:hover { 
   background-color: #f3f1ff;
   color: #6955A2;
   border-color: #b5a7f3;
 }
 
 .device-table th:nth-child(1),
-.device-table td:nth-child(1) { width: 10%; }
+.device-table td:nth-child(1) { width: 120px; }
 .device-table th:nth-child(2),
-.device-table td:nth-child(2) { width: 20%; }
+.device-table td:nth-child(2) { width: 359px; }
 .device-table th:nth-child(3),
-.device-table td:nth-child(3) { width: 30%; }
+.device-table td:nth-child(3) { width: 440px; }
 .device-table th:nth-child(4),
-.device-table td:nth-child(4) { width: 15%; }
+.device-table td:nth-child(4) { width: 359px; }
 .device-table th:nth-child(5),
-.device-table td:nth-child(5) { width: 15%; }
-.device-table th:nth-child(6),
-.device-table td:nth-child(6) { width: 10%; }
+.device-table td:nth-child(5) { width: 359px; }
+
+
+.table-checkBox[type="checkbox"],
+.row-check[type="checkbox"] {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.6px solid #767676;
+  border-radius: 4px; /* 둥근 사각형 */
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #fff;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* 체크된 상태 - 보라색 배경 */
+.table-checkBox[type="checkbox"]:checked,
+.row-check[type="checkbox"]:checked {
+  background-color: #6955A2;
+  border-color: #6955A2;
+}
+
+/* 체크마크 */
+.table-checkBox[type="checkbox"]:checked::after,
+.row-check[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
 
 /* ================= 반응형 ================= */
 @media (max-width: 1200px) {

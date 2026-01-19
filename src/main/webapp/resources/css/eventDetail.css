@@ -18,16 +18,12 @@ button {
 /* 헤더 전체 레이아웃 */
 .header {
   display: flex;
-  justify-content: space-between;  /* 좌측: 로고 / 우측: 유저+로그아웃 */
+  justify-content: space-between;
   align-items: center;
   background-color: #fff;
   border-bottom: 1px solid #ccc;
-  padding: 10px 40px;
-  box-sizing: border-box; /* padding 포함 폭 계산 */
-  position: fixed;
-  width: 100%;
-  top: 0;
-  z-index: 10;
+  padding: 0px 40px;
+  height: 80px;
 }
 
 /* 로고 */
