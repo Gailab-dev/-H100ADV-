@@ -130,7 +130,7 @@
 			
 		    // response 객체의 ok값(200~299)
 	        if (!r.ok) {
-	        	showError(r.ok " | " + r.msg);
+	        	showError(r.ok + " | " + r.msg);
 	            return;
 	        }
 			
