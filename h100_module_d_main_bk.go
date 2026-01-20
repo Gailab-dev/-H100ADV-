@@ -1,12 +1,16 @@
 package main
 
 import (
+	"crypto/tls"
 	"net/http"
 	"os"
+
+	// "fmt"
 
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/acme/autocert"
 
 	"local.dev/h100_module_d/internal/handlers/fileSend"
 	"local.dev/h100_module_d/internal/handlers/tilting"
@@ -47,8 +51,7 @@ func main() {
         // ===== [E] 스케줄러 설정 ====== //
 
         // ===== [S] SSL 적용 ====== //
-        /*
-		domain := "geyeparking.shop" // 가비아에서 구입한 도메인
+        domain := "geyeparking.shop" // 가비아에서 구입한 도메인
 
         m := &autocert.Manager{
 		// 인증서 캐시(필수). 없으면 재부팅 때마다 재발급 시도 → 레이트리밋 위험
@@ -72,21 +75,18 @@ func main() {
 		}
 	}()
 
-	*/
         mux := http.NewServeMux()
 
 	// 실제 HTTPS 서버
-	/*
 	httpsSrv := &http.Server{
-		// Addr:    ":8443",
-		Addr:    ":"+os.Getenv("PORT"),
+		Addr:    ":443",
+		// Addr:    ":"+os.Getenv("PORT"),
 		Handler: mux,
 		TLSConfig: &tls.Config{
 			MinVersion:     tls.VersionTLS12,
 			GetCertificate: m.GetCertificate, // ★ 인증서 자동 로드/갱신
 		},
 	}
-		*/
         // ===== [E] SSL 적용 ====== //
         
         // ===== [S] 서버 설정 ====== //
@@ -107,10 +107,8 @@ func main() {
         // sErr := http.ListenAndServeTLS(":"+os.Getenv("PORT"), os.Getenv("TLS_CERT_FILE"), os.Getenv("TLS_KEY_FILE"), mux)
         
         // Start HTTPS server with Let's Encrypt
-        sErr := http.ListenAndServeTLS(":"+os.Getenv("PORT"), os.Getenv("TLS_CERT_FILE"), os.Getenv("TLS_KEY_FILE"), mux)
-        
-        if sErr != nil {
-                log.Error("HTTP 서버 오류", zap.Error(sErr))
+        if err := httpsSrv.ListenAndServeTLS("", ""); err != nil {
+                log.Fatal("HTTPS 서버 시작 실패", zap.Error(err))
         }
         // ===== [E] 서버 설정 ====== //
 }
