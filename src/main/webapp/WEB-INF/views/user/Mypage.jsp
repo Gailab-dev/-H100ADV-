@@ -102,7 +102,7 @@
 						<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
 					</div>
 
-					<div class="form-group">
+					<div class="form-group">`
 						<label for="newPw">새 비밀번호</label> <input type="password"
 							id="newPw">
 						<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
@@ -111,6 +111,11 @@
 					<div class="form-group">
 						<label for="confirmPw">비밀번호 확인</label> <input type="password"
 							id="confirmPw">
+					</div>
+					<div class="form-group">
+						<label for="confirmPw">이메일</label> <input type="password"
+							id="confirmPw">
+						<button class="editEmail">변경</button>
 					</div>
 
 					<div class="saveBox">
