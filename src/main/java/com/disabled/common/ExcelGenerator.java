@@ -72,6 +72,7 @@ public class ExcelGenerator {
 
 		        workbook.write(response.getOutputStream());
 		        workbook.close();
+		        response.flushBuffer(); 
 		} catch (Exception e) {
 			logger.error("엑셀 워크북 생성 중 오류 발생",e);
 		}

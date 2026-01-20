@@ -15,8 +15,12 @@
             	<when test="sortCol == 'dv_addr'">dv_addr</when>
             	<when test="sortCol == 'ev_car_num'">ev_car_num</when>
             	<otherwise>ev_date</otherwise>
+			</choose>
+			<choose>
+  				<when test="sortDir == 'ASC'">ASC</when>
+  				<otherwise>DESC</otherwise>
 			</choose>	
-			${sortDir}) AS rn 
+			) AS rn 
 			, A.*
 			, B.dv_id			
 			, B.dv_addr
@@ -24,20 +28,18 @@
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
-		<where>
-			<if test="searchKeyword != null and searchKeyword != ''">
-				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
-				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
-				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
-			</if>
-			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-				AND A.ev_date BETWEEN #{startDate} AND #{endDate}	
-			</if>
-			<if test="evCd != null">
-				AND A.ev_cd = #{evCd}
-			</if>
-		</where>
-        ORDER BY A.ev_id DESC
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
+			OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
+			OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
+		</if>
+		<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+			AND A.ev_date BETWEEN #{startDate} AND #{endDate}	
+		</if>
+		<if test="evCd != null and evCd != ''">
+			AND A.ev_cd = #{evCd}
+		</if>
+		where 1=1
         <if test="recordCountPerPage != null">
         	LIMIT #{recordCountPerPage}
         </if>

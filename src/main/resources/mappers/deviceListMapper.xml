@@ -10,7 +10,7 @@
 		FROM tbl_device
 		WHERE 
 			1=1
-			<if test="startDate != null and endDate != null">
+			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
 				dv_reg_date BETWEEN #{startDate} AND #{endDate}
 			</if>
 	        <if test="searchKeyword != null">
