@@ -697,7 +697,7 @@ public class EventListController {
 	}
 	
 	/**
-	 * 엑셀 다운로드
+	 * 엑셀 다운로드(불법주차 리스트)
 	 * @param startDate		이벤트 발생일 기준 검색 시작일(String)
 	 * @param endDate		이벤트 발생일 기준 검색 종료일(String)
 	 * @param stCd			이벤트 유형 코드(Integer)
@@ -748,6 +748,82 @@ public class EventListController {
 		    
 		    // 엑셀 파일 생성 및 다운로드
 		    excelService.download("이벤트_목록.xlsx", sheet, response);
+			// ====== 서비스 [E] ======
+
+		} catch (Exception e) {
+			logger.error("엑셀 파일 생성 중 오류 발생",e);
+			return;
+		}
+	}
+	
+	/**
+	 * 엑셀 다운로드(불법주차 리스트 상세)
+	 * @param startDate		이벤트 발생일 기준 검색 시작일(String)
+	 * @param endDate		이벤트 발생일 기준 검색 종료일(String)
+	 * @param stCd			이벤트 유형 코드(Integer)
+	 * @param searchKeyword	검색어
+	 * @param response		HttpServletResponse 객체
+	 */
+	@PostMapping("/excelDownloadDetail")
+	@ResponseBody
+	public void excelDownloadDetail(
+			@RequestBody Map<String,Object> paramMap
+			, HttpServletResponse response) {
+		
+		// ====== 디버깅 로그 [S] ======
+		System.out.println("excelDownload map ; {}" + paramMap);
+		logger.info("excelDownload map ; {}",paramMap);
+		// ====== 디버깅 로그 [E] ======
+		
+		try {
+			// ====== 변수 선언부 [S] ======
+			
+			// ev_id null 검사
+			Object evIdObj = paramMap.get("ev_id");
+			Integer evId = null;
+			if(evIdObj != null) {
+				evId = Integer.parseInt(evIdObj.toString()); 
+			}else {
+				logger.info("ev_id가 null입니다.");
+				return;
+			}
+			
+			// ====== 변수 선언부 [E] ======
+			// ====== 서비스 [S] ======
+			
+			// 두 파라미터 값 0이 들어가지 않게 방어코드
+			paramMap.put("recordCountPerPage", null);
+			paramMap.put("firstIndex", null);
+			
+			// 데이터 가져오기
+			Map<String,Object> eventListDetail = eventListService.getEventListDetail(evId);
+			
+			System.out.println("eventList { " + eventListDetail + " } ");
+			
+			// 엑셀 컬럼 추가
+			/*
+		    List<ExcelColumn> columns = List.of(
+	            new ExcelColumn("ev_reg_date", "날짜"),
+	            new ExcelColumn("ev_cd", "유형"),
+	            new ExcelColumn("dv_name", "디바이스명"),
+	            new ExcelColumn("dv_addr", "디바이스 주소"),
+	            new ExcelColumn("ev_car_num", "차량번호")
+	        );
+		    */
+		    // 유형 문자열로 변환
+		    eventListDetail = codeConversionService.evCdConverstionIntToStr(eventListDetail);
+		    
+		    // 엑셀 시트 생성
+		    /*
+		    ExcelSheetSpec sheet = ExcelSheetSpec.builder()
+		            .sheetName("과태료부과_사전통지서_양식")
+		            .columns(columns)
+		            .data(eventListDetail)
+		            .build();
+		    */
+		    // 엑셀 파일 생성 및 다운로드
+		    
+		    // excelService.download("과태료부과_사전통지서.xlsx", sheet, response);
 			// ====== 서비스 [E] ======
 
 		} catch (Exception e) {
