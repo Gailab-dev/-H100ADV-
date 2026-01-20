@@ -35,7 +35,7 @@
 
 .left {
 	float: left;
-	width: 1200px;
+	width: 1305px;
 	border: 1px soild black;
 }
 
@@ -64,7 +64,8 @@
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
-<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
+<script
+	src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
 <%--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) --%>
 <%--
 <script>
@@ -147,7 +148,7 @@
 		// 5️⃣ 차트 생성
 		// 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가
 		
-	    const xData = ['x', ...xLabels.map(d => d.substring(5, 7) + '월')];
+	    const xData = ['x', ...xLabels.map(d => d.substring(0, 4) + '.' + d.substring(5, 7))];
 
 	    const yColumns = Object.keys(window.statusMap).map(cd => {
 	        return [
@@ -185,21 +186,31 @@
 		    		type: 'category', 
 		    		tick: {
 		    			fit: true,
-		    			rotate: 45,
+		    			rotate: 0,
 		    			multiline: false
 		    		}
 		    	},
 		    	y : {
-		    		label: {
-		    			text: '건수',
-		    			position: 'outer-middle'
-		    		},
+		    		show: true ,
 		    		min: 0,
-		    		padding : {
-		    			bottom: 0
-		    		}
+		    		tick:{
+		    			values:[0,25,50,75,100]
+		    		},
+		    		padding:{
+		    			bottom:0
+		    		}, 		    		
 		    	}
 		    },
+		    grid: {                            
+    	        y: {
+    	            show: true,
+    	            lines: [
+    	                {value: 25},
+    	                {value: 50},
+    	                {value: 75}
+    	            ]
+    	        }
+    	    },
 		    legend: {
 		    	position: 'right'
 		    },
@@ -213,7 +224,7 @@
 		        grouped: true  // 여러 시리즈 함께 보기
 		    },
 		    color: {
-		        pattern: ['#7a7978', '#87cbac','#90ffdc','#8de4ff','#8ac4ff']  // 비장애인, 장애인 선 색상 지정
+		        pattern: ['#21B5B3', '#4993AA','#7172A2','#995099','#8ac4ff']  // 비장애인, 장애인 선 색상 지정
 		    }
 		    
 		});
@@ -261,9 +272,9 @@
 	     months.forEach(d => {
 	    	 
 	    	console.log("d : " + d);	 
-	    	console.log(d.slice(5,7) + "월");
+	    	console.log(d.slice(0,4) + "." + parseInt(d.slice(5,7)));
 	    	
-	        headHtml += "<th>" + d.slice(5,7) + "월</th>";
+	    	headHtml += "<th>" + d.slice(0,4) + "." + parseInt(d.slice(5,7)) + "</th>";
 	     });
 
 	     headHtml += '</tr>';
@@ -446,58 +457,62 @@
 					<!-- 
                 <li><a href="${pageContext.request.contextPath}/local/viewLocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
             	 -->
-            </ul>
-        </aside>    
-    	<div class="content">
-    		<div class="title-box">
-    			<h1>월별 불법주차 현황(1년)</h1>
-    			<button id="btnExcel" type="button" class="excel-btn" title="엑셀 다운로드">
-    				<img src="${pageContext.request.contextPath}/resources/images/icon_excel.svg" alt="엑셀 다운로드">
-    			</button>
-    		</div>    	
-			<form id="StatsSearchForm" class="filter-form">
-				<div class="filter-input-group">
-					<input type="date" name="startDate" value="${startDate}" />
+				</ul>
+			</aside>
+			<div class="content">
+				<div class="title-box">
+					<h1>월별 불법주차 현황(1년)</h1>
+					<button id="btnExcel" type="button" class="excel-btn"
+						title="엑셀 다운로드">
+						<img
+							src="${pageContext.request.contextPath}/resources/images/icon_excel.svg"
+							alt="엑셀 다운로드">
+					</button>
 				</div>
-				<p class="date-contect">~</p>
-				<div class="filter-input-group">
-					<input type="date" name="endDate" value="${endDate}" />
-				</div>
-				<div class="filter-input-group">
-					<select name="stCd">
-						<option value="" ${stCd == null ? 'selected' : '' }>유형</option>
-						<option value="1" ${stCd == '1' ? 'selected' : ''}>미등록차량</option>
-						<%-- 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가 --%>
-						<%-- 
+				<form id="StatsSearchForm" class="filter-form">
+					<div class="filter-input-group">
+						<input type="date" name="startDate" value="${startDate}" />
+					</div>
+					<p class="date-contect">~</p>
+					<div class="filter-input-group">
+						<input type="date" name="endDate" value="${endDate}" />
+					</div>
+					<div class="filter-input-group">
+						<select name="stCd">
+							<option value="" ${stCd == null ? 'selected' : '' }>유형</option>
+							<option value="1" ${stCd == '1' ? 'selected' : ''}>미등록차량</option>
+							<%-- 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가 --%>
+							<%-- 
 						<option value="2" ${stCd == '2' ? 'selected' : ''}>불법주차(장애인미탑승)</option>
 						<option value="3" ${stCd == '3' ? 'selected' : ''}>스티커 불법 사용</option>
 						 --%>
-						<option value="4" ${stCd == '4' ? 'selected' : ''}>위험상황</option>
-						<option value="5" ${stCd == '5' ? 'selected' : ''}>물건적재</option>
-						<option value="6" ${stCd == '6' ? 'selected' : ''}>이중주차</option>
-					</select>
-				</div>
-				<button type="button" class="search-btn" onclick="searchStatistics('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
-			</form>
-    	
-    		
-			<div class ="graph-group">
-				<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
-				<div id="chart" class="graph-table" style="height: 402px;">
-					<p class="subTitle">불법주차 유형별 통계(그래프 )</p>
-				</div>
-				
-				<div class="graph-table">
-					<p class="subTitle">불법주차 유형별 통계(테이블)</p>
-					<!-- 불법주차 유형별 통계(테이블) -->
-					<table id="statsTable">
-					    <thead></thead>
-    					<tbody></tbody>
-					</table>
+							<option value="4" ${stCd == '4' ? 'selected' : ''}>위험상황</option>
+							<option value="5" ${stCd == '5' ? 'selected' : ''}>물건적재</option>
+							<option value="6" ${stCd == '6' ? 'selected' : ''}>이중주차</option>
+						</select>
+					</div>
+					<button type="button" class="search-btn"
+						onclick="searchStatistics('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
+				</form>
 
+
+				<div class="graph-group">
+					<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
+					<div id="chart" class="graph-table" style="height: 321.6px;">
+						<p class="subTitle">불법주차 유형별 통계(그래프)</p>
+					</div>
+
+					<div class="graph-table">
+						<p class="subTitle">불법주차 유형별 통계(테이블)</p>
+						<!-- 불법주차 유형별 통계(테이블) -->
+						<table id="statsTable">
+							<thead></thead>
+							<tbody></tbody>
+						</table>
+
+					</div>
 				</div>
 			</div>
 		</div>
-	</div>
 </body>
 </html>
