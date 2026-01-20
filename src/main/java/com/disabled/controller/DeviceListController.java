@@ -827,25 +827,32 @@ public class DeviceListController {
 	 * @param searchKeyword	검색어
 	 * @param response		HttpServletResponse 객체
 	 */
-	@PostMapping("/excelDownload")
+	@PostMapping(
+			value = "/excelDownload",
+			consumes = "application/json",
+			produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	@ResponseBody
 	public void excelDownload(
-			@RequestParam(name="startDate", required=false) String startDate
-			, @RequestParam(name="endDate", required=false) String endDate
-			, @RequestParam(name="searchKeyword", required=false) String searchKeyword
+			@RequestBody Map<String,Object> paramMap
 			, HttpServletResponse response) {
 		
-		Map<String, Object> paramMap = new HashMap<String, Object>();
+		// ====== 디버깅 로그 [S] ======
+		System.out.println("excelDownload map ; {}" + paramMap);
+		logger.info("excelDownload map ; {}",paramMap);
+		// ====== 디버깅 로그 [E] ======
 		
 		try {
 			
 			// ====== 서비스 [S] ======
-			paramMap.put("startDate", startDate);
-			paramMap.put("endDate",endDate);
-			paramMap.put("searchKeyword", searchKeyword);
+			
+			// 두 파라미터 값 0이 들어가지 않게 방어코드
+			paramMap.put("recordCountPerPage", null);
+			paramMap.put("firstIndex", null);
 			
 			// 데이터 가져오기
 			List<Map<String, Object>> deviceList = deviceListService.getDeviceList(paramMap);
+			
+			System.out.println("deviceList { " + deviceList + " }");
 			
 			// 엑셀 컬럼 추가
 		    List<ExcelColumn> columns = List.of(

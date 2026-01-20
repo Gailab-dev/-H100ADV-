@@ -26,9 +26,11 @@
 	  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
 	  crossorigin="anonymous"
 	</script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
-<script>
+
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
+	<%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
+	<script>
 	  <c:if test="${not empty errorMsg}">
 	    alert('<c:out value="${errorMsg}" />');
 	  </c:if>
@@ -88,11 +90,11 @@
 		window.searchDeviceList = function(pageNo){
 			
 			let form = document.getElementById('deviceListSearchForm');
-		  	let val1 = form.elements['searchKeyword'].value;
+		  	let val1 = form.elements['searchKeyword']?.value;
 		  	let searchKeyword = encodeURIComponent(val);
-		  	let val2 = form.elements['startDate'].value;
+		  	let val2 = form.elements['startDate']?.value;
 		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elemntes['endDate'].vlaue;
+		  	let val3 = form.elements['endDate']?.vlaue;
 		  	let endDate = encodeURIComponet(val3);
 		  	let pageSize = document.getElementById('pageSize')?.value;
 		  	
@@ -108,18 +110,22 @@
 		  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 		  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 			
-			location.href = "viewDeviceList.do?page=" + pageNo +"&startDate=" +startDate +"&endDate"+ endDate + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
+			location.href = "viewDeviceList.do?page=" + pageNo +"&startDate=" +startDate +"&endDate="+ endDate + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
 			
 		}
 		
 		// pagination 객체를 활용한 페이지 이동
 		window.goPage = function(pageNo){
 			let form = document.getElementById('deviceListSearchForm');
-		  	let val = form.elements['searchKeyword'].value;
-		  	let searchKeyword = encodeURIComponent(val);
-			let pageSize = document.getElementById('pageSize')?.value;
+		  	let val1 = form.elements['searchKeyword']?.value;
+		  	let searchKeyword = encodeURIComponent(val1);
+		  	let val2 = form.elements['startDate']?.value;
+		  	let startDate = encodeURIComponent(val2);
+		  	let val3 = form.elements['endDate']?.value;
+		  	let endDate = encodeURIComponent(val3);
+		  	let pageSize = document.getElementById('pageSize')?.value;
 
-			location.href = "viewDeviceList.do?page=" + pageNo + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
+			location.href = "viewDeviceList.do?page=" + pageNo + "&startDate=" +startDate+ "&endDate=" +endDate+"&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
 		}
 		
 		//  Pagination 
@@ -888,6 +894,32 @@
 		
 		// --------------------------- 엑셀 다운로드 -----------------------------
 		
+		/**
+		 @opt
+			endpoint: url 경로(contextPath는 고정)
+		    formSelector: form Id
+		    mapping : form 하위의 input 태그의 name 속성값 또는 #id 값을 json 형식으로 입력
+		    예)
+		    responseType: 함수 실행 결과를 받을 데이터 타입(기본값:blob)
+			downloadFilename: 엑셀 파일명
+		*/
+		document.addEventListener('DOMContentLoaded', function () {
+			document.getElementById('btnExcel').addEventListener('click',function(){
+				ExcelDownloader.excelDownload({
+					endpoint:'/deviceList/excelDownload',
+					formSelector:'#deviceListSearchForm',
+					mapping: {
+						startDate:'startDate',
+						endDate:'endDate',
+						searchKeyword:'searchKeyword'
+					},
+					responseType:'blob',
+					downloadFilename:'디바이스_리스트.xlsx'
+				}).catch(function(e){alert(e.message);});
+			})
+		});
+
+		/*
 		async function excelDownload(){
 			
 			let form = document.getElementById('deviceListSearchForm');
@@ -895,38 +927,38 @@
 		  	let searchKeyword = encodeURIComponent(val1);
 		  	let val2 = form.elements['startDate']?.value;
 		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elemntes['endDate']?.value;
-		  	let endDate = encodeURIComponet(val3);
-		  	let pageSize = document.getElementById('pageSize')?.value;
+		  	let val3 = form.elements['endDate']?.value;
+		  	let endDate = encodeURIComponent(val3);
 			
 			const body = {
-					'startDate': startDate,
-					'endDate': endDate,
-					'searchKeyword':searchKeyword
-				};
+				'startDate': startDate,
+				'endDate': endDate,
+				'searchKeyword':searchKeyword
+			};
 				
-				try{
-			    	const response = await fetch('${pageContext.request.contextPath}/deviceList/excelDownload', {
-			      		method: 'POST'
-			      		, headers: { 'Content-Type': 'application/json' }
-			      		, body: JSON.stringify(body)
-			      		, credentials : 'same-origin'
-			      		, cache:'no-store'
-			    		});
-			    	
-			    	// fetch는 항상 response 객체로 리턴
-			    	if (!response.ok) return;
-					
-			    	// response에서 json값 가져오기
-			    	let data = await response.json();
-			    	await sleep(2000);
-			    	
-			    	return;
-				}catch(e){
-					return;
-				}
+			try{
+		    	const response = await fetch('${pageContext.request.contextPath}/deviceList/excelDownload', {
+		      		method: 'POST'
+		      		, headers: { 'Content-Type': 'application/json' }
+		      		, body: JSON.stringify(body)
+		      		, credentials : 'same-origin'
+		      		, cache:'no-store'
+		    		});
+		    	
+		    	// fetch는 항상 response 객체로 리턴
+		    	if (!response.ok) return;
+				
+		    	// response에서 json값 가져오기
+		    	let data = await response.json();
+		    	await sleep(2000);
+		    	
+		    	return;
+			}catch(e){
+				return;
+			}
 
 		}
+		*/
 		// --------------------------- 엑셀 다운로드 -----------------------------
 
     </script>
@@ -1001,7 +1033,6 @@
             	 -->
 				</ul>
 			</aside>
-
 			<!-- 메인 콘텐츠 -->
 			<div class="content">
 				<main class="main">
@@ -1066,7 +1097,7 @@
 										stroke-linejoin="round" />
 					      	</svg>
 							</button>
-							<button type="button" class="delete-btn"
+							<button id="btnExcel" type="button" class="delete-btn"
 								onclick="excelDownload()" title="엑셀 다운로드">
 								<img
 									src="${pageContext.request.contextPath}/resources/images/icon_excel.svg"
@@ -1127,8 +1158,8 @@
 												title="${fn:escapeXml(item.dv_reg_date)}"> <c:out
 														value="${item.dv_reg_date}" escapeXml="true" />
 											</span></td>
-
-											
+					          
+					          <!--
 							  <td>
 								<c:choose>
 									<c:when test="${item.dv_status eq 0}">OFF</c:when>
@@ -1159,6 +1190,7 @@
 				            		</c:when>
 								</c:choose>	
 					          </td>
+					          -->
 											<td>
 												<button class="edit-btn" type="button"
 													onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>

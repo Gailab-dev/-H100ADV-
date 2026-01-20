@@ -22,6 +22,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -706,23 +707,25 @@ public class EventListController {
 	@PostMapping("/excelDownload")
 	@ResponseBody
 	public void excelDownload(
-			@RequestParam(name="startDate", required=false) String startDate
-			, @RequestParam(name="endDate", required=false) String endDate
-			, @RequestParam(name="stCd", required=false) Integer stCd
-			, @RequestParam(name="searchKeyword", required=false) String searchKeyword
+			@RequestBody Map<String,Object> paramMap
 			, HttpServletResponse response) {
 		
-		Map<String, Object> paramMap = new HashMap<String, Object>();
+		// ====== 디버깅 로그 [S] ======
+		System.out.println("excelDownload map ; {}" + paramMap);
+		logger.info("excelDownload map ; {}",paramMap);
+		// ====== 디버깅 로그 [E] ======
 		
 		try {
 			// ====== 서비스 [S] ======
-			paramMap.put("startDate", startDate);
-			paramMap.put("endDate",endDate);
-			paramMap.put("stCd",stCd);
-			paramMap.put("searchKeyword", searchKeyword);
+			
+			// 두 파라미터 값 0이 들어가지 않게 방어코드
+			paramMap.put("recordCountPerPage", null);
+			paramMap.put("firstIndex", null);
 			
 			// 데이터 가져오기
 			List<Map<String,Object>> eventList = eventListService.getEventList(paramMap);
+			
+			System.out.println("eventList { " + eventList + " } ");
 			
 			// 엑셀 컬럼 추가
 		    List<ExcelColumn> columns = List.of(
@@ -730,11 +733,11 @@ public class EventListController {
 	            new ExcelColumn("ev_cd", "유형"),
 	            new ExcelColumn("dv_name", "디바이스명"),
 	            new ExcelColumn("dv_addr", "디바이스 주소"),
-	            new ExcelColumn("dv_car_num", "차량번호")
+	            new ExcelColumn("ev_car_num", "차량번호")
 	        );
 		    
 		    // 유형 문자열로 변환
-		    eventList = codeConversionService.StCdConverstionIntToStr(eventList);
+		    eventList = codeConversionService.evCdConverstionIntToStr(eventList);
 		    
 		    // 엑셀 시트 생성
 		    ExcelSheetSpec sheet = ExcelSheetSpec.builder()

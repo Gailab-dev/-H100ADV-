@@ -40,8 +40,9 @@
    	window.SESSION_TIMEOUT_SECONDS = <%=session.getMaxInactiveInterval()%>;
    	const CONTEXT_PATH = "${pageContext.request.contextPath}";
 </script>
-<script
-	src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
+
 <%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
 <script>
 	// 검색 input에서 100자 이상 입력시 알림 출력
@@ -49,7 +50,7 @@
 	  const MAX_LEN = 100;
 	
 	  // 1) 폼 찾기
-	  const searchForm = document.getElementById('deviceListSearchForm');
+	  const searchForm = document.getElementById('eventListSearchForm');
 	  if (!searchForm) {
 	    // 이 페이지에는 검색 폼이 없으면 그냥 조용히 종료
 	    return;
@@ -100,10 +101,10 @@
 	window.searchEventList = function(pageNo){
 		
 		let form = document.getElementById('eventListSearchForm');
-	  	const startDate = form.elements['startDate'].value; // 'yyyy-MM-dd'
-	  	const endDate   = form.elements['endDate'].value;
-	  	const evCd = form.elements['evCd'].value;
-	  	const searchKeyword   = form.elements['searchKeyword'].value;
+	  	const startDate = form.elements['startDate']?.value; // 'yyyy-MM-dd'
+	  	const endDate   = form.elements['endDate']?.value;
+	  	const evCd = form.elements['evCd']?.value;
+	  	const searchKeyword   = form.elements['searchKeyword']?.value;
 	 	const pageSize = document.getElementById('pageSize')?.value;
 	  	
 	  	if( searchKeyword.length >= 100 ){
@@ -241,15 +242,41 @@
 		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------
 		// --------------------------- 엑셀 다운로드 -----------------------------
 		
+		/**
+		 @opt
+			endpoint: url 경로(contextPath는 고정)
+		    formSelector: form Id
+		    mapping : form 하위의 input 태그의 name 속성값 또는 #id 값을 json 형식으로 입력
+		    예)
+		    responseType: 함수 실행 결과를 받을 데이터 타입(기본값:blob)
+			downloadFilename: 엑셀 파일명
+		*/
+		document.addEventListener('DOMContentLoaded', function () {
+			document.getElementById('btnExcel').addEventListener('click',function(){
+				ExcelDownloader.excelDownload({
+					endpoint:'/eventList/excelDownload',
+					formSelector:'#eventListSearchForm',
+					mapping: {
+						startDate:'startDate',
+						endDate:'endDate',
+						evCd:'evCd',
+						searchKeyword:'searchKeyword'
+					},
+					responseType:'blob',
+					downloadFilename:'불법주차_리스트.xlsx'
+				}).catch(function(e){alert(e.message);});
+			})
+		});
+  		/*
 		async function excelDownload(){
 			
-			let form = document.getElementById('deviceListSearchForm');
+			let form = document.getElementById('eventListSearchForm');
 		  	let val1 = form.elements['searchKeyword']?.value;
 		  	let searchKeyword = encodeURIComponent(val1);
 		  	let val2 = form.elements['startDate']?.value;
 		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elemntes['endDate']?.value;
-		  	let endDate = encodeURIComponet(val3);
+		  	let val3 = form.elements['endDate']?.value;
+		  	let endDate = encodeURIComponent(val3);
 		  	let pageSize = document.getElementById('pageSize')?.value;
 			
 			const body = {
@@ -259,7 +286,7 @@
 				};
 				
 				try{
-			    	const response = await fetch('${pageContext.request.contextPath}/deviceList/excelDownload', {
+			    	const response = await fetch('${pageContext.request.contextPath}/eventList/excelDownload', {
 			      		method: 'POST'
 			      		, headers: { 'Content-Type': 'application/json' }
 			      		, body: JSON.stringify(body)
@@ -280,6 +307,7 @@
 				}
 
 		}
+  		*/
 		// --------------------------- 엑셀 다운로드 -----------------------------
 
 	
@@ -426,7 +454,7 @@
 									stroke-linejoin="round" />
                 </svg>
 						</button>
-						<button type="button" class="delete-btn" onclick="excelDownload()"
+						<button id="btnExcel" type="button" class="delete-btn" onclick="excelDownload()"
 							title="엑셀 다운로드">
 							<img
 								src="${pageContext.request.contextPath}/resources/images/icon_excel.svg"
