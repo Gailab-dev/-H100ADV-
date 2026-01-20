@@ -78,7 +78,35 @@ public class EventListServiceImpl implements EventListService{
 	 * - 이벤트 상새 내력(MAP)
 	 */
 	@Override
-	public Map<String, Object> getEventListDetail(Integer dvId, Integer evId) {
+	public Map<String, Object> getEventListDetail(Integer evId) {
+		
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			// 이벤트 ID를 검색조건으로 하여 리스트 상세 내역을 select
+			resultMap = eventListMapper.getEventListDetail(evId);
+			
+			if(resultMap == null) {
+				logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
+				throw new IllegalStateException("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
+			}
+			return resultMap;
+			
+		} catch (IllegalStateException e) {
+			logger.error("getEventListDetail 함수 수행 도중 오류 발생",e);
+			throw e;
+		}
+	}
+	
+	/**
+	 * 불법 주차 리스트에서 이벤트 상세 내역을 DB에서 가져옴
+	 * @Param
+	 * - evId : 이벤트 ID
+	 * @return
+	 * - 이벤트 상새 내력(MAP)
+	 */
+	@Override
+	public Map<String, Object> getEventListDetail(Integer evId, Integer evId2) {
 		
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		

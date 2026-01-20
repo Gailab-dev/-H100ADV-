@@ -52,7 +52,12 @@
         </aside>
         <div class="content">
 			<h3 class="detail-title">불법주차 리스트 상세</h3>
-			
+			<button id="btnExcel" type="button" class="delete-btn" onclick="excelDownload()"
+				title="엑셀 다운로드">
+				<img
+					src="${pageContext.request.contextPath}/resources/images/icon_excel.svg"
+					alt="엑셀 다운로드">
+			</button>
 			<!-- 상세 이미지 -->
 			<div class="image-wrapper">
 				<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">
@@ -248,7 +253,23 @@
     		}
 	  	});
 	    
+	    
 	  });
+	  	
+	  	// 엑셀 다운로드
+		document.addEventListener('DOMContentLoaded', function () {
+			document.getElementById('btnExcel').addEventListener('click',function(){
+				ExcelDownloader.excelDownload({
+					endpoint:'/eventListDetail/excelDownload',
+					formSelector:'#eventListSearchForm',
+					params: {
+						evId
+					},
+					responseType:'blob',
+					downloadFilename:'불법주차_리스트_상세.xlsx'
+				}).catch(function(e){alert(e.message);});
+			})
+		});
 	  
 	</script>
 	

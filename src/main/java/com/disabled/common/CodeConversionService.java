@@ -19,7 +19,15 @@ public class CodeConversionService {
 		// 코드 별 숫자를 문자로 변환
 		for (Iterator iterator = listContainStCds.iterator(); iterator.hasNext();) {
 			Map<String, Object> map = (Map<String, Object>) iterator.next();
-			Integer stCd = Integer.parseInt(map.get("st_cd").toString());
+			
+			Object stCdObj = map.get("st_cd");
+			Integer stCd = null;
+			if(stCdObj != null) {
+				stCd = Integer.parseInt(stCdObj.toString());
+			}else {
+				continue;
+			}
+			
 			switch (stCd) {
 			case 1:
 				map.put("st_cd", "미등록차량");
@@ -54,7 +62,15 @@ public class CodeConversionService {
 		// 코드 별 숫자를 문자로 변환
 		for (Iterator iterator = listContainEvCds.iterator(); iterator.hasNext();) {
 			Map<String, Object> map = (Map<String, Object>) iterator.next();
-			Integer evCd = Integer.parseInt(map.get("ev_cd").toString());
+			
+			Object evCdObj = map.get("ev_cd");
+			Integer evCd = null;
+			if(evCdObj != null) {
+				evCd  = Integer.parseInt(evCdObj.toString());
+			}else {
+				continue;
+			}
+			
 			switch (evCd) {
 			case 1:
 				map.put("ev_cd", "미등록차량");
@@ -77,6 +93,44 @@ public class CodeConversionService {
 		}
 		
 		return listContainEvCds;
+	}
+	
+	/**
+	 * evCd 코드의 integer값을 String으로 변환
+	 * @param MapContainEvCds evCd(유형) 값이 포함된 Map
+	 * @return
+	 */
+	public Map<String,Object> evCdConverstionIntToStr(Map<String,Object> MapContainEvCds){
+		
+		Object evCdObj = MapContainEvCds.get("ev_cd");
+		Integer evCd = null;
+		if(evCdObj != null && !"".equals(evCdObj.toString().trim())) {
+			evCd = Integer.parseInt(evCdObj.toString());
+		} else {
+			return MapContainEvCds;
+		}
+		
+		switch (evCd) {
+		case 1:
+			MapContainEvCds.put("ev_cd", "미등록차량");
+			break;
+		// 2와 3은 추후 고도화
+		case 2:
+		case 3:
+			break;
+		case 4:
+			MapContainEvCds.put("ev_cd", "위험상황");
+			break;
+		case 5:
+			MapContainEvCds.put("ev_cd", "물건적재");
+			break;
+		case 6:
+			MapContainEvCds.put("ev_cd", "이중주차");
+		default:
+			break;
+		}
+		
+		return MapContainEvCds;
 	}
 	
 	
