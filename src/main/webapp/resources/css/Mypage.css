@@ -1,0 +1,128 @@
+/* 공통 요소 스타일 */
+/* 초기화: 모든 요소의 margin/padding 제거 */
+* {
+    margin: 0;
+	padding: 0;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+}
+button {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    outline: none;
+}
+.page-wrapper{
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+/* ================= 헤더 ================= */
+/* 헤더 전체 레이아웃 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  border-bottom: 1px solid #ccc;
+  padding: 0px 40px;
+  height: 80px;
+}
+
+/* 로고 */
+.logo {
+  display: flex;
+  align-items: center;
+}
+.header-icon {
+  width: 150px;
+  vertical-align: middle;
+}
+
+/* 오른쪽 그룹 (유저 + 로그아웃) */
+.right-group {
+  display: flex;
+  align-items: center;
+  gap: 24px; /* 유저와 로그아웃 버튼 간격 */
+}
+
+/* 유저 */
+.user {
+  display: flex;
+  align-items: center;
+  gap:12px;
+}
+.user-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.user-name {
+  font-size: 14px;
+  color: #444;
+}
+
+/* 로그아웃 버튼 */
+.logout button {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.logout button:hover {
+  background: #f6f6f6;
+  border-color: #aaa;
+}
+/* ================= 헤더 ================= */
+
+/* 전체영역 */
+.container {
+  display: flex;
+  flex: 1;  /* 남은 공간 모두 차지 */
+
+}
+
+/* ================= sidebar(홈, 디바이스리스트, 불법주차리스트) ================= */
+
+.sidebar {
+    width: 234px;
+    padding: 20px;
+    border-right: 1px solid #E5E5EC;
+    background: #FCFBFF;
+}
+.menu {
+    list-style-type: none;
+    padding: 0;
+}
+
+.menu > li > a:hover {
+    background: #FCFBFF;
+}
+.menu-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+/* ================= sidebar(홈, 디바이스리스트, 불법주차리스트) ================= */
+
+
+
+/* ================= 내정보 수정 ================= */
+/* 비밀번호 안내문 */
+.hint-text {
+	margin:6px 0;
+  font-size: 13px;
+  color: #767676;
+  text-align: left;
+}
