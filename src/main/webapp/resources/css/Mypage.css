@@ -116,13 +116,110 @@ button {
 
 /* ================= sidebar(홈, 디바이스리스트, 불법주차리스트) ================= */
 
-
+/* ================= 전체적인 구조 ================= */
+.content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 32px 24px 29px 24px;
+}
 
 /* ================= 내정보 수정 ================= */
+.topTitle {
+    margin-bottom: 20px;
+}
+
+.mypageTitle {
+    font-size: 20px;
+    font-weight: 600;
+    color: #505050;
+}
+
+.editForm {
+    font-size: 14px;
+    margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    align-items: flex-start; 
+    gap: 51px;
+    min-height: 40px;  
+}
+
+.form-group label {
+    flex-shrink: 0; 
+    width: 120px; 
+    color: #000000;
+    padding-top: 12px;  
+}
+
+.inputBox {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group input {
+    width: 367px;  
+    height: 40px;
+    padding: 0 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* 1, 2, 5번째 input border 제거 */
+.form-group input[readonly] {
+    border: none;
+    background-color: transparent;
+    padding: 0; 
+    pointer-events: none;
+}
+
+.form-group input[readonly]:focus {
+    outline: none;  /* 포커스 테두리 제거 */
+    border: none;   /* 혹시 모를 border 제거 */
+}
+
 /* 비밀번호 안내문 */
 .hint-text {
-	margin:6px 0;
-  font-size: 13px;
-  color: #767676;
-  text-align: left;
+    font-size: 13px;
+    color: #767676;
+    margin: 0;
+}
+
+/* 이메일 변경 버튼 */
+.editEmail {
+    margin-left: 8px;
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.emailBox{
+    display: flex;
+    align-items: center;
+}
+
+/* 저장 버튼 */
+.saveBox {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.saveButton {
+    padding: 12px 24px;
+    background: #6955A2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
 }

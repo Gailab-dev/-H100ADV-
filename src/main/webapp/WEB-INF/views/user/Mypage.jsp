@@ -82,7 +82,7 @@
 			</aside>
 			<div class="content">
 				<div class="topTitle">
-					<h2 class="mypageTitle">내 정보</h2>
+					<p class="mypageTitle">내 정보</p>
 				</div>
 
 				<form class="editForm">
@@ -97,34 +97,38 @@
 					</div>
 
 					<div class="form-group">
-						<label for="currentPw">기존 비밀번호</label> <input type="password"
-							id="currentPw">
-						<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
-					</div>
-
-					<div class="form-group">`
-						<label for="newPw">새 비밀번호</label> <input type="password"
-							id="newPw">
-						<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
+   						<label for="currentPw">기존 비밀번호</label>
+    					<div class="inputBox">
+        					<input type="password" id="currentPw">
+        					<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
+    					</div>
 					</div>
 
 					<div class="form-group">
-						<label for="confirmPw">비밀번호 확인</label> <input type="password"
-							id="confirmPw">
-					</div>
-					<div class="form-group">
-						<label for="confirmPw">이메일</label> <input type="password"
-							id="confirmPw">
-						<button class="editEmail">변경</button>
+    					<label for="newPw">새 비밀번호</label>
+    					<div class="inputBox">
+        					<input type="password" id="newPw">
+        					<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
+    					</div>
 					</div>
 
-					<div class="saveBox">
-						<button type="submit" class="saveButton">저장</button>
+					<div class="form-group">
+						<label for="confirmPw">비밀번호 확인</label>
+						<input type="password" id="confirmPw">
+					</div>
+
+					<div class="form-group">
+						<label for="email">이메일</label>
+						<div class="emailBox">
+							<input type="email" id="email" readonly value="이메일 들어오기">
+							<button class="editEmail">변경</button>
+						</div>
 					</div>
 				</form>
+				<div class="saveBox">
+						<button type="submit" class="saveButton">저장</button>
+				</div>
 			</div>
 		</div>
-	</div>
-
 </body>
 </html>
