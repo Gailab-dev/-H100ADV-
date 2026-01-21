@@ -9,6 +9,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<!--  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">-->
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/stats.css">
 <title>home</title>
@@ -35,7 +36,7 @@
 
 .left {
 	float: left;
-	width: 1305px;
+	max-width: 1305px;
 	border: 1px soild black;
 }
 
@@ -148,12 +149,12 @@
 		// 5️⃣ 차트 생성
 		// 2025. 10. 28. 장애인 미탑승, 스티커 불법 사용 식별 불가
 		
-	    const xData = ['x', ...xLabels.map(d => d.substring(0, 4) + '.' + d.substring(5, 7))];
+	    const xData = ['x', ...xLabels.slice(0, 12).map(d => d.substring(0, 4) + '.' + d.substring(5, 7))];
 
 	    const yColumns = Object.keys(window.statusMap).map(cd => {
 	        return [
 	            'data' + cd,
-	            ...xLabels.map(date => dataMatrix[cd][date])
+	            ...xLabels.slice(0,12).map(date => dataMatrix[cd][date])
 	        ];
 	    });
 	    
@@ -162,10 +163,14 @@
 		
 		let chart = c3.generate({
 			bindto:'#chart', // 바인팅할 html 태그의 id
+			size:{
+				width:1533,
+				height:321.6
+			},
 		    data: {  // 데이터에 관한 속성값
-		        x: 'x', // x축 데이터를 식별하는 식별자
+		    	 //  x: 'x',x축 데이터를 식별하는 식별자
 		        columns: [  // 각 컬럼별 배열
-		        	xData,
+		        	//xData,
 		        	...yColumns,
 		        ],
 		        type:'line', // 그래프 종류(라인 그래프)
@@ -183,31 +188,47 @@
 		    },
 		    axis: {
 		    	x: {
-		    		type: 'category', 
+		    		type: 'indexed', 
 		    		tick: {
-		    			fit: true,
-		    			rotate: 0,
-		    			multiline: false
-		    		}
+		    			format: function(d) {
+		    		        const labels = xLabels.slice(0, 12).map(date => 
+		    		            date.substring(0, 4) + '.' + date.substring(5, 7)
+		    		        );
+		    		        return labels[d] || '';
+		    		    },
+		    			culling: false,
+		    			fit: true,  
+		                count: 12      // ✅ tick 개수 명시
+		    		},
+		    		padding:{
+		    			left:0.1,
+		    			right:0.025
+		    		},
+		    		extent: [0, 11] 
 		    	},
 		    	y : {
 		    		show: true ,
 		    		min: 0,
+		    		max:100,
 		    		tick:{
-		    			values:[0,25,50,75,100]
+		    			values:[0,25,50,75,100],
+		    	 outer: false,
 		    		},
 		    		padding:{
+		    			top:0.05,
 		    			bottom:0
+		    			
 		    		}, 		    		
 		    	}
 		    },
-		    grid: {                            
+		    grid: {  
+		    	x:{show:true},
     	        y: {
     	            show: true,
     	            lines: [
-    	                {value: 25},
-    	                {value: 50},
-    	                {value: 75}
+    	            	{value: 25, class: 'grid-25'},  // 클래스 추가 가능
+    	                {value: 50, class: 'grid-50'},
+    	                {value: 75, class: 'grid-75'}
     	            ]
     	        }
     	    },
@@ -215,18 +236,33 @@
 		    	position: 'right'
 		    },
 		    padding: {
-		        right: 150  // 우측 여백 확보
+		        right: 150,
+		        
 		    },
 		    line: {
 		        connectNull: true
 		    },
 		    tooltip: {
-		        grouped: true  // 여러 시리즈 함께 보기
+		        grouped: true,  // 여러 시리즈 함께 보기
+		        format: {
+		            title: function(d) {
+		                // d는 인덱스
+		                const labels = xLabels.slice(0, 12).map(date => 
+		                    date.substring(0, 4) + '.' + date.substring(5, 7)
+		                );
+		                return labels[d];  // 날짜 표시
+		            },
+		            value: function(value, ratio, id) {
+		                return value;  // 값만 표시
+		            },
+		             name: function(name, ratio, id, index) {
+		                return name;  // 시리즈 이름
+		           	 }
+		        }
 		    },
 		    color: {
 		        pattern: ['#21B5B3', '#4993AA','#7172A2','#995099','#8ac4ff']  // 비장애인, 장애인 선 색상 지정
-		    }
-		    
+		    },
 		});
 		
 	   	/** =========================
@@ -267,7 +303,7 @@
 	   	 console.log("months : " + months);
 	   	
 	     const thead = document.querySelector('#statsTable thead');
-	     let headHtml = "<tr><th>유형</th>";
+	     let headHtml = "<tr><th></th>";
 
 	     months.forEach(d => {
 	    	 
@@ -506,15 +542,16 @@
 
 				<div class="graph-group">
 					<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
-					<div id="chart" class="graph-table" style="height: 321.6px;">
+					<div class="graph-table">
 						<p class="subTitle">불법주차 유형별 통계(그래프)</p>
+						<div id="chart" ></div>
 					</div>
 
 					<div class="graph-table">
 						<p class="subTitle">불법주차 유형별 통계(테이블)</p>
 						<!-- 불법주차 유형별 통계(테이블) -->
-						<table id="statsTable">
-							<thead></thead>
+						<table id="statsTable" class="stats-table">
+							<thead class="tableTitle"></thead>
 							<tbody></tbody>
 						</table>
 
