@@ -29,6 +29,7 @@
 	</script>
 <%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 </head>
+
 <style>
 .container {
 	overflow: hidden;
