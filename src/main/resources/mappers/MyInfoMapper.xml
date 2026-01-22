@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 장비 리스트 화면 SQL -->
+<mapper namespace="com.disabled.mapper.MyInfoMapper">
+	
+	<!-- 내 정보 화면 접속 -->
+	<select id="getMyInfoMap" parameterType="map" resultType="map">
+		SELECT u_login_id, u_login_pwd, u_name, u_email
+		FROM tbl_user
+		WHERE 1=1
+			AND u_id = #{uIdStr}
+	</select>
+	
+	<!-- 내 정보 화면에서 정보 변경 -->
+	<select id="updateMyInfo" parameterType="map">
+		UPDATE tbl_user
+		SET u_name = #{name}
+		WHERE 1=1
+			AND u_id = #{uIdStr}
+	</select>
+</mapper>

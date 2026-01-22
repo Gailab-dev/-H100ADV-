@@ -35,6 +35,74 @@
 			icon.src ='${pageContext.request.contextPath}/resources/images/login/eye-closed.svg';
 		}
 	}
+	
+	async function myInfoSave(){
+		// 유효성 체크
+		if (myInfoValChk()){
+			const currentPw = document.getElementById("currentPw")?.value;
+			const newPw = document.getElementById("newPw")?.value;
+			const confirmPw = document.getElementById("confirmPw")?.value;
+			const name = document.getElementById("name")?.value;
+			
+			// 동기 통신으로 로그인
+			const r = await fetch('${pageContext.request.contextPath}/myInfo/saveMyInfo.do',{
+				method: 'POST',
+		  		headers: {
+		    		'Content-Type': 'application/json'
+		    		, 'Accept': 'application/json'
+		  		},
+		        credentials: 'same-origin'
+		        , cache: 'no-store'
+		        	, body: JSON.stringify({currentPw, newPw, confirmPw, name})
+			});
+			
+		    // response 객체의 ok값(200~299)
+	        if (!r.ok) {
+	        	alert("r.ok : " + r.ok);
+	        	alert("r.msg : " + r.msg);
+	//         	showError(r.ok + " | " + r.msg);
+	            return;
+	        }
+		}	
+	}
+	
+	function myInfoValChk(){
+		let result = false;
+		const currentPw = document.getElementById("currentPw")?.value;
+		const newPw = document.getElementById("newPw")?.value;
+		const confirmPw = document.getElementById("confirmPw")?.value;
+		const name = document.getElementById("name")?.value;
+		
+		if(currentPw.length > 0 || newPw.length > 0 || confirmPw.length > 0 ){
+			if(!currentPw){
+				alert("기존 비밀번호를 입력해주세요.");
+		  		return result;
+			}
+			
+			if(!newPw){
+				alert("새 비밀번호를 입력해주세요.");
+				return result;
+			}
+			
+			if(!confirmPw){
+				alert("비밀번호 확인을 입력해주세요.");
+				return result;
+			}
+			
+			if(newPw != confirmPw){
+				alert("새 비밀번호와 비밀번호 확인 값이 서로 다릅니다.");
+				return result;
+			}
+		}
+		
+		if(!name){
+			alert("이름을 입력해주세요.");
+			return result;
+		}
+		
+		result = true;
+		return result;
+	}
 </script>
 <body>
 	<div class=page-wrapper>
@@ -92,7 +160,7 @@
 					</a></li>
 
 					<li><a
-						href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do">
+						href="${pageContext.request.contextPath}/myInfo/viewMyInfo.do">
 							<svg class="menu-icon" width="20" height="20" viewBox="0 0 20 20"
 								fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path
@@ -102,7 +170,7 @@
 						</svg>디바이스 리스트
 					</a></li>
 					<li><a
-						href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do">
+						href="${pageContext.request.contextPath}/myInfo/viewMyInfo.do">
 							<svg width="30" height="30" viewBox="0 0 30 30" fill="none"
 								xmlns="http://www.w3.org/2000/svg">
 							<circle cx="15" cy="15" r="14.5" fill="white" stroke="black" />
@@ -126,20 +194,15 @@
 
 				<form class="editForm">
 					<div class="form-group">
-						<label for="userId">아이디</label> <input type="text" id="userId"
-							value="gailab" readonly>
-					</div>
-
-					<div class="form-group">
-						<label for="userRole">회원권한</label> <input type="text"
-							id="userRole" value="최고관리자" readonly>
+						<label for="userId">아이디</label> <input type="text" id="userId" name="userId"
+							value="${myInfoMap.u_login_id }" readonly>
 					</div>
 
 					<div class="form-group">
    						<label for="currentPw">기존 비밀번호</label>
     					<div class="inputBox">
 							<div class="password-wrapper">
-        						<input type="password" id="currentPw">
+        						<input type="password" id="currentPw" name="currentPw">
 								<button type="button" class="toggle-password"
 									onclick="togglePassword('currentPw', 'eyeIcon1')">
 									 <img id="eyeIcon1"
@@ -155,7 +218,7 @@
     					<label for="newPw">새 비밀번호</label>
     					<div class="inputBox">
 							<div class="password-wrapper">
-        						<input type="password" id="newPw">
+        						<input type="password" id="newPw" name="newPw">
 								<button type="button" class="toggle-password"
 									onclick="togglePassword('newPw', 'eyeIcon2')">
 									<img id="eyeIcon2"
@@ -171,7 +234,7 @@
 						<label for="confirmPw">비밀번호 확인</label>
 						<div class="inputBox">
 						<div class="password-wrapper">
-							<input type="password" id="confirmPw">
+							<input type="password" id="confirmPw" name="confirmPw">
 							<button type="button" class="toggle-password"
 									onclick="togglePassword('confirmPw', 'eyeIcon3')">
 									<img id="eyeIcon3"
@@ -181,17 +244,22 @@
 						</div>
 						</div>
 					</div>
+					
+					<div class="form-group">
+						<label for="confirmPw">이름</label>
+						<input type="text" id="name" name="name" value="${myInfoMap.u_name }">
+					</div>
 
 					<div class="form-group">
 						<label for="email">이메일</label>
 						<div class="emailBox">
-							<input type="email" id="email" readonly value="이메일 들어오기">
+							<input type="email" id="email" name="email" readonly value="${myInfoMap.u_email }">
 							<button class="editEmail">변경</button>
 						</div>
 					</div>
 				</form>
 				<div class="saveBox">
-					<button type="submit" class="saveButton">저장</button>
+					<button type="submit" class="saveButton" onclick="myInfoSave()">저장</button>
 				</div>
 			</div>
 		</div>
