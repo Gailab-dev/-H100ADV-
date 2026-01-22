@@ -9,7 +9,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<!--  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">-->
+ <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/stats.css">
 <title>home</title>
@@ -29,81 +29,6 @@
 	</script>
 <%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 </head>
-
-<style>
-.container {
-	overflow: hidden;
-}
-
-.left {
-	float: left;
-	max-width: 1305px;
-	border: 1px soild black;
-}
-
-.c3-area {
-	fill: none !important;
-}
-
-.c3-chart {
-	fill: none !important;
-}
-
-/* 기본: 보이는 시리즈의 이름은 진한 검은색 */
-.c3-legend-item text {
-	fill: #000000;
-	opacity: 1;
-}
-
-/* 숨겨진 시리즈: 그래프도 안 보이고, 이름도 회색/옅게 */
-.c3-legend-item-hidden text {
-	fill: #aaaaaa;
-	opacity: 0.5;
-}
-
-/* ✅ tooltip CSS 추가 */
-.c3-tooltip-container {
-    position: absolute !important;
-    pointer-events: none !important;
-    z-index: 99999 !important;
-    display: block !important;
-    width: auto !important;
-    height: auto !important;
-}
-
-.c3-tooltip {
-    display: table !important;
-    border-collapse: collapse !important;
-    background-color: white !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
-    border: 1px solid #ddd !important;
-    opacity: 1 !important;
-}
-
-.c3-tooltip th {
-    background-color: #666 !important;
-    color: white !important;
-    padding: 8px 12px !important;
-    font-size: 13px !important;
-    font-weight: normal !important;
-}
-
-.c3-tooltip td {
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-    background-color: white !important;
-}
-
-.c3-tooltip td.name {
-    text-align: left !important;
-}
-
-.c3-tooltip td.value {
-    text-align: right !important;
-    font-weight: 500 !important;
-}
-</style>
-
 
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
@@ -131,6 +56,7 @@
 	  {
 	    stDate: '${row.st_date == null ? "" : row.st_date}',
 	    stCd: ${row.st_cd == null ? 0 : row.st_cd},
+	    
 	    stCnt: ${row.st_cnt == null ? 0 : row.st_cnt}
 	  }<c:if test="${!s.last}">,</c:if>
 	  </c:forEach>
@@ -286,26 +212,27 @@
 		        connectNull: true
 		    },
 		    tooltip: {
-		    	 show: true,
-		        grouped: true,  // 여러 시리즈 함께 보기
+		    	show: true,
+		        grouped: false,  // 여러 시리즈 함께 보기
 		        contents: function(d, defaultTitleFormat, defaultValueFormat, color) {
 		            const labels = xLabels.slice(0, 12).map(date => 
 		                date.substring(0, 4) + '.' + date.substring(5, 7)
 		            );
 		            
-		            let html = '<table class="c3-tooltip">';
-		            html += '<thead><tr><th colspan="2">' + labels[d[0].index] + '</th></tr></thead>';
-		            html += '<tbody>';
+		            let html = '<div class="custom-tooltip">';
+		            html += '<div class="tooltip-header">' + labels[d[0].index] + '</div>';
+		            html += '<div class="tooltip-grid">';
 		            
 		            d.forEach(function(item) {
 		                const bgColor = color(item.id);
-		                html += '<tr class="c3-tooltip-name-' + item.id + '">';
-		                html += '<td class="name"><span style="background-color:' + bgColor + '; display:inline-block; width:10px; height:10px; margin-right:6px;"></span>' + item.name + '</td>';
-		                html += '<td class="value">' + item.value + '</td>';
-		                html += '</tr>';
+		                html += '<div class="tooltip-item">';
+		                html += '<span class="color-box" style="background-color:' + bgColor+ ';"></span>';
+		                html += '<span class="item-name">' + item.name + '</span>';
+		                html += '<span class="item-value">' + item.value + '</span>';
+		                html += '</div>';
 		            });
 		            
-		            html += '</tbody></table>';
+		            html += '</div></div>';
 		            return html;
 		        }
 		    },
