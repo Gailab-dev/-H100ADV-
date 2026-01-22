@@ -265,16 +265,20 @@ button {
     pointer-events: none !important;
     z-index: 9999 !important;
     display: block !important;
+    width:auto !important;
+    height:auto !important;
 }
 
 .c3-tooltip {
+	 display: table !important;
     border-collapse: collapse;
     border-spacing: 0;
     background-color: #fff;
     empty-cells: show;
     box-shadow: 7px 7px 12px -9px #777;
     opacity: 1 !important;  /* ✅ 0.9 -> 1 */
-    border: 1px solid #ddd;  /* ✅ 테두리 추가 */
+    border: 1px solid #ddd; 
+    min-width: 100px !important;
 }
 
 .c3-tooltip th {

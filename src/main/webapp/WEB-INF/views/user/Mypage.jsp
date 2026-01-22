@@ -8,6 +8,34 @@
 	href="${pageContext.request.contextPath}/resources/css/Mypage.css">
 <title>내 정보</title>
 </head>
+<script>
+	/* 에러 메시지 표시 함수*/
+	function showError(message) {
+		const errorElement = document.getElementById('errorMessage');
+		errorElement.textContent = message;
+		errorElement.style.opacity = '1';
+	}
+	/* 에러 메시지 숨기기 함수*/
+	function clearError() {
+		const errorElement = document.getElementById('errorMessage');
+		errorElement.textContent = '';
+		errorElement.style.opacity = '0';
+	}
+
+	//비밀번호 표시/숨기기 토글 함수
+	function togglePassword(inputId, iconId) {
+		const input = document.getElementById(inputId);
+		const icon = document.getElementById(iconId);
+
+		if (input.type === 'password') {
+			input.type = 'text';
+			icon.src = '${pageContext.request.contextPath}/resources/images/login/eye-open.svg';
+		} else {
+			input.type = 'password';
+			icon.src ='${pageContext.request.contextPath}/resources/images/login/eye-closed.svg';
+		}
+	}
+</script>
 <body>
 	<div class=page-wrapper>
 		<!-- 헤더 -->
@@ -75,9 +103,13 @@
 					</a></li>
 					<li><a
 						href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do">
-							<svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<circle cx="15" cy="15" r="14.5" fill="white" stroke="black"/>
-							<path d="M23 24V22C23 20.9391 22.5786 19.9217 21.8284 19.1716C21.0783 18.4214 20.0609 18 19 18H11C9.93913 18 8.92172 18.4214 8.17157 19.1716C7.42143 19.9217 7 20.9391 7 22V24M19 10C19 12.2091 17.2091 14 15 14C12.7909 14 11 12.2091 11 10C11 7.79086 12.7909 6 15 6C17.2091 6 19 7.79086 19 10Z" stroke="#1E1E1E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<svg width="30" height="30" viewBox="0 0 30 30" fill="none"
+								xmlns="http://www.w3.org/2000/svg">
+							<circle cx="15" cy="15" r="14.5" fill="white" stroke="black" />
+							<path
+									d="M23 24V22C23 20.9391 22.5786 19.9217 21.8284 19.1716C21.0783 18.4214 20.0609 18 19 18H11C9.93913 18 8.92172 18.4214 8.17157 19.1716C7.42143 19.9217 7 20.9391 7 22V24M19 10C19 12.2091 17.2091 14 15 14C12.7909 14 11 12.2091 11 10C11 7.79086 12.7909 6 15 6C17.2091 6 19 7.79086 19 10Z"
+									stroke="#1E1E1E" stroke-width="2.5" stroke-linecap="round"
+									stroke-linejoin="round" />
 							</svg>내 정보
 					</a></li>
 
@@ -106,7 +138,15 @@
 					<div class="form-group">
    						<label for="currentPw">기존 비밀번호</label>
     					<div class="inputBox">
-        					<input type="password" id="currentPw">
+							<div class="password-wrapper">
+        						<input type="password" id="currentPw">
+								<button type="button" class="toggle-password"
+									onclick="togglePassword('currentPw', 'eyeIcon1')">
+									 <img id="eyeIcon1"
+										src="${pageContext.request.contextPath}/resources/images/login/eye-closed.svg"
+										alt="비밀번호 표시">
+								</button>
+							</div>
         					<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
     					</div>
 					</div>
@@ -114,14 +154,32 @@
 					<div class="form-group">
     					<label for="newPw">새 비밀번호</label>
     					<div class="inputBox">
-        					<input type="password" id="newPw">
+							<div class="password-wrapper">
+        						<input type="password" id="newPw">
+								<button type="button" class="toggle-password"
+									onclick="togglePassword('newPw', 'eyeIcon2')">
+									<img id="eyeIcon2"
+										src="${pageContext.request.contextPath}/resources/images/login/eye-closed.svg"
+										alt="비밀번호 표시"> 
+								</button>
+							</div>
         					<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
     					</div>
 					</div>
-
+					
 					<div class="form-group">
 						<label for="confirmPw">비밀번호 확인</label>
-						<input type="password" id="confirmPw">
+						<div class="inputBox">
+						<div class="password-wrapper">
+							<input type="password" id="confirmPw">
+							<button type="button" class="toggle-password"
+									onclick="togglePassword('confirmPw', 'eyeIcon3')">
+									<img id="eyeIcon3"
+										src="${pageContext.request.contextPath}/resources/images/login/eye-closed.svg"
+										alt="비밀번호 표시"> 
+							</button>
+						</div>
+						</div>
 					</div>
 
 					<div class="form-group">
@@ -133,7 +191,7 @@
 					</div>
 				</form>
 				<div class="saveBox">
-						<button type="submit" class="saveButton">저장</button>
+					<button type="submit" class="saveButton">저장</button>
 				</div>
 			</div>
 		</div>

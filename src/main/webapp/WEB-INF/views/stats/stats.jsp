@@ -60,6 +60,48 @@
 	fill: #aaaaaa;
 	opacity: 0.5;
 }
+
+/* ✅ tooltip CSS 추가 */
+.c3-tooltip-container {
+    position: absolute !important;
+    pointer-events: none !important;
+    z-index: 99999 !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+.c3-tooltip {
+    display: table !important;
+    border-collapse: collapse !important;
+    background-color: white !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    border: 1px solid #ddd !important;
+    opacity: 1 !important;
+}
+
+.c3-tooltip th {
+    background-color: #666 !important;
+    color: white !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    font-weight: normal !important;
+}
+
+.c3-tooltip td {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    background-color: white !important;
+}
+
+.c3-tooltip td.name {
+    text-align: left !important;
+}
+
+.c3-tooltip td.value {
+    text-align: right !important;
+    font-weight: 500 !important;
+}
 </style>
 
 
@@ -244,21 +286,27 @@
 		        connectNull: true
 		    },
 		    tooltip: {
+		    	 show: true,
 		        grouped: true,  // 여러 시리즈 함께 보기
-		        format: {
-		            title: function(d) {
-		                // d는 인덱스
-		                const labels = xLabels.slice(0, 12).map(date => 
-		                    date.substring(0, 4) + '.' + date.substring(5, 7)
-		                );
-		                return labels[d];  // 날짜 표시
-		            },
-		            value: function(value, ratio, id) {
-		                return value;  // 값만 표시
-		            },
-		             name: function(name, ratio, id, index) {
-		                return name;  // 시리즈 이름
-		           	 }
+		        contents: function(d, defaultTitleFormat, defaultValueFormat, color) {
+		            const labels = xLabels.slice(0, 12).map(date => 
+		                date.substring(0, 4) + '.' + date.substring(5, 7)
+		            );
+		            
+		            let html = '<table class="c3-tooltip">';
+		            html += '<thead><tr><th colspan="2">' + labels[d[0].index] + '</th></tr></thead>';
+		            html += '<tbody>';
+		            
+		            d.forEach(function(item) {
+		                const bgColor = color(item.id);
+		                html += '<tr class="c3-tooltip-name-' + item.id + '">';
+		                html += '<td class="name"><span style="background-color:' + bgColor + '; display:inline-block; width:10px; height:10px; margin-right:6px;"></span>' + item.name + '</td>';
+		                html += '<td class="value">' + item.value + '</td>';
+		                html += '</tr>';
+		            });
+		            
+		            html += '</tbody></table>';
+		            return html;
 		        }
 		    },
 		    color: {

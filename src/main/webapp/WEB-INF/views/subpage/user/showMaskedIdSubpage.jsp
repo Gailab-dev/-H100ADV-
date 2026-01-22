@@ -5,5 +5,5 @@
 		<p class="findLogin"> 회원님의 아이디는 ${maskMyId} 입니다.</p>
 	</div>
 	
-	<button type="button" onclick="goBackLogin()">돌아가기</button>
+	<button type="button" class="primary-btn" onclick="goBackLogin()">돌아가기</button>
 </div>
