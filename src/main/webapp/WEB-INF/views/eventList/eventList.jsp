@@ -18,6 +18,11 @@
 <c:if test="${not empty param.errorMsg}">
 	<script>
 	alert('<c:out value="${param.errorMsg}" />');
+	
+    // ✅ URL에서 errorMsg 제거, 새로고침 등으로 오류 메시지 재출력 방지
+    const url = new URL(window.location.href);
+    url.searchParams.delete('errorMsg');
+    history.replaceState(null, '', url.toString());
 </script>
 </c:if>
 <%-- 상세 보기 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
@@ -25,6 +30,11 @@
 <script>
   <c:if test="${not empty myInfoErrorMsg}">
     alert('<c:out value="${myInfoErrorMsg}" />');
+    
+    // ✅ URL에서 errorMsg 제거, 새로고침 등으로 오류 메시지 재출력 방지
+    const url = new URL(window.location.href);
+    url.searchParams.delete('myInfoErrorMsg');
+    history.replaceState(null, '', url.toString());
   </c:if>
 </script>
 <%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
@@ -171,29 +181,46 @@
 	
 	  // 각 컬럼별 정렬 버튼 클릭시 데이터 정렬
 	  document.addEventListener('DOMContentLoaded', function () {  
-				  
-		    // 현재 정렬 상태 (Controller에서 model로 내려준 값 사용)
-		    let currentSortCol = '${sortCol != null ? sortCol : "ev_id"}';
-		    let currentSortDir = '${sortDir != null ? sortDir : "DESC"}';
+			
+		  	// 화살표 버튼 이미지 파일 경로
+		  	const BASE = '${pageContext.request.contextPath}';
+		  	const ICON_UP = BASE + '/resources/images/icon_arrow_up.svg';
+		  	const ICON_DOWN = BASE + '/resources/images/icon_arrow_down.svg';
+		  
+		    // 현재 정렬 상태 (url값 사용)
+		    const url = new URL(window.location.href);
+		    let currentSortCol = url.searchParams.get('sortCol') || 'ev_id';
+		    let currentSortDir = (url.searchParams.get('sortDir') || 'DESC').toUpperCase();
+
 			
 		    //각 정렬 버튼 별 이벤트 추가
 		    document.querySelectorAll('.sort-btn').forEach(btn => {
 		        
 		    	// 정렬 대상이 되는 컬럼
 		    	const col = btn.dataset.column;
+		    	
+		    	// 오름차순, 내림차순 표시하는 화살표 이미지
+		        const img = btn.querySelector('img');
+		        if (!img) return;
 
 		        // 🔹 현재 정렬 컬럼 표시
 		        if (col === currentSortCol) {
-		            btn.classList.add('active');
+		            
+		        	// active로 정렬 활성화
+		        	btn.classList.add('active');
+		            
+		        	// 이미지 아이콘 변경
+		        	img.src = (currentSortDir === 'ASC') ? ICON_UP : ICON_DOWN;
 		            if (currentSortDir === 'ASC') {
 		                btn.classList.add('asc');
 		            }
 		        }
 
 		        btn.addEventListener('click', function () {
-		            let nextDir = 'DESC';
+		            
 
-		            // 같은 컬럼 클릭 → ASC / DESC 토글
+		            // 다음 이벤트 발생시 정렬 조건을 변수에 저장
+		            let nextDir = 'DESC';
 		            if (currentSortCol === col) {
 		                nextDir = (currentSortDir === 'DESC') ? 'ASC' : 'DESC';
 		            }
@@ -201,7 +228,7 @@
 		            // 🔹 기존 파라미터 유지
 		            const url = new URL(window.location.href);
 					
-		            // 정렬 컬럼, 정렬 방법 파라미터 추가
+		            // 정렬 컬럼, 다음 이벤트시 정렬 조건을 검색 파라미터 추가
 		            url.searchParams.set('sortCol', col);
 		            url.searchParams.set('sortDir', nextDir);
 
@@ -419,13 +446,13 @@
 							<div class="search-box">
 								<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 									xmlns="http://www.w3.org/2000/svg">
-                        <path
+                        			<path
 										d="M8.75065 14.1673C11.7422 14.1673 14.1673 11.7422 14.1673 8.75065C14.1673 5.75911 11.7422 3.33398 8.75065 3.33398C5.75911 3.33398 3.33398 5.75911 3.33398 8.75065C3.33398 11.7422 5.75911 14.1673 8.75065 14.1673Z"
 										stroke="#767676" stroke-width="1.5" stroke-miterlimit="10" />
-                        <path
+                        			<path
 										d="M16.1363 17.197C16.4292 17.4899 16.9041 17.4899 17.197 17.197C17.4899 16.9041 17.4899 16.4292 17.197 16.1363L16.6667 16.6667L16.1363 17.197ZM12.5 12.5L11.9697 13.0303L16.1363 17.197L16.6667 16.6667L17.197 16.1363L13.0303 11.9697L12.5 12.5Z"
 										fill="#767676" />
-                    </svg>
+                    			</svg>
 								<input type="text" name="searchKeyword" value="${searchKeyword}"
 									placeholder="디바이스명 및 주소 검색" maxlength="100" />
 							</div>
@@ -490,40 +517,35 @@
 								<tr>
 									<th><input type="checkbox" id="checkAll"
 										class="table-checkBox" /></th>
-									<th>번호
-										<button class="sort-btn" data-column="ev_date">
-											<img
-												src="${pageContext.request.contextPath}/resources/images/arrow.svg">
-										</button>
-									</th>
+									<th>번호</th>
 									<th>날짜
 										<button class="sort-btn" data-column="ev_date">
 											<img
-												src="${pageContext.request.contextPath}/resources/images/arrow.svg">
+												src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 										</button>
 									</th>
 									<th>유형
 										<button class="sort-btn" data-column="ev_cd">
 											<img
-												src="${pageContext.request.contextPath}/resources/images/arrow.svg">
+												src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 										</button>
 									</th>
 									<th>디바이스명
 										<button class="sort-btn" data-column="dv_name">
 											<img
-												src="${pageContext.request.contextPath}/resources/images/arrow.svg">
+												src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 										</button>
 									</th>
 									<th>디바이스주소
 										<button class="sort-btn" data-column="dv_addr">
 											<img
-												src="${pageContext.request.contextPath}/resources/images/arrow.svg">
+												src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 										</button>
 									</th>
 									<th>차량번호
 										<button class="sort-btn" data-column="ev_car_num">
 											<img
-												src="${pageContext.request.contextPath}/resources/images/arrow.svg">
+												src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 										</button>
 									</th>
 									<th>상세</th>

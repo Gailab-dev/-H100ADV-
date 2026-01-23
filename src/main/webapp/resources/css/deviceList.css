@@ -210,8 +210,57 @@ button {
     outline: none;
 }
 
+.search-field input[type="text"] {
+    padding-left: 30px; /* 돋보기 아이콘 고려 */
+    background-image: url('/images/icon-search.svg'); /* 돋보기 아이콘 */
+    background-size: 16px;
+    background-repeat: no-repeat;
+    background-position: 8px center;
+}
 
 /* 검색창 */
+.search-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 11px;
+  background: #fff;
+  min-width: 340px;
+}
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  margin-left:8px;
+}
+.search-btn {
+    width:56px;
+    height: 44px;
+    padding: 0 12 px;
+    background-color: #666;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.select-box{
+  display: flex;
+  align-items: center;
+  flex: 1;
+  margin-left:auto;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  max-width: 180px;
+  height :44px;
+  font-size:16px;
+}
+/*
 .search-box {
   display: flex;
   align-items: center;
@@ -256,7 +305,7 @@ button {
     font-size: 14px;
     cursor: pointer;
 }
-
+*/
 
 /* 두 번째 줄: 선택 / 삭제 */
 .bulk-actions {
@@ -296,6 +345,11 @@ button {
 .excel-btn img {
     width: 24px;      /* 필요에 맞게 조절 */
     height: 24px;
+}
+
+/* 정렬 버튼 */
+.sort-btn{
+	margin-left:4px;
 }
 
 /* ================= 테이블 ================= */

@@ -149,6 +149,10 @@ button {
     gap: 8px;
     margin-bottom: 20px;
 }
+.date-contect{
+	font-size:14px;
+	font-weight:400;
+}
 .filter-input-group input[type="date"],
 .filter-input-group select {
     width:220px;
@@ -200,7 +204,6 @@ button {
     cursor: pointer;
 }
 
-<<<<<<< HEAD
 .select-box{
   display: flex;
   align-items: center;
