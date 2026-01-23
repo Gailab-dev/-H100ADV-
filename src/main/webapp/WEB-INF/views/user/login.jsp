@@ -210,7 +210,7 @@
 							<p id="errorMessage" class="error-message"></p>
 
 							<button class="primary-btn"
-								onclick="login(document.getElementById('id').value, document.getElementById('pwd').value)">
+								type="submit">
 								로그인</button>
 						</div>
 
