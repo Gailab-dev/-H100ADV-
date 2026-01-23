@@ -362,7 +362,7 @@ public class EventListController {
 			
 			// ====== 서비스 [S] ====== //
 			// 불법주차 리스트 상세 정보 가져오기
-			eventListDetail = eventListService.getEventListDetail(dvId,evId);
+			eventListDetail = eventListService.getEventListDetail(evId);
 			if(eventListDetail != null) {
 				String evCd = String.valueOf(eventListDetail.get("ev_cd"));
 				String ev_cd_name = "";
