@@ -104,6 +104,29 @@ button {
     padding: 0;
 }
 
+.menu > li {
+    margin-bottom: 12px;
+}
+
+.menu > li > a {
+    display: block;
+    padding: 10px;
+    background: #FCFBFF;
+    text-decoration: none;
+    color: #000;
+    transition: background 0.2s ease;
+}
+
+.menu > li:nth-child(4) > a {
+    background: #F1EDFF; 
+    font-weight: bold;
+    color:#6955A2;
+}
+/* 활성화된 메뉴의 SVG 두께 증가 */
+.menu > li:nth-child(4) > a svg {
+    stroke-width: 2; 
+}
+
 .menu > li > a:hover {
     background: #FCFBFF;
 }
@@ -164,7 +187,7 @@ button {
 }
 
 .form-group input {
-    width: 367px;  
+    width: 220px;  
     height: 44px;
     padding: 0 16px;
     border: 1px solid #ddd;
@@ -187,14 +210,10 @@ button {
 
 
 
-.password-wrapper {
+.password-wrapper,
+.user_name{
   position: relative;
   width: 100%;
-}
-
-.password-wrapper input {
-  width: 100%;
-  padding-right: 45px;
 }
 
 .toggle-password {
@@ -227,7 +246,7 @@ button {
 
 /* 이메일 변경 버튼 */
 .editEmail {
-    margin-left: 8px;
+    margin-left: 30px;
     padding: 8px 16px;
     border: 1px solid #ddd;
     border-radius: 4px;

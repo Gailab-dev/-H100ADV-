@@ -380,12 +380,15 @@
 					</a></li>
 					<li><a
 						href="${pageContext.request.contextPath}/myInfo/viewMyInfo.do">
-							<svg class="menu-icon" width="20" height="20" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-							<circle cx="15" cy="15" r="14.5" fill="white" stroke="currentColor"/>
-							<path d="M23 24V22C23 20.9391 22.5786 19.9217 21.8284 19.1716C21.0783 18.4214 20.0609 18 19 18H11C9.93913 18 8.92172 18.4214 8.17157 19.1716C7.42143 19.9217 7 20.9391 7 22V24M19 10C19 12.2091 17.2091 14 15 14C12.7909 14 11 12.2091 11 10C11 7.79086 12.7909 6 15 6C17.2091 6 19 7.79086 19 10Z" 
-							stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-							</svg>내 정보
+							<svg width="20" height="20" viewBox="0 0 12 12" fill="none"
+								xmlns="http://www.w3.org/2000/svg">
+								<circle cx="6" cy="6" r="5.5" stroke="currentColor" />
+								<path
+									d="M9.33335 9.75V8.91667C9.33335 8.47464 9.15776 8.05072 8.8452 7.73816C8.53264 7.4256 8.10871 7.25 7.66669 7.25H4.33335C3.89133 7.25 3.4674 7.4256 3.15484 7.73816C2.84228 8.05072 2.66669 8.47464 2.66669 8.91667V9.75M7.66669 3.91667C7.66669 4.83714 6.92049 5.58333 6.00002 5.58333C5.07955 5.58333 4.33335 4.83714 4.33335 3.91667C4.33335 2.99619 5.07955 2.25 6.00002 2.25C6.92049 2.25 7.66669 2.99619 7.66669 3.91667Z"
+									stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+							</svg> 내 정보
 					</a></li>
+
 
 
 					<!-- 

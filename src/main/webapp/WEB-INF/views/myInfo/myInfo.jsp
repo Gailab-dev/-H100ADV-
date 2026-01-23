@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/resources/css/Mypage.css">
+	href="${pageContext.request.contextPath}/resources/css/myinfo.css">
 <title>내 정보</title>
 </head>
 <script>
@@ -160,7 +160,7 @@
 					</a></li>
 
 					<li><a
-						href="${pageContext.request.contextPath}/myInfo/viewMyInfo.do">
+						href="${pageContext.request.contextPath}/myInfo/viewDeviceList.do">
 							<svg class="menu-icon" width="20" height="20" viewBox="0 0 20 20"
 								fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path
@@ -171,14 +171,13 @@
 					</a></li>
 					<li><a
 						href="${pageContext.request.contextPath}/myInfo/viewMyInfo.do">
-							<svg width="30" height="30" viewBox="0 0 30 30" fill="none"
+							<svg width="20" height="20" viewBox="0 0 12 12" fill="none"
 								xmlns="http://www.w3.org/2000/svg">
-							<circle cx="15" cy="15" r="14.5" fill="white" stroke="black" />
-							<path
-									d="M23 24V22C23 20.9391 22.5786 19.9217 21.8284 19.1716C21.0783 18.4214 20.0609 18 19 18H11C9.93913 18 8.92172 18.4214 8.17157 19.1716C7.42143 19.9217 7 20.9391 7 22V24M19 10C19 12.2091 17.2091 14 15 14C12.7909 14 11 12.2091 11 10C11 7.79086 12.7909 6 15 6C17.2091 6 19 7.79086 19 10Z"
-									stroke="#1E1E1E" stroke-width="2.5" stroke-linecap="round"
-									stroke-linejoin="round" />
-							</svg>내 정보
+								<circle cx="6" cy="6" r="5.5" stroke="currentColor" />
+								<path
+									d="M9.33335 9.75V8.91667C9.33335 8.47464 9.15776 8.05072 8.8452 7.73816C8.53264 7.4256 8.10871 7.25 7.66669 7.25H4.33335C3.89133 7.25 3.4674 7.4256 3.15484 7.73816C2.84228 8.05072 2.66669 8.47464 2.66669 8.91667V9.75M7.66669 3.91667C7.66669 4.83714 6.92049 5.58333 6.00002 5.58333C5.07955 5.58333 4.33335 4.83714 4.33335 3.91667C4.33335 2.99619 5.07955 2.25 6.00002 2.25C6.92049 2.25 7.66669 2.99619 7.66669 3.91667Z"
+									stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+							</svg> 내 정보
 					</a></li>
 
 
@@ -194,66 +193,67 @@
 
 				<form class="editForm">
 					<div class="form-group">
-						<label for="userId">아이디</label> <input type="text" id="userId" name="userId"
-							value="${myInfoMap.u_login_id }" readonly>
+						<label for="userId">아이디</label> <input type="text" id="userId"
+							name="userId" value="${myInfoMap.u_login_id }" readonly>
 					</div>
 
 					<div class="form-group">
-   						<label for="currentPw">기존 비밀번호</label>
-    					<div class="inputBox">
+						<label for="currentPw">기존 비밀번호</label>
+						<div class="inputBox">
 							<div class="password-wrapper">
-        						<input type="password" id="currentPw" name="currentPw">
+								<input type="password" id="currentPw" name="currentPw">
 								<button type="button" class="toggle-password"
 									onclick="togglePassword('currentPw', 'eyeIcon1')">
-									 <img id="eyeIcon1"
+									<img id="eyeIcon1"
 										src="${pageContext.request.contextPath}/resources/images/login/eye-closed.svg"
 										alt="비밀번호 표시">
 								</button>
 							</div>
-        					<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
-    					</div>
+							<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
+						</div>
 					</div>
 
 					<div class="form-group">
-    					<label for="newPw">새 비밀번호</label>
-    					<div class="inputBox">
+						<label for="newPw">새 비밀번호</label>
+						<div class="inputBox">
 							<div class="password-wrapper">
-        						<input type="password" id="newPw" name="newPw">
+								<input type="password" id="newPw" name="newPw">
 								<button type="button" class="toggle-password"
 									onclick="togglePassword('newPw', 'eyeIcon2')">
 									<img id="eyeIcon2"
 										src="${pageContext.request.contextPath}/resources/images/login/eye-closed.svg"
-										alt="비밀번호 표시"> 
+										alt="비밀번호 표시">
 								</button>
 							</div>
-        					<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
-    					</div>
+							<p class="hint-text">영문, 숫자, 특수문자 6-20자</p>
+						</div>
 					</div>
-					
+
 					<div class="form-group">
 						<label for="confirmPw">비밀번호 확인</label>
 						<div class="inputBox">
-						<div class="password-wrapper">
-							<input type="password" id="confirmPw" name="confirmPw">
-							<button type="button" class="toggle-password"
+							<div class="password-wrapper">
+								<input type="password" id="confirmPw" name="confirmPw">
+								<button type="button" class="toggle-password"
 									onclick="togglePassword('confirmPw', 'eyeIcon3')">
 									<img id="eyeIcon3"
 										src="${pageContext.request.contextPath}/resources/images/login/eye-closed.svg"
-										alt="비밀번호 표시"> 
-							</button>
-						</div>
+										alt="비밀번호 표시">
+								</button>
+							</div>
 						</div>
 					</div>
-					
+
 					<div class="form-group">
-						<label for="confirmPw">이름</label>
-						<input type="text" id="name" name="name" value="${myInfoMap.u_name }">
+						<label for="confirmPw">이름</label> <input type="text" id="name"
+							name="name" value="${myInfoMap.u_name }" class="user_name">
 					</div>
 
 					<div class="form-group">
 						<label for="email">이메일</label>
 						<div class="emailBox">
-							<input type="email" id="email" name="email" readonly value="${myInfoMap.u_email }">
+							<input type="email" id="email" name="email" readonly
+								value="${myInfoMap.u_email }">
 							<button class="editEmail">변경</button>
 						</div>
 					</div>
