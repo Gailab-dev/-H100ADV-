@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.service.CryptoARIAService;
 import com.disabled.service.MyInfoService;
@@ -39,6 +40,9 @@ public class MyInfoController {
 	@Autowired
 	LoginMapper loginMapper;
 	
+	@Autowired
+	LogDiskManager logDiskManager;
+	
 	// 디바이스 리스트 화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
@@ -62,7 +66,7 @@ public class MyInfoController {
 		if(uIdStr != null) {
 			logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자 {}에 내 정보 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
 		}
-		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
+		boolean useTblLog = logDiskManager.hasEnoughLogSpace();;	// 로그 스토리지 사용 가능 여부
 
 		// DB 검색을 위한 파라미터 설정
 		Map<String, Object> paramMap = new HashMap<String, Object>();

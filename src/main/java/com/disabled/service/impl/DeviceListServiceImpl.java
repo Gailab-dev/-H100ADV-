@@ -67,12 +67,13 @@ public class DeviceListServiceImpl implements DeviceListService{
 		
 		return dvIp;
 	}
-
+	
+	
 	@Override
-	public Integer getTotalRecordCount(String searchKeyword) {
+	public Integer getTotalRecordCount(String startDate, String endDate, String searchKeyword) {
 		
 		try {
-			return deviceListMapper.getTotalRecordCount(searchKeyword);
+			return deviceListMapper.getTotalRecordCount(startDate,endDate,searchKeyword);
 		} catch (RuntimeException e) {
 			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getTotalRecordCount(searchKeyword) : ",e);
 			throw e;

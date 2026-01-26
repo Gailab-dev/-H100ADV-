@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -160,7 +161,7 @@
 					</a></li>
 
 					<li><a
-						href="${pageContext.request.contextPath}/myInfo/viewDeviceList.do">
+						href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do">
 							<svg class="menu-icon" width="20" height="20" viewBox="0 0 20 20"
 								fill="none" xmlns="http://www.w3.org/2000/svg">
 							<path

@@ -474,11 +474,11 @@ public class EventListServiceImpl implements EventListService{
 	 * @return 검색 조건에 따른 총 레코드 갯수
 	 */
 	@Override
-	public int getTotalRecordCount(String startDate, String endDate, String searchKeyword) {
+	public int getTotalRecordCount(Map<String,Object> paramMap) {
 		
 		try {
 			// 검색 조건에 따른 천제 페이지 개수 출력
-			return eventListMapper.getTotalRecordCount(startDate, endDate, searchKeyword);
+			return eventListMapper.getTotalRecordCount(paramMap);
 		} catch (IllegalStateException e) {
 			logger.error("getTotalRecordCount에서 오류 발생 : ",e);
 			throw e;

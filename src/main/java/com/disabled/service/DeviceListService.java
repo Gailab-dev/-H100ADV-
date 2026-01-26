@@ -7,7 +7,7 @@ import java.util.Map;
 public interface DeviceListService {
 	List<Map<String, Object >> getDeviceList(Map<String,Object> paramMap);
 	String getDvIpByDvID(int dvId);
-	Integer getTotalRecordCount(String searchKeyword);
+	Integer getTotalRecordCount(String searchKeyword, String endDate, String searchKeyword2);
 	void insertDeviceInfo(String dvName, String dvAddr, String dvIp, Integer dvStatus, String dvSerialNumber);
 	void deleteDeviceInfo(List<Integer> dvIds);
 	void updateDeviceInfo(Integer dvId, String dvName, String dvAddr, String dvIp, Integer dvStatus, String dvSerialNumber);

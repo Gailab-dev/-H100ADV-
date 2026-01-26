@@ -7,8 +7,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,6 +20,7 @@ import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +34,10 @@ import com.disabled.common.CodeConversionService;
 import com.disabled.common.CommonValidation;
 import com.disabled.common.ExcelColumn;
 import com.disabled.common.ExcelSheetSpec;
+import com.disabled.common.ImageByteLoader;
 import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
+import com.disabled.model.FineAdvanceNoticeSpec;
 import com.disabled.service.EventListService;
 import com.disabled.service.ExcelService;
 
@@ -57,6 +62,13 @@ public class EventListController {
 	
 	@Autowired
 	ExcelService excelService;
+	
+	@Autowired
+	private ImageByteLoader imageByteLoader;
+	
+	@Autowired
+	private javax.servlet.ServletContext servletContext;
+	
 	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(EventListController.class);
@@ -90,7 +102,7 @@ public class EventListController {
 			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
 			, @RequestParam(value="page", required=false) Integer page
 			, @RequestParam(value="pageSize", defaultValue = "10" ) Integer pageSize
-	        , @RequestParam(value="sortCol", defaultValue="ev_id") String sortCol
+	        , @RequestParam(value="sortCol", defaultValue="ev_date") String sortCol
 	        , @RequestParam(value="sortDir", defaultValue="DESC") String sortDir
 			, Model model
 			, HttpSession session) {
@@ -152,6 +164,14 @@ public class EventListController {
 			}
 		}
 		
+		// 유형 검증
+		if(evCd != null && (evCd >= 7 || evCd <= 0)) {
+			logger.warn("유효하지 않은 유형: {}",evCd);
+			model.addAttribute("errorMessage", "유효하지 않은 유형입니다.");
+			return "error";
+
+		}
+		
 		// sortDir 검증
 		if(!"ASC".equals(sortDir) && !"DESC".equals(sortDir)) {
 			logger.warn("유효하지 않은 sortDir 요청: {}",sortDir);
@@ -199,11 +219,17 @@ public class EventListController {
 			
 			// 페이징 설정
 			paginationInfo.setCurrentPageNo(page); // 현제 페이지 번호
-			paginationInfo.setRecordCountPerPage(10);  // 한 페이지에 출력할 게시글 수
+			paginationInfo.setRecordCountPerPage(pageSize);  // 한 페이지에 출력할 게시글 수
 			paginationInfo.setPageSize(10); // 페이지 블록 수
 			
+			// DB 검색을 위한 파라미터 설정
+			paramMap.put("searchKeyword", searchKeyword);
+			paramMap.put("startDate",startDate);
+			paramMap.put("endDate",endDate);
+			paramMap.put("evCd", evCd);
+			
 			int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
-			totalRecordCount = eventListService.getTotalRecordCount(startDate,endDate,searchKeyword);
+			totalRecordCount = eventListService.getTotalRecordCount(paramMap);
 			
 			paginationInfo.setTotalRecordCount(totalRecordCount);
 			
@@ -218,15 +244,11 @@ public class EventListController {
 		    int firstIndex = (currentPage - 1) * recordCountPerPage;
 			
 			// DB 검색을 위한 파라미터 설정
-			paramMap.put("firstIndex", firstIndex);
-			paramMap.put("recordCountPerPage", recordCountPerPage);
-			paramMap.put("searchKeyword", searchKeyword);
-			paramMap.put("startDate",startDate);
-			paramMap.put("endDate",endDate);
-			paramMap.put("evCd", evCd);
 		    paramMap.put("sortCol", sortCol);
 		    paramMap.put("sortDir", sortDir);
-			
+			paramMap.put("firstIndex", firstIndex);
+			paramMap.put("recordCountPerPage", recordCountPerPage);
+		    
 			// 검색 조건에 따른 이벤트 리스트 조회
 			eventList = eventListService.getEventList(paramMap);
 			
@@ -265,6 +287,7 @@ public class EventListController {
 		model.addAttribute("useTblLog", useTblLog);
 		model.addAttribute("pageSize", pageSize);
 		model.addAttribute("totalRecordCount", totalRecordCount);
+		model.addAttribute("evCd", evCd);
 	    model.addAttribute("sortCol", sortCol);
 	    model.addAttribute("sortDir", sortDir);
 		
@@ -800,18 +823,20 @@ public class EventListController {
 			
 			System.out.println("eventList { " + eventListDetail + " } ");
 			
-			// 엑셀 컬럼 추가
-			/*
-		    List<ExcelColumn> columns = List.of(
-	            new ExcelColumn("ev_reg_date", "날짜"),
-	            new ExcelColumn("ev_cd", "유형"),
-	            new ExcelColumn("dv_name", "디바이스명"),
-	            new ExcelColumn("dv_addr", "디바이스 주소"),
-	            new ExcelColumn("ev_car_num", "차량번호")
-	        );
-		    */
+			// 불법주차 단속 이미지 파일명 가져오기
+			String photo1Path = eventListDetail.get("ev_img_path") == null ? null : eventListDetail.get("photo1").toString();
+	        String photo2Path = eventListDetail.get("ev_img_path2") == null ? null : eventListDetail.get("photo2").toString();
+			
+
+	        byte[] photo1 = imageByteLoader.readillegalParkingImage(photo1Path);
+	        byte[] photo2 = imageByteLoader.readillegalParkingImage(photo2Path);
+	        
 		    // 유형 문자열로 변환
 		    eventListDetail = codeConversionService.evCdConverstionIntToStr(eventListDetail);
+		    
+		    // 정적 이미지 가져오기
+	        byte[] sealImage = imageByteLoader.readWebAppResource(servletContext, "/resources/images/seal.png");
+	        byte[] collectorImage = imageByteLoader.readWebAppResource(servletContext, "/resources/images/collector.png");
 		    
 		    // 엑셀 시트 생성
 		    /*
@@ -824,11 +849,30 @@ public class EventListController {
 		    // 엑셀 파일 생성 및 다운로드
 		    
 		    // excelService.download("과태료부과_사전통지서.xlsx", sheet, response);
-			// ====== 서비스 [E] ======
+		    
+		    FineAdvanceNoticeSpec sheet = FineAdvanceNoticeSpec.fromEventDetail(
+		    		eventListDetail,
+		    		photo1,photo2,
+		    		sealImage,collectorImage
+		    		,"김00"
+		    		,"광주광역시 북구 00로"
+		    		,"100,000원"
+		    		,""
+		    		,""
+		    		,"2026.00.00"
+		    		,""
+		    		,"2026년 00월 00일"
+		    		,"광주광역시 북구");
+		    
+		    excelService.downloadFineAdvanceNotice("과태료부과_사전통지서.xlsx", sheet, response);
+		    
+		    
+		    // ====== 서비스 [E] ======
 
 		} catch (Exception e) {
 			logger.error("엑셀 파일 생성 중 오류 발생",e);
 			return;
 		}
 	}
+	
 }

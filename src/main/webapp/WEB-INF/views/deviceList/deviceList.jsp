@@ -91,11 +91,11 @@
 			
 			let form = document.getElementById('deviceListSearchForm');
 		  	let val1 = form.elements['searchKeyword']?.value;
-		  	let searchKeyword = encodeURIComponent(val);
+		  	let searchKeyword = encodeURIComponent(val1);
 		  	let val2 = form.elements['startDate']?.value;
 		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elements['endDate']?.vlaue;
-		  	let endDate = encodeURIComponet(val3);
+		  	let val3 = form.elements['endDate']?.value;
+		  	let endDate = encodeURIComponent(val3);
 		  	let pageSize = document.getElementById('pageSize')?.value;
 		  	
 		  	if( searchKeyword.length >= 100 ){
@@ -1190,13 +1190,13 @@
 								<th><input type="checkbox" id="checkAll"
 									class="table-checkBox" /></th>
 								<th>디바이스명
-									<button class="sort-btn" data-column="ev_date">
+									<button class="sort-btn" data-column="dv_name">
 										<img
 											src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 									</button>
 								</th>
 								<th>디바이스 주소
-									<button class="sort-btn" data-column="ev_addr">
+									<button class="sort-btn" data-column="dv_addr">
 										<img
 											src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 									</button>

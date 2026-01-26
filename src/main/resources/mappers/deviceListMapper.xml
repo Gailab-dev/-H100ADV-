@@ -6,14 +6,28 @@
 	
 	<!-- 디바이스 정보 -->
 	<select id="getDeviceInfo" parameterType="map" resultType="map">
-		SELECT dv_id, dv_name, dv_addr, dv_serial_number, dv_status,dv_reg_date
+		SELECT ROW_NUMBER() OVER (
+			ORDER BY 
+			<choose>
+            	<when test="sortCol == 'dv_name'">dv_name</when>
+            	<when test="sortCol == 'dv_addr'">dv_addr</when>
+            	<when test="sortCol == 'dv_reg_date'">dv_reg_date</when>
+            	<otherwise>dv_name</otherwise>
+			</choose>
+			<choose>
+  				<when test="sortDir == 'ASC'">ASC</when>
+  				<otherwise>DESC</otherwise>
+			</choose>	
+			) AS rn 
+			, dv_id, dv_name, dv_addr, dv_serial_number, dv_status,dv_reg_date
 		FROM tbl_device
 		WHERE 
 			1=1
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-				dv_reg_date BETWEEN #{startDate} AND #{endDate}
+				AND dv_reg_date <![CDATA[>=]]> STR_TO_DATE(#{startDate},'%Y-%m-%d') 
+				AND dv_reg_date <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{endDate},'%Y-%m-%d'),INTERVAL 1 DAY)
 			</if>
-	        <if test="searchKeyword != null">
+	        <if test="searchKeyword != null and searchKeyword !=''">
 		        AND (
 		            dv_name LIKE CONCAT(
 		                '%',
@@ -27,8 +41,7 @@
 		                '%'
 		            ) ESCAPE '\\'
 		        )
-	        </if>
-		ORDER BY dv_addr DESC,dv_name DESC	
+	        </if>	
         <if test="recordCountPerPage != null">
         	LIMIT #{recordCountPerPage} 
         </if>
@@ -51,7 +64,11 @@
 		FROM tbl_device
 		WHERE 
 			1=1
-	        <if test="searchKeyword != null">
+			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+				AND dv_reg_date <![CDATA[>=]]> STR_TO_DATE(#{startDate},'%Y-%m-%d') 
+				AND dv_reg_date <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{endDate},'%Y-%m-%d'), INTERVAL 1 DAY)
+			</if>
+	        <if test="searchKeyword != null and searchKeyword !=''">
 		        AND (
 		            dv_name LIKE CONCAT(
 		                '%',
