@@ -175,6 +175,15 @@ public class MyInfoController {
 			}
 		}
 		
+		// 사용자 정보 저장
+		paramMap.put("name", name);
+		Integer result4 = myInfoService.updateMyInfo(paramMap);
+		if(result4 != 1) {
+			res.put("ok", false); 
+			res.put("msg", "비밀번호 업데이트 실패.");
+			logger.error("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자가 {}에 내 정보 수정에 실패하였습니다. - 비밀번호 업데이트 실패", uIdStr, LocalDateTime.now());
+			return res;
+		}
 		
 		
 		res.put("ok", true); // 로그인 성공하면 true 반환

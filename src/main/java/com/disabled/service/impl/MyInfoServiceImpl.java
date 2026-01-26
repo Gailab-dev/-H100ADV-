@@ -44,4 +44,23 @@ public class MyInfoServiceImpl implements MyInfoService{
 		
 		return myInfoMap;
 	}
+
+	/**
+	 * 사용자 정보 저장
+	 * @param	uIdStr 회원 ID 
+	 * @param	name   이름 
+	 */
+	@Override
+	public Integer updateMyInfo(Map<String, Object> paramMap) {
+		int cnt = 0;
+		
+		try {
+			cnt = myInfoMapper.updateMyInfo(paramMap);
+		} catch (DataAccessException e) {
+			logger.error("SQL문 수행 도중 오류 발생, myInfoMapper.updateMyInfo() : ",e);
+			throw e;
+		}
+		
+		return cnt;
+	}
 }

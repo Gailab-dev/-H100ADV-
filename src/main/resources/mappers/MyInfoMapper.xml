@@ -13,10 +13,10 @@
 	</select>
 	
 	<!-- 내 정보 화면에서 정보 변경 -->
-	<select id="updateMyInfo" parameterType="map">
+	<update id="updateMyInfo" parameterType="map">
 		UPDATE tbl_user
 		SET u_name = #{name}
 		WHERE 1=1
 			AND u_id = #{uIdStr}
-	</select>
+	</update>
 </mapper>

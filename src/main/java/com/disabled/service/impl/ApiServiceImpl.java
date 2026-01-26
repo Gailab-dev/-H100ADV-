@@ -276,7 +276,7 @@ public class ApiServiceImpl implements ApiService{
 			
         	// 3. 디바이스 Url 검증
         	// targetUrl = "https://" + dvIp + path;
-        	targetUrl = "http://" + dvIp + path;
+        	targetUrl = "https://" + dvIp + path;
         	logger.info("통신할 디바이스 주소 : "+ targetUrl);
         	if(isValidUrl(targetUrl)) {
         		logger.error("targetUrl이 잘못되었습니다. : " + targetUrl);

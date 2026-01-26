@@ -20,6 +20,7 @@
   				<when test="sortDir == 'ASC'">ASC</when>
   				<otherwise>DESC</otherwise>
 			</choose>	
+			, ev_id DESC
 			) AS rn 
 			, A.*
 			, B.dv_id			

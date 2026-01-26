@@ -112,7 +112,7 @@ public class EventListServiceImpl implements EventListService{
 		
 		try {
 			// 이벤트 ID를 검색조건으로 하여 리스트 상세 내역을 select
-			resultMap = eventListMapper.getEventListDetail(evId);
+			resultMap = eventListMapper.getEventListDetail(evId2);
 			
 			if(resultMap == null) {
 				logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
