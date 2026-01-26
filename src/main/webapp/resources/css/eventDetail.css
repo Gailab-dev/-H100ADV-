@@ -4,6 +4,7 @@
     margin: 0;
 	padding: 0;
     font-family: Arial, sans-serif;
+    box-sizing: border-box;
 }
 button {
     background: none;
@@ -79,7 +80,6 @@ button {
 /* 헤더와 푸터 사이영역 */
 .container {
     display: flex;
-    margin-top: 70px;
     height: calc(100vh - 70px);
 }
 /* 헤더와 푸터 사이영역-sidebar(홈, 디바이스리스트, 불법주차리스트) */
@@ -122,13 +122,18 @@ button {
     display: flex;
     flex-direction: column;
     flex: 1;
-    padding: 30px 40px;
+    padding: 32px 0 0 46px;
     overflow-y: auto;
+}
+
+.topTitle {
+    margin-bottom: 20px;
+    display: flex;
+    gap:8px;
 }
 /* 상세 타이틀 */
 .detail-title {
     font-size: 20px;
-    margin-bottom: 20px;
     font-weight: bold;
 }
 
@@ -136,53 +141,72 @@ button {
 .image-wrapper {
     display: flex;
     justify-content: flex-start;  /* 왼쪽 정렬 */
-    margin-left: 40px;            /* 좌측 여백 */
     margin-bottom: 20px;
+    gap:24px;
 }
-.detail-image {
-    width: 640px;             /* 이미지 고정 너비 */
-    height: 360px;            /* 고정 높이 */
-    object-fit: cover;        /* 비율 유지하며 꽉 채우기 */
-    border-radius: 6px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+.image-container {
+    display:flex;
+    flex-direction: column;
+    width: 440px;
+    height: 304px;            
+    object-fit: cover;        
+    box-shadow: 10px 10px 30px 0px #0000000F;
+    gap: 12px;
+    padding: 24px;
+}
+
+.detail-image{
+  width: 392px;
+  height: 222px;
+  margin: 0 auto;
+}
+.imgeTitle{
+  font-weight: 600;
+  font-size: 16px;
+  color:#505050;
 }
 
 /* 상세 정보 테이블 */
 .detail-table-wrapper {
     display: flex;
     justify-content: flex-start;   /* 왼쪽 정렬 */
-    margin-left: 40px;             /* 약간 여백 */
     margin-bottom: 20px;
 }
 .detail-table {
     border-collapse: collapse;
     width: auto;
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: 500;
     border: none;
 }
 .detail-table th,
 .detail-table td {
     border: none;
     padding: 6px 8px;
-    font-weight: normal;
 }
 .detail-table th {
     text-align: left;
-    color: #555;
-    width: 100px;
+    color: #000000;
+    font-weight: 500;
+}
+.detail-table td {
+  font-weight: 400;
 }
 /* 돌아가기 버튼 */
 .back-btn-wrapper {
     display: flex;
     justify-content: flex-start;
+    margin-top:80px;
 }
 .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     background-color: transparent;
     border: none;
     font-size: 14px;
-    color: #333;
+    color: #000;
     cursor: pointer;
-    padding: 6px 12px;
 }
 .back-btn:hover {
     text-decoration: underline;
@@ -203,10 +227,9 @@ button {
   box-shadow:0 10px 30px rgba(0,0,0,.4)}
 .lb-dialog .lb-video {
   display: block;
-  width: 800px;     /* 원하는 너비 */
-  height: 600px;    /* 원하는 높이 */
+  width: 1200px;
+  height: 680px;    /* 원하는 높이 */
   object-fit: contain; /* 비율 유지 (cover로 바꾸면 꽉 채우기) */
-  max-width: 100%;
   max-height: 90vh;
 }
 .lb-close{position:absolute;right:10px;top:6px;border:0;background:transparent;font-size:28px;color:#fff;cursor:pointer}

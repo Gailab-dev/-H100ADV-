@@ -356,9 +356,7 @@
 						관리자에게 문의해주세요.</div>
 				</c:if>
 				<div class="user">
-					<img
-						src="${pageContext.request.contextPath}/resources/images/user.png"
-						alt="유저" class="user-image"> <span class="user-name">hskim</span>
+					<span class="user-name">hskim</span>
 				</div>
 				<div class="logout">
 					<button

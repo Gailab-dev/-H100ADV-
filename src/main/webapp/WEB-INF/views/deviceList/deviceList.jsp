@@ -1039,9 +1039,7 @@
 
 			<div class="right-group">
 				<div class="user">
-					<img
-						src="${pageContext.request.contextPath}/resources/images/user.png"
-						alt="유저" class="user-image"> <span class="user-name">hskim</span>
+				 <span class="user-name">hskim</span>
 				</div>
 				<div class="logout">
 					<button
