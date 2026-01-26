@@ -51,7 +51,7 @@
 	</select>
 	
 	<!-- 검색조건에 따른 페이징 기능을 위한 레코드 갯수 -->
-	<select id="getTotalRecordCount" resultType="int">
+	<select id="getTotalRecordCount" parameterType="map" resultType="int">
 		SELECT COUNT(*) 
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
@@ -64,6 +64,9 @@
 			</if>
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
 				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
+			</if>
+			<if test="evCd != null and evCd != ''">
+				AND A.ev_cd = #{evCd}
 			</if>
 		</where>
 	</select>

@@ -76,6 +76,8 @@ public class DeviceListController {
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="page", required=false) Integer page
 			, @RequestParam(value="pageSize", defaultValue="10") Integer pageSize
+	        , @RequestParam(value="sortCol", defaultValue="dv_name") String sortCol
+	        , @RequestParam(value="sortDir", defaultValue="DESC") String sortDir
 			, Model model
 			, HttpSession session  ) {
 		
@@ -146,7 +148,7 @@ public class DeviceListController {
 		paginationInfo.setPageSize(10); // 페이지 블록 수
 		
 		int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
-		int totalRecordCount = deviceListService.getTotalRecordCount(searchKeyword);
+		int totalRecordCount = deviceListService.getTotalRecordCount(startDate,endDate,searchKeyword);
 		paginationInfo.setTotalRecordCount(totalRecordCount);
 		
 	    // 마지막 페이지 계산 후 page 보정
@@ -165,13 +167,19 @@ public class DeviceListController {
 		paramMap.put("recordCountPerPage", recordCountPerPage);
 		paramMap.put("page", page);
 		paramMap.put("searchKeyword", searchKeyword == null ? "" : searchKeyword );
+	    paramMap.put("startDate", startDate);
+	    paramMap.put("endDate", endDate);
+		paramMap.put("sortCol", sortCol);
+	    paramMap.put("sortDir", sortDir);
 		
 		// 로그 스토리지 사용 가능 여부 조회
 		useTblLog = logDiskManager.hasEnoughLogSpace();
 		
 		// 디바이스 리스트 가져오기
 		List<Map<String, Object>> deviceList = deviceListService.getDeviceList(paramMap);
-			
+		
+		System.out.println(deviceList);
+		
 		// 디바이스 리스트 주소별로 그룹화
 		// Map<String, List<Map<String, Object>>> groupAddrByDeviceList = groupedByAddr(deviceList);
 		
@@ -188,6 +196,8 @@ public class DeviceListController {
 		model.addAttribute("deviceList", deviceList);
 		model.addAttribute("paginationInfo", paginationInfo);
 		model.addAttribute("searchKeyword", searchKeyword == null ? "" : searchKeyword);
+		model.addAttribute("startDate", startDate);
+		model.addAttribute("endDate", endDate);
 		model.addAttribute("useTblLog", useTblLog);
 		model.addAttribute("pageSize", pageSize);
 		// model.addAttribute("deviceId", firstDeviceId);

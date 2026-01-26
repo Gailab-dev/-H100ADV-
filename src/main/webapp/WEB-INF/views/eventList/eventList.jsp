@@ -93,7 +93,8 @@
     	let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
     	let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
 		let pageSize = encodeURIComponent('${pageSize != null ? pageSize : ""}');
-    	location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
+		let evCd = encodeURIComponent('${evCd != null ? evCd : ""}');
+    	location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize+"&evCd="+evCd;
 	}
 		
 	// 상세보기 클릭시 불법주차 상세 화면으로 이동
@@ -127,10 +128,15 @@
 			return;
 		}
 		
+		if( evCd != null && (evCd >=7 || evCd <= 0)){
+			alert("유효하지 않은 유형입니다.");
+			return;
+		}
+		
 	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 		
-		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "$evCd=" + evCd + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&evCd=" + evCd + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
 		
 	}
 	
@@ -434,7 +440,7 @@
 							</div>
 							<div class="filter-input-group">
 								<select name="evCd" class="selectOption">
-									<option ${evCd == null ? 'selected' : '' }>유형</option>
+									<option value="" ${evCd == null ? 'selected' : '' }>유형</option>
 									<option value="1" ${evCd == 1 ? 'selected' : ''}>미등록차량</option>
 									<option value="4" ${evCd == 4 ? 'selected' : ''}>위험상황</option>
 									<option value="5" ${evCd == 5 ? 'selected' : ''}>물건적재</option>

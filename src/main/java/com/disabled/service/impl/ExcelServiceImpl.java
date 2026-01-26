@@ -9,6 +9,7 @@ import com.disabled.common.ExcelDownloadException;
 import com.disabled.common.ExcelGenerator;
 import com.disabled.common.ExcelSheetSpec;
 import com.disabled.model.ExcelErrorCode;
+import com.disabled.model.FineAdvanceNoticeSpec;
 import com.disabled.service.ExcelService;
 
 @Service
@@ -36,6 +37,24 @@ public class ExcelServiceImpl implements ExcelService{
 		
 		try {
 			excelGenerator.generate(fileName, sheet, response);
+		} catch (Exception e) {
+			throw new ExcelDownloadException(ExcelErrorCode.EXCEL_GENERATION_FAIL, e);
+		}
+	}
+    
+    
+    /**
+     * 
+     */
+	@Override
+	public void downloadFineAdvanceNotice(String fileName, FineAdvanceNoticeSpec sheet, HttpServletResponse response) {
+		
+		if (sheet == null) {
+			throw new ExcelDownloadException(ExcelErrorCode.NO_DATA);
+		}
+		
+		try {
+			excelGenerator.generateFineAdvanceNotice(fileName, sheet, response);
 		} catch (Exception e) {
 			throw new ExcelDownloadException(ExcelErrorCode.EXCEL_GENERATION_FAIL, e);
 		}

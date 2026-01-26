@@ -20,5 +20,5 @@ public interface EventListService {
 	boolean requestFileFromModule(HttpServletResponse res, Integer dvId, Integer evId, Map<String, Object> eventListDetail);
 	boolean requestFileDec(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail);
 	String getDvIpByEvId(Integer dvId, Integer evId);
-	int getTotalRecordCount(String startDate, String endDate, String searchKeyword);
+	int getTotalRecordCount(Map<String, Object> paramMap);
 }

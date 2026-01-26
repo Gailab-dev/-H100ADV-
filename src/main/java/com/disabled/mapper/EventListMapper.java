@@ -18,7 +18,7 @@ public interface EventListMapper {
 	String getDvIpByEvId(@Param("evId") Integer evId) throws RuntimeException;
 	void updateEvHasImgOne(@Param("evId") Integer evId) throws RuntimeException;
 	void updateEvHasMovOne(@Param("evId") Integer evId) throws RuntimeException;
-	int getTotalRecordCount(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("searchKeyword") String searchKeyword) throws RuntimeException;
 	int getTotalRecordCountJoinSerial(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("searchKeyword") String searchKeyword) throws RuntimeException;
+	int getTotalRecordCount(Map<String, Object> paramMap) throws RuntimeException;
 
 }
