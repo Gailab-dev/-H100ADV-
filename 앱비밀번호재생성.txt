@@ -1,0 +1,4 @@
+앱 비밀번호 재생성
+회사 개발 계정으로 로그인 : gailab.dev@gmail.com
+아래 링크 클릭 : https://myaccount.google.com/apppasswords
+앱비밀번호 생성

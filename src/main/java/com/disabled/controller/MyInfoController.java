@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
@@ -82,8 +83,9 @@ public class MyInfoController {
 	}
 	
 	// 내 정보 수정
+	@ResponseBody
 	@RequestMapping("/saveMyInfo.do")
-	private Map<String,Object> saveMyInfo(
+	public Map<String,Object> saveMyInfo(
 			@RequestBody Map<String,String> body
 			, Model model
 			, HttpSession session  ) {

@@ -63,16 +63,20 @@
 	        	alert("r.msg : " + r.msg);
 	//         	showError(r.ok + " | " + r.msg);
 	            return;
+	        }else{
+	        	alert("수정되었습니다.");
+	        	window.location.href = "${pageContext.request.contextPath}/stats/viewStat.do";
 	        }
 		}	
 	}
 	
-	function myInfoValChk(){
+	async function myInfoValChk(){
 		let result = false;
 		const currentPw = document.getElementById("currentPw")?.value;
 		const newPw = document.getElementById("newPw")?.value;
 		const confirmPw = document.getElementById("confirmPw")?.value;
 		const name = document.getElementById("name")?.value;
+		const email = document.getElementById("email")?.value;
 		
 		if(currentPw.length > 0 || newPw.length > 0 || confirmPw.length > 0 ){
 			if(!currentPw){
@@ -94,6 +98,11 @@
 				alert("새 비밀번호와 비밀번호 확인 값이 서로 다릅니다.");
 				return result;
 			}
+			
+		  	if (!(await isVerifiedNow(email))) {
+		  		alert("이메일 인증이 필요합니다.");
+		  	  return;
+		  	}
 		}
 		
 		if(!name){
@@ -103,6 +112,74 @@
 		
 		result = true;
 		return result;
+	}
+	
+	// 이메일을 입력 받았을 때 인증번호 인증
+	async function request(){
+		
+		const email = document.getElementById('email')?.value;
+		if(email == null || email.trim() === ""){
+			alert("이메일을 입력해주세요.");
+			return;
+		}
+		
+		const r = await fetch("${pageContext.request.contextPath}/user/request",{
+			method: "POST",
+			mode: "same-origin",
+			cache:"no-cache",
+			headers:{
+				"Content-Type":"application/json",
+			},
+			body: JSON.stringify({"u_email":email}),
+		})
+		
+		if(!r.ok){
+	      const text = await r.text().catch(() => "");
+	      console.error("인증메일 요청 실패:", r.status, text);
+	      alert("인증메일 발송에 실패했습니다.");
+	      return;
+		}
+		
+		const data = await r.json();
+		
+		alert(data.msg);
+		alert("인증메일을 발송했습니다.");
+		
+	}
+	
+	// 이메일 인증했는지 확인
+	async function isVerifiedNow(email){
+	  try {
+	    const res = await fetch("${pageContext.request.contextPath}/user/isRegisterEmailVerified", {
+	      method: "POST",
+	      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+	      credentials: "same-origin",
+	      body: JSON.stringify({ email })
+	    });
+	
+	    const contentType = res.headers.get("content-type") || "";
+	    const raw = await res.text();
+	
+	    console.log("[isVerifiedNow] status=", res.status);
+	    console.log("[isVerifiedNow] redirected=", res.redirected, "url=", res.url);
+	    console.log("[isVerifiedNow] contentType=", contentType);
+	    console.log("[isVerifiedNow] raw=", raw);
+	
+	    if (!res.ok) return false;
+	
+	    // 서버가 JSON이 아닌 페이지를 반환하면 무조건 false
+	    if (!contentType.includes("application/json")) return false;
+	
+	    const json = JSON.parse(raw);
+	    
+	    console.log(json.verified);
+	    
+	    return json.verified === true;
+	
+	  } catch (e) {
+	    console.error("[isVerifiedNow] error", e);
+	    return false;
+	  }
 	}
 </script>
 <body>
@@ -255,7 +332,7 @@
 						<div class="emailBox">
 							<input type="email" id="email" name="email" readonly
 								value="${myInfoMap.u_email }">
-							<button class="editEmail">변경</button>
+							<button class="editEmail" onclick="request()">변경</button>
 						</div>
 					</div>
 				</form>
