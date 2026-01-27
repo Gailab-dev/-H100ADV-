@@ -198,7 +198,7 @@
 						관리자에게 문의해주세요.</div>
 				</c:if>
 				<div class="user">
-				 <span class="user-name">hskim</span>
+				 <span class="user-name">hskim</span> 
 				</div>
 				<div class="logout">
 					<button

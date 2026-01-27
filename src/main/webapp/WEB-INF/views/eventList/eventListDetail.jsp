@@ -35,7 +35,7 @@
 			</c:if>
 			<div class="user">
 			 <span class="user-name">hskim</span>
-			</div>
+			</div> 
 			<div class="logout">
 				<button
 					onclick="location.href='${pageContext.request.contextPath}/user/logout'">로그아웃</button>
