@@ -820,11 +820,18 @@ public class EventListController {
 			
 			System.out.println("eventList { " + eventListDetail + " } ");
 			
+			// 이미지, 영상 파일 복호화
+		    boolean decCheck = false;
+		    decCheck = eventListService.requestFileDec(response, evId,eventListDetail);
+		    if(!decCheck) {
+		    	logger.error("이미지, 영상 파일 복호화 중 오류 발생 / response : " + response.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
+		    	return;
+		    }
+		    
 			// 불법주차 단속 이미지 파일명 가져오기
-			String photo1Path = eventListDetail.get("ev_img_path") == null ? null : eventListDetail.get("photo1").toString();
-	        String photo2Path = eventListDetail.get("ev_img_path2") == null ? null : eventListDetail.get("photo2").toString();
-			
-
+			String photo1Path = eventListDetail.get("ev_img_path") == null ? null : eventListDetail.get("ev_img_path").toString();
+	        String photo2Path = eventListDetail.get("ev_img_path2") == null ? null : eventListDetail.get("ev_img_path2").toString();
+	        
 	        byte[] photo1 = imageByteLoader.readillegalParkingImage(photo1Path);
 	        byte[] photo2 = imageByteLoader.readillegalParkingImage(photo2Path);
 	        

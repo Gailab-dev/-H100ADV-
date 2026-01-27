@@ -352,6 +352,10 @@ public class EventListServiceImpl implements EventListService{
 				
 				json.put("type", "image");
 				json.put("fileName", eventListDetail.get("ev_img_path").toString());
+				if(eventListDetail.get("ev_img_path2") != null) {
+					json.put("fileName2", eventListDetail.get("ev_img_path2").toString());
+
+				}
 				
 				// 이미지 파일 가져오기
 				String streamCheck = "";
@@ -412,14 +416,15 @@ public class EventListServiceImpl implements EventListService{
 	@Override
 	public boolean requestFileDec(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
 		try {
-			boolean decImgCheck = false;
+			String decImgCheck = "error";
 			boolean decVideoCheck = false;
         
 			// 이미지 복호화
-			decImgCheck = decryptionService.decryptAndSaveFileAutoName(eventListDetail.get("ev_img_path").toString(), imgEncPath, imgDecPath);
-        
-			if(!decImgCheck) {
-				logger.error("[이미지파일 복호화 실패] 파일명: " + eventListDetail.get("ev_img_path").toString() + ", 암호화 된 이미지 경로: " +  imgEncPath + ", 복호화 된 이미지 경로" + imgDecPath);
+			List<String> paramList = new ArrayList<String>();
+			
+			decImgCheck = decryptionService.decryptAndSaveFileAutoName(paramList, imgEncPath, imgDecPath);
+			if(!"ok".equals(decImgCheck)) {
+				logger.error("[이미지파일 복호화 실패] 파일명: " + decImgCheck + ", 암호화 된 이미지 경로: " +  imgEncPath + ", 복호화 된 이미지 경로" + imgDecPath);
 				return false;
 			}
         

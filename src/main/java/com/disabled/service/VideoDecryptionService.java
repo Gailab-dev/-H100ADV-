@@ -1,16 +1,27 @@
 package com.disabled.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 @Service
 public class VideoDecryptionService {
@@ -314,4 +325,42 @@ public class VideoDecryptionService {
         }
         return sb.toString();
     }
+
+	public String decryptAndSaveFileAutoName(List<String> paramList, String encryptedFilePath, String outputFilePath) throws Exception {
+        
+		for (Iterator iterator = paramList.iterator(); iterator.hasNext();) {
+			String fileName = (String) iterator.next();
+			
+			// fileName에서 .enc 빼기
+	        String fileNameTemp = fileName.replaceFirst("\\.enc$", "");
+	        
+	        // 전체 출력 파일 경로 생성
+	        String fullOutputPath = outputFilePath + File.separator + fileNameTemp;
+	        
+	        // output 파일 존재 여부 확인
+	        File outputFile = new File(fullOutputPath);
+	        
+	        // 파일이 이미 존재하면 복호화 안함
+	        String fullEncryptedPath = "";
+	        if (outputFile.exists()) {
+	            logger.info("복호화된 파일이 이미 존재합니다. 기존 파일: {}", fullOutputPath);
+	            return fullOutputPath;
+	        }else {
+	        	// 파일이 없으면 복호화 수행
+	            fullEncryptedPath = encryptedFilePath + File.separator + fileName;
+	            logger.info("파일 복호화 시작: {} -> {}", fullEncryptedPath, fullOutputPath);
+	        }
+	        
+	        boolean isDecrypt = decryptAndSaveFile(fullEncryptedPath, fullOutputPath);
+	        if(!isDecrypt) {
+	        	return fullEncryptedPath;
+	        }
+	        
+		}
+        
+		return "ok";
+		
+	}
+
+
 }

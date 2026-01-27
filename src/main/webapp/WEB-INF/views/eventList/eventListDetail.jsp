@@ -17,6 +17,7 @@
 <script
 	src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
 <%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
+<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
 
 </head>
 <body>
@@ -324,17 +325,12 @@
 	  	
 	  	// 엑셀 다운로드
 		document.addEventListener('DOMContentLoaded', function () {
-			document.getElementById('btnExcel').addEventListener('click',function(){
-				ExcelDownloader.excelDownload({
-					endpoint:'/eventListDetail/excelDownload',
-					formSelector:'#eventListSearchForm',
-					params: {
-						evId
-					},
-					responseType:'blob',
-					downloadFilename:'불법주차_리스트_상세.xlsx'
-				}).catch(function(e){alert(e.message);});
-			})
+		  document.getElementById('btnExcel').addEventListener('click', function () {
+		    const evId = '${eventListDetail.ev_id}';
+		
+		    ExcelDownloader.downloadFineAdvanceNotice(evId)
+		      .catch(e => alert(e.message));
+		  });
 		});
 	  
 	</script>

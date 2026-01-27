@@ -50,10 +50,10 @@ public class ApiServiceImpl implements ApiService{
 	
 	//외부 파일 저장
 	
-	@Value("#{servletContext.getInitParameter('imgFilePath')}")
+	@Value("${image.enc.path}")
 	private String imgFilePath;
 	
-	@Value("#{servletContext.getInitParameter('videoFilePath')}")
+	@Value("${video.enc.path}")
 	private String videoFilePath;
 	
 	/**
@@ -329,8 +329,12 @@ public class ApiServiceImpl implements ApiService{
 	        } else if(type.equals("image") | type.equals("video")) {
 	        	
 	        	String filePath = "";
+	        	String filePath2 = null;
 	        	if(type.equals("image")) {
 	        		filePath = imgFilePath + "/" + json.get("fileName");
+	        		if(json.get("fileName2") != null) {
+	        			filePath2 = imgFilePath + "/" + json.get("fileName2");
+	        		}
 	        	}else if(type.equals("video")) {
 	        		filePath = videoFilePath + "/" + json.get("fileName");
 	        	}
@@ -345,6 +349,18 @@ public class ApiServiceImpl implements ApiService{
 	        	    	logger.error("",ignore);
 	        	    }
 	        	    return "error";
+	        	}
+	        	if(filePath2 != null) {
+		        	boolean fileResponseCheck2 = fileResponse(conn, filePath2);
+		        	if (!fileResponseCheck2) {
+		        	    try {
+		        	        logger.error("디바이스에서 이미지 파일 수신 실패 / url: " + conn.getURL() + " / filePath: "+filePath+" / parentWritable: "+java.nio.file.Files.isWritable(java.nio.file.Paths.get(filePath).getParent()));
+		        	            
+		        	    } catch (RuntimeException ignore) {
+		        	    	logger.error("",ignore);
+		        	    }
+		        	    return "error";
+		        	}
 	        	}
 	        	
 	        	return "true";
