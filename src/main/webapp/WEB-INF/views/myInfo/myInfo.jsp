@@ -181,6 +181,27 @@
 	    return false;
 	  }
 	}
+	
+	// 원본 이메일 저장 (페이지 로드 시)
+	let originalEmail = '';
+
+	document.addEventListener('DOMContentLoaded', function() {
+	    originalEmail = document.getElementById('email')?.value || '';
+	});
+
+	// 이메일 변경 감지
+	function checkEmailChange() {
+	    const currentEmail = document.getElementById('email')?.value;
+	    const authBtn = document.getElementById('emailAuthBtn');
+	    
+	    if (currentEmail && currentEmail !== originalEmail && currentEmail.trim() !== '') {
+	        authBtn.disabled = false;
+	        authBtn.classList.add('active');
+	    } else {
+	        authBtn.disabled = true;
+	        authBtn.classList.remove('active');
+	    }
+	}
 </script>
 <body>
 	<div class=page-wrapper>
@@ -328,9 +349,10 @@
 					<div class="form-group">
 						<label for="email">이메일</label>
 						<div class="emailBox">
-							<input type="email" id="email" name="email" readonly
-								value="${myInfoMap.u_email }">
-							<button class="editEmail" onclick="request()">변경</button>
+							<input type="email" id="email" name="email" 
+								value="${myInfoMap.u_email }"
+								oninput="checkEmailChange()">
+								<button type="button" class="editEmail"  id="emailAuthBtn" onclick="request()" disabled>인증</button>
 						</div>
 					</div>
 				</form>

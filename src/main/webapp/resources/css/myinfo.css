@@ -187,7 +187,7 @@ button {
 }
 
 .form-group input {
-    width: 220px;  
+    width: 260px;  
     height: 44px;
     padding: 0 16px;
     border: 1px solid #ddd;
@@ -195,7 +195,11 @@ button {
     font-size: 14px;
 }
 
-/* 1, 2, 5번째 input border 제거 */
+.form-group input:focus {
+    border-color: #6955A2;
+    outline: none;
+}
+/* 1번째 input border 제거 */
 .form-group input[readonly] {
     border: none;
     background-color: transparent;
@@ -246,18 +250,37 @@ button {
 
 /* 이메일 변경 버튼 */
 .editEmail {
-    margin-left: 30px;
+    position: absolute;
+    right: 8px; 
     padding: 8px 16px;
-    border: 1px solid #ddd;
     border-radius: 4px;
-    background: #fff;
     font-size: 14px;
+    cursor: not-allowed;
+    color: #fff;
+    background: #ADADAD;
+    border: none;
+}
+
+.editEmail.active {
+    background: #6955A2;
     cursor: pointer;
 }
 
-.emailBox{
+.editEmail:disabled {
+    background: #dbdbdb;
+    cursor: not-allowed;
+}
+
+.emailBox {
+    position: relative; 
     display: flex;
     align-items: center;
+}
+
+.emailBox input {
+    flex: 1; 
+    padding-right: 80px; 
+    width:360px;    
 }
 
 /* 저장 버튼 */
