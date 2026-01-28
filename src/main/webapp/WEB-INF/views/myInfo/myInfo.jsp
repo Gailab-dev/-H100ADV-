@@ -38,12 +38,22 @@
 	}
 	
 	async function myInfoSave(){
+		// 이메일이 변경되었는지 확인
+	    const currentEmail = document.getElementById('email')?.value;
+	    if (currentEmail !== originalEmail) {
+	        // 이메일이 변경되었으면 인증 확인
+	        if (!(await isVerifiedNow(currentEmail))) {
+	            showError("변경된 이메일에 대한 인증이 필요합니다.");
+	            return;
+	        }
+	    }
 		// 유효성 체크
 		if (myInfoValChk()){
 			const currentPw = document.getElementById("currentPw")?.value;
 			const newPw = document.getElementById("newPw")?.value;
 			const confirmPw = document.getElementById("confirmPw")?.value;
 			const name = document.getElementById("name")?.value;
+			const email = document.getElementById("email")?.value;
 			
 			// 동기 통신으로 로그인
 			const r = await fetch('${pageContext.request.contextPath}/myInfo/saveMyInfo.do',{
@@ -54,7 +64,7 @@
 		  		},
 		        credentials: 'same-origin'
 		        , cache: 'no-store'
-		        	, body: JSON.stringify({currentPw, newPw, confirmPw, name})
+		        	, body: JSON.stringify({currentPw, newPw, confirmPw, name, email})
 			});
 			
 		    // response 객체의 ok값(200~299)
@@ -64,6 +74,7 @@
 	//         	showError(r.ok + " | " + r.msg);
 	            return;
 	        }else{
+	        	clearError();
 	        	alert("수정되었습니다.");
 	        	window.location.href = "${pageContext.request.contextPath}/stats/viewStat.do";
 	        }
@@ -80,33 +91,33 @@
 		
 		if(currentPw.length > 0 || newPw.length > 0 || confirmPw.length > 0 ){
 			if(!currentPw){
-				alert("기존 비밀번호를 입력해주세요.");
+				showError("기존 비밀번호를 입력해주세요.");
 		  		return result;
 			}
 			
 			if(!newPw){
-				alert("새 비밀번호를 입력해주세요.");
+				showError("새 비밀번호를 입력해주세요.");
 				return result;
 			}
 			
 			if(!confirmPw){
-				alert("비밀번호 확인을 입력해주세요.");
+				showError("비밀번호 확인을 입력해주세요.");
 				return result;
 			}
 			
 			if(newPw != confirmPw){
-				alert("새 비밀번호와 비밀번호 확인 값이 서로 다릅니다.");
+				showError("새 비밀번호와 비밀번호 확인 값이 서로 다릅니다.");
 				return result;
 			}
 			
 		  	if (!(await isVerifiedNow(email))) {
-		  		alert("이메일 인증이 필요합니다.");
+		  		showError("이메일 인증이 필요합니다.");
 		  	  return;
 		  	}
 		}
 		
 		if(!name){
-			alert("이름을 입력해주세요.");
+			showError("이름을 입력해주세요.");
 			return result;
 		}
 		
@@ -119,9 +130,10 @@
 		
 		const email = document.getElementById('email')?.value;
 		if(email == null || email.trim() === ""){
-			alert("이메일을 입력해주세요.");
+			showError("이메일을 입력해주세요.");
 			return;
 		}
+		clearError();
 		
 		const r = await fetch("${pageContext.request.contextPath}/user/request",{
 			method: "POST",
@@ -136,7 +148,7 @@
 		if(!r.ok){
 	      const text = await r.text().catch(() => "");
 	      console.error("인증메일 요청 실패:", r.status, text);
-	      alert("인증메일 발송에 실패했습니다.");
+	      showError("인증메일 발송에 실패했습니다.");
 	      return;
 		}
 		
@@ -357,6 +369,7 @@
 					</div>
 				</form>
 				<div class="saveBox">
+					<p id="errorMessage" class="error-message"></p>
 					<button type="submit" class="saveButton" onclick="myInfoSave()">저장</button>
 				</div>
 			</div>

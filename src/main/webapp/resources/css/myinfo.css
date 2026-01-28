@@ -285,16 +285,23 @@ button {
 
 /* 저장 버튼 */
 .saveBox {
-    display: flex;
+    display: grid;
     justify-content: flex-start;
+    gap:16px;
+}
+.error-message{
+	color:#ED1C24;
+	font-weight:400;
+	font-size:13px
 }
 
 .saveButton {
-    padding: 12px 24px;
     background: #6955A2;
     color: white;
     border: none;
     border-radius: 4px;
     font-size: 14px;
     cursor: pointer;
+    width:56px;
+    height:34px;
 }
