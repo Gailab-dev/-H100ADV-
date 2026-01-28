@@ -65,7 +65,7 @@
 		        credentials: 'same-origin'
 		        , cache: 'no-store'
 		        	, body: JSON.stringify({currentPw, newPw, confirmPw, name, email})
-			});
+			}); 
 			
 		    // response 객체의 ok값(200~299)
 	        if (!r.ok) {
