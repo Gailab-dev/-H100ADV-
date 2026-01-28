@@ -348,14 +348,6 @@ public class ExcelGenerator {
 	    st.setBorderRight(bs);  st.setRightBorderColor(color);
 	}
 	
-	// 과태료부과 사전통지서 - 가는 선
-	private void setThinBorder(CellStyle st) {
-	    st.setBorderTop(BorderStyle.THIN);
-	    st.setBorderBottom(BorderStyle.THIN);
-	    st.setBorderLeft(BorderStyle.THIN);
-	    st.setBorderRight(BorderStyle.THIN);
-	}
-
 	// ======================================================================
 	// 과태료부과 사전통지서 - 병합 + 병합된 모든 셀에 스타일 깔기
 	// ======================================================================
@@ -382,28 +374,10 @@ public class ExcelGenerator {
 	    if (style != null) cell.setCellStyle(style);
 	}
 
-	// 과태료부과 사전통지서 - 표 1행 생성: [A~B]라벨1 [C~D]값1 [E~F]라벨2 [G~H]값2
-	private void setTableRow(Sheet sheet, int rowIdx,
-	                         String l1, String v1, String l2, String v2,
-	                         CellStyle labelStyle, CellStyle valueStyle) {
-
-	    CellRangeAddress rL1 = new CellRangeAddress(rowIdx, rowIdx, 0, 1);
-	    CellRangeAddress rV1 = new CellRangeAddress(rowIdx, rowIdx, 2, 3);
-	    CellRangeAddress rL2 = new CellRangeAddress(rowIdx, rowIdx, 4, 5);
-	    CellRangeAddress rV2 = new CellRangeAddress(rowIdx, rowIdx, 6, 7);
-
-	    mergeAndStyle(sheet, rL1, labelStyle);
-	    mergeAndStyle(sheet, rV1, valueStyle);
-	    mergeAndStyle(sheet, rL2, labelStyle);
-	    mergeAndStyle(sheet, rV2, valueStyle);
-
-	    setCell(sheet, rowIdx, 0, l1, labelStyle);
-	    setCell(sheet, rowIdx, 2, v1, valueStyle);
-	    setCell(sheet, rowIdx, 4, l2, labelStyle);
-	    setCell(sheet, rowIdx, 6, v2, valueStyle);
-	}
 
 	// 과태료부과 사전통지서 - 굵은 테두리(이미지 박스용)
+	// never used 경고(굵은 테투리가 나중에 필요할 경우 사용)
+	@SuppressWarnings("unused")
 	private void setThickBorder(Sheet sheet, CellRangeAddress region) {
 	    RegionUtil.setBorderTop(BorderStyle.THICK, region, sheet);
 	    RegionUtil.setBorderBottom(BorderStyle.THICK, region, sheet);
@@ -570,7 +544,6 @@ public class ExcelGenerator {
 		            XDDFLineChartData data = (XDDFLineChartData) chart.createData(ChartTypes.LINE, bottomAxis, leftAxis);
 
 		            // 시리즈 추가 (각 행이 한 시리즈)
-		            int sIdx = 0;
 		            for (int s = 0; s < seriesCount; s++) {
 		                int rowIdx = tableTopRow + 1 + s;
 		                CellRangeAddress yRange = new CellRangeAddress(
@@ -585,7 +558,6 @@ public class ExcelGenerator {
 		                series.setTitle(seriesName, null);
 		                series.setSmooth(false);
 		                series.setMarkerStyle(MarkerStyle.CIRCLE);
-		                sIdx++;
 		            }
 
 		            chart.plot(data);
