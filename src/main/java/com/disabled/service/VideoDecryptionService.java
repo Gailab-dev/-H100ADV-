@@ -344,7 +344,7 @@ public class VideoDecryptionService {
 	        String fullEncryptedPath = "";
 	        if (outputFile.exists()) {
 	            logger.info("복호화된 파일이 이미 존재합니다. 기존 파일: {}", fullOutputPath);
-	            return fullOutputPath;
+	            continue;
 	        }else {
 	        	// 파일이 없으면 복호화 수행
 	            fullEncryptedPath = encryptedFilePath + File.separator + fileName;

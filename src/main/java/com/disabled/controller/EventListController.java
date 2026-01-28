@@ -829,8 +829,8 @@ public class EventListController {
 		    }
 		    
 			// 불법주차 단속 이미지 파일명 가져오기
-			String photo1Path = eventListDetail.get("ev_img_path") == null ? null : eventListDetail.get("ev_img_path").toString();
-	        String photo2Path = eventListDetail.get("ev_img_path2") == null ? null : eventListDetail.get("ev_img_path2").toString();
+			String photo1Path = eventListDetail.get("ev_img_path") == null ? null : eventListDetail.get("ev_img_path").toString().replace(".enc","").trim();
+	        String photo2Path = eventListDetail.get("ev_img_path2") == null ? null : eventListDetail.get("ev_img_path2").toString().replace(".enc","").trim();
 	        
 	        byte[] photo1 = imageByteLoader.readillegalParkingImage(photo1Path);
 	        byte[] photo2 = imageByteLoader.readillegalParkingImage(photo2Path);
@@ -855,18 +855,19 @@ public class EventListController {
 		    // excelService.download("과태료부과_사전통지서.xlsx", sheet, response);
 		    
 		    FineAdvanceNoticeSpec sheet = FineAdvanceNoticeSpec.fromEventDetail(
-		    		eventListDetail,
-		    		photo1,photo2,
-		    		sealImage,collectorImage
-		    		,"김00"
-		    		,"광주광역시 북구 00로"
-		    		,"100,000원"
-		    		,""
-		    		,""
-		    		,"2026.00.00"
-		    		,""
-		    		,"2026년 00월 00일"
-		    		,"광주광역시 북구");
+		    		eventListDetail,			// 차량번호, 위반장소, 위반내용, 위반일시
+		    		photo1,photo2,				// 단속이미지 2장
+		    		sealImage,collectorImage	// 하단 도장 이미지, 수납인 이미지
+		    		,"김00"						// 대상자
+		    		,"광주광역시 북구 00로"		// 주소
+		    		,"100,000원"				// 과태료
+		    		,""							// 적용방법 
+		    		,"0원"						// 감경금액
+		    		,"2026.00.00"				// 의견제출기한
+		    		,"12345678"					// 전자납부번호
+		    		,"2026년 00월 00일"			// 날짜
+		    		,"광주광역시 북구"			// 기관
+		    		);
 		    
 		    excelService.downloadFineAdvanceNotice("과태료부과_사전통지서.xlsx", sheet, response);
 		    

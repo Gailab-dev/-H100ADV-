@@ -419,9 +419,14 @@ public class EventListServiceImpl implements EventListService{
 			String decImgCheck = "error";
 			boolean decVideoCheck = false;
         
-			// 이미지 복호화
+			// 파라미터 추가
 			List<String> paramList = new ArrayList<String>();
+			if (eventListDetail.get("ev_img_path") != null)
+			    paramList.add(eventListDetail.get("ev_img_path").toString());
+			if (eventListDetail.get("ev_img_path2") != null)
+			    paramList.add(eventListDetail.get("ev_img_path2").toString());
 			
+			// 이미지 복호화
 			decImgCheck = decryptionService.decryptAndSaveFileAutoName(paramList, imgEncPath, imgDecPath);
 			if(!"ok".equals(decImgCheck)) {
 				logger.error("[이미지파일 복호화 실패] 파일명: " + decImgCheck + ", 암호화 된 이미지 경로: " +  imgEncPath + ", 복호화 된 이미지 경로" + imgDecPath);
@@ -429,10 +434,13 @@ public class EventListServiceImpl implements EventListService{
 			}
         
 			// 영상 복호화
-			decVideoCheck = decryptionService.decryptAndSaveFileAutoName(eventListDetail.get("ev_mov_path").toString(), videoEncPath, videoDecPath);
+			Object movObj = eventListDetail.get("ev_mov_path");
+			if (movObj != null && !movObj.toString().isBlank()) {
+				decVideoCheck = decryptionService.decryptAndSaveFileAutoName(eventListDetail.get("ev_mov_path").toString(), videoEncPath, videoDecPath);
+			}
         
 			if(!decVideoCheck) {
-				logger.error("[영상파일 복호화 실패] 파일명: " + eventListDetail.get("ev_mov_path").toString() + ", 암호화 된 영상 경로: " +  videoEncPath + ", 복호화 된 영상 경로" + videoDecPath);
+				logger.error("[영상파일 복호화 실패] 파일명: " + eventListDetail.get("ev_mov_path") + ", 암호화 된 영상 경로: " +  videoEncPath + ", 복호화 된 영상 경로" + videoDecPath);
 				return false;
 			}
 		} catch (Exception e) {

@@ -114,11 +114,11 @@
 				<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image"> -->
 				<div class="image-container">
 					<div class="imgeTitle">진입 시</div>
-					<img src="MTS_TAP.png" alt="불법주차 리스트 상세 이미지" class="detail-image">
+					<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">
 				</div>
 				<div class="image-container">
 					<div class="imgeTitle">1분 후</div>
-					<img src="MTS_TAP.png" alt="불법주차 리스트 상세 이미지" class="detail-image">
+					<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path2, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">
 				</div>
 			</div>
 			<!-- 상세 정보 -->
@@ -134,8 +134,8 @@
 						<td><c:choose>
 								<c:when test="${eventListDetail.ev_cd == 1}">미등록차량 🚫</c:when>
 
-								<!-- <c:when test="${eventListDetail.ev_cd == 2}">장애인미탑승 🚫</c:when> -->
-								<!-- <c:when test="${eventListDetail.ev_cd == 3}">스티커 불법 사용 🚫</c:when> -->
+								<%-- <c:when test="${eventListDetail.ev_cd == 2}">장애인미탑승 🚫</c:when> --%>
+								<%-- <c:when test="${eventListDetail.ev_cd == 3}">스티커 불법 사용 🚫</c:when> --%>
 
 								<c:when test="${eventListDetail.ev_cd == 4}">위험상황 🚫</c:when>
 								<c:when test="${eventListDetail.ev_cd == 5}">물건적재 🚫</c:when>

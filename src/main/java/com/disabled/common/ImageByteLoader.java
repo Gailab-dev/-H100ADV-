@@ -12,13 +12,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class ImageByteLoader {
 	
-	@Value("${media.external.base-dir}")
+	// 이미지 읽어들이는 경로 = 복호화된 이미지 저장 경로
+	@Value("${image.dec.path}")
     private String externalBaseDir;
 
     // 외부 저장소(디스크)에서 파일명/상대경로로 불법주차 단속 이미지를 byte[] 타입으로 읽기
     public byte[] readillegalParkingImage(String fileNameOrRelativePath) throws IOException {
         if (fileNameOrRelativePath == null || fileNameOrRelativePath.trim().isEmpty()) return null;
 
+        System.out.println("externalBaseDir : " + externalBaseDir);
+        
         Path base = Paths.get(externalBaseDir).toAbsolutePath().normalize();
         Path target = base.resolve(fileNameOrRelativePath).normalize();
 
