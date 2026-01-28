@@ -29,6 +29,8 @@
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
+
+		where 1=1
 		<if test="searchKeyword != null and searchKeyword != ''">
 			AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
 			OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
@@ -40,7 +42,6 @@
 		<if test="evCd != null and evCd != ''">
 			AND A.ev_cd = #{evCd}
 		</if>
-		where 1=1
         <if test="recordCountPerPage != null">
         	LIMIT #{recordCountPerPage}
         </if>

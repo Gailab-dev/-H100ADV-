@@ -3,9 +3,15 @@ package com.disabled.common;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -22,8 +28,23 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
+import org.apache.poi.xddf.usermodel.chart.AxisCrosses;
+import org.apache.poi.xddf.usermodel.chart.AxisPosition;
+import org.apache.poi.xddf.usermodel.chart.ChartTypes;
+import org.apache.poi.xddf.usermodel.chart.LegendPosition;
+import org.apache.poi.xddf.usermodel.chart.MarkerStyle;
+import org.apache.poi.xddf.usermodel.chart.XDDFCategoryAxis;
+import org.apache.poi.xddf.usermodel.chart.XDDFChartLegend;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSourcesFactory;
+import org.apache.poi.xddf.usermodel.chart.XDDFLineChartData;
+import org.apache.poi.xddf.usermodel.chart.XDDFNumericalDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFValueAxis;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFChart;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -32,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.disabled.model.FineAdvanceNoticeSpec;
+import com.disabled.model.MonthlyStatsWithChartSpec;
 
 @Component
 public class ExcelGenerator {
@@ -96,8 +118,9 @@ public class ExcelGenerator {
        
     }
 	
+	// ====== 과태료부과 사전통지서 [S] ======
 	/**
-	 * 과탤 부과 엑셀 파일 생성
+	 * 과태료 부과 엑셀 파일 생성
 	 * @param fileName
 	 * @param spec
 	 * @param response
@@ -240,7 +263,7 @@ public class ExcelGenerator {
 	}    
 
 	// ======================================================================
-	// 스타일 생성 (색상은 스샷 느낌으로 세팅, 필요시 RGB만 조정하면 됨)
+	// 과태료부과 사전통지서 - 스타일 생성 (색상은 스샷 느낌으로 세팅, 필요시 RGB만 조정하면 됨)
 	// ======================================================================
 	private Map<String, CellStyle> createStylesV2(XSSFWorkbook wb, XSSFColor BLUE, XSSFColor RED, XSSFColor WHITE) {
 	    Map<String, CellStyle> m = new HashMap<>();
@@ -316,14 +339,16 @@ public class ExcelGenerator {
 
 	    return m;
 	}
-
+	
+	// 과태료부과 사전통지서 - 모서리
 	private void setAllBorders(XSSFCellStyle st, BorderStyle bs, XSSFColor color) {
 	    st.setBorderTop(bs);    st.setTopBorderColor(color);
 	    st.setBorderBottom(bs); st.setBottomBorderColor(color);
 	    st.setBorderLeft(bs);   st.setLeftBorderColor(color);
 	    st.setBorderRight(bs);  st.setRightBorderColor(color);
 	}
-
+	
+	// 과태료부과 사전통지서 - 가는 선
 	private void setThinBorder(CellStyle st) {
 	    st.setBorderTop(BorderStyle.THIN);
 	    st.setBorderBottom(BorderStyle.THIN);
@@ -332,7 +357,7 @@ public class ExcelGenerator {
 	}
 
 	// ======================================================================
-	// 병합 + 병합된 모든 셀에 스타일 깔기
+	// 과태료부과 사전통지서 - 병합 + 병합된 모든 셀에 스타일 깔기
 	// ======================================================================
 	private void mergeAndStyle(Sheet sheet, CellRangeAddress region, CellStyle style) {
 	    sheet.addMergedRegion(region);
@@ -347,6 +372,7 @@ public class ExcelGenerator {
 	    }
 	}
 
+	// 과태료부과 사전통지서 - 셀 설정
 	private void setCell(Sheet sheet, int r, int c, String v, CellStyle style) {
 	    Row row = sheet.getRow(r);
 	    if (row == null) row = sheet.createRow(r);
@@ -356,7 +382,7 @@ public class ExcelGenerator {
 	    if (style != null) cell.setCellStyle(style);
 	}
 
-	// 표 1행 생성: [A~B]라벨1 [C~D]값1 [E~F]라벨2 [G~H]값2
+	// 과태료부과 사전통지서 - 표 1행 생성: [A~B]라벨1 [C~D]값1 [E~F]라벨2 [G~H]값2
 	private void setTableRow(Sheet sheet, int rowIdx,
 	                         String l1, String v1, String l2, String v2,
 	                         CellStyle labelStyle, CellStyle valueStyle) {
@@ -377,15 +403,15 @@ public class ExcelGenerator {
 	    setCell(sheet, rowIdx, 6, v2, valueStyle);
 	}
 
-	// 굵은 테두리(이미지 박스용)
+	// 과태료부과 사전통지서 - 굵은 테두리(이미지 박스용)
 	private void setThickBorder(Sheet sheet, CellRangeAddress region) {
 	    RegionUtil.setBorderTop(BorderStyle.THICK, region, sheet);
 	    RegionUtil.setBorderBottom(BorderStyle.THICK, region, sheet);
 	    RegionUtil.setBorderLeft(BorderStyle.THICK, region, sheet);
 	    RegionUtil.setBorderRight(BorderStyle.THICK, region, sheet);
 	}
-
-	// 이미지 삽입: (col1,row1) ~ (col2,row2) 영역에 꽉 차게
+	
+	// 과태료부과 사전통지서 - 이미지 삽입: (col1,row1) ~ (col2,row2) 영역에 꽉 차게
 	private void addImageToArea(Workbook wb, Drawing<?> drawing, byte[] imageBytes, int poiPictureType,
 	                            int col1, int row1, int col2, int row2) {
 	    if (imageBytes == null || imageBytes.length == 0) return;
@@ -402,10 +428,12 @@ public class ExcelGenerator {
 	    drawing.createPicture(anchor, pictureIdx);
 	}
 
+	// 과태료부과 사전통지서 - 문자열 null 처리
 	private String nvl(String s) {
 	    return (s == null) ? "" : s;
 	}
 	
+	// 과태료부과 사전통지서 - 이미지 확장자 설정(png,jpg 호환 위함)
 	private int detectPictureType(byte[] bytes) {
 	    if (bytes == null || bytes.length < 4) return Workbook.PICTURE_TYPE_PNG;
 
@@ -420,6 +448,7 @@ public class ExcelGenerator {
 	    return Workbook.PICTURE_TYPE_PNG;
 	}
 
+	// 과태료부과 사전통지서 - 표 설정
 	private void setTableRow6(Sheet sheet, int rowIdx,
 	        String leftLabel, String leftValue,
 	        String rightLabel, String rightValue,
@@ -438,6 +467,299 @@ public class ExcelGenerator {
 	setCell(sheet, rowIdx, 1, leftValue, cellStyleBlueBorder);
 	setCell(sheet, rowIdx, 4, rightValue, cellStyleBlueBorder);
 	}
+	// ====== 과태료부과 사전통지서 [E] ======
+	
+	
+	// ====== 월별 이벤트 통계 [S] ======
+	/**
+	 * 월별 이벤트 통계 엑셀 파일 생성
+	 * @param fileName
+	 * @param sheet
+	 * @param response
+	 */
+	public void generateMonthlyStatsWithChart(String fileName, MonthlyStatsWithChartSpec monthyStatsWithChartSheet,
+			HttpServletResponse response) {
+		 try {
+		        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+		        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+		        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encoded);
+
+		        try (XSSFWorkbook wb = new XSSFWorkbook(); OutputStream os = response.getOutputStream()) {
+
+		            XSSFSheet sheet = wb.createSheet("통계");
+		            sheet.setDefaultRowHeightInPoints(16f);
+		            sheet.setDefaultColumnWidth(12);
+
+		            // ===== 스타일 =====
+		            Map<String, CellStyle> st = createStatsStyles(wb);
+
+		            // ===== 1) 상단 타이틀 =====
+		            setCellStats(sheet, 1, 1, "불법주차 유형별 통계 (그래프)", st.get("title"));
+
+		            // ===== 2) 하단 타이틀 =====
+		            setCellStats(sheet, 21, 1, "불법주차 유형별 통계 (테이블)", st.get("title"));
+
+		            // ===== 3) statsByMonth -> months / series 구조로 변환 =====
+		            // months: ["2025.06", "2025.07", ...]
+		            // seriesMap: { "미등록차량":[...], "위험상황":[...], ... }
+		            StatsMatrix matrix = buildMatrix(monthyStatsWithChartSheet.getData(), monthyStatsWithChartSheet.getStCd());
+
+		            List<String> months = matrix.months;
+		            LinkedHashMap<String, List<Integer>> seriesMap = matrix.seriesMap; // 순서 유지
+
+		            // ===== 4) 표 작성 위치 (스크린샷 느낌) =====
+		            // 표 헤더: C23부터 (row=22, col=2)
+		            int tableTopRow = 22; // 0-based => 23행
+		            int tableLabelCol = 1; // B
+		            int tableMonthStartCol = 2; // C
+
+		            // 월 헤더 (C23~)
+		            for (int i = 0; i < months.size(); i++) {
+		            	setCellStats(sheet, tableTopRow, tableMonthStartCol + i, months.get(i), st.get("hdr"));
+		            }
+
+		            // 유형명 + 값
+		            int row = tableTopRow + 1; // 24행부터
+		            for (Map.Entry<String, List<Integer>> e : seriesMap.entrySet()) {
+		            	setCellStats(sheet, row, tableLabelCol, e.getKey(), st.get("rowHdr"));
+
+		                List<Integer> vals = e.getValue();
+		                for (int i = 0; i < months.size(); i++) {
+		                    int v = (vals != null && i < vals.size() && vals.get(i) != null) ? vals.get(i) : 0;
+		                    setCellNumber(sheet, row, tableMonthStartCol + i, v, st.get("cell"));
+		                }
+		                row++;
+		            }
+
+		            int seriesCount = seriesMap.size();
+		            int tableBottomRow = tableTopRow + seriesCount; // 마지막 데이터 행
+
+		            // 테이블 외곽 포함 테두리(원하면)
+		            // (B23 ~ (C+months-1)(23+seriesCount))
+		            setRegionBorderThinBlue(sheet,
+		                    new CellRangeAddress(tableTopRow, tableBottomRow, tableLabelCol, tableMonthStartCol + months.size() - 1),
+		                    new java.awt.Color(0x0F, 0x9E, 0xD5)
+		            );
+
+		            // ===== 5) 차트 생성 (표 범위 참조) =====
+		            XSSFDrawing drawing = sheet.createDrawingPatriarch();
+
+		            // 차트 위치: B4 ~ N16 정도
+		            XSSFClientAnchor anchor = new XSSFClientAnchor();
+		            anchor.setCol1(1);  anchor.setRow1(3);   // B4
+		            anchor.setCol2(14); anchor.setRow2(16);  // O16 근처
+		            XSSFChart chart = drawing.createChart(anchor);
+
+		            // 범례
+		            XDDFChartLegend legend = chart.getOrAddLegend();
+		            legend.setPosition(LegendPosition.BOTTOM);
+
+		            // 축
+		            XDDFCategoryAxis bottomAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
+		            XDDFValueAxis leftAxis = chart.createValueAxis(AxisPosition.LEFT);
+		            leftAxis.setCrosses(AxisCrosses.AUTO_ZERO);
+
+		            // X축(월) 범위: C23 ~ ...
+		            CellRangeAddress xRange = new CellRangeAddress(
+		                    tableTopRow, tableTopRow,
+		                    tableMonthStartCol, tableMonthStartCol + months.size() - 1
+		            );
+
+		            XDDFDataSource<String> xs = XDDFDataSourcesFactory.fromStringCellRange(sheet, xRange);
+
+		            XDDFLineChartData data = (XDDFLineChartData) chart.createData(ChartTypes.LINE, bottomAxis, leftAxis);
+
+		            // 시리즈 추가 (각 행이 한 시리즈)
+		            int sIdx = 0;
+		            for (int s = 0; s < seriesCount; s++) {
+		                int rowIdx = tableTopRow + 1 + s;
+		                CellRangeAddress yRange = new CellRangeAddress(
+		                        rowIdx, rowIdx,
+		                        tableMonthStartCol, tableMonthStartCol + months.size() - 1
+		                );
+
+		                XDDFNumericalDataSource<Double> ys = XDDFDataSourcesFactory.fromNumericCellRange(sheet, yRange);
+
+		                String seriesName = (String) seriesMap.keySet().toArray()[s];
+		                XDDFLineChartData.Series series = (XDDFLineChartData.Series) data.addSeries(xs, ys);
+		                series.setTitle(seriesName, null);
+		                series.setSmooth(false);
+		                series.setMarkerStyle(MarkerStyle.CIRCLE);
+		                sIdx++;
+		            }
+
+		            chart.plot(data);
+
+		            wb.write(os);
+		            response.flushBuffer();
+		        }
+
+		    } catch (Exception e) {
+		        logger.error("월별 통계(표+차트) 엑셀 생성 중 오류", e);
+		    }
+		
+	}
+	
+	// 월별 이벤트 통계 - 쿼리 결과를 월 별 리스트로 변환
+	/** 쿼리 결과 -> 월 리스트 + (유형명 -> 월별카운트) */
+	private StatsMatrix buildMatrix(List<Map<String,Object>> rows, Integer stCdFilter) {
+
+	    // 쿼리는 ORDER BY m.month, c.st_cd 이므로 month는 순서대로 들어옴
+	    LinkedHashSet<String> monthSet = new LinkedHashSet<>();
+	    // st_cd -> (month -> cnt)
+	    Map<Integer, Map<String, Integer>> tmp = new HashMap<>();
+
+	    for (Map<String,Object> r : rows) {
+	        String month = Objects.toString(r.get("st_date"), ""); // 예: "2025-06"
+	        Integer cd = (r.get("st_cd") instanceof Number) ? ((Number) r.get("st_cd")).intValue() : null;
+	        Integer cnt = (r.get("st_cnt") instanceof Number) ? ((Number) r.get("st_cnt")).intValue() : 0;
+
+	        if (month.isEmpty() || cd == null) continue;
+
+	        // stCdFilter가 있으면 해당 코드만 사용(표/차트에서 다른 시리즈 숨김)
+	        if (stCdFilter != null && cd.intValue() != stCdFilter.intValue()) continue;
+
+	        monthSet.add(month);
+	        tmp.computeIfAbsent(cd, k -> new HashMap<>()).put(month, cnt);
+	    }
+
+	    // month 문자열을 "YYYY.MM"로 표시 (스크샷)
+	    List<String> rawMonths = new ArrayList<>(monthSet); // "YYYY-MM"
+	    List<String> months = new ArrayList<>();
+	    for (String m : rawMonths) months.add(m.replace("-", "."));
+
+	    // 코드 표시 순서(원하면 1,4,5,6 고정)
+	    List<Integer> codeOrder = Arrays.asList(1, 4, 5, 6);
+	    if (stCdFilter != null) codeOrder = Collections.singletonList(stCdFilter);
+
+	    LinkedHashMap<String, List<Integer>> seriesMap = new LinkedHashMap<>();
+	    for (Integer cd : codeOrder) {
+	        // 데이터가 아예 없으면 건너뛰기(필요시)
+	        if (!tmp.containsKey(cd)) continue;
+
+	        String name = codeName(cd); // 유형명
+	        List<Integer> vals = new ArrayList<>();
+	        for (String rawMonth : rawMonths) {
+	            int v = tmp.get(cd).getOrDefault(rawMonth, 0);
+	            vals.add(v);
+	        }
+	        seriesMap.put(name, vals);
+	    }
+
+	    // stCdFilter가 없고 tmp가 비어버린 경우(이론상 거의 없음) 대비
+	    if (seriesMap.isEmpty()) {
+	        // 최소 12개월이라도 보이게 하고 싶으면 여기서 month를 생성해서 0으로 채우면 됨
+	    }
+
+	    StatsMatrix out = new StatsMatrix();
+	    out.months = months;
+	    out.seriesMap = seriesMap;
+	    return out;
+	}
+
+	private String codeName(int cd) {
+	    switch (cd) {
+	        case 1: return "미등록차량";
+	        case 4: return "위험상황";
+	        case 5: return "물건적재";
+	        case 6: return "이중주차";
+	        // 2,3까지 확장 가능
+	        case 2: return "장애인미탑승";
+	        case 3: return "스티커불법사용";
+	        default: return "코드" + cd;
+	    }
+	}
+
+	// 월별 이벤트 통계
+	private static class StatsMatrix {
+	    List<String> months;
+	    LinkedHashMap<String, List<Integer>> seriesMap;
+	}
+
+	// 월별 이벤트 통계 - 엑셀 스타일 설정
+	private Map<String, CellStyle> createStatsStyles(XSSFWorkbook wb) {
+	    Map<String, CellStyle> m = new HashMap<>();
+
+	    // 타이틀
+	    XSSFFont titleFont = wb.createFont();
+	    titleFont.setBold(true);
+	    titleFont.setFontHeightInPoints((short) 12);
+
+	    XSSFCellStyle title = wb.createCellStyle();
+	    title.setFont(titleFont);
+	    title.setAlignment(HorizontalAlignment.LEFT);
+	    title.setVerticalAlignment(VerticalAlignment.CENTER);
+	    m.put("title", title);
+
+	    // 테두리 + 헤더
+	    XSSFFont hdrFont = wb.createFont();
+	    hdrFont.setBold(true);
+
+	    XSSFCellStyle hdr = wb.createCellStyle();
+	    hdr.setFont(hdrFont);
+	    hdr.setAlignment(HorizontalAlignment.CENTER);
+	    hdr.setVerticalAlignment(VerticalAlignment.CENTER);
+	    setThinBorderAll(hdr);
+	    m.put("hdr", hdr);
+
+	    XSSFCellStyle rowHdr = wb.createCellStyle();
+	    rowHdr.cloneStyleFrom(hdr);
+	    rowHdr.setAlignment(HorizontalAlignment.LEFT);
+	    m.put("rowHdr", rowHdr);
+
+	    XSSFCellStyle cell = wb.createCellStyle();
+	    cell.setAlignment(HorizontalAlignment.CENTER);
+	    cell.setVerticalAlignment(VerticalAlignment.CENTER);
+	    setThinBorderAll(cell);
+	    m.put("cell", cell);
+
+	    return m;
+	}
+
+	// 월별 이벤트 통계 - 테두리 
+	private void setThinBorderAll(CellStyle st) {
+	    st.setBorderTop(BorderStyle.THIN);
+	    st.setBorderBottom(BorderStyle.THIN);
+	    st.setBorderLeft(BorderStyle.THIN);
+	    st.setBorderRight(BorderStyle.THIN);
+	}
+
+	// 월별 이벤트 통계 - 셀 설정
+	private void setCellStats(Sheet sheet, int r, int c, String v, CellStyle style) {
+	    Row row = sheet.getRow(r);
+	    if (row == null) row = sheet.createRow(r);
+	    Cell cell = row.getCell(c);
+	    if (cell == null) cell = row.createCell(c);
+	    cell.setCellValue(v == null ? "" : v);
+	    if (style != null) cell.setCellStyle(style);
+	}
+
+	// 월별 이벤트 통계 - 셀 스타일 설정
+	private void setCellNumber(Sheet sheet, int r, int c, double v, CellStyle style) {
+	    Row row = sheet.getRow(r);
+	    if (row == null) row = sheet.createRow(r);
+	    Cell cell = row.getCell(c);
+	    if (cell == null) cell = row.createCell(c);
+	    cell.setCellValue(v);
+	    if (style != null) cell.setCellStyle(style);
+	}
+
+	// 테두리 색 지정까지 하고 싶을 때(원하면)
+	// #0F9ED5 같이 색 지정 가능
+	private void setRegionBorderThinBlue(XSSFSheet sheet, CellRangeAddress region, java.awt.Color color) {
+	    XSSFColor xColor = new XSSFColor(color, null);
+	    RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
+	    RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
+	    RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
+	    RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
+
+	    RegionUtil.setTopBorderColor(xColor.getIndex(), region, sheet);
+	    RegionUtil.setBottomBorderColor(xColor.getIndex(), region, sheet);
+	    RegionUtil.setLeftBorderColor(xColor.getIndex(), region, sheet);
+	    RegionUtil.setRightBorderColor(xColor.getIndex(), region, sheet);
+	}
+	
+	// ====== 통계 화면 엑셀 관련[E] ======
     
 }
 

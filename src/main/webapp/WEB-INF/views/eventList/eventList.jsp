@@ -128,10 +128,14 @@
 			return;
 		}
 		
-		if( evCd != null && (evCd >=7 || evCd <= 0)){
-			alert("유효하지 않은 유형입니다.");
-			return;
+		if(evCd !== ""){
+			if( evCd != null && (evCd >=7 || evCd <= 0)){
+				alert("유효하지 않은 유형입니다.");
+				return;
+			}
 		}
+		
+
 		
 	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);

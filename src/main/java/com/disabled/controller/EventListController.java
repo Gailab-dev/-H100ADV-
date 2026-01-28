@@ -757,6 +757,22 @@ public class EventListController {
 			paramMap.put("recordCountPerPage", null);
 			paramMap.put("firstIndex", null);
 			
+			// startDate, endDate 값 변경 yyyy-MM-dd > yyyymmdd
+			Object startDateObj = paramMap.get("startDate");
+			Object endDateObj = paramMap.get("endDate");
+			String startDate = "";
+			String endDate = "";
+			
+			if(startDateObj != null) {
+				startDate = startDateObj.toString().replace("-", "").trim();
+			}
+			if(endDateObj != null) {
+				endDate = endDateObj.toString().replace("-", "").trim();
+			}
+			paramMap.put("startDate", startDate);
+			paramMap.put("endDate", endDate);
+			
+			
 			// 데이터 가져오기
 			List<Map<String,Object>> eventList = eventListService.getEventList(paramMap);
 			
@@ -772,7 +788,10 @@ public class EventListController {
 	        );
 		    
 		    // 유형 문자열로 변환
-		    eventList = codeConversionService.evCdConverstionIntToStr(eventList);
+		    if(!eventList.isEmpty()) {
+			    eventList = codeConversionService.evCdConverstionIntToStr(eventList);
+		    }
+		    
 		    
 		    // 엑셀 시트 생성
 		    ExcelSheetSpec sheet = ExcelSheetSpec.builder()

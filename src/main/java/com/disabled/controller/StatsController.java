@@ -27,6 +27,7 @@ import com.disabled.component.LogDiskManager;
 import com.disabled.component.SessionManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.mapper.StatsMapper;
+import com.disabled.model.MonthlyStatsWithChartSpec;
 import com.disabled.service.CryptoARIAService;
 import com.disabled.service.ExcelService;
 import com.disabled.service.StatsService;
@@ -193,8 +194,11 @@ public class StatsController {
 		
 		// stCd값 빈문자열이면 null값으로  변경
 		Object stCdObj = paramMap.get("stCd");
+		Integer stCd = null;
 		if (stCdObj == null || stCdObj.toString().trim().isEmpty()) {
-		    paramMap.put("stCd", null);
+		    paramMap.put("stCd", stCd);
+		} else {
+			stCd = Integer.parseInt(stCdObj.toString());
 		}
 		// ====== 변수 선언부 [E] ======
 
@@ -205,25 +209,19 @@ public class StatsController {
 			statsByMonth = statsService.getEventByMonthAndSearchParams(paramMap);
 			
 			// statsByMonth의 stCd 코드를 문자열로 변환
-			statsByMonth = codeConversionService.StCdConverstionIntToStr(statsByMonth);
+			// statsByMonth = codeConversionService.StCdConverstionIntToStr(statsByMonth);
 			
-			// 엑셀 컬럼 추가
-		    List<ExcelColumn> columns = List.of(
-	            new ExcelColumn("st_date", "월"),
-	            new ExcelColumn("st_cd", "이벤트"),
-	            new ExcelColumn("st_cnt", "개수")
-	        );
 		    
 		    // 엑셀 시트 생성
-		    ExcelSheetSpec sheet = ExcelSheetSpec.builder()
-		            .sheetName("통계")
-		            .columns(columns)
+			MonthlyStatsWithChartSpec sheet = MonthlyStatsWithChartSpec.builder()
+		            .sheetName("월별_이벤트_통계")
 		            .data(statsByMonth)
+		            .stCd(stCd)
 		            .build();
 		    
 		    // 엑셀 파일 생성 및 다운로드
 		    // 엑셀 파일명, 엑셀 시트, 다운로드를 위한 response 객체
-		    excelService.download("월별_이벤트_통계.xlsx", sheet, response);
+		    excelService.downloadMonthlyStatsWithChart("월별_이벤트_통계.xlsx", sheet, response);
 		    
 			// ====== 서비스 [E] ======
 			
