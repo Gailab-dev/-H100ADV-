@@ -45,6 +45,8 @@
 	</header>
 
 	<div class="container">
+    	<form id="eventListSearchForm" style="display:none;">
+			<input type="hidden" name="evId" value="${eventListDetail.ev_id}" />
 		<aside class="sidebar">
 			<ul class="menu">
 				<li><a
@@ -323,15 +325,18 @@
 	    
 	  });
 	  	
-	  	// 엑셀 다운로드
-		document.addEventListener('DOMContentLoaded', function () {
-		  document.getElementById('btnExcel').addEventListener('click', function () {
-		    const evId = '${eventListDetail.ev_id}';
-		
-		    ExcelDownloader.downloadFineAdvanceNotice(evId)
-		      .catch(e => alert(e.message));
-		  });
-		});
+	// 엑셀 다운로드
+	function excelDownload(){
+		ExcelDownloader.excelDownload({
+			endpoint:'/eventList/excelDownloadDetail',
+			formSelector:'#eventListSearchForm',
+			mapping: {
+				ev_id:'evId',
+			},
+			responseType:'blob',
+			downloadFilename:'불법주차_리스트_상세.xlsx'
+		}).catch(function(e){alert(e.message);});
+	}
 	  
 	</script>
 

@@ -17,6 +17,7 @@ type Tbl_Event_Data struct {
 	EvCarNum  string `json:"ev_car_num"`
 	EvMovPath string `json:"ev_mov_path"`
 	EvImgPath string `json:"ev_img_path"`
+	EvImgPath2 string `json:"ev_img_path_2"`
 	EvDate     string `json:"ev_date"`
 	EvSerialNumber    string   `json:"ev_serial_number"`
 	EvRegDate time.Time   `json:"ev_reg_date"`
