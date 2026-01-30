@@ -49,9 +49,9 @@ import com.disabled.common.ExcelSheetSpec;
 import com.disabled.common.ImageByteLoader;
 import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
-import com.disabled.model.FineAdvanceNoticeSpec;
 import com.disabled.service.EventListService;
 import com.disabled.service.ExcelService;
+import com.disabled.service.UserService;
 
 @Controller
 @RequestMapping("/eventList")
@@ -81,6 +81,8 @@ public class EventListController {
 	@Autowired
 	private javax.servlet.ServletContext servletContext;
 	
+	@Autowired
+	UserService userService;
 	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(EventListController.class);
@@ -121,8 +123,12 @@ public class EventListController {
 		
 		// 접근 로그
 		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		Integer uId = null;
 		if(uIdStr != null) {
-			logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자의 {}에 불법주차 리스트 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+			logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자의 {}에 디바이스 리스트 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+			uId = Integer.parseInt(uIdStr.toString());
+		}else {
+			return "/user/login.do"; 
 		}
 		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
 		
@@ -283,6 +289,8 @@ public class EventListController {
 				convertEndDate = DateTypeInputTagFormat.format(end);
 			}
 			
+
+			
 			// 로그 스토리지 사용 가능 여부 조회
 			useTblLog = logDiskManager.hasEnoughLogSpace();
 			
@@ -290,7 +298,11 @@ public class EventListController {
 			logger.error("데이터 타입 변환 중 오류 발생 : ",e);
 		}
 		
+		// 세션에 저장된 회원의 이름 조회
+		String uName = userService.getUNameBySession(uId);
+		
 		// model add
+		model.addAttribute("uName", uName);
 		model.addAttribute("paginationInfo",paginationInfo);
 		model.addAttribute("eventList", eventList);
 		model.addAttribute("searchKeyword", searchKeyword);

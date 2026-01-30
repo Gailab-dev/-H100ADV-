@@ -10,6 +10,10 @@
 <title>내 정보</title>
 </head>
 <script>
+	
+	// 변경 전 이메일
+	let originalEmail = '';
+
 	/* 에러 메시지 표시 함수*/
 	function showError(message) {
 		const errorElement = document.getElementById('errorMessage');
@@ -40,6 +44,10 @@
 	async function myInfoSave(){
 		// 이메일이 변경되었는지 확인
 	    const currentEmail = document.getElementById('email')?.value;
+		
+		console.log("currentEmail : " + currentEmail);
+		console.log("originalEmail : " + originalEmail);
+		
 	    if (currentEmail !== originalEmail) {
 	        // 이메일이 변경되었으면 인증 확인
 	        if (!(await isVerifiedNow(currentEmail))) {
@@ -48,14 +56,21 @@
 	        }
 	    }
 		// 유효성 체크
-		if (myInfoValChk()){
-			const currentPw = document.getElementById("currentPw")?.value;
-			const newPw = document.getElementById("newPw")?.value;
-			const confirmPw = document.getElementById("confirmPw")?.value;
-			const name = document.getElementById("name")?.value;
-			const email = document.getElementById("email")?.value;
-			
-			// 동기 통신으로 로그인
+		const currentPw = document.getElementById("currentPw")?.value;
+		const newPw = document.getElementById("newPw")?.value;
+		const confirmPw = document.getElementById("confirmPw")?.value;
+		const name = document.getElementById("name")?.value;
+		const email = document.getElementById("email")?.value;
+		
+		const checkedPwd = await checkCurrentPwd(currentPw);
+		if(!checkedPwd){
+            showError("기존 비밀번호가 틀립니다.");
+            return
+		}
+		
+		if (myInfoValChk(currentPw,newPw,confirmPw,name,email)){
+
+			// 동기 통신으로 개인정보 수정
 			const r = await fetch('${pageContext.request.contextPath}/myInfo/saveMyInfo.do',{
 				method: 'POST',
 		  		headers: {
@@ -70,56 +85,87 @@
 		    // response 객체의 ok값(200~299)
 	        if (!r.ok) {
 	        	alert("r.ok : " + r.ok);
-	        	alert("r.msg : " + r.msg);
-	//         	showError(r.ok + " | " + r.msg);
+	         	showError("내 정보 수정 중 오류가 발생했습니다.");
 	            return;
 	        }else{
 	        	clearError();
-	        	alert("수정되었습니다.");
+	        	
+	        	const data = await r.json();
+	        	if(data.ok === "false"){
+	        		showError(data.msg);
+	        		return;
+	        	}
+	        	
 	        	window.location.href = "${pageContext.request.contextPath}/stats/viewStat.do";
 	        }
+		    
 		}	
 	}
 	
-	async function myInfoValChk(){
+	function myInfoValChk(currentPw,newPw,confirmPw,name,email){
 		let result = false;
-		const currentPw = document.getElementById("currentPw")?.value;
-		const newPw = document.getElementById("newPw")?.value;
-		const confirmPw = document.getElementById("confirmPw")?.value;
-		const name = document.getElementById("name")?.value;
-		const email = document.getElementById("email")?.value;
 		
-		if(currentPw.length > 0 || newPw.length > 0 || confirmPw.length > 0 ){
-			if(!currentPw){
-				showError("기존 비밀번호를 입력해주세요.");
-		  		return result;
-			}
-			
-			if(!newPw){
-				showError("새 비밀번호를 입력해주세요.");
-				return result;
-			}
-			
-			if(!confirmPw){
-				showError("비밀번호 확인을 입력해주세요.");
-				return result;
-			}
-			
-			if(newPw != confirmPw){
-				showError("새 비밀번호와 비밀번호 확인 값이 서로 다릅니다.");
-				return result;
-			}
-			
-		  	if (!(await isVerifiedNow(email))) {
-		  		showError("이메일 인증이 필요합니다.");
-		  	  return;
-		  	}
+		if(!currentPw){
+			showError("기존 비밀번호를 입력해주세요.");
+	  		return result;
+		}
+		
+	  	if( currentPw.length >= 100 ){
+	  		showError("기존 비밀번호는 100자를 넘을 수 없습니다.");
+	  		return;
+	  	}
+	  	
+	    //비번 규칙: 6~20글자 / 영문+숫자+특수문자 각 1개 이상 / 공백 불가 
+	    const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^\w\s])\S{6,20}$/; 
+		if(!PASSWORD_RULE.test(currentPw)){
+			showError("비밀번호는 6자 - 20자 사이여야 하고, 영문, 숫자, 특수문자 1개 이상을 포함하는 문자열이여야 합니다.");
+	  		return;
+		}
+		
+		if(!newPw){
+			showError("새 비밀번호를 입력해주세요.");
+			return result;
+		}
+		
+	  	if( newPw.length >= 100 ){
+	  		showError("새 비밀번호는 100자를 넘을 수 없습니다.");
+	  		return;
+	  	}
+	  	
+		if(!PASSWORD_RULE.test(newPw)){
+			showError("비밀번호는 6자 - 20자 사이여야 하고, 영문, 숫자, 특수문자 1개 이상을 포함하는 문자열이여야 합니다.");
+	  		return;
+		}
+		
+		if(!confirmPw){
+			showError("비밀번호 확인을 입력해주세요.");
+			return result;
+		}
+		
+	  	if( confirmPw.length >= 100 ){
+	  		showError("새 비밀번호 확인은 100자를 넘을 수 없습니다.");
+	  		return;
+	  	}
+		
+		if(newPw != confirmPw){
+			showError("새 비밀번호와 비밀번호 확인 값이 서로 다릅니다.");
+			return result;
+		}
+	  	
+		if(newPw == currentPw){
+			showError("새 비밀번호와 기존 비밀번호는 달라야 합니다.");
+			return result;
 		}
 		
 		if(!name){
 			showError("이름을 입력해주세요.");
 			return result;
 		}
+		
+	  	if( name.length >= 40 ){
+	  		showError("이름은 최대 한글 20자, 영문 40자 이내로 입력해주세요.");
+	  		return;
+	  	}
 		
 		result = true;
 		return result;
@@ -133,7 +179,6 @@
 			showError("이메일을 입력해주세요.");
 			return;
 		}
-		clearError();
 		
 		const r = await fetch("${pageContext.request.contextPath}/user/request",{
 			method: "POST",
@@ -195,8 +240,6 @@
 	}
 	
 	// 원본 이메일 저장 (페이지 로드 시)
-	let originalEmail = '';
-
 	document.addEventListener('DOMContentLoaded', function() {
 	    originalEmail = document.getElementById('email')?.value || '';
 	});
@@ -214,6 +257,47 @@
 	        authBtn.classList.remove('active');
 	    }
 	}
+	
+	// 입력한 비밀번호가 기존 비밀번호가 맞는지 확인
+	async function checkCurrentPwd(currentPw){
+		
+		try {
+		    const res = await fetch("${pageContext.request.contextPath}/myInfo/checkCurrentPwd", {
+		      method: "POST",
+		      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+		      credentials: "same-origin",
+		      body: JSON.stringify({ currentPw })
+		    });
+		
+		    const contentType = res.headers.get("content-type") || "";
+		    const raw = await res.text();
+		
+		    console.log("[checkCurrentPwd] status=", res.status);
+		    console.log("[checkCurrentPwd] redirected=", res.redirected, "url=", res.url);
+		    console.log("[checkCurrentPwd] contentType=", contentType);
+		    console.log("[checkCurrentPwd] raw=", raw);
+		
+		    if (!res.ok) return false;
+		
+		    // 서버가 JSON이 아닌 페이지를 반환하면 무조건 false
+		    if (!contentType.includes("application/json")) return false;
+		
+		    const json = JSON.parse(raw);
+		    
+		    if(json.ok){
+		    	showError(json.msg);
+		    	
+		    }
+		    
+		    return json.ok;
+		
+		  } catch (e) {
+		    console.error("[isVerifiedNow] error", e);
+		    return false;
+		  }
+		
+	}
+
 </script>
 <body>
 	<div class=page-wrapper>
@@ -231,7 +315,9 @@
 						관리자에게 문의해주세요.</div>
 				</c:if>
 				<div class="user">
-				 <span class="user-name">hskim</span> 
+				 	<span class="user-name">
+				 		<c:out value="${uName}" escapeXml="true" />
+					</span> 
 				</div>
 				<div class="logout">
 					<button

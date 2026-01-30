@@ -1038,8 +1038,14 @@
 			</div>
 
 			<div class="right-group">
+				<c:if test="${useTblLog == false}">
+					<div class="alert alert-warning">현재 로그 데이터 저장 공간이 매우 부족합니다.
+						관리자에게 문의해주세요.</div>
+				</c:if>
 				<div class="user">
-				 <span class="user-name">hskim</span>
+					 <span class="user-name">
+					 	<c:out value="${uName}" escapeXml="true" />
+					</span>
 				</div>
 				<div class="logout">
 					<button

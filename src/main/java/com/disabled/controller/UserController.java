@@ -169,6 +169,7 @@ public class UserController {
 			if(encryptPwd == null || encryptPwd.isEmpty()) {
 				resultMap.put("ok", false); 
 				resultMap.put("msg", "암호화 실패.");
+				return resultMap;
 			}
 			
 			Map<String, Object> checkErr = userService.loginCheck(id, encryptPwd); //db에 해당 사용자가 있는지 체크

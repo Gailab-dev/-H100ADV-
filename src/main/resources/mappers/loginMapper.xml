@@ -165,5 +165,11 @@
 			AND u_phone = #{u_phone}
 	</select>
 	
+	<select id = "getUnameBySession" resultType="string">
+		SELECT u_name
+		FROM tbl_user
+		WHERE u_id = #{uId}
+	</select>
+	
 
 </mapper>

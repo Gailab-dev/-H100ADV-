@@ -44,6 +44,8 @@ public interface UserService {
 
 	int verifyEmailByToken(Map<String, Object> param);
 
+	String getUNameBySession(Integer uId);
+
 	// Map<String, Object> getMyInfo(Integer uId);
 
 	// Integer updateMyInfoExceptPwd(Integer uId);

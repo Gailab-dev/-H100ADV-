@@ -459,6 +459,21 @@ public class UserServiceImpl implements UserService {
 		return 0;
 	}
 	
+	/**
+	 * 세션에 저장된 유저명 조회
+	 */
+	@Override
+	public String getUNameBySession(Integer uId) {
+		
+		try {
+			return loginMapper.getUnameBySession(uId);
+		} catch (Exception e) {
+			logger.error("유저명 조회 중 오류 발생",e);
+			throw e;
+		}
+		
+	}
+	
 	
 
 	/*

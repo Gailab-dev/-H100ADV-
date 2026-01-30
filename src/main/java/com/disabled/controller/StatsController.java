@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.common.CodeConversionService;
-import com.disabled.common.ExcelColumn;
-import com.disabled.common.ExcelSheetSpec;
 import com.disabled.component.LogDiskManager;
 import com.disabled.component.SessionManager;
 import com.disabled.mapper.LoginMapper;
@@ -31,6 +29,7 @@ import com.disabled.model.MonthlyStatsWithChartSpec;
 import com.disabled.service.CryptoARIAService;
 import com.disabled.service.ExcelService;
 import com.disabled.service.StatsService;
+import com.disabled.service.UserService;
 
 @Controller
 @RequestMapping("/stats")
@@ -63,6 +62,9 @@ public class StatsController {
 	@Autowired
 	ExcelService excelService;
 	
+	@Autowired
+	UserService userService;
+	
 	// 통계 화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
@@ -86,8 +88,12 @@ public class StatsController {
 		
 		// 접근 로그
 		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		Integer uId = null;
 		if(uIdStr != null) {
 			logger.info("{}(" + loginMapper.getLoginId( Integer.parseInt(uIdStr)) + ") 사용자의 {}에 홈 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+			uId = Integer.parseInt(uIdStr.toString());
+		}else {
+			return "/user/login.do";
 		}
 
 		// ====== 변수 선언부 [S] ======
@@ -140,11 +146,15 @@ public class StatsController {
 			// 로그 스토리지 사용 가능 여부 조회
 			useTblLog = logDiskManager.hasEnoughLogSpace();
 			
+			// 세션에 저장된 회원의 이름 조회
+			String uName = userService.getUNameBySession(uId);
+			
 			 // 세션에 저장된 회원의 등급(권한) 조회
 		    Integer uGrade = Integer.parseInt(session.getAttribute("uGrade").toString()); 
 			// ====== 서비스 [E] ======
 			
 		    // ====== model add [S] ======
+		    model.addAttribute("uName", uName);
 		    model.addAttribute("uGrade",uGrade);
 			model.addAttribute("statsByMonth", statsByMonth);
 			model.addAttribute("startDate", startDate);

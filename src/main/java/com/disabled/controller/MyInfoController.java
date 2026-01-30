@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.component.LogDiskManager;
@@ -54,19 +54,20 @@ public class MyInfoController {
 	// 내 정보 화면 조회
 	@RequestMapping("/viewMyInfo.do")
 	private String viewMyInfo(
-			@RequestParam(value="searchKeyword", required=false) String searchKeyword
-			, @RequestParam(value="startDate", required=false) String startDate
-			, @RequestParam(value="endDate", required=false) String endDate
-			, @RequestParam(value="page", required=false) Integer page
-			, @RequestParam(value="pageSize", defaultValue="10") Integer pageSize
-			, Model model
+			Model model
 			, HttpSession session  ) {
 		
 		// 접근 로그
 		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		Integer uId = null;
 		if(uIdStr != null) {
-			logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자 {}에 내 정보 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+			logger.info("{}(" + loginMapper.getLoginId( Integer.parseInt(uIdStr)) + ") 사용자의 {}에 홈 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+			uId = Integer.parseInt(uIdStr.toString());
+		}else {
+			return "/user/login.do";
 		}
+		
+		// 로그 스토리지 사용 가능 여부 조회
 		boolean useTblLog = logDiskManager.hasEnoughLogSpace();;	// 로그 스토리지 사용 가능 여부
 
 		// DB 검색을 위한 파라미터 설정
@@ -76,6 +77,10 @@ public class MyInfoController {
 		// 사용자 정보 가져오기
 		Map<String, Object> myInfoMap = myInfoService.getMyInfoMap(paramMap);
 		
+		// 세션에 저장된 회원의 이름 조회
+		String uName = userService.getUNameBySession(uId);
+		
+		model.addAttribute("uName",uName);
 	    model.addAttribute("myInfoMap",myInfoMap);
 		model.addAttribute("useTblLog", useTblLog);
 		
@@ -195,6 +200,84 @@ public class MyInfoController {
 		res.put("ok", true); // 로그인 성공하면 true 반환
 		return res;
 		// ====== 서비스 [E] ====== //
+	}
+	
+	/**
+	 * 기존 비밀번호와 접속한 사용자의 비밀번호를 비교하여 같은지 확인
+	 * @param paramMap	입력한 비밀번호
+	 * @return 같다면 true, 다르거나 오류 발생시 false
+	 */
+	@ResponseBody
+	@PostMapping("/checkCurrentPwd")
+	public Map<String,Object> checkCurrentPwd(
+			@RequestBody Map<String,Object> paramMap
+			, HttpSession session) {
+		
+		Map<String,Object> resultMap = new HashMap<String, Object>();
+		
+		try {
+			// ====== 변수 선언부[s] ======
+			Object pwdObj = paramMap.get("currentPw");
+			String currentPwd = null;
+			if(pwdObj == null || pwdObj.toString().isEmpty()) {
+				logger.error("입력한 비밀번호 값이 없음");
+				resultMap.put("msg", "입력한 비밀번호 값이 없음");
+				resultMap.put("ok", false);
+				return resultMap;
+			}else {
+				currentPwd = pwdObj.toString();
+			}
+			
+			// ====== 변수 선언부[e] ======
+			// ====== 서비스 [s] ======
+			
+			// 암호화
+			String encryptPwd = cryptoARIAService.encryptPassword(currentPwd);
+			if(encryptPwd == null || encryptPwd.isEmpty()) {
+				logger.error("암호화 실패");
+				resultMap.put("msg", "암호화 실패");
+				resultMap.put("ok", false);
+				return resultMap;
+			}
+			
+			// 세션 uid 가져오기
+			Object uIdObj = session.getAttribute("uId");
+			Integer uid = null;
+			if(uIdObj == null || uIdObj.toString().isEmpty()) {
+				logger.error("세션 만료");
+				resultMap.put("msg", "세션 만료");
+				resultMap.put("ok", false);
+				return resultMap;
+			}else {
+				uid = Integer.parseInt(uIdObj.toString());
+			}
+			
+			// 기존 비밀번호 가져오기
+			String cmpPwd = userService.getPwd(uid);
+			if(cmpPwd == null || cmpPwd.isEmpty()) {
+				logger.error("기존 비밀번호 가져오기 실패.");
+				resultMap.put("msg", "세션 만료");
+				resultMap.put("ok", false);
+				return resultMap;
+			}
+			
+			// 비밀번호 비교 후 리턴
+			boolean matched = encryptPwd.equals(cmpPwd);
+			if(!matched) {
+				resultMap.put("msg", "기존 비밀번호가 틀립니다");
+			}
+			resultMap.put("ok", matched);
+			return resultMap;
+			
+			// ====== 서비스 [e] ======
+
+		} catch (Exception e) {
+			logger.error("비밀번호 체크 도중 오류 발생");
+			resultMap.put("msg", "비밀번호 체크 도중 오류 발생");
+			resultMap.put("ok", false);
+			return resultMap;
+		}
+		
 	}
 }
 

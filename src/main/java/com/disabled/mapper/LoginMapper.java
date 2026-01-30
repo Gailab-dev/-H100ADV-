@@ -25,4 +25,5 @@ public interface LoginMapper {
 	Integer lockAccount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
 	Integer resetFailCount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
 	int updateLoginFailCountZero(@Param("u_login_id") String uLoginId) throws IllegalStateException;
+	String getUnameBySession(@Param("uId")Integer uId) throws IllegalStateException;
 }

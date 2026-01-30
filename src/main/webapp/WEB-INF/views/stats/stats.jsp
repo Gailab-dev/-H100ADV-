@@ -415,7 +415,9 @@
 						관리자에게 문의해주세요.</div>
 				</c:if>
 				<div class="user">
-				 <span class="user-name">hskim</span>
+				 	<span class="user-name">
+				 		<c:out value="${uName}" escapeXml="true" />
+			 		</span>
 				</div>
 				<div class="logout">
 					<button

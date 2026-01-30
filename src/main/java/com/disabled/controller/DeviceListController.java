@@ -34,6 +34,7 @@ import com.disabled.mapper.LoginMapper;
 import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
 import com.disabled.service.ExcelService;
+import com.disabled.service.UserService;
 
 @Controller
 @RequestMapping("/deviceList")
@@ -60,6 +61,9 @@ public class DeviceListController {
 	@Autowired
 	ExcelService excelService;
 	
+	@Autowired
+	UserService userService;
+	
 	
 	// 디바이스 리스트 화면으로 redirect
 	@RequestMapping("")
@@ -83,9 +87,14 @@ public class DeviceListController {
 		
 		// 접근 로그
 		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		Integer uId = null;
 		if(uIdStr != null) {
 			logger.info("{}(" + loginMapper.getLoginId(Integer.parseInt(uIdStr)) + ") 사용자의 {}에 디바이스 리스트 화면 접속.", session.getAttribute("uId"),LocalDateTime.now());
+			uId = Integer.parseInt(uIdStr.toString());
+		}else {
+			return "/user/login.do"; 
 		}
+		
 		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
 
 		// ====== 유효성 검증 [S] ====== //
@@ -189,9 +198,13 @@ public class DeviceListController {
 		//model add
 		// model.addAttribute("groupAddrByDeviceList", groupAddrByDeviceList);
 		
+		// 세션에 저장된 회원의 이름 조회
+		String uName = userService.getUNameBySession(uId);
+		
 		 // 세션에 저장된 회원의 등급(권한) 가져오기
 	    Integer uGrade = Integer.parseInt(session.getAttribute("uGrade").toString()); 
 		
+	    model.addAttribute("uName", uName);
 	    model.addAttribute("uGrade",uGrade);
 		model.addAttribute("deviceList", deviceList);
 		model.addAttribute("paginationInfo", paginationInfo);
