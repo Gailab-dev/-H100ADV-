@@ -24,6 +24,10 @@ public class ImageByteLoader {
         
         Path base = Paths.get(externalBaseDir).toAbsolutePath().normalize();
         Path target = base.resolve(fileNameOrRelativePath).normalize();
+        
+        System.out.println("[IMG] base  =" + base);
+        System.out.println("[IMG] input =" + fileNameOrRelativePath);
+        System.out.println("[IMG] target=" + target);
 
         // Path Traversal 방어
         if (!target.startsWith(base)) {

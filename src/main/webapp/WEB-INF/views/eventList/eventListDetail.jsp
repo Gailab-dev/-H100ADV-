@@ -321,16 +321,17 @@
 	    
 	  });
 	  	
-	// 엑셀 다운로드
-	  	// 엑셀 다운로드
-		document.addEventListener('DOMContentLoaded', function () {
-		  document.getElementById('btnExcel').addEventListener('click', function () {
-		    const evId = '${eventListDetail.ev_id}';
-		
-		    ExcelDownloader.downloadFineAdvanceNotice(evId)
-		      .catch(e => alert(e.message));
-		  });
-		});}
+	
+  	// 엑셀 다운로드
+	document.addEventListener('DOMContentLoaded', function () {
+	  document.getElementById('btnExcel').addEventListener('click', function () {
+	    const evId = '${eventListDetail.ev_id}';
+	
+	    ExcelDownloader.downloadFineAdvanceNotice(evId)
+	      .catch(e => alert(e.message));
+	  });
+	});
+	
 	  
 	</script>
 

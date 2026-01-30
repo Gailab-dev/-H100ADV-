@@ -49,6 +49,7 @@ import com.disabled.common.ExcelSheetSpec;
 import com.disabled.common.ImageByteLoader;
 import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
+import com.disabled.model.FineAdvanceNoticeSpec;
 import com.disabled.service.EventListService;
 import com.disabled.service.ExcelService;
 import com.disabled.service.UserService;
@@ -866,249 +867,56 @@ public class EventListController {
 			
 			System.out.println("eventList { " + eventListDetail + " } ");
 			
-			// 불법주차 단속 이미지 파일명 가져오기
-			String photo1Path = eventListDetail.get("ev_img_path") == null ? "" : eventListDetail.get("ev_img_path").toString();
-	        String photo2Path = eventListDetail.get("ev_img_path2") == null ? "" : eventListDetail.get("ev_img_path2").toString();
+			// 이미지, 영상 파일 복호화
+		    boolean decCheck = false;
+		    decCheck = eventListService.requestFileDec(response, evId,eventListDetail);
+		    if(!decCheck) {
+		    	logger.error("이미지, 영상 파일 복호화 중 오류 발생 / response : " + response.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
+		    	return;
+		    }
 			
-
+			// 불법주차 단속 이미지 파일명 가져오기
+			String photo1Path = eventListDetail.get("ev_img_path") == null ? "" : eventListDetail.get("ev_img_path").toString().replace(".enc", "");
+	        String photo2Path = eventListDetail.get("ev_img_path2") == null ? "" : eventListDetail.get("ev_img_path2").toString().replace(".enc", "");
+		    
+		    // evCd값 문자열로 변경
+		    eventListDetail = codeConversionService.evCdConverstionIntToStr(eventListDetail);
+	        
+	        // 이미지 2장 가져오기
 	        byte[] photo1 = imageByteLoader.readillegalParkingImage(photo1Path);
 	        byte[] photo2 = imageByteLoader.readillegalParkingImage(photo2Path);
-	        
-		    // 유형 문자열로 변환
-		    eventListDetail = codeConversionService.evCdConverstionIntToStr(eventListDetail);
 		    
 		    // 정적 이미지 가져오기
 	        byte[] sealImage = imageByteLoader.readWebAppResource(servletContext, "/resources/images/seal.png");
 	        byte[] collectorImage = imageByteLoader.readWebAppResource(servletContext, "/resources/images/collector.png");
 		    
-		    // 엑셀 시트 생성
-	        Workbook wb = new XSSFWorkbook();
-	        Sheet sheet = wb.createSheet("과태료 통지서");
-
-	        // 컬럼 너비
-	        for (int i = 0; i < 12; i++) {
-	            sheet.setColumnWidth(i, 4000);
-	        }
-
-	        // ===== 스타일 =====
-	        XSSFColor lightSkyBlue = new XSSFColor(new java.awt.Color(220, 235, 247), null);
-	        XSSFColor lightRed = new XSSFColor(new java.awt.Color(255, 163, 163), null);
-	        
-	        CellStyle titleStyle = wb.createCellStyle();
-	        Font titleFont = wb.createFont();
-	        titleFont.setBold(true);
-	        titleFont.setFontHeightInPoints((short) 10);
-	        titleFont.setColor(IndexedColors.WHITE.getIndex());
-	        titleStyle.setFont(titleFont);
-	        titleStyle.setAlignment(HorizontalAlignment.CENTER);
-	        titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-	        titleStyle.setFillForegroundColor(IndexedColors.SKY_BLUE.getIndex());
-	        titleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-	        
-	        CellStyle noticeStyle = wb.createCellStyle();
-	        Font noticeFont = wb.createFont();
-	        noticeFont.setFontHeightInPoints((short) 9);
-	        noticeFont.setColor(IndexedColors.SKY_BLUE.getIndex());
-	        noticeStyle.setFont(noticeFont);
-	        noticeStyle.setAlignment(HorizontalAlignment.LEFT);
-	        noticeStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-	        
-	        Font bodyFont9 = wb.createFont();
-	        bodyFont9.setFontHeightInPoints((short) 9);
-
-	        CellStyle labelStyle = wb.createCellStyle();
-	        labelStyle.setFont(bodyFont9);
-	        labelStyle.setBorderBottom(BorderStyle.THIN);
-	        labelStyle.setBorderTop(BorderStyle.THIN);
-	        labelStyle.setBorderLeft(BorderStyle.THIN);
-	        labelStyle.setBorderRight(BorderStyle.THIN);
-	        labelStyle.setAlignment(HorizontalAlignment.CENTER);
-	        labelStyle.setFillForegroundColor(lightSkyBlue);
-	        labelStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-	        labelStyle.setTopBorderColor(IndexedColors.SKY_BLUE.getIndex());
-	        labelStyle.setBottomBorderColor(IndexedColors.SKY_BLUE.getIndex());
-	        labelStyle.setLeftBorderColor(IndexedColors.SKY_BLUE.getIndex());
-	        labelStyle.setRightBorderColor(IndexedColors.SKY_BLUE.getIndex());
-
-	        CellStyle valueStyle = wb.createCellStyle();
-	        valueStyle.cloneStyleFrom(labelStyle);
-	        valueStyle.setFillForegroundColor(IndexedColors.AUTOMATIC.getIndex());
-	        valueStyle.setFillPattern(FillPatternType.NO_FILL);
-	        valueStyle.setAlignment(HorizontalAlignment.LEFT);
-
-	        CellStyle labelStyle2 = wb.createCellStyle();
-	        Font labelFont2 = wb.createFont();
-	        labelFont2.setFontHeightInPoints((short) 9);
-	        labelFont2.setColor(IndexedColors.RED.getIndex());
-	        labelStyle2.setFont(labelFont2);
-	        labelStyle2.setBorderBottom(BorderStyle.THIN);
-	        labelStyle2.setBorderTop(BorderStyle.THIN);
-	        labelStyle2.setBorderLeft(BorderStyle.THIN);
-	        labelStyle2.setBorderRight(BorderStyle.THIN);
-	        labelStyle2.setAlignment(HorizontalAlignment.CENTER);
-	        labelStyle2.setFillForegroundColor(lightRed);
-	        labelStyle2.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-	        labelStyle2.setTopBorderColor(IndexedColors.RED.getIndex());
-	        labelStyle2.setBottomBorderColor(IndexedColors.RED.getIndex());
-	        labelStyle2.setLeftBorderColor(IndexedColors.RED.getIndex());
-	        labelStyle2.setRightBorderColor(IndexedColors.RED.getIndex());
-	        
-	        CellStyle valueStyle2 = wb.createCellStyle();
-	        valueStyle2.cloneStyleFrom(labelStyle2);
-	        valueStyle2.setFillForegroundColor(IndexedColors.AUTOMATIC.getIndex());
-	        valueStyle2.setFillPattern(FillPatternType.NO_FILL);
-	        valueStyle2.setAlignment(HorizontalAlignment.LEFT);
-
-	        CellStyle basicStyle = wb.createCellStyle();
-	        basicStyle.setFont(bodyFont9);
-	        basicStyle.setAlignment(HorizontalAlignment.CENTER);
-	        
-	        // ===== 제목 =====
-	        Row row2 = sheet.createRow(1);
-	        row2.setHeightInPoints(28);
-	        Cell title = row2.createCell(0);
-	        title.setCellValue("과태료 부과 사전통지서 및 영수증 (납부자보관용)");
-	        title.setCellStyle(titleStyle);
-	        sheet.addMergedRegion(new CellRangeAddress(1,1,0,3));
-	        
-	        // ===== 안내 정보 =====
-	        Row row4 = sheet.createRow(3);
-	        Cell notCel = row4.createCell(0);
-	        notCel.setCellValue("대상자:");
-	        notCel.setCellStyle(noticeStyle);
-	        
-	        Row row5 = sheet.createRow(4);
-	        notCel = row5.createCell(0);
-	        notCel.setCellValue("주   소:");
-	        notCel.setCellStyle(noticeStyle);
-
-	        
-	        Row row8 = sheet.createRow(7);
-	        notCel = row8.createCell(0);
-	        notCel.setCellValue("귀하에 대하여 장애인·노인·임산부 등의 편익증진 보장에 관한 법률 제 27조에 따라 아래와");
-	        notCel.setCellStyle(noticeStyle);
-	        
-	        Row row9 = sheet.createRow(8);
-	        notCel = row9.createCell(0);
-	        notCel.setCellValue("같이 과태료를 부과하고자 하오니 의견이 있으시면 기한내 의견을 주시기 바랍니다.");
-	        notCel.setCellStyle(noticeStyle);
-
-	        // ===== 기본 정보 =====
-	        createRow(sheet, 10, "차량번호", "35더3975", "일반일시", "2025.06.10 10:30:20", labelStyle, valueStyle);
-	        createRow(sheet, 11, "위반장소", "광주 북구 용두택지 66", "과태료금액", "", labelStyle, valueStyle);
-	        createRow(sheet, 12, "위반내용", "비장애인 주차", "적용법", "", labelStyle, valueStyle);
-	        createRow(sheet, 13, "감경금액", "", "의견제출기한", "", labelStyle, valueStyle);
-
-	        // ===== 전자납부번호 =====
+		    /*
+		    ExcelSheetSpec sheet = ExcelSheetSpec.builder()
+		            .sheetName("과태료부과_사전통지서_양식")
+		            .columns(columns)
+		            .data(eventListDetail)
+		            .build();
+		    */
+		    // 엑셀 파일 생성 및 다운로드
 		    
-	        Row row16 = sheet.createRow(15);
-	        Cell payNo = row16.createCell(0);
-	        payNo.setCellValue("전자납부번호");
-	        payNo.setCellStyle(labelStyle2);
-	        
-	        CellRangeAddress leftLabelRegion1 =
-		            new CellRangeAddress(15, 15, 0, 1);
-	        sheet.addMergedRegion(leftLabelRegion1);
-
-	        RegionUtil.setBorderTop(BorderStyle.THIN, leftLabelRegion1, sheet);
-	        RegionUtil.setBorderBottom(BorderStyle.THIN, leftLabelRegion1, sheet);
-	        RegionUtil.setBorderLeft(BorderStyle.THIN, leftLabelRegion1, sheet);
-	        RegionUtil.setBorderRight(BorderStyle.THIN, leftLabelRegion1, sheet);
-	        RegionUtil.setTopBorderColor(IndexedColors.RED.getIndex(), leftLabelRegion1, sheet);
-	        RegionUtil.setBottomBorderColor(IndexedColors.RED.getIndex(), leftLabelRegion1, sheet);
-	        RegionUtil.setLeftBorderColor(IndexedColors.RED.getIndex(), leftLabelRegion1, sheet);
-	        RegionUtil.setRightBorderColor(IndexedColors.RED.getIndex(), leftLabelRegion1, sheet);
-	        
-	        Cell payNo16_1 = row16.createCell(2);
-	        payNo16_1.setCellStyle(valueStyle2);
-	        
-	        CellRangeAddress leftValueRegion1 =
-		            new CellRangeAddress(15, 15, 2, 5);
-	        sheet.addMergedRegion(leftValueRegion1);
-	        
-	        RegionUtil.setBorderTop(BorderStyle.THIN, leftValueRegion1, sheet);
-	        RegionUtil.setBorderBottom(BorderStyle.THIN, leftValueRegion1, sheet);
-	        RegionUtil.setBorderLeft(BorderStyle.THIN, leftValueRegion1, sheet);
-	        RegionUtil.setBorderRight(BorderStyle.THIN, leftValueRegion1, sheet);
-	        RegionUtil.setTopBorderColor(IndexedColors.RED.getIndex(), leftValueRegion1, sheet);
-	        RegionUtil.setBottomBorderColor(IndexedColors.RED.getIndex(), leftValueRegion1, sheet);
-	        RegionUtil.setLeftBorderColor(IndexedColors.RED.getIndex(), leftValueRegion1, sheet);
-	        RegionUtil.setRightBorderColor(IndexedColors.RED.getIndex(), leftValueRegion1, sheet);
-	        
-	        
-	        // ===== 안내 정보 2 =====
-	        
-	        Row row18 = sheet.createRow(17);
-	        notCel = row18.createCell(0);
-	        notCel.setCellValue("귀하께서 위 의견제출기한 내에 이의제기 없이 과태료를 납부 하고자하는 경우에는");
-	        notCel.setCellStyle(noticeStyle);
-	        
-	        Row row19 = sheet.createRow(18);
-	        notCel = row19.createCell(0);
-	        notCel.setCellValue("감경금액으로 납부하실 수 있습니다. 의견제출은 기한 내에만 가능하며 의견진술을");
-	        notCel.setCellStyle(noticeStyle);
-	        
-	        Row row20 = sheet.createRow(19);
-	        notCel = row20.createCell(0);
-	        notCel.setCellValue("하여도 자진납부 기한은 연장되지 않습니다.");
-	        notCel.setCellStyle(noticeStyle);
-	        
-	        Row row23 = sheet.createRow(22);
-	        notCel = row23.createCell(1);
-	        notCel.setCellValue("2026년");
-	        notCel.setCellStyle(basicStyle);
-	        
-	        notCel = row23.createCell(2);
-	        notCel.setCellValue("1월");
-	        notCel.setCellStyle(basicStyle);
-	        
-	        notCel = row23.createCell(3);
-	        notCel.setCellValue("27일");
-	        notCel.setCellStyle(basicStyle);
-	        
-	        Row row24 = sheet.createRow(23);
-	        notCel = row24.createCell(3);
-	        notCel.setCellValue("용인시 기흥구");
-	        notCel.setCellStyle(basicStyle);
-	        
-	        // ===== 불법주차 이미지 =====
-	        
-	        CellRangeAddress region =
-	                new CellRangeAddress(4, 22, 7, 10);
-
-	        RegionUtil.setBorderTop(BorderStyle.THIN, region, sheet);
-	        RegionUtil.setBorderBottom(BorderStyle.THIN, region, sheet);
-	        RegionUtil.setBorderLeft(BorderStyle.THIN, region, sheet);
-	        RegionUtil.setBorderRight(BorderStyle.THIN, region, sheet);
-
-
-	        // ===== 이미지 삽입 =====
-//	        InputStream is = new FileInputStream("C:/images/car.jpg"); // 실제 서버 경로
-//	        byte[] bytes = IOUtils.toByteArray(is);
-//	        int pictureIdx = wb.addPicture(bytes, Workbook.PICTURE_TYPE_JPEG);
-//	        is.close();
-//
-//	        Drawing<?> drawing = sheet.createDrawingPatriarch();
-//	        CreationHelper helper = wb.getCreationHelper();
-//
-//	        ClientAnchor anchor1 = helper.createClientAnchor();
-//	        anchor1.setCol1(8);
-//	        anchor1.setRow1(6);
-//	        anchor1.setCol2(12);
-//	        anchor1.setRow2(13);
-//
-//	        Picture pic1 = drawing.createPicture(anchor1, pictureIdx);
-//	        pic1.resize();
-
-	        // ===== 응답 =====
-	        response.setContentType(
-	            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-	        response.setHeader(
-	            "Content-Disposition",
-	            "attachment; filename=과태료부과_사전통지서.xlsx");
-
-	        wb.write(response.getOutputStream());
-	        wb.close();
+		    // excelService.download("과태료부과_사전통지서.xlsx", sheet, response);
+		    
+		    FineAdvanceNoticeSpec sheet = FineAdvanceNoticeSpec.fromEventDetail(
+		    		eventListDetail,			// 차량번호, 위반장소, 위반내용, 위반일시
+		    		photo1,photo2,				// 단속이미지 2장
+		    		sealImage,collectorImage	// 하단 도장 이미지, 수납인 이미지
+		    		,"김00"						// 대상자
+		    		,"광주광역시 북구 00로"		// 주소
+		    		,"100,000원"				// 과태료
+		    		,""							// 적용방법 
+		    		,"0원"						// 감경금액
+		    		,"2026.00.00"				// 의견제출기한
+		    		,"12345678"					// 전자납부번호
+		    		,"2026년 00월 00일"			// 날짜
+		    		,"광주광역시 북구"			// 기관
+		    		);
+		    
+		    excelService.downloadFineAdvanceNotice("과태료부과_사전통지서.xlsx", sheet, response);
  		    
 		    // ====== 서비스 [E] ======
 
@@ -1116,64 +924,6 @@ public class EventListController {
 			logger.error("엑셀 파일 생성 중 오류 발생",e);
 			return;
 		}
-	}
-	
-	private void createRow(
-        Sheet sheet, int rowNum,
-        String label1, String value1,
-        String label2, String value2,
-        CellStyle labelStyle, CellStyle valueStyle) {
-
-	    Row row = sheet.createRow(rowNum);
-
-	    Cell c0 = row.createCell(0);
-	    c0.setCellValue(label1);
-	    c0.setCellStyle(labelStyle);
-
-	    Cell c1 = row.createCell(1);
-	    c1.setCellValue(value1);
-	    c1.setCellStyle(valueStyle);
-	    
-	    CellRangeAddress leftValueRegion =
-	            new CellRangeAddress(rowNum, rowNum, 1, 2);
-        sheet.addMergedRegion(leftValueRegion);
-
-        RegionUtil.setBorderTop(BorderStyle.THIN, leftValueRegion, sheet);
-        RegionUtil.setBorderBottom(BorderStyle.THIN, leftValueRegion, sheet);
-        RegionUtil.setBorderLeft(BorderStyle.THIN, leftValueRegion, sheet);
-        RegionUtil.setBorderRight(BorderStyle.THIN, leftValueRegion, sheet);
-        
-        RegionUtil.setTopBorderColor(IndexedColors.SKY_BLUE.getIndex(), leftValueRegion, sheet);
-        RegionUtil.setBottomBorderColor(IndexedColors.SKY_BLUE.getIndex(), leftValueRegion, sheet);
-        RegionUtil.setLeftBorderColor(IndexedColors.SKY_BLUE.getIndex(), leftValueRegion, sheet);
-        RegionUtil.setRightBorderColor(IndexedColors.SKY_BLUE.getIndex(), leftValueRegion, sheet);
-        
-
-	    Cell c3 = row.createCell(3);
-	    c3.setCellValue(label2);
-	    c3.setCellStyle(labelStyle);
-
-	    Cell c4 = row.createCell(4);
-	    c4.setCellValue(value2);
-	    c4.setCellStyle(valueStyle);
-	    
-	    CellRangeAddress rightValueRegion =
-	            new CellRangeAddress(rowNum, rowNum, 4, 5);
-        sheet.addMergedRegion(rightValueRegion);
-
-        RegionUtil.setBorderTop(BorderStyle.THIN, rightValueRegion, sheet);
-        RegionUtil.setBorderBottom(BorderStyle.THIN, rightValueRegion, sheet);
-        RegionUtil.setBorderLeft(BorderStyle.THIN, rightValueRegion, sheet);
-        RegionUtil.setBorderRight(BorderStyle.THIN, rightValueRegion, sheet);
-        
-        RegionUtil.setTopBorderColor(IndexedColors.SKY_BLUE.getIndex(), rightValueRegion, sheet);
-        RegionUtil.setBottomBorderColor(IndexedColors.SKY_BLUE.getIndex(), rightValueRegion, sheet);
-        RegionUtil.setLeftBorderColor(IndexedColors.SKY_BLUE.getIndex(), rightValueRegion, sheet);
-        RegionUtil.setRightBorderColor(IndexedColors.SKY_BLUE.getIndex(), rightValueRegion, sheet);
-	    
-        c0.setCellStyle(labelStyle);
-        c3.setCellStyle(labelStyle);
-	    
 	}
 	
 }
