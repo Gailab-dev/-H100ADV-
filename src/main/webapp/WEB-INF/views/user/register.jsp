@@ -342,7 +342,6 @@
 			const data = await r.json();
 			
 			alert(data.msg);
-			showAlert("인증메일을 발송했습니다.");
 			
 		}
 		

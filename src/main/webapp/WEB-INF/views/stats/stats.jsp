@@ -250,14 +250,13 @@
 	})
 	
 	// 검색 조건에 따른 검색
-	window.searchStatistics = function(pageNo){
+	window.searchStatistics = function(){
 		
 		let form = document.getElementById('StatsSearchForm');
 	  	const startDate = form.elements['startDate']?.value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate']?.value;
 	  	let stCd = form.elements['stCd']?.value;
-	  	stCd = stCd ? Number(stCd) : null;
-	 	const pageSize = document.getElementById('pageSize')?.value;
+	  	stCd = stCd ? Number(stCd) : "";
 	  	
 		
 		if(startDate != null && endDate != null && startDate > endDate ){
@@ -265,10 +264,20 @@
 			return;
 		}
 		
-	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
-	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
+		// 검색 파라티터 설정
+	    const params = new URLSearchParams();
+		  if (startDate) params.set('startDate', startDate);
+		  if (endDate)   params.set('endDate', endDate);
+
+		  // stCd가 숫자일 때만 붙임
+		  if (stCd !== "") params.set('stCd', String(Number(stCd)));
+		  
+		  // location.href = `viewStat.do?${params.toString()}`;
+	
+		  console.log(params);
+		  location.href = "viewStat.do?" + params;
 		
-		location.href = "viewStat.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&stCd=" + stCd +"&pageSize="+pageSize;
+		// location.href = "viewStat.do?startDate=" + startDate + "&endDate=" + endDate + "&stCd=" + stCd;
 		
 	}
 	
@@ -515,7 +524,7 @@
 						</select>
 					</div>
 					<button type="button" class="search-btn"
-						onclick="searchStatistics('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
+						onclick="searchStatistics()">조회</button>
 				</form>
 
 

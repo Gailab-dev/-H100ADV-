@@ -107,7 +107,7 @@
 		LEFT JOIN tbl_statistics s
 		  ON s.st_cd = c.st_cd
 		  AND STR_TO_DATE(s.st_date, '%Y%m') = STR_TO_DATE(m.month, '%Y-%m')
-  			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+  			<if test="startMonth != null and startMonth != '' and endMonth != null and endMonth != ''">
 				and s.st_date BETWEEN #{startMonth} AND #{endMonth}
 			</if>
 			<if test="stCd != null and stCd != ''">

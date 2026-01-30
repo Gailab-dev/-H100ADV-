@@ -119,15 +119,15 @@ public class StatsController {
 			//yyyy-MM-dd 형식의 값을 yyyyMM으로 편집
 			String startMonth = "";
 			String endMonth = "";
-			if(startDate != null && startDate != "") startMonth = startDate.replace("-", "").substring(0, 6).trim();
-			if(endDate != null && endDate != "") endMonth = endDate.replace("-", "").substring(0, 6).trim();
+			if(startDate != null && !startDate.isEmpty()) startMonth = startDate.replace("-", "").substring(0, 6).trim();
+			if(endDate != null && !endDate.isEmpty()) endMonth = endDate.replace("-", "").substring(0, 6).trim();
 			
 			System.out.println(startMonth + "  " + endMonth);
 			
 			// 최근 1년간 월별 불법주차 통계 데이터 조회 
 			//statsByMonth = statsService.getEventByMonth();
 			// 검색 조건에 따른 최근 1년간 월별 불법주차 통계 데이터 조회
-			paramMap.put("endMonth", startMonth);
+			paramMap.put("startMonth", startMonth);
 			paramMap.put("endMonth", endMonth);
 			paramMap.put("stCd", stCd);	
 			statsByMonth = statsService.getEventByMonthAndSearchParams(paramMap);
