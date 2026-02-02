@@ -181,6 +181,7 @@ public class VideoDecryptionService {
         try (FileInputStream fis = new FileInputStream(encryptedFile)) {
             // 파일 크기 확인
             long fileSize = encryptedFile.length();
+            System.out.println("======암호화된 파일 크기: " + fileSize + " bytes");
             logger.info("암호화된 파일 크기: {} bytes", fileSize);
 
             // 첫 16바이트를 IV로 읽기
@@ -205,6 +206,18 @@ public class VideoDecryptionService {
 
             byte[] encryptedData = baos.toByteArray();
             logger.info("암호화된 데이터 크기: {} bytes", encryptedData.length);
+
+            // 암호화된 데이터 검증
+            if (encryptedData.length == 0) {
+                logger.error("암호화된 데이터가 없습니다. 파일이 손상되었거나 IV만 존재합니다. 파일: {}", encryptedFilePath);
+                return false;
+            }
+
+            if (encryptedData.length % 16 != 0) {
+                logger.error("암호화된 데이터 크기({} bytes)가 16의 배수가 아닙니다. 파일이 손상되었거나 불완전하게 전송되었습니다. 파일: {}",
+                        encryptedData.length, encryptedFilePath);
+                return false;
+            }
 
             // 디버깅: 키 정보 확인
             logger.info("복호화 키 알고리즘: {}, 키 길이: {} bytes, 키 hex: " + bytesToHex(videoSecretKey.getEncoded()),
@@ -292,7 +305,7 @@ public class VideoDecryptionService {
      * @return true: 성공
      * @throws Exception 복호화 또는 저장 실패 시
      */
-    public boolean decryptAndSaveFileAutoName(String fileName, String encryptedFilePath, String outputFilePath) throws Exception {
+    public boolean decryptAndSaveFileAutoName1(String fileName, String encryptedFilePath, String outputFilePath) throws Exception {
         // fileName에서 .enc 빼기
         String fileNameTemp = fileName.replaceFirst("\\.enc$", "");
 

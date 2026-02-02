@@ -356,10 +356,12 @@ public class EventListServiceImpl implements EventListService{
 					json.put("fileName2", eventListDetail.get("ev_img_path2").toString());
 
 				}
+				System.out.println("======json : " + json);
 				
 				// 이미지 파일 가져오기
 				String streamCheck = "";
 				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
+				
 				if("error".equals(streamCheck)) {
 					
 					// 실패 처리
@@ -395,6 +397,10 @@ public class EventListServiceImpl implements EventListService{
 				}
 			}
 			
+			File encryptedFile = new File("/home/dsic/Desktop/H100_system/output_images_enc/20260202175054_1_Cam1_1.png.enc");
+    		long fileSize = encryptedFile.length();
+            System.out.println("======666666암호화된 파일 크기: " + fileSize + " bytes");
+			
 		} catch (IllegalStateException e2) {
 			logger.error("requestFileFromModule에서 evHasMovChange 또는 evHasImgChange 오류 발생 : ",e2);
 			throw e2;
@@ -416,18 +422,28 @@ public class EventListServiceImpl implements EventListService{
 	@Override
 	public boolean requestFileDec(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
 		try {
-			String decImgCheck = "error";
+			File encryptedFile1 = new File("/home/dsic/Desktop/H100_system/output_images_enc/20260202175054_1_Cam1_1.png.enc");
+    		long fileSize1 = encryptedFile1.length();
+            System.out.println("======999999암호화된 파일 크기: " + fileSize1 + " bytes");
+            
+			boolean decImgCheck = false;
 			boolean decVideoCheck = false;
         
 			// 파라미터 추가
-			List<String> paramList = new ArrayList<String>();
-			if (eventListDetail.get("ev_img_path") != null)
-			    paramList.add(eventListDetail.get("ev_img_path").toString());
-			if (eventListDetail.get("ev_img_path2") != null)
-			    paramList.add(eventListDetail.get("ev_img_path2").toString());
+//			List<String> paramList = new ArrayList<String>();
+//			if (eventListDetail.get("ev_img_path") != null)
+//			    paramList.add(eventListDetail.get("ev_img_path").toString());
+//			if (eventListDetail.get("ev_img_path2") != null)
+//			    paramList.add(eventListDetail.get("ev_img_path2").toString());
 			
 			// 이미지 복호화
-			decImgCheck = decryptionService.decryptAndSaveFileAutoName(paramList, imgEncPath, imgDecPath);
+			File encryptedFile = new File("/home/dsic/Desktop/H100_system/output_images_enc/20260202175054_1_Cam1_1.png.enc");
+			long fileSize = encryptedFile.length();
+			System.out.println("======파일 경로 : " + imgEncPath + File.separator + eventListDetail.get("ev_img_path"));
+            System.out.println("======11111111암호화된 파일 크기: " + fileSize + " bytes");
+			
+			decImgCheck = decryptionService.decryptAndSaveFileAutoName1(String.valueOf(eventListDetail.get("ev_img_path")), imgEncPath, imgDecPath);
+			decImgCheck = decryptionService.decryptAndSaveFileAutoName1(String.valueOf(eventListDetail.get("ev_img_path2")), imgEncPath, imgDecPath);
 			if(!"ok".equals(decImgCheck)) {
 				logger.error("[이미지파일 복호화 실패] 파일명: " + decImgCheck + ", 암호화 된 이미지 경로: " +  imgEncPath + ", 복호화 된 이미지 경로" + imgDecPath);
 				return false;
@@ -436,7 +452,7 @@ public class EventListServiceImpl implements EventListService{
 			// 영상 복호화
 			Object movObj = eventListDetail.get("ev_mov_path");
 			if (movObj != null && !movObj.toString().isBlank()) {
-				decVideoCheck = decryptionService.decryptAndSaveFileAutoName(eventListDetail.get("ev_mov_path").toString(), videoEncPath, videoDecPath);
+				decVideoCheck = decryptionService.decryptAndSaveFileAutoName1(eventListDetail.get("ev_mov_path").toString(), videoEncPath, videoDecPath);
 			}
         
 			if(!decVideoCheck) {
