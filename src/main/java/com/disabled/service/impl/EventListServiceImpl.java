@@ -444,7 +444,7 @@ public class EventListServiceImpl implements EventListService{
 			
 			decImgCheck = decryptionService.decryptAndSaveFileAutoName1(String.valueOf(eventListDetail.get("ev_img_path")), imgEncPath, imgDecPath);
 			decImgCheck = decryptionService.decryptAndSaveFileAutoName1(String.valueOf(eventListDetail.get("ev_img_path2")), imgEncPath, imgDecPath);
-			if(!"ok".equals(decImgCheck)) {
+			if(!decImgCheck) {
 				logger.error("[이미지파일 복호화 실패] 파일명: " + decImgCheck + ", 암호화 된 이미지 경로: " +  imgEncPath + ", 복호화 된 이미지 경로" + imgDecPath);
 				return false;
 			}
