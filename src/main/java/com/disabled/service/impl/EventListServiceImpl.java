@@ -351,19 +351,24 @@ public class EventListServiceImpl implements EventListService{
 				
 				
 				json.put("type", "image");
-				json.put("fileName", eventListDetail.get("ev_img_path").toString());
-				if(eventListDetail.get("ev_img_path2") != null) {
-					json.put("fileName2", eventListDetail.get("ev_img_path2").toString());
-
-				}
+				
 				System.out.println("======json : " + json);
 				
-				// 이미지 파일 가져오기
+				// 첫번째 이미지 파일 가져오기
 				String streamCheck = "";
+				json.put("fileName", eventListDetail.get("ev_img_path").toString());
 				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
-				
 				if("error".equals(streamCheck)) {
 					
+					// 실패 처리
+					logger.error("디바이스에서 이미지 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);
+					return false; 
+				}
+				
+				// 두번째 이미지 파일 가져오기
+				json.put("fileName", eventListDetail.get("ev_img_path2").toString());
+				streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend" );
+				if("error".equals(streamCheck)) {
 					// 실패 처리
 					logger.error("디바이스에서 이미지 가져오기 실패 / dvIp : "+ dvIp + "json : " + json);
 					return false; 
