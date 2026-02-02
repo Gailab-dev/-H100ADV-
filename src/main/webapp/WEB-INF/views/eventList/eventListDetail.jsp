@@ -158,7 +158,7 @@
 						<!-- 
 						<td>${eventListDetail.dv_addr}</td>
 						 -->
-						<td><c:out value="${dvAddr}" escapeXml="true" /></td>
+						<td><c:out value="${eventListDetail.ev_dv_addr}" escapeXml="true" /></td>
 					</tr>
 					<tr>
 						<th>차량번호</th>
