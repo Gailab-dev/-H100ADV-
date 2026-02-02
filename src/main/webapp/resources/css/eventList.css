@@ -349,3 +349,37 @@ button {
     text-align: center;
 }
 
+/* ================= 반응형 zoom 설정 ================= */
+@media (max-width: 1620px) {
+    .content {
+        zoom: 0.9;
+    }
+    .sidebar {
+        zoom: 1;
+        min-width: 234px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 1440px) {
+    .content {
+        zoom: 0.8;
+    }
+    .sidebar {
+        zoom: 1;
+        min-width: 234px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 1280px) {
+    .content {
+        zoom: 0.7;
+    }
+    .sidebar {
+        zoom: 1;
+        min-width: 234px;
+        flex-shrink: 0;
+    }
+}
+

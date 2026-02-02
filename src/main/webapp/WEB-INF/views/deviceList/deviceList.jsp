@@ -1110,7 +1110,6 @@
 			</aside>
 			<!-- 메인 콘텐츠 -->
 			<div class="content">
-				<main class="main">
 					<div class="buttonBox">
 						<!-- 첫 번째 줄: 등록 버튼 / 두 번째 줄 : 날짜, 검색, 조회버튼 - 10개씩 보기 -->
 						<button class="add-btn" onclick="viewDeviceInfoPopup()">+
@@ -1290,7 +1289,7 @@
 					<div id="realTimeVideoPopup" style="display: none;"></div>
 					<div id="deviceInfoPopup" style="display: none;"></div>
 					<div id="deleteDevicePopup" style="display: none;"></div>
-				</main>
+				
 			</div>
 		</div>
 	</div>

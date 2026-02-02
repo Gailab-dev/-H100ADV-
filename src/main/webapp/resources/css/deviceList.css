@@ -93,6 +93,7 @@ button {
     padding: 20px;
     border-right: 1px solid #E5E5EC;
     background: #FCFBFF;
+    flex-shrink: 0;
 }
 .menu {
     list-style-type: none;
@@ -135,16 +136,6 @@ button {
     flex-direction: column;
     flex: 1;
     padding: 32px 24px 29px 24px;
-}
-
-/* 메인 영역 */
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-x: auto;
-  background: #fff;
-  width: 100%;
 }
 
 /* ================= 상단 영역 ================= */
@@ -425,7 +416,7 @@ button {
   width: 16px;
   height: 16px;
   border: 1.6px solid #767676;
-  border-radius: 4px; /* 둥근 사각형 */
+  border-radius: 4px; 
   cursor: pointer;
   transition: all 0.2s;
   background-color: #fff;
@@ -453,18 +444,37 @@ button {
   transform: rotate(45deg);
 }
 
-
-/* ================= 반응형 ================= */
-@media (max-width: 1200px) {
-  .main {
-    padding: 16px 20px;
-  }
-  .top-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .search-box {
-    width: 100%;
-    max-width: none;
-  }
+/* ================= 반응형 zoom 설정 ================= */
+@media (max-width: 1620px) {
+    .content {
+        zoom: 0.9;
+    }
+    .sidebar {
+        zoom: 1;
+        min-width: 234px;
+        flex-shrink: 0;
+    }
 }
+
+@media (max-width: 1440px) {
+    .content {
+        zoom: 0.8;
+    }
+    .sidebar {
+        zoom: 1;
+        min-width: 234px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 1280px) {
+    .content {
+        zoom: 0.7;
+    }
+    .sidebar {
+        zoom: 1;
+        min-width: 234px;
+        flex-shrink: 0;
+    }
+}
+

@@ -76,7 +76,7 @@
 <%--  전역 변수 선언부 --%>
 
 <script>
-	
+	let chart = null;
 	$(document).ready(function () {
 		
 		console.log("statsByMonth:", window.statsByMonth);
@@ -130,10 +130,10 @@
 		console.log("xData : " + xData);
 		console.log("yColumns : " + yColumns);
 		
-		let chart = c3.generate({
+		chart = c3.generate({
 			bindto:'#chart', // 바인팅할 html 태그의 id
 			size:{
-				width:1533,
+				width:null,
 				height:321.6
 			},
 		    data: {  // 데이터에 관한 속성값
@@ -247,7 +247,17 @@
 
 		buildStatsTable();
 
-	})
+	});
+	let resizeTimer;
+	window.addEventListener('resize', function() {
+	    clearTimeout(resizeTimer);
+	    resizeTimer = setTimeout(function() {
+	        if (chart) {
+	            chart.flush();  // C3.js 차트 리사이즈
+	        }
+	    }, 250);
+	});
+
 	
 	// 검색 조건에 따른 검색
 	window.searchStatistics = function(){
