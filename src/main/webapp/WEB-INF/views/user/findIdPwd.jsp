@@ -151,6 +151,10 @@
 		
 		// 결과 출력
 		loadSubpage(subpageDiv,html);
+		// 서브페이지 로드 후 이메일 인증 버튼 초기화
+		setTimeout(() => {
+	        initEmailAuthButton();
+	    }, 100);
 	}
 	
 	// 아이디 찾기 로직
@@ -217,17 +221,94 @@
 		goPage("/user/login.do");
 	}
 	
+	// ============ 이메일 인증 관련 함수들 ============
+
+	// 이메일 인증 요청
+	async function requestEmailAuth(){
+	    const email = document.getElementById('email')?.value;
+	    
+	    if(!email || email.trim() === ""){
+	        alert("이메일을 입력해주세요.");
+	        return;
+	    }
+	    
+	    const res = await fetch("${pageContext.request.contextPath}/user/request", {
+	        method: "POST",
+	        headers: {"Content-Type":"application/json"},
+	        credentials: "same-origin",
+	        cache: "no-store",
+	        body: JSON.stringify({"u_email": email})
+	    });
+	    
+	    if(!res.ok){
+	        showAlert("인증메일 발송에 실패했습니다.");
+	        return;
+	    }
+	    
+	    const data = await res.json();
+	    alert(data.msg);
+	}
+
+	// 이메일 인증 완료 확인
+	async function isEmailVerified(email){
+	    try {
+	        const res = await fetch("${pageContext.request.contextPath}/user/isRegisterEmailVerified", {
+	            method: "POST",
+	            headers: {"Content-Type":"application/json", "Accept": "application/json"},
+	            credentials: "same-origin",
+	            body: JSON.stringify({ email })
+	        });
+	        
+	        if(!res.ok) return false;
+	        
+	        const contentType = res.headers.get("content-type") || "";
+	        if(!contentType.includes("application/json")) return false;
+	        
+	        const json = await res.json();
+	        return json.verified === true;
+	        
+	    } catch(e) {
+	        console.error("[isEmailVerified] error", e);
+	        return false;
+	    }
+	}
+
+	// 이메일 입력 감지하여 인증 버튼 활성화/비활성화
+	function initEmailAuthButton(){
+	    const emailInput = document.getElementById('email');
+	    const confirmBtn = document.getElementById('emailAuthBtn');
+	    
+	    if(!emailInput || !confirmBtn) return;
+	    
+	    // 초기: 비활성화
+	    confirmBtn.disabled = true;
+	    confirmBtn.style.backgroundColor = '#ADADAD';
+	    confirmBtn.style.cursor = 'not-allowed';
+	    
+	    emailInput.addEventListener('input', function(){
+	        if(emailInput.value.trim().length > 0){
+	            confirmBtn.disabled = false;
+	            confirmBtn.style.backgroundColor = '#6955A2';
+	            confirmBtn.style.cursor = 'pointer';
+	        } else {
+	            confirmBtn.disabled = true;
+	            confirmBtn.style.backgroundColor = '#ADADAD';
+	            confirmBtn.style.cursor = 'not-allowed';
+	        }
+	    });
+	}
+	
 	//비밀번호 인증하기
 	async function authPwd(){
 		const name = document.getElementById("name")?.value;
-		const phone = document.getElementById("phone")?.value;
+		const phone = document.getElementById("email")?.value;
 		const id = document.getElementById("id")?.value;
 		
 		url = "/user/authPwd";
 		
 		body = makeJson({
 			u_name : name
-			, u_phone : phone
+			, u_email : email
 			,u_login_id : id
 		});
 		

@@ -6,9 +6,8 @@
 	</p>
 	<div class="fields">
 		<div class="input-group">
-			<input type="text" class="line-input" id="name"
-				placeholder="이름을 입력하세요."> <input type="text"
-				class="line-input" id="id" placeholder="아이디를 입력하세요.">
+			<input type="text" class="line-input" id="name"	placeholder="이름을 입력하세요."> 
+			<input type="text" class="line-input" id="id" placeholder="아이디를 입력하세요.">
 
 			<!-- 이메일 + 인증 버튼 -->
 			<div class="email-wrapper">
