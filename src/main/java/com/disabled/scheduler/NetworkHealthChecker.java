@@ -1,20 +1,17 @@
 package com.disabled.scheduler;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.disabled.mapper.DeviceListMapper;
 
+@SuppressWarnings("unused")
 @Component
 public class NetworkHealthChecker {
 
+	
     private static final Logger logger = LoggerFactory.getLogger(NetworkHealthChecker.class);
 
 	@Autowired
