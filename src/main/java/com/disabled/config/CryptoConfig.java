@@ -27,6 +27,7 @@ public class CryptoConfig {
         return new SecretKeySpec(keyBytes, "AES");
     }
 
+    @SuppressWarnings("unused")
     private String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {

@@ -340,6 +340,7 @@ public class UserServiceImpl implements UserService {
 	/*
 	 * 마스킹 처리 된 문자열 리턴
 	 */
+	@SuppressWarnings("unused")
 	private String makeMaskStr(String str, int len, int prefix, int suffix) {
 		String prefixStr = str.substring(0, prefix);
 		String suffixStr = str.substring(len - suffix);

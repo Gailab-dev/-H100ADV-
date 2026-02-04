@@ -62,13 +62,6 @@ public class EventListServiceImpl implements EventListService{
 	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(EventListServiceImpl.class);
-	
-	
-	@Override
-	public List<Map<String, Object>> getEventList() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	/**
 	 * 불법 주차 리스트에서 이벤트 상세 내역을 DB에서 가져옴

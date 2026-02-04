@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -341,7 +340,8 @@ public class VideoDecryptionService {
 
 	public String decryptAndSaveFileAutoName(List<String> paramList, String encryptedFilePath, String outputFilePath) throws Exception {
         
-		for (Iterator iterator = paramList.iterator(); iterator.hasNext();) {
+		for (@SuppressWarnings("rawtypes")
+		Iterator iterator = paramList.iterator(); iterator.hasNext();) {
 			String fileName = (String) iterator.next();
 			
 			// fileName에서 .enc 빼기
