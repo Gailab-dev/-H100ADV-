@@ -254,7 +254,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 초기 사용자 로그인 변경 화면
+	 * 최초로 로그인한 경우, 초기 비밀번호 변경 화면으로 이동
 	 * @param uId		아이디(String)
 	 * @param response
 	 * @param session
@@ -632,7 +632,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 마스크 된 아이디를 보여주는 서브페이지 출력
+	 * 아이디 찾기 결과로 * 마스킹 된 아이디를 보여주는 서브페이지 출력
 	 */
 	@RequestMapping("viewShowMaskedIdSubpage.do")
 	public String viewShowMaskedIdSubpage(
@@ -725,7 +725,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 비밀번호 리셋 서브페이지 보여주기
+	 * 비밀번호 찾기 시 새로운 비밀번호를 설정하는 서브페이지 이동
 	 */
 	@RequestMapping("viewResetPwdSubpage.do")
 	public String viewResetPwdSubpage(
@@ -738,7 +738,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 비밀번호 리셋
+	 * 비밀번호 재설정
 	 */
 	@PostMapping(value = "/resetPwd", produces = "application/json; charset=UTF-8")
 	@ResponseBody
@@ -865,7 +865,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 사용자가 인증메일에서 인증버튼 클릭시 처리(토큰과 이메일 둘 다 비교하고 싶을 경우)
+	 * 사용자가 인증메일에서 인증버튼 클릭시 인증 처리(토큰과 이메일 둘 다 비교하고 싶을 경우)
 	 * @param token
 	 * @param model
 	 * @return
@@ -944,7 +944,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 회원가입시 이메일 인증을 하였는지 확인
+	 * 회원가입시 이메일 인증을 여부를 확인
 	 * @param body
 	 * @param session
 	 * @return
@@ -1035,7 +1035,7 @@ public class UserController {
 	}
 	
 	/**
-	 * 이메일 인증 여부 확인하는 함수
+	 * 입력한 이메일이 인증되었는지 아닌지 이메일 인증 여부를 확인
 	 * @param session
 	 * @return
 	 */

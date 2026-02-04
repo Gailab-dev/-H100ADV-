@@ -203,7 +203,7 @@ public class MyInfoController {
 	}
 	
 	/**
-	 * 기존 비밀번호와 접속한 사용자의 비밀번호를 비교하여 같은지 확인
+	 * DB에 저장된 비밀번호와 사용자가 입력한 비밀번호를 비교하여 같은지 확인
 	 * @param paramMap	입력한 비밀번호
 	 * @return 같다면 true, 다르거나 오류 발생시 false
 	 */
@@ -252,7 +252,7 @@ public class MyInfoController {
 				uid = Integer.parseInt(uIdObj.toString());
 			}
 			
-			// 기존 비밀번호 가져오기
+			// DB에 저장된 비밀번호 가져오기
 			String cmpPwd = userService.getPwd(uid);
 			if(cmpPwd == null || cmpPwd.isEmpty()) {
 				logger.error("기존 비밀번호 가져오기 실패.");
