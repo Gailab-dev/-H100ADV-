@@ -17,7 +17,7 @@ public class CodeConversionService {
 	public List<Map<String,Object>> StCdConverstionIntToStr(List<Map<String,Object>> listContainStCds){
 		
 		// 코드 별 숫자를 문자로 변환
-		for (Iterator iterator = listContainStCds.iterator(); iterator.hasNext();) {
+		for (Iterator<Map<String,Object>> iterator = listContainStCds.iterator(); iterator.hasNext();) {
 			Map<String, Object> map = (Map<String, Object>) iterator.next();
 			
 			Object stCdObj = map.get("st_cd");
@@ -60,7 +60,7 @@ public class CodeConversionService {
 	public List<Map<String,Object>> evCdConverstionIntToStr(List<Map<String,Object>> listContainEvCds){
 		
 		// 코드 별 숫자를 문자로 변환
-		for (Iterator iterator = listContainEvCds.iterator(); iterator.hasNext();) {
+		for (Iterator<Map<String,Object>> iterator = listContainEvCds.iterator(); iterator.hasNext();) {
 			Map<String, Object> map = (Map<String, Object>) iterator.next();
 			
 			Object evCdObj = map.get("ev_cd");

@@ -154,7 +154,7 @@
 	
 	</select>
 	
-	<!-- 이름, 아이디, 전화번호로 식별번호 가져오기 -->
+	<!-- 이름, 아이디, 전화번호로 로그인 아이디 가져오기 -->
 	<select id="getLoginIdWithNameAndIdAndPhone" resultType="int">
 		SELECT u_id
 		FROM tbl_user

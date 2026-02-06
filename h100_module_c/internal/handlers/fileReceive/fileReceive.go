@@ -46,9 +46,9 @@ func FileReceive(res http.ResponseWriter, req *http.Request, stype string) bool 
     saveDir := ""
 
     if(stype == "image") {
-        saveDir = filepath.Join(os.Getenv("FILE_UPLOAD_PATH"), "output_images")
+        saveDir = filepath.Join(os.Getenv("FILE_UPLOAD_PATH"), "output_images_enc")
     } else if (stype == "video") {
-        saveDir = filepath.Join(os.Getenv("FILE_UPLOAD_PATH"), "output_videos")
+        saveDir = filepath.Join(os.Getenv("FILE_UPLOAD_PATH"), "output_videos_enc")
     }
     
     os.MkdirAll(saveDir, os.ModePerm)
@@ -73,7 +73,10 @@ func FileReceive(res http.ResponseWriter, req *http.Request, stype string) bool 
         return false
     }
     
-    logger.Log.Info(fmt.Sprintf("[파일 수신] 시간: %s | 파일명: %s bytes\n", timestamp, sFileName))
+    logger.Log.Info(fmt.Sprintf("[파일 수신] 시간: %s | 파일명: %s | 사이즈:%d bytes\n", timestamp, sFileName, handler.Size))
+    info, err := os.Stat(savePath)
+    logger.Log.Info(fmt.Sprintf("[[[[파일 사이즈 ]]]] %d bytes\n", info.Size()))
+
     return true
 }
 
