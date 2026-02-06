@@ -104,7 +104,7 @@ button {
     color: #000;
     transition: background 0.2s ease;
 }
-.menu > li:nth-child(3) > a {
+.menu > li:nth-child(1) > a {
     background: #f8f8fa; 
     font-weight: bold;
 }
