@@ -101,6 +101,13 @@
 		AND u_phone = #{u_phone}
 	</select>
 	
+	<select id = "getLoginIdByNameAndEmail" resultType="string">
+		SELECT u_login_id
+		FROM tbl_user
+		WHERE u_name = #{u_name}
+		AND u_email = #{u_email}
+	</select>
+	
 	<select id="getCountUserIdAsParam" resultType="int">
 		SELECT COUNT(1)
 		FROM tbl_user
@@ -150,7 +157,7 @@
 			1=1
 			AND u_login_id = #{u_login_id}
 			AND u_name = #{u_name}
-			AND u_phone = #{u_phone}
+			AND u_email = #{u_email}
 	
 	</select>
 	
@@ -163,6 +170,17 @@
 			AND u_login_id = #{u_login_id}
 			AND u_name = #{u_name}
 			AND u_phone = #{u_phone}
+	</select>
+	
+		<!-- 이름, 아이디, 이메일로 로그인 아이디 가져오기 -->
+	<select id="getLoginIdWithNameAndIdAndEmail" resultType="int">
+		SELECT u_id
+		FROM tbl_user
+		WHERE
+			1=1
+			AND u_login_id = #{u_login_id}
+			AND u_name = #{u_name}
+			AND u_email = #{u_email}
 	</select>
 	
 	<select id = "getUnameBySession" resultType="string">

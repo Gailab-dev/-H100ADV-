@@ -97,6 +97,7 @@
 	function loadSubpage(subpageDiv,res){
 		subpageDiv.innerHTML = "";
 		subpageDiv.innerHTML = res;
+		
 	}
 	
 	// 서브페이지 적용 시 title 숨기기 (특정 단계에서만)
@@ -133,6 +134,10 @@
 		
 		// 결과 출력
 		loadSubpage(subpageDiv,html);
+		// 서브페이지 로드 후 이메일 인증 버튼 초기화
+		setTimeout(() => {
+	        initEmailAuthButton();
+	    }, 100);
 		
 	}
 	
@@ -160,13 +165,28 @@
 	// 아이디 찾기 로직
 	async function findId(){
 		const name = document.getElementById("name")?.value;
-		const phone = document.getElementById("phone")?.value;
+		const email = document.getElementById("email")?.value;
+		
+		//validation
+		if(!name){
+			showAlert("이름을 입력하세요.");
+			return;
+		}
+		if(!email){
+			showAlert("이메일을 입력하세요.");
+			return;
+		}
+		const verifiedEmail = await isVerifiedNow(email);
+		if(!verifiedEmail){
+			showAlert("이메일 인증이 필요합니다.");
+			return;
+		}
 		
 		url = "/user/findId"
 		
 		body = makeJson({
 			u_name : name
-			, u_phone : phone
+			, u_email : email
 		});
 		
 		res = await apiService(
@@ -188,21 +208,20 @@
 		
 		const result = await res.json();
 		
-		const alert = document.getElementById("");
 		if(!result.ok){
 			showAlert(result.msg);
 			return;
 		}else{
-			viewShowMaskedIdSubpage(result.maskedId);
+			viewShowMaskedIdSubpage(result.maskMyId);
 			return;
 		}
 		
 	}
 	
 	// 마스크 된 아이디를 보여주는 서브페이지 출력
-	async function viewShowMaskedIdSubpage(maskedId){
+	async function viewShowMaskedIdSubpage(maskMyId){
 		
-		url = "/user/viewShowMaskedIdSubpage.do?maskedId="+maskedId;
+		url = "/user/viewShowMaskedIdSubpage.do?maskMyId="+maskMyId;
 		
 		res = await apiService(url);
 		
@@ -217,7 +236,6 @@
 	
 	// 로그인 화면으로 돌아가기.
 	function goBackLogin(){
-		alert("로그인 페이지로 돌아갑니다.");
 		goPage("/user/login.do");
 	}
 	
@@ -249,28 +267,39 @@
 	    alert(data.msg);
 	}
 
-	// 이메일 인증 완료 확인
-	async function isEmailVerified(email){
-	    try {
-	        const res = await fetch("${pageContext.request.contextPath}/user/isRegisterEmailVerified", {
-	            method: "POST",
-	            headers: {"Content-Type":"application/json", "Accept": "application/json"},
-	            credentials: "same-origin",
-	            body: JSON.stringify({ email })
-	        });
-	        
-	        if(!res.ok) return false;
-	        
-	        const contentType = res.headers.get("content-type") || "";
-	        if(!contentType.includes("application/json")) return false;
-	        
-	        const json = await res.json();
-	        return json.verified === true;
-	        
-	    } catch(e) {
-	        console.error("[isEmailVerified] error", e);
-	        return false;
-	    }
+	// 이메일 인증했는지 확인
+	async function isVerifiedNow(email){
+	  try {
+	    const res = await fetch("${pageContext.request.contextPath}/user/isRegisterEmailVerified", {
+	      method: "POST",
+	      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+	      credentials: "same-origin",
+	      body: JSON.stringify({ email })
+	    });
+	
+	    const contentType = res.headers.get("content-type") || "";
+	    const raw = await res.text();
+	
+	    console.log("[isVerifiedNow] status=", res.status);
+	    console.log("[isVerifiedNow] redirected=", res.redirected, "url=", res.url);
+	    console.log("[isVerifiedNow] contentType=", contentType);
+	    console.log("[isVerifiedNow] raw=", raw);
+	
+	    if (!res.ok) return false;
+	
+	    // 서버가 JSON이 아닌 페이지를 반환하면 무조건 false
+	    if (!contentType.includes("application/json")) return false;
+	
+	    const json = JSON.parse(raw);
+	    
+	    console.log(json.verified);
+	    
+	    return json.verified === true;
+	
+	  } catch (e) {
+	    console.error("[isVerifiedNow] error", e);
+	    return false;
+	  }
 	}
 
 	// 이메일 입력 감지하여 인증 버튼 활성화/비활성화
@@ -301,8 +330,27 @@
 	//비밀번호 인증하기
 	async function authPwd(){
 		const name = document.getElementById("name")?.value;
-		const phone = document.getElementById("email")?.value;
+		const email = document.getElementById("email")?.value;
 		const id = document.getElementById("id")?.value;
+		
+		//validation
+		if(!name){
+			showAlert("이름을 입력하세요.");
+			return;
+		}
+		if(!id){
+			showAlert("아이디를 입력하세요.");
+			return;
+		}
+		if(!email){
+			showAlert("이메일을 입력하세요.");
+			return;
+		}
+		const verifiedEmail = await isVerifiedNow(email);
+		if(!verifiedEmail){
+			showAlert("이메일 인증이 필요합니다.");
+			return;
+		}
 		
 		url = "/user/authPwd";
 		
@@ -335,63 +383,10 @@
 			showAlert(result.msg);
 			return;
 		}else{
-			viewInputAuthNumberSubpage(result.uId);
+			viewResetPwdSubpage(result.uId);
 			return;
 		}
 		
-	}
-	
-	// 인증번호 전송 페이지 보여주기
-	async function viewInputAuthNumberSubpage(uId){
-		url = "/user/viewInputAuthNumberSubpage.do?uId="+uId;
-		
-		res = await apiService(url);
-		
-		if(!res){
-			return;
-		}
-		
-		const html = await res.text();
-		
-		loadSubpage(subpageDiv, html);
-	}
-	
-	// 인증번호 인증하기
-	async function authNumber(uId){
-		const authNumber = document.getElementById("authNumber")?.value;
-		
-		url = "/user/authNumber";
-		
-		body = makeJson({
-			authNumber : authNumber
-		});
-		
-		res = await apiService(
-				url,
-				{
-					method : 'POST',
-					headers : {
-						'Content-Type':'application/json'
-					},
-					credentials : 'same-origin',
-					cache: 'no-store',	
-				},
-				body
-			);
-		
-		if(!res){
-			return;
-		}
-		
-		const result = await res.json();
-		
-		if(!result.ok){
-			showAlert(result.msg);
-			return;
-		}else{
-			viewResetPwdSubpage(uId);
-			return;
-		}
 	}
 	
 	// 비밀번호 리셋 서브페이지 보여주기
@@ -414,6 +409,14 @@
 	async function resetPwd(uId){
 		const pwd = document.getElementById("pwd")?.value;
 		const rePwd = document.getElementById("rePwd")?.value;
+		
+		if(!pwd){
+			
+		}
+		if(!rePwd){
+			
+		}
+		
 		
 		url = "/user/resetPwd";
 		

@@ -151,7 +151,7 @@
 					</tr>
 					<tr>
 						<th>디바이스명</th>
-						<td>테스트용 내용</td>
+						<td><c:out value="${eventListDetail.ev_dv_name}" escapeXml="true" /></td>
 					</tr>
 					<tr>
 						<th>디바이스 주소</th>

@@ -41,6 +41,8 @@ public interface UserService {
 	boolean authWithAuthNumber(Map<String, Object> json);
 
 	Integer getLoginIdWithNameAndIdAndPhone(Map<String, Object> body);
+	
+	Integer getLoginIdWithNameAndIdAndEmail(Map<String, Object> body);
 
 	int verifyEmailByToken(Map<String, Object> param);
 

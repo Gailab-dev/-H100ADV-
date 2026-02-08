@@ -589,6 +589,13 @@ public class UserController {
 		
 		try {
 			
+			Object nameObj = body.get("u_name");
+			Object emailObj = body.get("u_emial");
+			if(nameObj == null || emailObj == null) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "입력한 정보에 해당하는 아이디가 없습니다.");
+			}
+			
 			String myId = userService.findId(body);
 			if(myId == null || myId.toString().trim().isEmpty()) {
 				resultMap.put("ok", false);
@@ -636,10 +643,10 @@ public class UserController {
 	 */
 	@RequestMapping("viewShowMaskedIdSubpage.do")
 	public String viewShowMaskedIdSubpage(
-			@RequestParam("maskedId") String maskedId
+			@RequestParam("maskMyId") String maskMyId
 			, Model model) {
 		
-		model.addAttribute("maskedId", maskedId);
+		model.addAttribute("maskMyId", maskMyId);
 		return "/subpage/user/showMaskedIdSubpage";
 		
 	}
@@ -662,13 +669,13 @@ public class UserController {
 			boolean isAuthPwd = userService.authPwd(body);
 			if(!isAuthPwd) {
 				resultMap.put("ok", false);
-				resultMap.put("msg", "해당 정보에 맞는 회원을 찾을 수 없습니다. 이름 또는 아이디 또는 전화번호를 다시 확인해주세요.");
+				resultMap.put("msg", "해당 정보에 맞는 회원을 찾을 수 없습니다. 이름 또는 아이디 또는 이메일을 다시 확인해주세요.");
 				return resultMap;
 			}else {
-				uId = userService.getLoginIdWithNameAndIdAndPhone(body);
+				uId = userService.getLoginIdWithNameAndIdAndEmail(body);
 				if(uId == null) {
 					resultMap.put("ok", false);
-					resultMap.put("msg", "해당 정보에 맞는 회원을 찾을 수 없습니다. 이름 또는 아이디 또는 전화번호를 다시 확인해주세요.");
+					resultMap.put("msg", "해당 정보에 맞는 회원을 찾을 수 없습니다. 이름 또는 아이디 또는 이메일을 다시 확인해주세요.");
 				}
 			}
 			

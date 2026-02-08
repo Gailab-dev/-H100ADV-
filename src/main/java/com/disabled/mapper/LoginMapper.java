@@ -17,8 +17,10 @@ public interface LoginMapper {
 	Integer getCountUserIdAsParam(@Param("uLoginId") String uLoginId) throws IllegalStateException;
 	Integer insertUser(Map<String, Object> paramMap) throws IllegalStateException;
 	String getLoginIdByNameAndPhone(Map<String, Object> body) throws IllegalStateException;
+	String getLoginIdByNameAndEmail(Map<String, Object> body) throws IllegalStateException;
 	int getCountPwd(Map<String, Object> body) throws IllegalStateException;
-	Integer getLoginIdWithNameAndIdAndPhone(Map<String, Object> body);
+	Integer getLoginIdWithNameAndIdAndPhone(Map<String, Object> body) throws IllegalStateException;
+	Integer getLoginIdWithNameAndIdAndEmail(Map<String, Object> body) throws IllegalStateException;
 	
 	Map<String, Object> getUserByULoginId(@Param("u_login_id") String uLoginId) throws IllegalStateException;
 	void increaseFailCount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
@@ -26,4 +28,5 @@ public interface LoginMapper {
 	Integer resetFailCount(@Param("u_login_id") String uLoginId) throws IllegalStateException;
 	int updateLoginFailCountZero(@Param("u_login_id") String uLoginId) throws IllegalStateException;
 	String getUnameBySession(@Param("uId")Integer uId) throws IllegalStateException;
+	
 }

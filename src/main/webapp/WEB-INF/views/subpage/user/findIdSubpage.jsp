@@ -10,8 +10,13 @@
 	<div class="fields">
 		<div class="input-group">
 			<input type="text" class="line-input" id="name"
-				placeholder="이름을 입력하세요."> <input type="text"
-				class="line-input" id="email" placeholder="이메일을 입력하세요.">
+				placeholder="이름을 입력하세요.">
+				
+			<%-- 이메일 + 인증 버튼 --%>
+			<div class="email-wrapper">
+				<input type="email" class="line-input" id="email" placeholder="이메일을 입력하세요.">
+				<button type="button" class="confirm" id="emailAuthBtn" onclick="requestEmailAuth()" disabled>인증</button>
+			</div>	 
 		</div>
 		<div class="submitgroup">
 			<p id="alert" style="color: red;"></p>

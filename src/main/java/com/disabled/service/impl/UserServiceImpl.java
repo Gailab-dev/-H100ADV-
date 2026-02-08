@@ -357,7 +357,7 @@ public class UserServiceImpl implements UserService {
 	public String findId(Map<String, Object> body) {
 		
 		try {
-			return loginMapper.getLoginIdByNameAndPhone(body);
+			return loginMapper.getLoginIdByNameAndEmail(body);
 			
 		} catch (IllegalStateException e) {
 			logger.error("findId 함수 실행 도중 오류 발생 : ",e);
@@ -451,6 +451,30 @@ public class UserServiceImpl implements UserService {
 	}
 	
 	/**
+	 * 이름, 아이디, 이메일로 고유번호 식별
+	 */
+	@Override
+	public Integer getLoginIdWithNameAndIdAndEmail(Map<String, Object> body) {
+		
+		Integer uId = null;
+		
+		try {
+			uId = loginMapper.getLoginIdWithNameAndIdAndEmail(body);
+			if(uId == null) {
+				logger.error("loginMapper.getLoginIdWithNameAndIdAndEmail SQL문에서 오류 발생");
+				return null;
+			}
+			
+			return uId;
+		} catch (RuntimeException e) {
+			logger.error("getLoginIdWithNameAndIdAndEmail 함수 실행 중 오류 발생 : ",e);
+			throw e;
+			
+		}
+		
+	}
+	
+	/**
 	 * 이메일 인증
 	 * 현재 세션 기반으로 개발하여 사용하지 않음
 	 */
@@ -474,6 +498,8 @@ public class UserServiceImpl implements UserService {
 		}
 		
 	}
+
+
 	
 	
 
