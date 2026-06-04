@@ -122,6 +122,8 @@ public class UserServiceImpl implements UserService {
 			// 그 값이 5 이상이라면 잠금
 			loginMapper.lockAccount(id);
 			
+			// 현재 잠금값 가져오기
+			
 		} catch (IllegalStateException e2) {
 			logger.error("loginFailService 함수에서 SQL 사용시 오류 발생 : ",e2);
 			throw e2;
