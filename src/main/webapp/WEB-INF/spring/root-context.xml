@@ -72,6 +72,7 @@
 	<!-- 이메일 인증을 위한 Gmail SMTP 설정값 불러오기 -->
 	<context:property-placeholder
     location="classpath:/globals.properties"
+    file-encoding="UTF-8"
     ignore-unresolvable="false" />
 	
 	<!-- mail sender -->

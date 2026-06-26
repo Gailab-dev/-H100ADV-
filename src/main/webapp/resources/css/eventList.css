@@ -383,3 +383,47 @@ button {
     }
 }
 
+
+/* ===== ADR-008(2026-06-17) 상세보기 로딩/메시지 오버레이 (목록 페이지 위) ===== */
+/* 상세보기 클릭 즉시 표시 → 가능 시 상세 이동, 불가 시 "파일이 존재하지 않습니다" 메시지 */
+.h100-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+.h100-overlay-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 220px;
+  padding: 28px 32px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+.h100-overlay-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid #d0d4da;
+  border-top-color: #6955A2;
+  animation: h100-ov-spin 0.8s linear infinite;
+}
+@keyframes h100-ov-spin { to { transform: rotate(360deg); } }
+.h100-overlay-msg { font-size: 14px; color: #333; }
+.h100-overlay-close {
+  display: none;
+  margin-top: 4px;
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #6955A2;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}

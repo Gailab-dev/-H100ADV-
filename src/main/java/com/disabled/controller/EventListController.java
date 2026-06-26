@@ -419,43 +419,95 @@ public class EventListController {
 			    }
 			}
 			
-			// 이미지파일, 영상 파일 module에서 수신
-			boolean moduleCheck = false;
-			moduleCheck = eventListService.requestFileFromModule(res, dvId,evId,eventListDetail);
-			if(!moduleCheck) {
-				logger.error("Device와 파일 송수신 도중 오류 발생 / response : " + res.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
-				model.addAttribute("errorMsg", "상세 조회 중 오류가 발생했습니다.");
-				return "redirect:/eventList/viewEventList.do";
-			}
-			
-			// 이미지, 영상 파일 복호화
-		    boolean decCheck = false;
-		    decCheck = eventListService.requestFileDec(res, evId,eventListDetail);
-		    if(!decCheck) {
-		    	logger.error("이미지, 영상 파일 복호화 중 오류 발생 / response : " + res.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
-		    	model.addAttribute("errorMsg", "상세 조회 중 이미지, 영상 파일 복호화 오류가 발생했습니다.");
-		    	return "redirect:/eventList/viewEventList.do";
-		    }
+			// ====== ADR-008(2026-06-17) 디바이스 통신 우선순위 변경 ======
+			// 파일 준비(서버파일 우선 → 없으면 디바이스 → 복호화)는 목록에서 상세보기 클릭 시
+			// AJAX(/eventList/detail/check)로 사전 수행된다. 이 페이지는 그 결과로 진입하므로,
+			// 직접 진입 대비 서버 파일 복호화만 멱등·빠르게 보장(디바이스 호출 X)한 뒤 렌더링한다.
+			eventListService.decryptForView(eventListDetail);
 			
 			// ====== 서비스 [E] ====== //
 			
 			// ====== mdoel add [S] ====== //
 			model.addAttribute("eventListDetail", eventListDetail);
+			model.addAttribute("dvId", dvId); // ADR-008: AJAX 단계 호출에서 디바이스 식별용
 			model.addAttribute("searchKeyword", searchKeyword);
 			model.addAttribute("startDate", startDate);
 			model.addAttribute("endDate", endDate);
 			// ====== mdoel add [E] ====== //
 			
 		} catch (IllegalArgumentException e) {
+			// ADR-008: errorMsg 파라미터 리다이렉트 제거(목록 alert 유발 방지). 조용히 목록으로 복귀.
 			logger.error("잘못된 인자 전달로 인한 오류 발생 : ",e);
-			model.addAttribute("errorMsg", "상세 조회 중 오류가 발생했습니다.");
 			return "redirect:/eventList/viewEventList.do";
-			
 		}
 
 		return "eventList/eventListDetail";
 	}
 	
+	// ====== ADR-008 디바이스 통신 우선순위 변경 — 비동기 사전검증 엔드포인트 (단일) ======
+	// 목록에서 상세보기 클릭 시 호출. 서버 파일 우선 → 없으면 디바이스 통신 → 복호화까지 수행하고,
+	// 이동 가능 여부(available)와 사용자 메시지를 반환한다. (페이지 이동 여부는 프론트가 결정)
+
+	/**
+	 * 상세보기 사전검증. 시나리오 확정 + 파일 준비.
+	 * @return {"available": bool, "scenario": "A"~"E", "message": String|null}
+	 *   A=가(서버存) / B=나(없음·통신실패) / C=다(디바이스도없음) / D=라(디바이스수신) / E=마(손상→재시도)
+	 */
+	@GetMapping("/detail/check")
+	@ResponseBody
+	public Map<String, Object> detailCheck(@RequestParam("evId") Integer evId,
+			@RequestParam(value = "dvId", required = false) Integer dvId, HttpServletResponse res) {
+
+		logger.info("[DIAG] [evId={}] [phase=detailCheck-entry] msg=상세보기 진입", evId); // TEMP 진단 — 시연 후 제거
+		Map<String, Object> out = new HashMap<String, Object>();
+		String scenario;
+		boolean available;
+		String message = null;
+
+		Map<String, Object> detail = eventListService.getEventListDetail(evId);
+
+		if (detail == null) {
+			available = false; scenario = "B"; message = "파일이 존재하지 않습니다";
+		} else if (eventListService.encImagesExistOnServer(detail)) {
+			logger.info("[DIAG] [evId={}] [phase=normal-flow] msg=enc 존재, 정상 흐름 진입", evId); // TEMP 진단
+			// (가) 서버 파일 존재 → 복호화
+			if (eventListService.decryptForView(detail)) {
+				available = true; scenario = "A";
+			} else {
+				// (마) 서버 파일 손상 → 디바이스 재연결 1회
+				String r = eventListService.fetchFromDevice(res, dvId, evId, detail);
+				if ("OK".equals(r) && eventListService.decryptForView(detail)) {
+					available = true; scenario = "E";
+				} else {
+					available = false; scenario = "E"; message = "파일이 존재하지 않습니다";
+				}
+			}
+		} else if (eventListService.plainImagesExistOnServer(detail)) {
+			logger.info("[DIAG] [evId={}] [phase=plain-fallback-success] msg=평문 fallback 성공, available=true 응답", evId); // TEMP 진단
+			// (ADR-008 / 2026-06-25) .enc 없음 + 평문 원본(.png 등) 존재 → 복호화·디바이스통신 없이 그대로 표시.
+			// 응답 available/message 는 정상 흐름(A)과 동일(프론트는 available만 사용). scenario="P"는 로깅 식별용.
+			available = true; scenario = "P";
+			logger.info("[ADR-008] 평문 원본 fallback evId={} (복호화·디바이스 통신 생략)", evId);
+		} else {
+			logger.info("[DIAG] [evId={}] [phase=plain-fallback-failed] msg=enc·평문 둘 다 없음, fetchFromDevice 진입", evId); // TEMP 진단
+			// (나/다/라) 둘 다 없음 → 디바이스 통신 (timeout 연결5초/응답10초)
+			String r = eventListService.fetchFromDevice(res, dvId, evId, detail);
+			if ("OK".equals(r) && eventListService.decryptForView(detail)) {
+				available = true; scenario = "D";
+			} else {
+				available = false;
+				scenario = "FAIL".equals(r) ? "B" : "C";
+				message = "파일이 존재하지 않습니다";
+			}
+		}
+
+		logger.info("[ADR-008] detail/check evId={} scenario={} available={}", evId, scenario, available);
+		out.put("available", available);
+		out.put("scenario", scenario);
+		out.put("message", message);
+		return out;
+	}
+
 	/**
 	 * tomcat 외부 경로에 저장된 이미지 파일 불러오기
 	 * @Param

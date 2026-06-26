@@ -106,10 +106,8 @@
 						alt="엑셀 다운로드">
 				</button>
 			</div>
-			<!-- 상세 이미지 -->
+			<!-- 상세 이미지 (ADR-008: 목록에서 AJAX 사전검증 완료 후 진입 → 직접 렌더) -->
 			<div class="image-wrapper">
-				<!-- <img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">
-				<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image"> -->
 				<div class="image-container">
 					<div class="imgeTitle">진입 시</div>
 					<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">

@@ -19,7 +19,7 @@ import org.springframework.web.client.RestTemplate;
  * 향후 Apache HttpComponents 기반 팩토리로 교체 가능.)</p>
  */
 @Configuration
-@PropertySource("classpath:globals.properties")
+@PropertySource(value = "classpath:globals.properties", encoding = "UTF-8")
 public class ExternalApiConfig {
 
 	/** 연결 타임아웃(ms) */

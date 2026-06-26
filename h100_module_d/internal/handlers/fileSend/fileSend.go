@@ -2,16 +2,20 @@ package fileSend
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
-	"encoding/json"
 	"strconv"
+	"strings"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -95,17 +99,33 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) bool {
 	file, fErr := os.Open(filePath)
 	if fErr != nil {
 		logger.Log.Error(fmt.Sprintf("파일 열기 실패: %s", filePath), zap.Error(fErr))
-		defer file.Close()
 		return false
-	} else {
-		defer file.Close()
 	}
+	defer file.Close()
+
+	// HMAC 계산과 전송 본문 작성 모두에 사용하기 위해 파일 바이트를 메모리에 적재
+	fileBytes, rdErr := io.ReadAll(file)
+	if rdErr != nil {
+		logger.Log.Error(fmt.Sprintf("파일 읽기 실패: %s", filePath), zap.Error(rdErr))
+		return false
+	}
+
+	// ===== [S] 디바이스 인증 헤더 생성 (Phase 2) ===== //
+	// 환경변수 DEVICE_SERIAL(디바이스 시리얼), DEVICE_HMAC_KEY(64자 hex=32바이트)에서 로드.
+	// HMAC = HMAC-SHA256(키, serial || fileBytes) 의 hex. 서버(module_c)가 동일하게 계산·비교한다.
+	serial := os.Getenv("DEVICE_SERIAL")
+	macHex, hErr := computeDeviceHMAC(os.Getenv("DEVICE_HMAC_KEY"), serial, fileBytes)
+	if hErr != nil {
+		// 보안: 키 원문은 로그에 남기지 않음
+		logger.Log.Error("HMAC 생성 실패 — 환경변수 DEVICE_SERIAL / DEVICE_HMAC_KEY 확인 필요", zap.Error(hErr))
+		return false
+	}
+	// ===== [E] 디바이스 인증 헤더 생성 ===== //
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	fileInfo, _ := file.Stat()
-	filesize := fileInfo.Size()
+	filesize := int64(len(fileBytes))
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 
 	part, pErr := writer.CreateFormFile("file", sFileName)
@@ -113,7 +133,10 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) bool {
 		logger.Log.Error("FormFile 생성 실패", zap.Error(pErr))
 		return false
 	}
-	io.Copy(part, file)
+	if _, wErr := part.Write(fileBytes); wErr != nil {
+		logger.Log.Error("multipart 본문 작성 실패", zap.Error(wErr))
+		return false
+	}
 
 	writer.Close()
 
@@ -124,6 +147,9 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) bool {
 		return false
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	// 디바이스 인증 헤더 부착
+	req.Header.Set("X-Device-Serial", serial)
+	req.Header.Set("X-Device-HMAC", macHex)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -141,6 +167,30 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) bool {
 	logger.Log.Info(fmt.Sprintf("서버 응답: %s", string(respBody)))
 
 	return true
+}
+
+/**
+ * 디바이스 인증용 HMAC 생성 함수
+ * HMAC-SHA256(key, serial || body) 의 hex 문자열을 반환한다.
+ *
+ * @param	keyHex	디바이스 HMAC 키(64자 hex = 32바이트).
+ * @param	serial	디바이스 시리얼
+ * @param	body	전송 파일 원본 바이트(IV || 암호문)
+ * @return	HMAC hex, 오류
+ */
+func computeDeviceHMAC(keyHex string, serial string, body []byte) (string, error) {
+	keyHex = strings.TrimSpace(keyHex)
+	if keyHex == "" || strings.TrimSpace(serial) == "" {
+		return "", fmt.Errorf("DEVICE_SERIAL 또는 DEVICE_HMAC_KEY 미설정")
+	}
+	key, err := hex.DecodeString(keyHex)
+	if err != nil || len(key) != 32 {
+		return "", fmt.Errorf("DEVICE_HMAC_KEY 형식 오류(64자 hex 필요)")
+	}
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(serial)) // 시리얼 바인딩(스왑 방지)
+	mac.Write(body)
+	return hex.EncodeToString(mac.Sum(nil)), nil
 }
 
 /**

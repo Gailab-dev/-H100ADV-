@@ -128,8 +128,8 @@ public class ApiServiceImpl implements ApiService{
 	        conn.setDoOutput(true);
 	        conn.setRequestProperty("Content-Type", contentType);
 	        conn.setRequestProperty("Accept", "application/octet-stream");
-	        conn.setConnectTimeout(8000);  
-	        conn.setReadTimeout(8000); 
+	        conn.setConnectTimeout(5000);   // ADR-008(2026-06-17): 연결 5초 — 죽은 디바이스 빨리 실패
+	        conn.setReadTimeout(10000);  // ADR-008(2026-06-17): 응답 10초 상한
 	        
 	        // 요청 송신
 	        try(OutputStream os = conn.getOutputStream()){

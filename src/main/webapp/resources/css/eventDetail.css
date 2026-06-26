@@ -239,3 +239,5 @@ body.lb-open{overflow:hidden}
 
 /* 아이콘 버튼 기본 */
 .video-icon-btn{border:0;background:transparent;cursor:pointer;vertical-align:middle}
+
+/* ADR-008: 로딩 UI는 목록 페이지(eventList.css)로 이동 — 상세 페이지에는 오버레이 없음 */

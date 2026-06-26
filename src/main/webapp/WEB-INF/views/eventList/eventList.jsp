@@ -15,16 +15,7 @@
 <title>eventList</title>
 
 <%-- 상세 보기 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
-<c:if test="${not empty param.errorMsg}">
-	<script>
-	alert('<c:out value="${param.errorMsg}" />');
-	
-    // ✅ URL에서 errorMsg 제거, 새로고침 등으로 오류 메시지 재출력 방지
-    const url = new URL(window.location.href);
-    url.searchParams.delete('errorMsg');
-    history.replaceState(null, '', url.toString());
-</script>
-</c:if>
+<%-- ADR-008(2026-06-17): errorMsg alert 블록 제거. 상세 실패는 AJAX 사전검증 후 목록 오버레이 메시지로 처리(페이지 이동·alert 없음). --%>
 <%-- 상세 보기 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 <%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 <script>
@@ -105,9 +96,58 @@
 	    let pageSize = encodeURIComponent('${pageSize != null ? pageSize : ""}');
 	    
 	    
-	    location.href = 'eventListDetail?dvId='+dvId+'&evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&dvAddr="+dvAddr+"&pageSize="+pageSize;
+	    // 결과가 '가능'일 때 이동할 상세 URL (파라미터는 목록이 보유)
+	    const detailUrl = 'eventListDetail?dvId='+dvId+'&evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&dvAddr="+dvAddr+"&pageSize="+pageSize;
+
+	    // (ADR-008) 즉시 로딩 오버레이 → 비동기 사전검증 → 가능 시 동기 이동, 아니면 "파일 없음" 표시
+	    const _h100Started = Date.now();
+	    const _h100MinShow = 300; // 깜박임 방지(최소 표시 시간 ms)
+	    showLoadingOverlay('처리 중...');
+	    const _h100Ctrl = new AbortController();
+	    const _h100To = setTimeout(function(){ _h100Ctrl.abort(); }, 10000); // 10초 상한
+	    fetch(CONTEXT_PATH + '/eventList/detail/check?evId=' + encodeURIComponent(evId) + '&dvId=' + encodeURIComponent(dvId==null?'':dvId),
+	          { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _h100Ctrl.signal })
+	      .then(function(r){ return r.json(); })
+	      .then(function(d){
+	        clearTimeout(_h100To);
+	        if (d && d.available) { location.href = detailUrl; return; } // 동기 페이지 이동
+	        const wait = Math.max(0, _h100MinShow - (Date.now() - _h100Started));
+	        setTimeout(function(){ hideLoadingOverlay(); showMessageOverlay((d && d.message) || '파일이 존재하지 않습니다'); }, wait);
+	      })
+	      .catch(function(){ clearTimeout(_h100To); hideLoadingOverlay(); showMessageOverlay('파일이 존재하지 않습니다'); });
 	}
 	
+	// ===== ADR-008 로딩/메시지 오버레이 헬퍼 (목록 페이지 위) =====
+	function showLoadingOverlay(msg){
+	  const ov = document.getElementById('h100Overlay');
+	  const sp = document.getElementById('h100OverlaySpinner');
+	  const mt = document.getElementById('h100OverlayMsg');
+	  const cl = document.getElementById('h100OverlayClose');
+	  if(!ov) return;
+	  clearTimeout(window.__h100OvTimer);
+	  if(sp) sp.style.display = 'block';
+	  if(cl) cl.style.display = 'none';
+	  if(mt) mt.textContent = msg || '처리 중...';
+	  ov.style.display = 'flex';
+	}
+	function hideLoadingOverlay(){
+	  const ov = document.getElementById('h100Overlay');
+	  if(ov) ov.style.display = 'none';
+	}
+	function showMessageOverlay(msg){
+	  const ov = document.getElementById('h100Overlay');
+	  const sp = document.getElementById('h100OverlaySpinner');
+	  const mt = document.getElementById('h100OverlayMsg');
+	  const cl = document.getElementById('h100OverlayClose');
+	  if(!ov) return;
+	  if(sp) sp.style.display = 'none';
+	  if(mt) mt.textContent = msg || '파일이 존재하지 않습니다';
+	  if(cl) cl.style.display = 'inline-block';
+	  ov.style.display = 'flex';
+	  clearTimeout(window.__h100OvTimer);
+	  window.__h100OvTimer = setTimeout(hideLoadingOverlay, 3000); // 3초 후 자동 사라짐
+	}
+
 	// 검색 조건에 따른 검색
 	window.searchEventList = function(pageNo){
 		
@@ -605,6 +645,14 @@
 			</div>
 		</div>
 
+	</div>
+	<!-- ADR-008 로딩/메시지 오버레이 (목록 페이지 위) -->
+	<div id="h100Overlay" class="h100-overlay" role="status" aria-live="polite">
+		<div class="h100-overlay-box">
+			<div id="h100OverlaySpinner" class="h100-overlay-spinner" aria-hidden="true"></div>
+			<div id="h100OverlayMsg" class="h100-overlay-msg">처리 중...</div>
+			<button type="button" id="h100OverlayClose" class="h100-overlay-close" onclick="hideLoadingOverlay()">닫기</button>
+		</div>
 	</div>
 </body>
 </html>

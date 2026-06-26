@@ -8,11 +8,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -20,6 +20,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,30 +28,69 @@ public class VideoDecryptionService {
 
     private static final Logger logger = LoggerFactory.getLogger(VideoDecryptionService.class);
 
-    // ✅ 파이썬 decrypt_test.py / parking_system_rtsp.py 의 SECRET_KEY 와 반드시 동일
-    private static final String SECRET_KEY = "gailab3883!";
-
     private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
     private static final int IV_SIZE = 16; // AES block size
+    private static final int AES_256_KEY_BYTES = 32; // AES-256 = 32바이트 키
 
-    // 🔥 더 이상 외부 @Autowired 로 받지 않고, 파이썬과 동일하게 내부에서 생성
-    private final SecretKey videoSecretKey;
+    /**
+     * 디바이스 ↔ 웹 파일 암호화에 사용하는 AES-256 대칭키 (hex 문자열로 주입).
+     *
+     * [Phase 1 변경 이유]
+     *  - 과거: 소스코드 상수 SECRET_KEY 를 SHA-256 해싱해 키 생성 → 키가 Git에 노출 + 예측 가능 + 로그 출력까지 됨
+     *  - 변경: 환경변수 H100_AES_KEY (globals.properties: external.crypto.aes-key) 에서 64자 hex(=32바이트)를 직접 로드
+     *  - 환경변수 값 자체가 고엔트로피 랜덤 키이므로 SHA-256 도출 단계 제거
+     *
+     * 보안 정책: 키 원문(hex/바이트)은 로그·예외 메시지·API 응답에 절대 출력하지 않는다.
+     */
+    @Value("${external.crypto.aes-key:}")
+    private String aesKeyHex;
 
-    public VideoDecryptionService() throws Exception {
-        this.videoSecretKey = createVideoSecretKey();
-        logger.info("VideoDecryptionService 초기화 - 키 길이: {} bytes, 키 hex: {}",
-                videoSecretKey.getEncoded().length,
-                bytesToHex(videoSecretKey.getEncoded()));
+    /** 로드된 AES 키. 환경변수 미설정/형식오류 시 null 로 남고, 복호화 호출 시점에 명확히 실패한다. */
+    private SecretKey videoSecretKey;
+
+    /**
+     * 시작 시 키 로드.
+     *
+     * 정책: 키가 없거나 형식이 틀려도 컨텍스트 기동은 막지 않는다(경고 로그만 남김).
+     *      이유 — 복호화는 보조 기능이며, 키 부재로 웹 전체 가용성을 떨어뜨리지 않기 위함이다.
+     *      실제 복호화가 호출되는 시점에 {@link #requireKey()} 가 명확한 예외를 던진다.
+     */
+    @PostConstruct
+    private void initKey() {
+        if (aesKeyHex == null || aesKeyHex.isBlank()) {
+            logger.warn("[보안] 환경변수 H100_AES_KEY(external.crypto.aes-key) 미설정 — 복호화 호출 시 실패합니다. (부팅은 계속)");
+            return;
+        }
+        try {
+            byte[] keyBytes = HexFormat.of().parseHex(aesKeyHex.trim());
+            if (keyBytes.length != AES_256_KEY_BYTES) {
+                // 키 길이만 로그에 남기고 키 값은 남기지 않음
+                logger.warn("[보안] H100_AES_KEY 길이가 {}바이트가 아님(현재 {}바이트) — 복호화 호출 시 실패합니다.",
+                        AES_256_KEY_BYTES, keyBytes.length);
+                return;
+            }
+            this.videoSecretKey = new SecretKeySpec(keyBytes, "AES");
+            // 키 원문은 절대 로그에 남기지 않음. 로드 성공 사실과 길이만 기록.
+            logger.info("VideoDecryptionService 초기화 완료 - AES-256 키 로드됨(길이 {} bytes)", keyBytes.length);
+        } catch (IllegalArgumentException e) {
+            // hex 파싱 실패(허용되지 않는 문자 등). 키 원문은 로그에 남기지 않음.
+            logger.warn("[보안] H100_AES_KEY hex 파싱 실패 — 복호화 호출 시 실패합니다. (형식: 64자 hex)");
+        }
     }
 
     /**
-     * 파이썬의 get_aes_key 와 동일:
-     * key = SHA256(SECRET_KEY UTF-8) → 32 bytes → AES-256 키
+     * 복호화에 사용할 키 반환. 키가 로드되지 않았으면 명확한 예외를 던진다.
+     * (부팅은 통과시키되, 실제 사용 시점에 실패시키는 정책의 집행 지점)
+     *
+     * @return 로드된 AES-256 키
+     * @throws IllegalStateException 키 미로드 시
      */
-    private SecretKey createVideoSecretKey() throws Exception {
-        MessageDigest sha = MessageDigest.getInstance("SHA-256");
-        byte[] keyBytes = sha.digest(SECRET_KEY.getBytes(StandardCharsets.UTF_8)); // 32 bytes
-        return new SecretKeySpec(keyBytes, "AES");
+    private SecretKey requireKey() {
+        if (videoSecretKey == null) {
+            throw new IllegalStateException(
+                    "AES 키가 로드되지 않았습니다. 환경변수 H100_AES_KEY(64자 hex)를 설정하세요.");
+        }
+        return videoSecretKey;
     }
 
     /**
@@ -85,7 +125,7 @@ public class VideoDecryptionService {
             // 복호화
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             IvParameterSpec ivSpec = new IvParameterSpec(iv);
-            cipher.init(Cipher.DECRYPT_MODE, videoSecretKey, ivSpec);
+            cipher.init(Cipher.DECRYPT_MODE, requireKey(), ivSpec);
 
             byte[] decryptedData = cipher.doFinal(encryptedData);
 
@@ -141,7 +181,7 @@ public class VideoDecryptionService {
             // 복호화
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             IvParameterSpec ivSpec = new IvParameterSpec(iv);
-            cipher.init(Cipher.DECRYPT_MODE, videoSecretKey, ivSpec);
+            cipher.init(Cipher.DECRYPT_MODE, requireKey(), ivSpec);
 
             byte[] decryptedData = cipher.doFinal(encryptedData);
 
@@ -218,16 +258,15 @@ public class VideoDecryptionService {
                 return false;
             }
 
-            // 디버깅: 키 정보 확인
-            logger.info("복호화 키 알고리즘: {}, 키 길이: {} bytes, 키 hex: " + bytesToHex(videoSecretKey.getEncoded()),
-                    videoSecretKey.getAlgorithm(),
-                    videoSecretKey.getEncoded().length
-                    );
+            // 키 정보 확인 (보안: 키 원문은 로그에 남기지 않음 — 알고리즘/길이만)
+            logger.info("복호화 키 알고리즘: {}, 키 길이: {} bytes",
+                    requireKey().getAlgorithm(),
+                    requireKey().getEncoded().length);
 
             // 복호화
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             IvParameterSpec ivSpec = new IvParameterSpec(iv);
-            cipher.init(Cipher.DECRYPT_MODE, videoSecretKey, ivSpec);
+            cipher.init(Cipher.DECRYPT_MODE, requireKey(), ivSpec);
 
             logger.info("복호화 시도 중...");
             byte[] decryptedData = cipher.doFinal(encryptedData);

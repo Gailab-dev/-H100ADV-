@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
 @Configuration
-@PropertySource("classpath:globals.properties")
+@PropertySource(value = "classpath:globals.properties", encoding = "UTF-8")
 public class CryptoConfig {
 
     @Value("${crypto.video.base64-key}")
