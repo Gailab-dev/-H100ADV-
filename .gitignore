@@ -25,4 +25,9 @@ wtpwebapps/
 *.pem
 *.crt
 
+# Claude Code 개인 설정 (로컬 전용)
+.claude/settings.local.json
+
+# 디바이스와 송수신을 위한 테스트 코드(운영·Git 추적 제외)
+H100_system/
 

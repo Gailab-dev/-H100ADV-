@@ -29,7 +29,7 @@ var (
 // DB 접속 정보를 불러와서 mariadb와 연결
 func Init(){
 
-	fmt.Println("dataabse Init in")
+	fmt.Println("database Init in")
 
 	// YAML 파일 읽기
 	data, err := os.ReadFile("./config/database.yml")

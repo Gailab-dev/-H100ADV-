@@ -56,6 +56,14 @@
 	      <type>pom</type>
 	      <scope>import</scope>
 	    </dependency>
+	    <!-- Jackson 버전 단일화(2.15.4): core/databind/annotations 전부 고정 → 옛 2.9.x transitive 재유입 차단 -->
+	    <dependency>
+	      <groupId>com.fasterxml.jackson</groupId>
+	      <artifactId>jackson-bom</artifactId>
+	      <version>2.15.4</version>
+	      <type>pom</type>
+	      <scope>import</scope>
+	    </dependency>
 	  </dependencies>
 
 	</dependencyManagement>
@@ -203,7 +211,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.9.4</version>
+			<version>2.15.4</version>
 		</dependency>
 		<!-- File Upload -->
 		<dependency>
@@ -315,7 +323,7 @@
 	    <dependency>
     		<groupId>org.projectlombok</groupId>
     		<artifactId>lombok</artifactId>
-    		<version>1.18.28</version>
+    		<version>1.18.46</version>
     		<scope>provided</scope>
   		</dependency>
 		
@@ -413,6 +421,16 @@
 			</plugins>
 		</pluginManagement>
 		<plugins>
+			<!-- 리소스 인코딩 UTF-8 (필터링 사용 시 ISO-8859-1/native2ascii 방지). 현재 필터링 OFF=바이트복사라 안전망 성격 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.3.1</version>
+				<configuration>
+					<encoding>UTF-8</encoding>
+					<propertiesEncoding>UTF-8</propertiesEncoding>
+				</configuration>
+			</plugin>
 			<!-- EMMA -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
