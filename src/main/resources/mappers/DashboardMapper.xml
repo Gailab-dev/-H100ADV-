@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 대시보드 지도기반 페이지 SQL (작업계획서 10 / DB설계서 v0.0.7) -->
+<mapper namespace="com.disabled.mapper.DashboardMapper">
+
+	<!--
+		지도 표시용 디바이스 리스트 (좌표 있는 것만).
+		상태 5종(dv_status_display 는 v0.0.8 에도 미존재로 제외). dv_addr_detail 은 v0.0.8 정합(varchar200 NULL).
+	-->
+	<select id="selectDeviceMapList" resultType="map">
+		SELECT
+			dv_id, dv_name, dv_addr, dv_addr_detail, dv_lat, dv_lng,
+			dv_status_pc, dv_status_cctv, dv_lens,
+			dv_status_speaker, dv_status_sip,
+			dv_status_updated
+		FROM tbl_device
+		WHERE dv_lat IS NOT NULL
+			AND dv_lat != 0
+			AND dv_lng IS NOT NULL
+			AND dv_lng != 0
+		ORDER BY dv_id
+	</select>
+
+	<!-- 팝업 기본 정보 -->
+	<select id="selectDeviceBasic" parameterType="int" resultType="map">
+		SELECT
+			dv_id, dv_name, dv_addr, dv_addr_detail,
+			dv_status_pc, dv_status_cctv, dv_lens,
+			dv_status_speaker, dv_status_sip,
+			dv_status_updated
+		FROM tbl_device
+		WHERE dv_id = #{dvId}
+	</select>
+
+	<!-- 오늘 처리 건수 (ev_action 별: 0 계도 / 1 단속 / 2 과태료). 오늘 데이터는 실시간 tbl_event_data SELECT(09 결정) -->
+	<select id="selectTodayEventCount" parameterType="int" resultType="map">
+		SELECT
+			SUM(CASE WHEN ev_action = 0 THEN 1 ELSE 0 END) AS guide_cnt,
+			SUM(CASE WHEN ev_action = 1 THEN 1 ELSE 0 END) AS enforce_cnt,
+			SUM(CASE WHEN ev_action = 2 THEN 1 ELSE 0 END) AS fine_cnt
+		FROM tbl_event_data
+		WHERE ev_dv_id = #{dvId}
+			AND LEFT(ev_date, 8) = DATE_FORMAT(CURDATE(), '%Y%m%d')
+	</select>
+
+	<!-- (작업계획서 12) 우측 카드 — 오늘 전체 디바이스 처리 합계 (지도 팝업 SQL 확장, WHERE dv_id 없음) -->
+	<select id="selectTodaySummary" resultType="map">
+		SELECT
+			SUM(CASE WHEN ev_action = 0 THEN 1 ELSE 0 END) AS guide_cnt,
+			SUM(CASE WHEN ev_action = 1 THEN 1 ELSE 0 END) AS enforce_cnt
+		FROM tbl_event_data
+		WHERE LEFT(ev_date, 8) = DATE_FORMAT(CURDATE(), '%Y%m%d')
+	</select>
+
+	<!-- (작업계획서 12) 하단 최근 이벤트 요약 N건. ev_dv_name 은 tbl_event_data 에 비정규화 저장되어 있어 조인 불필요 -->
+	<select id="selectRecentEvents" parameterType="int" resultType="map">
+		SELECT
+			ev_id, ev_dv_id, ev_dv_name, ev_car_num,
+			ev_cd, ev_action, ev_date, ev_reg_date, ev_img_path
+		FROM tbl_event_data
+		ORDER BY ev_reg_date DESC, ev_id DESC
+		LIMIT #{limit}
+	</select>
+
+</mapper>

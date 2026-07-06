@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- SIP CALL 로그 화면 SQL (작업계획서 07 / DB설계서 v0.0.7 tbl_sip_call = AP_DB_0012) -->
+<mapper namespace="com.disabled.mapper.SipCallMapper">
+
+	<!-- 공통 검색 조건 (검색창 통합: dv_id 완전일치 OR 시리얼 LIKE, reg_date 기간) -->
+	<sql id="whereClause">
+		<where>
+			<if test="keyword != null and keyword != ''">
+				AND (
+					<if test="keywordIsNumeric == true">
+						sc_dv_id = #{keyword} OR
+					</if>
+					sc_serial_number LIKE CONCAT('%', REPLACE(#{keyword}, '_', '\\_'), '%') ESCAPE '\\'
+				)
+			</if>
+			<if test="startDate != null and startDate != ''">
+				AND sc_reg_date <![CDATA[>=]]> STR_TO_DATE(#{startDate}, '%Y-%m-%d')
+			</if>
+			<if test="endDate != null and endDate != ''">
+				AND sc_reg_date <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{endDate}, '%Y-%m-%d'), INTERVAL 1 DAY)
+			</if>
+		</where>
+	</sql>
+
+	<!-- 조회(필터 + 페이지네이션) -->
+	<select id="selectList" parameterType="map" resultType="map">
+		SELECT
+			sc_id, sc_dv_id, sc_serial_number,
+			sc_start_date, sc_end_date, sc_duration,
+			sc_status, sc_direction, sc_audio_path,
+			sc_has_audio, sc_reg_date
+		FROM tbl_sip_call
+		<include refid="whereClause" />
+		ORDER BY sc_reg_date DESC, sc_id DESC
+		<if test="listSize != null">
+			LIMIT #{listSize}
+		</if>
+		<if test="offset != null">
+			OFFSET #{offset}
+		</if>
+	</select>
+
+	<!-- 조회 총 갯수(동일 필터) -->
+	<select id="countList" parameterType="map" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_sip_call
+		<include refid="whereClause" />
+	</select>
+
+	<!-- 단건 조회(오디오 재생용) -->
+	<select id="selectById" parameterType="int" resultType="map">
+		SELECT
+			sc_id, sc_dv_id, sc_serial_number,
+			sc_start_date, sc_end_date, sc_duration,
+			sc_status, sc_direction, sc_audio_path,
+			sc_has_audio, sc_reg_date
+		FROM tbl_sip_call
+		WHERE sc_id = #{scId}
+	</select>
+
+</mapper>

@@ -1,0 +1,191 @@
+/* 대시보드 지도기반 페이지 (작업계획서 10) + 우측 카드·하단 이벤트 (작업계획서 12) */
+.dashboard-wrap {
+	padding: 20px 24px;
+	font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+	color: #222;
+}
+
+/* 레이아웃: 좌측 지도 + 우측 카드, 하단 최근 이벤트 (화면설계서 v0.0.2 Slide4) */
+.dashboard-container {
+	display: grid;
+	grid-template-columns: 3fr 1fr;
+	grid-template-areas:
+		"map cards"
+		"events events";
+	gap: 16px;
+	align-items: stretch;
+}
+.map-area { grid-area: map; }
+.cards-area {
+	grid-area: cards;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+.recent-events-area { grid-area: events; }
+
+@media (max-width: 1100px) {
+	.dashboard-container {
+		grid-template-columns: 1fr;
+		grid-template-areas: "map" "cards" "events";
+	}
+	.cards-area { flex-direction: row; flex-wrap: wrap; }
+	.cards-area .card { flex: 1 1 200px; }
+}
+
+.dashboard-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 14px;
+}
+.dashboard-title {
+	font-size: 20px;
+	font-weight: 700;
+	margin: 0;
+}
+.legend {
+	display: flex;
+	gap: 14px;
+	font-size: 13px;
+	color: #555;
+}
+.legend i { margin-right: 3px; }
+
+/* 지도 */
+#map {
+	width: 100%;
+	height: 560px;
+	border: 1px solid #e3e6ea;
+	border-radius: 6px;
+}
+
+.map-warning {
+	padding: 16px 18px;
+	margin-bottom: 12px;
+	background: #fff4f4;
+	border: 1px solid #f0c0c0;
+	border-radius: 6px;
+	color: #b02a2a;
+	line-height: 1.6;
+}
+
+/* 마커 오버 팝업 (CustomOverlay 내용) */
+.device-popup {
+	background: #fff;
+	padding: 14px 16px;
+	border-radius: 8px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+	min-width: 230px;
+	font-size: 13px;
+	border: 1px solid #e3e6ea;
+}
+.device-popup h4 {
+	margin: 0 0 6px;
+	font-size: 15px;
+	font-weight: 700;
+}
+.device-popup .addr { margin: 0 0 8px; color: #555; }
+.device-popup .section {
+	margin: 8px 0 4px;
+	font-weight: 600;
+	color: #383351;
+}
+.device-popup ul.today {
+	list-style: none;
+	padding: 0;
+	margin: 0 0 6px;
+	display: flex;
+	gap: 12px;
+}
+.device-popup ul.today li { color: #444; }
+.device-popup ul.today b { color: #d33333; }
+
+.status-row { display: flex; gap: 8px; margin-top: 4px; }
+.status-icon { font-size: 17px; }
+.status-normal { color: #28a745; }
+.status-error { color: #dc3545; }
+
+/* ===== 작업계획서 12: 우측 카드 ===== */
+.card {
+	padding: 18px 20px;
+	background: #fff;
+	border: 1px solid #e3e6ea;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+.card h3 {
+	margin: 0 0 10px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #555;
+}
+.card h3 i { margin-right: 6px; color: #4F4A85; }
+.card .card-value {
+	font-size: 30px;
+	font-weight: 700;
+	color: #222;
+	line-height: 1.1;
+}
+.card .card-sub { margin-top: 6px; font-size: 12px; color: #888; }
+.guide-card .card-value { color: #1a8a4a; }
+.enforce-card .card-value { color: #d33333; }
+
+/* ===== 작업계획서 12: 하단 최근 이벤트 ===== */
+.recent-events-area {
+	padding: 18px 20px;
+	background: #fff;
+	border: 1px solid #e3e6ea;
+	border-radius: 8px;
+}
+.section-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+}
+.section-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.btn-more {
+	padding: 6px 14px;
+	border: none;
+	background: #383351;
+	color: #fff;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 13px;
+}
+.btn-more:hover { background: #4F4A85; }
+
+.recent-events-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+.recent-events-table th,
+.recent-events-table td {
+	border-bottom: 1px solid #eef0f3;
+	padding: 9px 8px;
+	text-align: center;
+}
+.recent-events-table thead th {
+	background: #f6f7f9;
+	border-bottom: 1px solid #e3e6ea;
+	font-weight: 600;
+	color: #555;
+}
+.recent-events-table tbody tr:hover { background: #f9fafb; }
+.recent-events-table .empty-row { color: #999; padding: 20px; }
+.recent-events-table .act-guide { color: #1a8a4a; font-weight: 600; }
+.recent-events-table .act-enforce { color: #d33333; font-weight: 600; }
+.recent-events-table .act-fine { color: #b5179e; font-weight: 600; }
+.btn-detail {
+	padding: 3px 10px;
+	border: 1px solid #4F4A85;
+	background: #fff;
+	color: #4F4A85;
+	border-radius: 4px;
+	cursor: pointer;
+}
+.btn-detail:hover { background: #4F4A85; color: #fff; }
