@@ -139,7 +139,8 @@
 	        
 	        if(result.ok){
 				if(result.pwdChanged){
-					window.location.replace("${pageContext.request.contextPath}/stats/viewStat.do");
+					// patches 2026-07-06: 로그인 성공 최초 화면을 통계 → 대시보드로 변경
+					window.location.replace("${pageContext.request.contextPath}/dashboard");
 				}else{
 					if(result.pwdPassedDays >= 180){
 						alert("마지막 비밀번호 변경일이 180일이 지났습니다. 비밀번호를 재설정해주세요.")

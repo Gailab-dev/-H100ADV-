@@ -215,9 +215,20 @@ public class DeviceListController {
 		model.addAttribute("pageSize", pageSize);
 		// model.addAttribute("deviceId", firstDeviceId);
 		
-		return "/deviceList/deviceList";
+		return "deviceList"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
 	}
-	
+
+	/**
+	 * (작업계획서 04) 디바이스 상태 실시간 조회 — deviceList 화면 AJAX 폴링용.
+	 * tbl_device 의 상태 5종(dv_status_pc/cctv/lens/speaker/sip) + dv_status_updated 반환.
+	 * 조회 전용이라 기존 기능 영향 0. (display 는 DB v0.0.7 미존재로 제외)
+	 */
+	@GetMapping("/status")
+	@ResponseBody
+	public List<Map<String, Object>> getStatusList() {
+		return deviceListService.getStatusList();
+	}
+
 	/**
 	 * 디바이스 리스트를 주소를 기준으로 그룹화하여 리턴
 	 * @prarm 

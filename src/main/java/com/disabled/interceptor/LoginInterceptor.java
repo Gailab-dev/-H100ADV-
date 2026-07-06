@@ -112,7 +112,8 @@ public class LoginInterceptor implements HandlerInterceptor{
         if (Boolean.TRUE.equals(pwdChanged) && isPwdEndpoints) {
             try {
             	setNoStore(response);
-				response.sendRedirect(ctx + "/stats/viewStat.do");
+				// patches 2026-07-06: 메인 화면을 통계 → 대시보드로 변경
+				response.sendRedirect(ctx + "/dashboard");
 			} catch (IOException e) {
 				logger.error("LoginInterceptor에서 로그인 되었고, 비밀번호까지 변경한 사용자가 메인 페이지로 이동 중 오류: ", e);
 			}

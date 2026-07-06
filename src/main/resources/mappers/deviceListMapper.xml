@@ -157,6 +157,17 @@
 		SELECT DISTINCT dv_ip
 		FROM tbl_device
 	</select>
+
+	<!-- (작업계획서 04) 디바이스 상태 5종 + 갱신시각 (AJAX 폴링용). display 는 DB v0.0.7 미존재로 제외 -->
+	<select id="getStatusList" resultType="map">
+		SELECT
+			dv_id, dv_name, dv_serial_number,
+			dv_status_pc, dv_status_cctv, dv_lens,
+			dv_status_speaker, dv_status_sip,
+			dv_status_updated
+		FROM tbl_device
+		ORDER BY dv_id
+	</select>
 	
 	<!-- 디바이스 IP별 상태값 수정 -->
 	<update id="updateDeviceStatus">

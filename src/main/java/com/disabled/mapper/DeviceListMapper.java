@@ -21,6 +21,9 @@ public interface DeviceListMapper {
 
 	// 모든 디바이스 ip 조회
 	List<String> getAllDvIp() throws IllegalStateException;
+
+	// (작업계획서 04) 디바이스 상태 5종 + 갱신시각 조회
+	List<Map<String, Object>> getStatusList() throws IllegalStateException;
 	
 	// 디바이스 IP별 상태값 수정
 	Integer updateDeviceStatus(@Param("dvStatus") Integer dvStatus, @Param("dvIp") String dvIp) throws IllegalStateException;

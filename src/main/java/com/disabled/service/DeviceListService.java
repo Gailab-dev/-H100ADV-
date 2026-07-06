@@ -6,6 +6,7 @@ import java.util.Map;
 
 public interface DeviceListService {
 	List<Map<String, Object >> getDeviceList(Map<String,Object> paramMap);
+	List<Map<String, Object >> getStatusList();   // 작업계획서 04: 디바이스 상태 실시간 조회
 	String getDvIpByDvID(int dvId);
 	Integer getTotalRecordCount(String searchKeyword, String endDate, String searchKeyword2);
 	void insertDeviceInfo(String dvName, String dvAddr, String dvIp, Integer dvStatus, String dvSerialNumber);

@@ -301,7 +301,7 @@ public class EventListController {
 	    model.addAttribute("sortCol", sortCol);
 	    model.addAttribute("sortDir", sortDir);
 		
-		return "eventList/eventList";
+		return "eventList"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
 	}
 	
 	/**

@@ -106,7 +106,7 @@ public class StatsController {
 		// 이벤트 코드가 1~6까지의 숫자가 아닌 경우 오류 문자 출력하고 리턴
 		if(stCd != null && (stCd > 7 || stCd < 1)) {
 			model.addAttribute("errorMsg", "이벤트 코드 오류");
-			return "stats/stats";
+			return "stats"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
 		}
 		
 		// ====== 유효성 검사 [E] ======
@@ -163,7 +163,7 @@ public class StatsController {
 			model.addAttribute("useTblLog", useTblLog);
 			// ====== model add [E] ======
 			
-			return "stats/stats";
+			return "stats"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
 			
 		} catch (IllegalArgumentException e) {
 			logger.error("잘못된 인자 전달",e);

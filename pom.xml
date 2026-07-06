@@ -103,7 +103,8 @@
 		</dependency>
 		 
 		<!-- Spring MVC -->
-		<!-- 
+		<!-- patches 2026-07-06: 명시 선언(주석 해제)으로 spring-webmvc 를 5.3.39 로 통일.
+		     (기존: 주석 처리 → egovframe 경유 transitive 5.3.6 유입 = spring-web/context 5.3.39 와 버전 스큐) -->
 		<dependency>
 		    <groupId>org.springframework</groupId>
 		    <artifactId>spring-webmvc</artifactId>
@@ -115,7 +116,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		 -->
 		<!-- mail 사용시 필요 -->
 		<dependency>
     		<groupId>org.springframework</groupId>

@@ -6,37 +6,34 @@
 <head>
 	<!-- ---------------------- 공통 meta 설정----------------------------- -->
 	<meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  	<!-- ---------------------- 공통 meta 설정----------------------------- -->
-  	<!-- ---------------------- 공통 라이브러리 ---------------------------- -->
-  	<script src="/resources/js/jquery-3.3.1.min.js"></script>
-  	<script src="/resources/js/c3.min.js"></script>
-  	<!-- ---------------------- 공통 라이브러리 ---------------------------- -->
-  	<!-- ----------------------- 공통 스타일 ------------------------------- -->
-  	<link rel="stylesheet" href="/resources/css/common.css" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<!-- ---------------------- 공통 라이브러리 ---------------------------- -->
+	<script src="${pageContext.request.contextPath}/resources/js/jquery-3.3.1.min.js"></script>
+	<script src="${pageContext.request.contextPath}/resources/js/c3.min.js"></script>
 	<!-- ----------------------- 공통 스타일 ------------------------------- -->
-	<!-- ------------------------- pagination ------------------------------- -->
-	<link rel="stylesheet" href="/resources/css/pagination.css" />
-	<!-- ------------------------- pagination ------------------------------- -->
-  	<!-- ---------------------- 공통 자바스크립트 함수 ---------------------- -->
-  	<script src="/resources/js/common.js"></script>
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/common.css" />
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css" />
+	<!-- 공용 레이아웃(chrome) 스타일 -->
+	<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/layout.css" />
 	<!-- ---------------------- 공통 자바스크립트 함수 ---------------------- -->
-	<!-- ------------------------------ jQuery ------------------------------ -->
-	<script
-  		src="https://code.jquery.com/jquery-3.7.1.js"
-  		integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
-  		crossorigin="anonymous"></script>
-  	<!-- ------------------------------ jQuery ------------------------------ -->	
-	<tiles:insertAttribute name="header"/>
+	<script src="${pageContext.request.contextPath}/resources/js/common.js"></script>
+	<!-- 화면별 추가 head (선택) -->
+	<tiles:insertAttribute name="head" ignore="true"/>
 </head>
 <body>
-	<div>
-		<tiles:insertAttribute name="left"/>
-		<tiles:insertAttribute name="body"/>
-		<footer>
-			<tiles:insertAttribute name="footer"/>
-		</footer>
+	<div class="page-wrapper">
+		<%-- 상단 헤더 --%>
+		<tiles:insertAttribute name="header"/>
+		<div class="container">
+			<%-- 좌측 사이드바 --%>
+			<tiles:insertAttribute name="left"/>
+			<%-- 본문 --%>
+			<div class="content">
+				<tiles:insertAttribute name="body"/>
+			</div>
+		</div>
+		<%-- 푸터 --%>
+		<tiles:insertAttribute name="footer"/>
 	</div>
-
-</body>		
+</body>
 </html>

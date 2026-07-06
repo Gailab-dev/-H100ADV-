@@ -84,7 +84,7 @@ public class MyInfoController {
 	    model.addAttribute("myInfoMap",myInfoMap);
 		model.addAttribute("useTblLog", useTblLog);
 		
-		return "/myInfo/myInfo";
+		return "myInfo"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
 	}
 	
 	// 내 정보 수정

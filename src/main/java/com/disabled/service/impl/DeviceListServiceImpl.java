@@ -47,6 +47,20 @@ public class DeviceListServiceImpl implements DeviceListService{
 	}
 	
 	/**
+	 * (작업계획서 04) 디바이스 상태 5종 + 갱신시각 실시간 조회 (AJAX 폴링용)
+	 * @return dv_id, dv_name, dv_serial_number, dv_status_pc/cctv/lens/speaker/sip, dv_status_updated
+	 */
+	@Override
+	public List<Map<String, Object>> getStatusList() {
+		try {
+			return deviceListMapper.getStatusList();
+		} catch (DataAccessException e) {
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getStatusList() : ", e);
+			throw e;
+		}
+	}
+
+	/**
 	 * 디바이스 id를 통해 해당 디바이스의 ip를 조회
 	 * @param 
 	 *   - dvId : 디바이스 ID (int)

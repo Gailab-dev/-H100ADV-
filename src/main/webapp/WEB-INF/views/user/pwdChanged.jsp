@@ -69,9 +69,10 @@
 				newPwd : newPwd 
 			}); 
 			
-			if(r.data?.ok){ 
-				window.location.replace("${pageContext.request.contextPath}/stats/viewStat.do"); 
-			} 
+			if(r.data?.ok){
+				// patches 2026-07-06: 비밀번호 변경 후 최초 화면을 통계 → 대시보드로 변경
+				window.location.replace("${pageContext.request.contextPath}/dashboard");
+			}
 			else{ 
 				alert(r.data?.msg); 
 			} 

@@ -9,9 +9,11 @@ import (
 
 	"local.dev/h100_module_c/database"
 	"local.dev/h100_module_c/insertEvent"
+	"local.dev/h100_module_c/internal/handlers/deviceStatus"
 	"local.dev/h100_module_c/internal/handlers/fileReceive"
+	"local.dev/h100_module_c/internal/handlers/insertSipCall"
 	"local.dev/h100_module_c/internal/middlewares"
-	"local.dev/h100_module_c/logger" 
+	"local.dev/h100_module_c/logger"
 )
 
 func main() {
@@ -40,6 +42,8 @@ func main() {
         mux.HandleFunc("/imageFileReceive", middlewares.WithCORS(fileReceive.ImageFileReceive))
         mux.HandleFunc("/videoFileReceive", middlewares.WithCORS(fileReceive.VideoFileReceive))
         mux.HandleFunc("/insertEventData",insertEvent.InsertEventData())
+        mux.HandleFunc("/deviceStatus", middlewares.WithCORS(deviceStatus.DeviceStatusHandler)) // 작업계획서 04: 디바이스 상태 Heartbeat 수신
+        mux.HandleFunc("/insertSipCallLog", middlewares.WithCORS(insertSipCall.InsertSipCallHandler)) // 작업계획서 07: SIP CALL 로그 수신
         // ===== [E] 핸들러 등록 ====== //
         
         // ===== [S] 서버 설정 ====== //

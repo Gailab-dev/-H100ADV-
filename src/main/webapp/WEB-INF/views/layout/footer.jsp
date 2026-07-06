@@ -1,7 +1,3 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<!-- 공통 footer 내용 -->
-<div>
-	이곳에 공통 footer 생성
-</div>
-    
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%-- 공용 푸터 (Tiles defaultLayout) --%>
+<div class="app-footer">© G-AILAB Inc. All rights reserved.</div>
