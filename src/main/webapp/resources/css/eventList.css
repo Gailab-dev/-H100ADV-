@@ -112,15 +112,6 @@ button {
     color: #000;
     transition: background 0.2s ease;
 }
-.menu > li:nth-child(1) > a {
-    background: #F1EDFF; 
-    font-weight: bold;
-    color:#6955A2;
-}
-/* 활성화된 메뉴의 SVG 두께 증가 */
-.menu > li:nth-child(1) > a svg {
-    stroke-width: 2; 
-}
 .menu > li > a:hover {
     background: #FCFBFF;
 }

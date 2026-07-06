@@ -110,15 +110,6 @@ button {
     color: #000;
     transition: background 0.2s ease;
 }
-.menu > li:nth-child(3) > a {
-    background: #F1EDFF; 
-    font-weight: bold;
-    color:#6955A2;
-}
-/* 활성화된 메뉴의 SVG 두께 증가 */
-.menu > li:nth-child(3) > a svg {
-    stroke-width: 2; 
-}
 .menu > li > a:hover {
     background: #FCFBFF;
 }
@@ -398,16 +389,21 @@ button {
   border-color: #b5a7f3;
 }
 
+/* patches 2026-07-06: 상태 5열 추가(총 10열) + Tiles 사이드바로 가용폭 축소 대응 재조정.
+   1 체크박스 / 2 디바이스명 / 3 주소(잔여폭 자동) / 4 등록날짜 / 5~9 상태 / 10 수정 */
 .device-table th:nth-child(1),
-.device-table td:nth-child(1) { width: 120px; }
+.device-table td:nth-child(1) { width: 40px; }
 .device-table th:nth-child(2),
-.device-table td:nth-child(2) { width: 359px; }
-.device-table th:nth-child(3),
-.device-table td:nth-child(3) { width: 440px; }
+.device-table td:nth-child(2) { width: 150px; }
+/* nth-child(3) 디바이스 주소 = 미지정 → table-layout:fixed 에서 잔여폭 자동 흡수 */
 .device-table th:nth-child(4),
-.device-table td:nth-child(4) { width: 359px; }
-.device-table th:nth-child(5),
-.device-table td:nth-child(5) { width: 359px; }
+.device-table td:nth-child(4) { width: 120px; }
+.device-table th:nth-child(5),  .device-table td:nth-child(5),
+.device-table th:nth-child(6),  .device-table td:nth-child(6),
+.device-table th:nth-child(7),  .device-table td:nth-child(7),
+.device-table th:nth-child(8),  .device-table td:nth-child(8),
+.device-table th:nth-child(9),  .device-table td:nth-child(9) { width: 58px; }
+.device-table th:nth-child(10), .device-table td:nth-child(10) { width: 92px; }
 
 
 .table-checkBox[type="checkbox"],
@@ -478,3 +474,7 @@ button {
     }
 }
 
+
+/* (작업계획서 04) 디바이스 상태 셀 색상 — 정상/이상 */
+.device-table td.status-normal { color: #1a8a4a; font-weight: 600; }
+.device-table td.status-error  { color: #d33333; font-weight: 600; }
