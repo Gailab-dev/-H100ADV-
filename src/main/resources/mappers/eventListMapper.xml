@@ -11,8 +11,8 @@
 			<choose>
             	<when test="sortCol == 'ev_date'">ev_date</when>
             	<when test="sortCol == 'ev_cd'">ev_cd</when>
-            	<when test="sortCol == 'dv_name'">dv_name</when>
-            	<when test="sortCol == 'dv_addr'">dv_addr</when>
+            	<when test="sortCol == 'ev_dv_name'">dv_name</when>
+            	<when test="sortCol == 'ev_dv_addr'">dv_addr</when>
             	<when test="sortCol == 'ev_car_num'">ev_car_num</when>
             	<otherwise>ev_date</otherwise>
 			</choose>
@@ -22,7 +22,13 @@
 			</choose>	
 			, ev_id DESC
 			) AS rn 
-			, A.*
+			, A.ev_date
+			, A.ev_dv_name
+			, A.ev_dv_addr
+			, A.ev_car_num
+			, A.ev_cd
+			, A.ev_serial_number
+			, A.ev_dv_ip
 			, B.dv_id			
 			, B.dv_addr
 			, B.dv_name

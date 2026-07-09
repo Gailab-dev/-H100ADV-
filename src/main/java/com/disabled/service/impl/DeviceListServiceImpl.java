@@ -103,12 +103,12 @@ public class DeviceListServiceImpl implements DeviceListService{
 	 * @param dvSerialNumber 디바이스의 고유 번호(String)
 	 */
 	@Override
-	public void insertDeviceInfo(String dvName, String dvAddr, String dvIp, Integer dvStatus, String dvSerialNumber) {
-		
+	public void insertDeviceInfo(String dvName, String dvAddr, String dvAddrDetail, String dvIp, Integer dvStatus, String dvSerialNumber, String dvLat, String dvLng) {
+
 		try {
-			
+
 			// 디바이스 등록
-			Integer rows1 = deviceListMapper.insertDeviceInfo(dvName,dvAddr,dvIp,dvStatus,dvSerialNumber);
+			Integer rows1 = deviceListMapper.insertDeviceInfo(dvName,dvAddr,dvAddrDetail,dvIp,dvStatus,dvSerialNumber,dvLat,dvLng);
 			if(rows1 != 1) {
 				logger.error("deviceListMapper.insertDeviceInfo SQL문에서 오류 발생");
 				throw new IllegalStateException("deviceListMapper.insertDeviceInfo SQL문에서 오류 발생");
@@ -151,10 +151,10 @@ public class DeviceListServiceImpl implements DeviceListService{
 	 * @param dvSerialNumber	시리얼번호(디바이스고유번호) (String)
 	 */
 	@Override
-	public void updateDeviceInfo(Integer dvId, String dvName, String dvAddr, String dvIp, Integer dvStatus,String dvSerialNumber) {
+	public void updateDeviceInfo(Integer dvId, String dvName, String dvAddr, String dvAddrDetail, String dvIp, Integer dvStatus,String dvSerialNumber, String dvLat, String dvLng) {
 		try {
-			
-			Integer rows1 = deviceListMapper.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus,dvSerialNumber);
+
+			Integer rows1 = deviceListMapper.updateDeviceInfo(dvId,dvName,dvAddr,dvAddrDetail,dvIp,dvStatus,dvSerialNumber,dvLat,dvLng);
 			if(rows1 != 1) {
 				logger.error("deviceListMapper.updateDeviceInfo SQL문에서 오류 발생");
 				throw new IllegalStateException("deviceListMapper.updateDeviceInfo SQL문에서 오류 발생");

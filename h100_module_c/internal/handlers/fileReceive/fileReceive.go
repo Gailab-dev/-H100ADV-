@@ -143,6 +143,7 @@ func VideoFileReceive(res http.ResponseWriter, req *http.Request) {
  * @param	file    수신 file
  */
 func OneFileReceive(res http.ResponseWriter, req *http.Request) {
+
 	if FileReceive(res, req, "image") {
 		fmt.Fprintf(res, "OK")
 	}

@@ -9,7 +9,21 @@
 <meta charset="UTF-8">
  <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.css" rel="stylesheet">
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/resources/css/stats.css">
+	href="${pageContext.request.contextPath}/resources/css/stats.css?v=20260707">
+<%-- patches 2026-07-07: 외부 CSS 캐시 대비 인라인 보정 — .page-wrapper 고정 height(100vh) 제거 →
+     콘텐츠가 길어도 사이드바가 하단(푸터)까지 이어지도록(다른 화면과 동일) --%>
+<%-- patches 2026-07-09: 디자이너 피드백 — 그래프/테이블 세로 축소로 오른쪽 스크롤 제거.
+     외부 CSS(stats.css #chart:504px) 캐시 대비 인라인 !important 로 확실히 덮어씀 --%>
+<style>
+	/* patches 2026-07-09(2): 인라인 .page-wrapper{min-height:100vh} 제거.
+	   사이드바 하단 연장은 바깥 page-wrapper(layout.css, 100vh)가 담당. 본문 내부 page-wrapper 를 100vh 로
+	   두면 헤더 높이만큼 뷰포트 초과 → 하단 여백/스크롤 발생. → template.jsp 전역 규칙(.content .page-wrapper{min-height:0})에 위임 */
+	#chart{ height:260px !important; }               /* 504px → 260px (c3 실제높이 250 에 맞춤, 하단 빈공간 제거) */
+	.graph-group{ gap:14px !important; }
+	.graph-table .subTitle{ margin:6px 0 8px !important; }
+	.title-box{ margin-bottom:10px !important; }
+	.stats-table th, .stats-table td{ padding:6px 8px !important; }  /* 행 높이 축소 */
+</style>
 <title>home</title>
 <%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
 <script>
@@ -131,7 +145,7 @@
 			bindto:'#chart', // 바인팅할 html 태그의 id
 			size:{
 				width:null,
-				height:321.6
+				height:250
 			},
 		    data: {  // 데이터에 관한 속성값
 		    	 //  x: 'x',x축 데이터를 식별하는 식별자

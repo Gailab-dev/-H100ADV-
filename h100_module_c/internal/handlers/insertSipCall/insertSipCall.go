@@ -9,8 +9,9 @@
 //   - Phase 2 HMAC 은 본 영역 범위 외(별도) — /deviceStatus 와 동일하게 JSON 수신
 //
 // DB v0.0.7 정합(작업계획서 §9 게이트 결과 — 계획서 가정과 달라 DB 기준으로 정정):
-//   sc_serial_number = varchar(15) (계획서 13 → DB 15), sc_start_date/sc_end_date(varchar20)·sc_has_audio 존재.
-//   sc_has_audio 는 서버가 오디오 파일명 유무로 파생(1:있음/0:없음). sc_reg_date 는 Go time.Now().
+//
+//	sc_serial_number = varchar(15) (계획서 13 → DB 15), sc_start_date/sc_end_date(varchar20)·sc_has_audio 존재.
+//	sc_has_audio 는 서버가 오디오 파일명 유무로 파생(1:있음/0:없음). sc_reg_date 는 Go time.Now().
 package insertSipCall
 
 import (
@@ -76,6 +77,11 @@ func clientIP(r *http.Request) string {
 
 // InsertSipCallHandler: POST /insertSipCallLog
 func InsertSipCallHandler(w http.ResponseWriter, r *http.Request) {
+
+	logger.Log.Info("[SIP_CALL_ENTRY] /insertSipCallLog 요청 수신",
+        zap.String("method", r.Method),
+		zap.String("client_ip", clientIP(r)))
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST 요청만 허용됩니다.", http.StatusMethodNotAllowed)
 		return

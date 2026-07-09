@@ -335,8 +335,14 @@ button {
 }
 
 /* ================= 테이블 ================= */
+/* patches 2026-07-07: 가로 스크롤 안전망 — 열이 컨테이너보다 넓어도 잘리지 않고 스크롤 */
+.device-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
 .device-table {
   width: 100%;
+  min-width: 900px;        /* 좁은 화면에선 스크롤(잘림 방지), 넓은 화면에선 100% */
   border-collapse: collapse;
   border: 1px solid #E0E0E0;
   border-radius: 8px;
@@ -391,19 +397,22 @@ button {
 
 /* patches 2026-07-06: 상태 5열 추가(총 10열) + Tiles 사이드바로 가용폭 축소 대응 재조정.
    1 체크박스 / 2 디바이스명 / 3 주소(잔여폭 자동) / 4 등록날짜 / 5~9 상태 / 10 수정 */
+/* patches 2026-07-07: 균형 % 너비(주소 auto 과대 완화, 화면폭 비례 유지).
+   1 체크박스3 / 2 이름13 / 3 주소30 / 4 등록날짜14 / 5~9 상태6 / 10 수정10 (합100%) */
 .device-table th:nth-child(1),
-.device-table td:nth-child(1) { width: 40px; }
+.device-table td:nth-child(1) { width: 3%; }
 .device-table th:nth-child(2),
-.device-table td:nth-child(2) { width: 150px; }
-/* nth-child(3) 디바이스 주소 = 미지정 → table-layout:fixed 에서 잔여폭 자동 흡수 */
+.device-table td:nth-child(2) { width: 13%; }
+.device-table th:nth-child(3),
+.device-table td:nth-child(3) { width: 30%; }
 .device-table th:nth-child(4),
-.device-table td:nth-child(4) { width: 120px; }
+.device-table td:nth-child(4) { width: 14%; }
 .device-table th:nth-child(5),  .device-table td:nth-child(5),
 .device-table th:nth-child(6),  .device-table td:nth-child(6),
 .device-table th:nth-child(7),  .device-table td:nth-child(7),
 .device-table th:nth-child(8),  .device-table td:nth-child(8),
-.device-table th:nth-child(9),  .device-table td:nth-child(9) { width: 58px; }
-.device-table th:nth-child(10), .device-table td:nth-child(10) { width: 92px; }
+.device-table th:nth-child(9),  .device-table td:nth-child(9) { width: 6%; }
+.device-table th:nth-child(10), .device-table td:nth-child(10) { width: 10%; }
 
 
 .table-checkBox[type="checkbox"],

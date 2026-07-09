@@ -44,6 +44,7 @@ func main() {
         mux.HandleFunc("/insertEventData",insertEvent.InsertEventData())
         mux.HandleFunc("/deviceStatus", middlewares.WithCORS(deviceStatus.DeviceStatusHandler)) // 작업계획서 04: 디바이스 상태 Heartbeat 수신
         mux.HandleFunc("/insertSipCallLog", middlewares.WithCORS(insertSipCall.InsertSipCallHandler)) // 작업계획서 07: SIP CALL 로그 수신
+        log.Info("[BUILD_CHECK] 핸들러 등록 완료")
         // ===== [E] 핸들러 등록 ====== //
         
         // ===== [S] 서버 설정 ====== //

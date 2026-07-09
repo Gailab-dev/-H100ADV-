@@ -18,7 +18,9 @@ button {
 .page-wrapper{
 	display: flex;
 	flex-direction: column;
-	height: 100vh;
+	/* patches 2026-07-07: height(고정) → min-height. 콘텐츠가 뷰포트보다 길 때도
+	   page-wrapper·사이드바가 끝까지 늘어나 다른 화면과 동일하게 하단까지 이어지도록 함 */
+	min-height: 100vh;
 }
 /* ================= 헤더 ================= */
 /* 헤더 전체 레이아웃 */

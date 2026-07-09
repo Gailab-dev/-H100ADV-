@@ -1,6 +1,7 @@
 /* SIP 통화 로그 화면 (작업계획서 07) */
 .sip-call-log-container {
-	padding: 24px;
+	/* patches 2026-07-07: 이중 여백 제거 — 공용 .content(layout.css)가 이미 padding 제공 */
+	padding: 0;
 	font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
 	color: #222;
 }

@@ -8,6 +8,24 @@
 <meta charset="UTF-8">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/eventList.css">
+<%-- patches 2026-07-07: 열너비 균형 (외부 CSS 캐시 무관 인라인 !important).
+     8열: 체크박스4 / 번호6 / 날짜12 / 유형12 / 디바이스명15 / 디바이스주소25 / 차량번호14 / 상세12 (합100%) --%>
+<style>
+	.event-table { table-layout: fixed !important; width: 100% !important; }
+	.event-table th:nth-child(1), .event-table td:nth-child(1) { width: 4%  !important; }
+	.event-table th:nth-child(2), .event-table td:nth-child(2) { width: 6%  !important; }
+	.event-table th:nth-child(3), .event-table td:nth-child(3) { width: 12% !important; }
+	.event-table th:nth-child(4), .event-table td:nth-child(4) { width: 12% !important; }
+	.event-table th:nth-child(5), .event-table td:nth-child(5) { width: 15% !important; }
+	.event-table th:nth-child(6), .event-table td:nth-child(6) { width: 25% !important; }
+	.event-table th:nth-child(7), .event-table td:nth-child(7) { width: 14% !important; }
+	.event-table th:nth-child(8), .event-table td:nth-child(8) { width: 12% !important; }
+	/* patches 2026-07-09(3): 10건 조회 시 오른쪽 스크롤 없이 한 화면에 꽉 차도록 세로 여백 미세 축소 */
+	.content { padding: 16px 24px 12px 24px !important; }        /* 상/하 32·29 → 16·12 */
+	.filter-form { margin-bottom: 12px !important; }             /* 20 → 12 */
+	.event-table th, .event-table td { padding: 9px 12px !important; }  /* 12 → 9 (행당 -6px) */
+	.pagination { margin-top: 12px !important; }                 /* 20 → 12 */
+</style>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/pagination.css">
 <title>eventList</title>
@@ -529,7 +547,7 @@
 												escapeXml="true" /></td>
 										<td><span class="cell-ellipsis"
 											title="${fn:escapeXml(item.ev_date)}"> <c:out
-													value="${item.ev_date}" escapeXml="true" />
+													value="${fn:substring(item.ev_date,0,8)}" escapeXml="true" />
 										</span></td>
 										<td><c:choose>
 												<c:when test="${item.ev_cd eq 1}">미등록차량</c:when>
@@ -539,12 +557,12 @@
 												<c:otherwise>기타</c:otherwise>
 											</c:choose></td>
 										<td><span class="cell-ellipsis"
-											title="${fn:escapeXml(item.dv_name)}"> <c:out
-													value="${item.dv_name}" escapeXml="true" />
+											title="${fn:escapeXml(item.ev_dv_name)}"> <c:out
+													value="${item.ev_dv_name}" escapeXml="true" />
 										</span></td>
 										<td><span class="cell-ellipsis"
-											title="${fn:escapeXml(item.dv_addr)}"> <c:out
-													value="${item.dv_addr}" escapeXml="true" />
+											title="${fn:escapeXml(item.ev_dv_addr)}"> <c:out
+													value="${item.ev_dv_addr}" escapeXml="true" />
 										</span></td>
 										<td><span class="cell-ellipsis"
 											title="${fn:escapeXml(item.ev_car_num)}"> <c:out

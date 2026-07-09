@@ -3,6 +3,25 @@
 
 <%-- Tiles body fragment (patches 2026-07-06). 공용 chrome(헤더·사이드바·푸터)은 template.jsp/defaultLayout 제공. jQuery 는 template 에서 로드 --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/sipCallLog.css">
+<%-- patches 2026-07-07: 외부 CSS 캐시 대비 인라인 — 공용 .content 여백을 다른 화면과 동일하게, 이중여백 제거
+     patches 2026-07-09: 오디오 재생 UI 를 하단 고정 모달 → '클릭한 행 바로 아래 인라인 행(아코디언)' 으로 변경.
+       - 각 로그 행마다 그 아래에 독립 오디오 재생 행이 열림(표 맨 아래 아님).
+       - 높이는 표 행에 맞춰 컴팩트(파형 40px + 컨트롤 가로 배치). --%>
+<style>
+	.content { padding: 32px 24px 29px 24px !important; }
+	.sip-call-log-container { padding: 0 !important; }
+	/* 인라인 오디오 재생 행 (클릭한 로그 바로 아래) */
+	.sip-audio-row > td { padding: 0 !important; background: #f5f2ff !important; border-top: 0 !important; }
+	.inline-audio { display: flex; align-items: center; gap: 14px; padding: 8px 14px; }
+	.ia-wave-wrap { flex: 1 1 auto; min-width: 0; position: relative; }
+	.ia-waveform { width: 100%; }
+	.ia-msg { font-size: 12px; color: #888; padding: 6px 0; }
+	.ia-msg.ia-error { color: #dc3545; }
+	.ia-controls { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 13px; color: #555; }
+	.ia-controls button { border: 1px solid #cfc6ea; background: #fff; color: #4F4A85; border-radius: 4px; padding: 4px 9px; cursor: pointer; line-height: 1; }
+	.ia-controls button:hover { background: #ece7fb; }
+	.ia-controls .ia-close { margin-left: 4px; color: #888; border-color: #ddd; }
+</style>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
 <%-- 오디오 파형 UI: Wavesurfer.js v7 (작업계획서 §10-6 확정). UMD 빌드로 전역 WaveSurfer 노출 --%>
 <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
@@ -52,21 +71,7 @@
 	<!-- 페이지네이션 -->
 	<div id="pagination" class="pagination-area"></div>
 
-	<!-- 오디오 재생 영역 (하단 고정 패널) -->
-	<div id="audioPlayerPanel" class="audio-panel" style="display:none;">
-		<div class="audio-panel-head">
-			<span id="audioTitle">통화 오디오</span>
-			<button type="button" id="btnClosePanel" class="btn-close">닫기</button>
-		</div>
-		<div id="waveform"></div>
-		<div id="audioLoading" class="audio-loading" style="display:none;">오디오 불러오는 중...</div>
-		<div id="audioError" class="audio-error" style="display:none;">오디오 파일이 존재하지 않습니다.</div>
-		<div class="audio-controls">
-			<button type="button" id="btnPlay">▶ 재생</button>
-			<button type="button" id="btnPause">❚❚ 정지</button>
-			<span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
-		</div>
-	</div>
+	<%-- patches 2026-07-09: 하단 고정 오디오 패널 제거. 오디오는 각 로그 행 바로 아래 인라인 행으로 열림(아래 JS) --%>
 
 </div>
 
@@ -105,6 +110,7 @@ function formatTime(seconds) {
 
 function loadSipCallList(page) {
 	currentPage = page;
+	closeInlineAudio();   // 재조회 전 열려있던 인라인 오디오 파형 정리(메모리 누수 방지)
 	$.ajax({
 		url: CONTEXT_PATH + '/sipcall/list',
 		method: 'GET',
@@ -172,34 +178,67 @@ function renderPagination(total, page) {
 	$('#pagination').html(html);
 }
 
-function playAudio(scId) {
-	$('#audioPlayerPanel').show();
-	$('#audioError').hide();
-	$('#audioLoading').show();
-	$('#currentTime').text('0:00');
-	$('#totalTime').text('0:00');
-
+// 열려있는 인라인 오디오 행 정리(파형 파괴 + 행 제거)
+function closeInlineAudio() {
 	if (wavesurfer) { wavesurfer.destroy(); wavesurfer = null; }
+	$('.sip-audio-row').remove();
+}
+
+// 클릭한 로그 행($tr) 바로 아래에 오디오 재생 행을 토글로 열고/닫음
+function toggleAudio(scId, $tr) {
+	// 같은 행의 오디오가 이미 열려 있으면 닫기(토글)
+	var $next = $tr.next('.sip-audio-row');
+	if ($next.length && String($next.data('id')) === String(scId)) {
+		closeInlineAudio();
+		return;
+	}
+	// 다른 곳에 열려 있던 것은 닫고 이 행 아래에 새로 연다
+	closeInlineAudio();
+
+	var waveId = 'waveform-' + scId;
+	var rowHtml = ''
+		+ '<tr class="sip-audio-row" data-id="' + scId + '">'
+		+   '<td colspan="8">'
+		+     '<div class="inline-audio">'
+		+       '<div class="ia-wave-wrap">'
+		+         '<div class="ia-waveform" id="' + waveId + '"></div>'
+		+         '<div class="ia-msg ia-loading">오디오 불러오는 중...</div>'
+		+         '<div class="ia-msg ia-error" style="display:none;">오디오 파일이 존재하지 않습니다.</div>'
+		+       '</div>'
+		+       '<div class="ia-controls">'
+		+         '<button type="button" class="ia-play">▶ 재생</button>'
+		+         '<button type="button" class="ia-pause">❚❚ 정지</button>'
+		+         '<span class="ia-cur">0:00</span> / <span class="ia-tot">0:00</span>'
+		+         '<button type="button" class="ia-close">닫기</button>'
+		+       '</div>'
+		+     '</div>'
+		+   '</td>'
+		+ '</tr>';
+	$tr.after(rowHtml);
+
+	var $arow = $tr.next('.sip-audio-row');
+	var $loading = $arow.find('.ia-loading');
+	var $error = $arow.find('.ia-error');
 
 	wavesurfer = WaveSurfer.create({
-		container: '#waveform',
+		container: '#' + waveId,
 		waveColor: '#4F4A85',
 		progressColor: '#383351',
 		cursorColor: '#FF6B6B',
-		height: 96,
+		height: 40,               // 표 행에 맞춘 컴팩트 높이
 		url: CONTEXT_PATH + '/sipcall/audio/' + scId
 	});
 
 	wavesurfer.on('ready', function() {
-		$('#audioLoading').hide();
-		$('#totalTime').text(formatTime(wavesurfer.getDuration()));
+		$loading.hide();
+		$arow.find('.ia-tot').text(formatTime(wavesurfer.getDuration()));
 	});
 	wavesurfer.on('timeupdate', function(t) {
-		$('#currentTime').text(formatTime(t));
+		$arow.find('.ia-cur').text(formatTime(t));
 	});
 	wavesurfer.on('error', function() {
-		$('#audioLoading').hide();
-		$('#audioError').show();
+		$loading.hide();
+		$error.show();
 	});
 }
 
@@ -212,19 +251,17 @@ $(document).ready(function() {
 
 	// 이벤트 위임 (동적 렌더링 대상)
 	$('#sipCallList').on('click', '.btn-audio', function() {
-		playAudio($(this).data('id'));
+		toggleAudio($(this).data('id'), $(this).closest('tr'));
 	});
+	// 인라인 오디오 컨트롤(동적 삽입된 재생 행) 위임
+	$('#sipCallList').on('click', '.ia-play', function() { if (wavesurfer) wavesurfer.play(); });
+	$('#sipCallList').on('click', '.ia-pause', function() { if (wavesurfer) wavesurfer.pause(); });
+	$('#sipCallList').on('click', '.ia-close', function() { closeInlineAudio(); });
+
 	$('#pagination').on('click', '.pg-btn', function() {
 		if ($(this).is(':disabled')) return;
 		var p = parseInt($(this).data('page'), 10);
 		if (!isNaN(p) && p >= 1) loadSipCallList(p);
-	});
-
-	$('#btnPlay').on('click', function() { if (wavesurfer) wavesurfer.play(); });
-	$('#btnPause').on('click', function() { if (wavesurfer) wavesurfer.pause(); });
-	$('#btnClosePanel').on('click', function() {
-		if (wavesurfer) { wavesurfer.destroy(); wavesurfer = null; }
-		$('#audioPlayerPanel').hide();
 	});
 });
 </script>

@@ -3,6 +3,21 @@
 
 <%-- Tiles body fragment (patches 2026-07-06). 공용 chrome(헤더·사이드바·푸터)은 template.jsp/defaultLayout 제공. jQuery 는 template 에서 로드 --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/dashboard.css">
+<%-- patches 2026-07-07: 외부 CSS 캐시 대비 인라인 — 공용 .content 여백을 다른 화면(32 24 29 24)과 동일하게,
+     대시보드 자체 wrapper 이중여백 제거 → 화면 이동 시 틀 어긋남/여백 차이 해소 --%>
+<style>
+	.content { padding: 24px !important; }
+	.dashboard-wrap { padding: 0 !important; }
+	/* patches 2026-07-09(2): 지도를 우측 카드 열 높이에 맞춰 '채움' — 날씨 API 응답으로 카드가 커져도
+	   지도 하단에 여백이 생기지 않도록. grid(align-items:stretch)에서 map-area 를 flex 로 만들어
+	   #map 이 셀(=카드 열과 동일) 높이 전체를 채움. 카드 높이 변동 후에는 JS 에서 map.relayout() 호출. */
+	.map-area { display: flex; }
+	#map { flex: 1 1 auto; height: auto !important; min-height: 460px !important; }
+	/* 마커 상태 범례 카드(우측 상단) */
+	.legend-card .legend-list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #555; }
+	.legend-card .legend-list i { margin-right: 5px; }
+	.legend-card h3 { margin: 0 0 8px; }
+</style>
 <!-- Font Awesome (상태 아이콘) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <!-- 카카오 지도 JavaScript SDK (services=Geocoder 등). autoload=false → kakao.maps.load 로 초기화 -->
@@ -13,16 +28,7 @@
 </script>
 
 <div class="dashboard-wrap">
-	<div class="dashboard-head">
-		<h2 class="dashboard-title">G-Eye Parking 대시보드</h2>
-		<div class="legend">
-			<span><i class="fas fa-map-marker-alt" style="color:#28a745"></i> 정상</span>
-			<span><i class="fas fa-map-marker-alt" style="color:#ffc107"></i> 이상 1~2</span>
-			<span><i class="fas fa-map-marker-alt" style="color:#dc3545"></i> 이상 3+</span>
-			<span><i class="fas fa-map-marker-alt" style="color:#808080"></i> 30분+ 미갱신</span>
-		</div>
-	</div>
-
+	<%-- patches 2026-07-09: 최상단 제목 제거(피드백). 마커 상태 범례는 우측 카드로 이동 --%>
 	<div id="mapWarning" class="map-warning" style="display:none;">
 		카카오 지도 키(kakao.map.js-key)가 설정되지 않았거나 지도를 불러올 수 없습니다.
 		<br>globals.properties 의 <b>kakao.map.js-key</b>(환경변수 KAKAO_MAP_JS_KEY)를 확인하세요.
@@ -36,6 +42,16 @@
 
 		<!-- 우측: 일별 대시보드 카드 (신설, 화면설계서 v0.0.2 Slide4) -->
 		<div class="cards-area">
+			<%-- patches 2026-07-09: 마커 상태 범례 카드(우측 최상단, 다른 카드처럼 테두리) --%>
+			<div class="card legend-card">
+				<h3><i class="fas fa-map-marker-alt"></i> 마커 상태</h3>
+				<div class="legend-list">
+					<span><i class="fas fa-map-marker-alt" style="color:#28a745"></i> 정상</span>
+					<span><i class="fas fa-map-marker-alt" style="color:#ffc107"></i> 이상 1~2</span>
+					<span><i class="fas fa-map-marker-alt" style="color:#dc3545"></i> 이상 3+</span>
+					<span><i class="fas fa-map-marker-alt" style="color:#808080"></i> 30분+ 미갱신</span>
+				</div>
+			</div>
 			<div class="card weather-card">
 				<h3><i class="fas fa-cloud-sun"></i> 오늘 날씨</h3>
 				<div class="card-value" id="weather-value">-</div>
@@ -55,7 +71,7 @@
 		<div class="recent-events-area">
 			<div class="section-header">
 				<h3>최근 이벤트</h3>
-				<button type="button" id="btnMoreEvents" class="btn-more">＋ 더보기</button>
+				<button type="button" id="btnMoreEvents" class="btn-more">전체보기</button>
 			</div>
 			<table class="recent-events-table">
 				<thead>
@@ -90,18 +106,19 @@ function getStatusColor(device) {
 			return "#808080";
 		}
 	}
-	// 이상(0) 개수 — 5종
+	// 이상 개수 — 5종. (버그수정 2026-07-07) '정상(1)'이 아닌 값(이상 0 · null · 미보고)은 모두 '이상'으로 집계.
+	//   → 디바이스 리스트의 "값 없으면 이상" 정책과 일치. (기존 '=== 0' 은 null 을 이상으로 안 세어 초록으로 오표시)
 	var errorCount = [
 		device.dv_status_pc,
 		device.dv_status_cctv,
 		device.dv_lens,
 		device.dv_status_speaker,
 		device.dv_status_sip
-	].filter(function(v) { return String(v) === '0'; }).length;
+	].filter(function(v) { return String(v) !== '1'; }).length;
 
-	if (errorCount === 0) return "#28a745"; // 초록
-	if (errorCount <= 2) return "#ffc107";  // 노랑
-	return "#dc3545";                        // 빨강
+	if (errorCount === 0) return "#28a745"; // 초록: 5종 모두 정상
+	if (errorCount <= 2) return "#ffc107";  // 노랑: 이상 1~2
+	return "#dc3545";                        // 빨강: 이상 3+
 }
 
 function markerImage(color) {
@@ -243,6 +260,7 @@ function initMap() {
 	});
 	loadDevices();
 	setInterval(loadDevices, 10000); // 10초 폴링 (04 정합)
+	fitMapSoon();   // 생성 직후, 현재 카드 열 높이에 맞춰 1회 재배치(날씨가 먼저 로드된 경우 대비)
 }
 
 // ===== 작업계획서 12: 우측 카드 · 하단 최근 이벤트 요약 =====
@@ -274,6 +292,12 @@ function formatEvDate(item) {
 	return s || '-';
 }
 
+// 카드 열 높이가 바뀌면(날씨 로드 등) 지도 캔버스를 컨테이너 크기에 맞춰 재배치.
+// (Kakao 지도는 컨테이너가 커져도 캔버스가 자동 확장되지 않아 relayout 필요 → 지도 하단 회색/여백 방지)
+function fitMapSoon() {
+	setTimeout(function() { if (map && map.relayout) map.relayout(); }, 60);
+}
+
 // 오늘 날씨 — 기존 WeatherApiAdapter 엔드포인트(/api/external/weather/test, 기본 광주 좌표) 재사용
 function loadWeather() {
 	$.ajax({
@@ -283,16 +307,19 @@ function loadWeather() {
 			if (!data || !data.slots || !data.slots.length) {
 				$('#weather-value').text('-');
 				$('#weather-sub').text('날씨 정보 없음');
+				fitMapSoon();
 				return;
 			}
 			var s = data.slots[0];
 			var label = (s.pty && s.pty !== '없음') ? s.pty : (s.sky || '-');
 			$('#weather-value').text(label + (s.tmp ? ' · ' + s.tmp + '°C' : ''));
 			$('#weather-sub').text('강수확률 ' + (s.pop || '0') + '%');
+			fitMapSoon();   // 날씨 텍스트 생성으로 카드 열 높이 변동 → 지도 재배치
 		},
 		error: function() {
 			$('#weather-value').text('-');
 			$('#weather-sub').text('날씨 정보 없음');
+			fitMapSoon();
 		}
 	});
 }
@@ -315,10 +342,10 @@ function loadTodaySummary() {
 	});
 }
 
-// 하단 최근 이벤트 요약
+// 하단 최근 이벤트 요약 (patches 2026-07-09: 5건 → 3건, 스크롤 최소화)
 function loadRecentEvents() {
 	$.ajax({
-		url: CONTEXT_PATH + "/dashboard/recentEvents",
+		url: CONTEXT_PATH + "/dashboard/recentEvents?limit=3",
 		method: "GET", dataType: "json",
 		success: function(events) {
 			if (!events || !events.length) {

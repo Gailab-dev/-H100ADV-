@@ -9,7 +9,33 @@
 <title>diviceList</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/resources/css/deviceList.css">
+	href="${pageContext.request.contextPath}/resources/css/deviceList.css?v=20260707">
+<%-- patches 2026-07-07: 외부 CSS 배포/캐시 지연 대비 — 테이블 열너비를 JSP 인라인으로 직접 지정.
+     #deviceTable(ID) 선택자 + !important 로 옛 외부 CSS(.device-table nth-child width:359/440px)를 확실히 무력화.
+     1 체크박스40 / 2 이름100 / 3 주소 잔여폭 / 4 등록날짜150 / 5~9 상태 통일70 / 10 수정90 --%>
+<style>
+	.device-table-scroll { width: 100%; overflow-x: auto; }
+	#deviceTable { table-layout: fixed; width: 100%; min-width: 900px; }
+	/* patches 2026-07-07: 주소 auto(잔여폭 전부) → 균형 %. 화면폭에 비례 유지, 주소 과대 완화 */
+	#deviceTable th:nth-child(1),  #deviceTable td:nth-child(1)  { width: 3%  !important; } /* 체크박스 */
+	#deviceTable th:nth-child(2),  #deviceTable td:nth-child(2)  { width: 13% !important; } /* 디바이스명 */
+	#deviceTable th:nth-child(3),  #deviceTable td:nth-child(3)  { width: 30% !important; } /* 주소 */
+	#deviceTable th:nth-child(4),  #deviceTable td:nth-child(4)  { width: 14% !important; } /* 등록날짜 */
+	#deviceTable th:nth-child(5),  #deviceTable td:nth-child(5),
+	#deviceTable th:nth-child(6),  #deviceTable td:nth-child(6),
+	#deviceTable th:nth-child(7),  #deviceTable td:nth-child(7),
+	#deviceTable th:nth-child(8),  #deviceTable td:nth-child(8),
+	#deviceTable th:nth-child(9),  #deviceTable td:nth-child(9)  { width: 6%  !important; } /* 상태 5종 */
+	#deviceTable th:nth-child(10), #deviceTable td:nth-child(10) { width: 10% !important; } /* 수정 */
+	/* patches 2026-07-09(3): 10건 조회 시 오른쪽 스크롤 없이 한 화면에 꽉 차도록 세로 여백 미세 축소 */
+	.content { padding: 16px 24px 12px 24px !important; }        /* 상/하 32·29 → 16·12 */
+	.device-top { margin-bottom: 8px !important; }               /* 12 → 8 */
+	#deviceTable th, #deviceTable td { padding: 7px 0 !important; }  /* 9 → 7 (행당 -4px) */
+	.pagination { margin-top: 12px !important; }                 /* 20 → 12 */
+</style>
+<%-- patches 2026-07-07: Daum(Kakao) 우편번호 서비스(주소 검색) + Kakao 지도 SDK(services=주소→좌표 지오코딩) --%>
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services"></script>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/pagination.css">
 <link rel="stylesheet"
@@ -358,10 +384,12 @@
     			alert("도메인은 30자를 넘을 수 없습니다. \n 숫자, '.' 이외의 문자(예: 한글, 영문 등)를 최소 1자 이상 포함한 값만 입력 가능합니다");
     			return false;
     		}
+    		/*
     		if (/^[0-9.]+$/.test(dvIp)) {
     			alert("도메인에는 '.'과 숫자만으로 이루어진 값을 넣을 수 없습니다. \n 숫자, '.' 이외의 문자(예: 한글, 영문 등)를 최소 1자 이상 포함해 주세요.");
     			return false;
     		}
+    		*/
     		if(!dvSerialNumber){
     			alert("시리얼 넘버는 필수입니다.");
     			return false;
@@ -379,6 +407,48 @@
     		return true;
 	 	}   
 	 
+	    // patches 2026-07-07: Daum 우편번호 서비스로 디바이스 주소 검색 (팝업 버튼 onclick 에서 호출)
+	    function searchDeviceAddress(){
+	        if (typeof daum === 'undefined' || !daum.Postcode) {
+	            alert('주소 검색 스크립트를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');
+	            return;
+	        }
+	        new daum.Postcode({
+	            oncomplete: function(data){
+	                var addr = data.roadAddress || data.jibunAddress; // 도로명 우선, 없으면 지번
+	                var addrEl = document.getElementById('dvAddr');
+	                if (addrEl) addrEl.value = addr;
+
+	                // patches 2026-07-07: 지오코딩 — 주소 → 좌표(lat/lng). 대시보드 지도 마커 자동생성용.
+	                geocodeDeviceAddress(addr);
+
+	                var detailEl = document.getElementById('dvAddrDetail');
+	                if (detailEl) detailEl.focus(); // 상세주소 입력으로 포커스 이동
+	            }
+	        }).open();
+	    }
+
+	    // 주소 → 좌표 변환(Kakao Geocoder). 성공 시 hidden dvLat/dvLng 채움, 실패/미로드 시 0(지도 미표시).
+	    function geocodeDeviceAddress(addr){
+	        var latEl = document.getElementById('dvLat');
+	        var lngEl = document.getElementById('dvLng');
+	        if (!latEl || !lngEl) return;
+	        if (typeof kakao === 'undefined' || !kakao.maps || !kakao.maps.services) {
+	            // SDK 미로드(키 미설정 등) → 좌표 0 유지
+	            latEl.value = '0'; lngEl.value = '0';
+	            return;
+	        }
+	        var geocoder = new kakao.maps.services.Geocoder();
+	        geocoder.addressSearch(addr, function(result, status){
+	            if (status === kakao.maps.services.Status.OK && result && result[0]) {
+	                latEl.value = result[0].y; // 위도
+	                lngEl.value = result[0].x; // 경도
+	            } else {
+	                latEl.value = '0'; lngEl.value = '0'; // 변환 실패 → 지도 미표시
+	            }
+	        });
+	    }
+
 	    // 디바이스 정보 팝업 열기
 		function viewDeviceInfoPopup(dvId){
 			axios.get('${pageContext.request.contextPath}/deviceList/viewDeviceInfoPopup', { params : {dvId} })
@@ -398,19 +468,25 @@
     		
     		let dvName = document.getElementById("dvName").value;
     		let dvAddr = document.getElementById("dvAddr").value;
+    		let dvAddrDetail = document.getElementById("dvAddrDetail").value.trim();
+    		let dvLat = (document.getElementById("dvLat").value || '0').trim();
+    		let dvLng = (document.getElementById("dvLng").value || '0').trim();
     		let dvIp = document.getElementById("dvIp").value;
-    		let dvSerialNumber = document.getElementById("serialNumber").value.trim();	
-		
+    		let dvSerialNumber = document.getElementById("serialNumber").value.trim();
+
     		const validateCheck = await validateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvSerialNumber);
     		if(!validateCheck){
     			return;
     		}
-    		
+
     		axios.post('${pageContext.request.contextPath}/deviceList/updateDeviceInfo',
   			    new URLSearchParams({
   			        dvId: dvId,
   			        dvName: dvName,
   			        dvAddr: dvAddr,
+  			        dvAddrDetail: dvAddrDetail,
+  			        dvLat: dvLat,
+  			        dvLng: dvLng,
   			        dvIp: dvIp,
     			    dvSerialNumber : dvSerialNumber
   			    })
@@ -436,18 +512,24 @@
 		async function insertDeviceInfo() {
 		  let dvName = document.getElementById("dvName").value.trim();
 		  let dvAddr = document.getElementById("dvAddr").value.trim();
+		  let dvAddrDetail = document.getElementById("dvAddrDetail").value.trim();
+		  let dvLat = (document.getElementById("dvLat").value || '0').trim();
+		  let dvLng = (document.getElementById("dvLng").value || '0').trim();
 		  let dvIp = document.getElementById("dvIp").value.trim();
-		  let dvSerialNumber = document.getElementById("serialNumber").value.trim();	
+		  let dvSerialNumber = document.getElementById("serialNumber").value.trim();
 
   		  const validateCheck = await validateDeviceInfo(null,dvName,dvAddr,dvIp,dvSerialNumber);
 		  if(!validateCheck){
 			  return;
 		  }
-		
+
 		  axios.post("${pageContext.request.contextPath}/deviceList/insertDeviceInfo",
 		      new URLSearchParams({
 		        dvName: dvName,
 		        dvAddr: dvAddr,
+		        dvAddrDetail: dvAddrDetail,
+		        dvLat: dvLat,
+		        dvLng: dvLng,
 		        dvIp: dvIp,
 		        dvSerialNumber : dvSerialNumber
 		      })
@@ -1107,6 +1189,8 @@
 						</div>
 					</div>
 
+					<!-- patches 2026-07-07: 가로 스크롤 안전망 — 열이 넘쳐도 잘리지 않고 스크롤 -->
+					<div class="device-table-scroll">
 					<table id="deviceTable" class="device-table">
 						<thead>
 							<tr>
@@ -1157,9 +1241,11 @@
 												title="${fn:escapeXml(item.dv_name)}"> <c:out
 														value="${item.dv_name}" escapeXml="true" />
 											</span></td>
+											<%-- 주소 + 상세주소 (상세주소 null/공백이면 '' 처리, 공백 구분자도 그때만) --%>
+											<c:set var="addrFull" value="${item.dv_addr}${empty item.dv_addr_detail ? '' : ' '}${item.dv_addr_detail}" />
 											<td><span class="cell-ellipsis"
-												title="${fn:escapeXml(item.dv_addr)}"> <c:out
-														value="${item.dv_addr}" escapeXml="true" />
+												title="${fn:escapeXml(addrFull)}"> <c:out
+														value="${addrFull}" escapeXml="true" />
 											</span></td>
 											<td><span class="cell-ellipsis"
 												title="${fn:escapeXml(item.dv_reg_date)}"> <c:out
@@ -1214,6 +1300,7 @@
 							</c:choose>
 						</tbody>
 					</table>
+					</div><!-- /.device-table-scroll -->
 
 					<div class="pagination">
 						<ui:pagination paginationInfo="${paginationInfo}" type="text"

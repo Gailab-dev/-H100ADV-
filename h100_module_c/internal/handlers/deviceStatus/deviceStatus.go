@@ -9,7 +9,8 @@
 //   - Phase 2 HMAC 은 본 영역 범위 외(별도)
 //
 // 상태 컬럼(DB v0.0.7 tbl_device): dv_status_pc / dv_status_cctv / dv_lens / dv_status_speaker / dv_status_sip
-//   ※ dv_status_display 는 DB v0.0.7 에 없음(전광판 단방향 불가로 제외) → 수신/반영하지 않음
+//
+//	※ dv_status_display 는 DB v0.0.7 에 없음(전광판 단방향 불가로 제외) → 수신/반영하지 않음
 package deviceStatus
 
 import (
@@ -60,6 +61,11 @@ func clientIP(r *http.Request) string {
 
 // DeviceStatusHandler: POST /deviceStatus
 func DeviceStatusHandler(w http.ResponseWriter, r *http.Request) {
+
+	logger.Log.Info("[DEVICE_STATUS_ENTRY] /deviceStatus 요청 수신",
+        zap.String("method", r.Method),
+		zap.String("client_ip", clientIP(r)))
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST 요청만 허용됩니다.", http.StatusMethodNotAllowed)
 		return

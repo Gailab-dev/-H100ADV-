@@ -1,0 +1,18 @@
+# 1. ssl 폴더 확인·생성
+mkdir -p /home/dsic/h100_module_c/ssl
+cd /home/dsic/h100_module_c/ssl
+
+# 2. 자체 서명 발급 (CN=192.168.0.15, 1년)
+openssl req -x509 -nodes -days 365 \
+  -subj "/CN=192.168.0.15" \
+  -newkey rsa:2048 \
+  -keyout server.key.pem \
+  -out server.cert.pem
+
+# 3. 검증
+openssl x509 -in server.cert.pem -noout -subject -dates
+# 기대: subject=CN=192.168.0.15, notAfter=2027 07월
+
+# 4. 재실행
+cd /home/dsic/h100_module_c
+go run ./cmd/server/

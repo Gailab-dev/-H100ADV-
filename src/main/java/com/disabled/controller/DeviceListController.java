@@ -16,6 +16,7 @@ import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -63,7 +64,11 @@ public class DeviceListController {
 	
 	@Autowired
 	UserService userService;
-	
+
+	/** 카카오 지도 JavaScript SDK 키(주소→좌표 지오코딩용). globals.properties kakao.map.js-key */
+	@Value("${kakao.map.js-key:}")
+	private String kakaoMapJsKey;
+
 	
 	// 디바이스 리스트 화면으로 redirect
 	@RequestMapping("")
@@ -213,6 +218,7 @@ public class DeviceListController {
 		model.addAttribute("endDate", endDate);
 		model.addAttribute("useTblLog", useTblLog);
 		model.addAttribute("pageSize", pageSize);
+		model.addAttribute("kakaoMapJsKey", kakaoMapJsKey); // 주소검색 지오코딩용 Kakao SDK 키
 		// model.addAttribute("deviceId", firstDeviceId);
 		
 		return "deviceList"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
@@ -450,8 +456,11 @@ public class DeviceListController {
 	public Map<String, Object> insertDeviceInfo(
 			@RequestParam("dvName") String dvName
 			, @RequestParam("dvAddr") String dvAddr
+			, @RequestParam(value = "dvAddrDetail", required = false) String dvAddrDetail
 			, @RequestParam("dvIp") String dvIp
 			, @RequestParam("dvSerialNumber") String dvSerialNumber
+			, @RequestParam(value = "dvLat", required = false) String dvLat
+			, @RequestParam(value = "dvLng", required = false) String dvLng
 			) {
 		
 		// connetion 객체
@@ -494,6 +503,15 @@ public class DeviceListController {
 				return res;
 			}
 
+			// dvAddrDetail 검증 (선택 입력. XSS/SQLi 방어, 최대 200자)
+			if (dvAddrDetail != null && !dvAddrDetail.isEmpty()
+					&& (dvAddrDetail.length() > 200 || containsDangerousPattern(dvAddrDetail))) {
+				logger.warn("유효하지 않은 dvAddrDetail 요청: {}", dvAddrDetail);
+				res.put("ok", false);
+				res.put("msg", "유효하지 않은 상세 주소입니다.");
+				return res;
+			}
+
 			// dvIp 검증
 			if (dvIp == null || dvIp.isEmpty()) {
 				logger.warn("도메인 값이 비어있습니다.");
@@ -526,8 +544,12 @@ public class DeviceListController {
 			}
 			
 			
+			// 좌표 정규화(지오코딩 값 또는 0). decimal(10,7) 범위 밖·비숫자는 0으로 방어(파싱오류·인젝션 방지)
+			dvLat = normalizeCoord(dvLat);
+			dvLng = normalizeCoord(dvLng);
+
 			// 디바이스 등록
-			deviceListService.insertDeviceInfo(dvName,dvAddr,dvIp,dvStatus,dvSerialNumber);
+			deviceListService.insertDeviceInfo(dvName,dvAddr,dvAddrDetail,dvIp,dvStatus,dvSerialNumber,dvLat,dvLng);
 			
 			
 		} catch (RuntimeException e) {
@@ -556,8 +578,11 @@ public class DeviceListController {
 			@RequestParam("dvId") Integer dvId
 			, @RequestParam("dvName") String dvName
 			, @RequestParam("dvAddr") String dvAddr
+			, @RequestParam(value = "dvAddrDetail", required = false) String dvAddrDetail
 			, @RequestParam("dvIp") String dvIp
 			, @RequestParam("dvSerialNumber") String dvSerialNumber
+			, @RequestParam(value = "dvLat", required = false) String dvLat
+			, @RequestParam(value = "dvLng", required = false) String dvLng
 			) {
 		
 		// connetion 객체
@@ -608,6 +633,15 @@ public class DeviceListController {
 							return res;
 						}
 
+						// dvAddrDetail 검증 (선택 입력. XSS/SQLi 방어, 최대 200자)
+						if (dvAddrDetail != null && !dvAddrDetail.isEmpty()
+								&& (dvAddrDetail.length() > 200 || containsDangerousPattern(dvAddrDetail))) {
+							logger.warn("유효하지 않은 dvAddrDetail 요청: {}", dvAddrDetail);
+							res.put("ok", false);
+							res.put("msg", "유효하지 않은 상세 주소입니다.");
+							return res;
+						}
+
 						// dvIp 검증 (IP 형식 검증)
 						if (dvIp == null || dvIp.isEmpty()) {
 							logger.warn("디바이스 IP가 비어있습니다.");
@@ -640,8 +674,12 @@ public class DeviceListController {
 				dvStatus = 0;
 			}
 			
+			// 좌표 정규화(지오코딩 값 또는 0)
+			dvLat = normalizeCoord(dvLat);
+			dvLng = normalizeCoord(dvLng);
+
 			// 디바이스 수정
-			deviceListService.updateDeviceInfo(dvId,dvName,dvAddr,dvIp,dvStatus,dvSerialNumber);
+			deviceListService.updateDeviceInfo(dvId,dvName,dvAddr,dvAddrDetail,dvIp,dvStatus,dvSerialNumber,dvLat,dvLng);
 			
 			
 		} catch (RuntimeException e) {
@@ -825,6 +863,24 @@ public class DeviceListController {
 	    return sb.toString();
 	}
 	
+	/**
+	 * 좌표 문자열 정규화(patches 2026-07-07): decimal(10,7) 형태의 유효 숫자만 허용.
+	 * null·빈값·비숫자·범위초과는 "0"(지도 미표시)으로 방어 → 파싱오류·인젝션 차단.
+	 * @param v 위도 또는 경도 문자열
+	 * @return 유효 숫자 문자열 또는 "0"
+	 */
+	private String normalizeCoord(String v) {
+		if (v == null) return "0";
+		v = v.trim();
+		// 부호 + 정수부(최대 3자리) + 소수부(자리수 제한 없음).
+		// (버그수정 2026-07-07) 카카오 지오코더는 고정밀 좌표(예: 37.5665683509886, 13자리)를 반환 →
+		//   기존 소수 7자리 제한 정규식이 이를 탈락시켜 0으로 저장되던 문제 해소. DB decimal(10,7)이 7자리로 반올림.
+		if (v.matches("^-?\\d{1,3}(\\.\\d+)?$")) {
+			return v;
+		}
+		return "0";
+	}
+
 	/**
 	 * 위험한 패턴 검사 (SQL Injection, XSS, Path Traversal 방어)
 	 * @param input 검사할 문자열

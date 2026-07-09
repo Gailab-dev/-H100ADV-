@@ -19,7 +19,7 @@
   				<otherwise>DESC</otherwise>
 			</choose>	
 			) AS rn 
-			, dv_id, dv_name, dv_addr, dv_serial_number, dv_status,dv_reg_date
+			, dv_id, dv_name, dv_addr, dv_addr_detail, dv_serial_number, dv_status, dv_reg_date
 		FROM tbl_device
 		WHERE 
 			1=1
@@ -91,6 +91,7 @@
 			dv_org_id
 			, dv_name
 			, dv_addr
+			, dv_addr_detail
 			, dv_ip
 			, dv_status
 			, dv_reg_user
@@ -98,11 +99,14 @@
 			, dv_reg_date
 			, dv_mod_date
 			, dv_serial_number
+			, dv_lat
+			, dv_lng
 		)
 		VALUES(
 			1
 			, #{dvName}
 			, #{dvAddr}
+			, #{dvAddrDetail}
 			, #{dvIp}
 			, #{dvStatus}
 			, 1
@@ -110,6 +114,8 @@
 			, NOW()
 			, NOW()
 			, #{dvSerialNumber}
+			, #{dvLat}
+			, #{dvLng}
 		)
 	</insert>
 	
@@ -119,12 +125,15 @@
 		SET
 			dv_name = #{dvName}
 			, dv_addr = #{dvAddr}
+			, dv_addr_detail = #{dvAddrDetail}
 			, dv_ip = #{dvIp}
 			, dv_status = #{dvStatus}
 			, dv_mod_user = 1
 			, dv_mod_date = NOW()
-			, dv_serial_number = #{dvSerialNumber}			
-		WHERE dv_id = #{dvId}	
+			, dv_serial_number = #{dvSerialNumber}
+			, dv_lat = #{dvLat}
+			, dv_lng = #{dvLng}
+		WHERE dv_id = #{dvId}
 	
 	</update>
 	
@@ -136,7 +145,7 @@
 	
 	<!-- 디바이스 1개 정보 -->
 	<select id="getOneDeviceInfo" resultType="map">
-		SELECT dv_name, dv_addr, dv_ip, dv_serial_number
+		SELECT dv_name, dv_addr, dv_addr_detail, dv_ip, dv_serial_number, dv_lat, dv_lng
 		FROM tbl_device
 		WHERE dv_id = #{dvId}
 	</select>
