@@ -105,11 +105,7 @@ button {
     transition: background 0.2s ease;
 }
 
-.menu > li:nth-child(1) > a {
-    background: #f8f8fa; 
-    font-weight: bold;
-}
-
+/* patches 2026-07-09(8): 구 하드코딩 active(nth-child 고정) 제거 — 공통 left.jsp 의 요청 URL 기반 active 사용 */
 .menu > li > a:hover {
     background: #eee;
 }

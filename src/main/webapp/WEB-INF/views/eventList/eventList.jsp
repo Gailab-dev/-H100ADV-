@@ -132,6 +132,16 @@
 	      })
 	      .catch(function(){ clearTimeout(_h100To); hideLoadingOverlay(); showMessageOverlay('파일이 존재하지 않습니다'); });
 	}
+
+	// 상세보기 버튼 — 이벤트 위임(인라인 onclick 대신). data 속성에서 값 안전 추출 → SyntaxError 방지
+	document.addEventListener('click', function(e){
+	    var btn = e.target.closest('.detailButton');
+	    if (!btn) return;
+	    var dvId   = btn.getAttribute('data-dv-id');
+	    var evId   = btn.getAttribute('data-ev-id');
+	    var dvAddr = btn.getAttribute('data-dv-addr') || '';
+	    eventListDetail((dvId === '' ? null : dvId), evId, dvAddr);
+	});
 	
 	// ===== ADR-008 로딩/메시지 오버레이 헬퍼 (목록 페이지 위) =====
 	function showLoadingOverlay(msg){
@@ -568,9 +578,13 @@
 											title="${fn:escapeXml(item.ev_car_num)}"> <c:out
 													value="${item.ev_car_num}" escapeXml="true" />
 										</span></td>
-										<td><button
-												onclick="eventListDetail(${item.dv_id},${item.ev_id},'${item.dv_addr}')"
-												class="detailButton">상세보기</button></td>
+										<%-- patches 2026-07-09(8): 인라인 onclick 에 EL 직접 삽입 시 dv_id 가 null 이면
+										     eventListDetail(,82,'..') 형태로 JS SyntaxError, 주소에 따옴표 있으면 문자열 깨짐.
+										     → 대시보드와 동일하게 data 속성 + 이벤트 위임(아래 JS)으로 안전 처리. --%>
+										<td><button type="button" class="detailButton"
+												data-dv-id="${item.dv_id}"
+												data-ev-id="${item.ev_id}"
+												data-dv-addr="${fn:escapeXml(item.dv_addr)}">상세보기</button></td>
 									</tr>
 								</c:forEach>
 							</tbody>

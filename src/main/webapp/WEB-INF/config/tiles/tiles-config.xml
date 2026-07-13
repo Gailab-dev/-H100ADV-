@@ -54,6 +54,11 @@
     <put-attribute name="body" value="/WEB-INF/views/eventList/eventList.jsp" />
   </definition>
 
+  <!-- 불법주차 리스트 상세 (patches 2026-07-09(8) — 독립 페이지 → Tiles 이관: 공통 chrome/신규 메뉴 적용) -->
+  <definition name="eventListDetail" extends="defaultLayout">
+    <put-attribute name="body" value="/WEB-INF/views/eventList/eventListDetail.jsp" />
+  </definition>
+
   <!-- 내 정보 (patches 2026-07-06 — 운영 화면 순차 이관) -->
   <definition name="myInfo" extends="defaultLayout">
     <put-attribute name="body" value="/WEB-INF/views/myInfo/myInfo.jsp" />

@@ -419,49 +419,38 @@ public class EventListServiceImpl implements EventListService{
 	 */
 	@Override
 	public boolean requestFileDec(HttpServletResponse res, Integer evId, Map<String, Object> eventListDetail) {
+		// patches 2026-07-09(8): 과태료 사전통지서 엑셀 손상 원인 수정.
+		//  - 기존: 2번째 이미지 결과만 검사(첫 결과 덮어씀) + 영상이 없으면 decVideoCheck=false 로 남아 return false →
+		//          컨트롤러가 엑셀을 생성하지 않고 early return → 빈 200 응답 → 다운로드된 xlsx 손상("파일 형식이 잘못됨").
+		//  - 통지서 엑셀은 영상을 사용하지 않으며(사진 2장·도장·수납인만 임베드), 일부 파일 부재는 정상 케이스다.
+		//  - 수정: 존재하는 파일만 개별 복호화하고 부재/개별 실패는 warn 로그만 남긴 뒤 진행(엑셀은 있는 이미지로 생성).
+		//          실제 예외(복호화 로직 오류)일 때만 false 반환.
 		try {
-			File encryptedFile1 = new File("/home/dsic/Desktop/H100_system/output_images_enc/20260202175054_1_Cam1_1.png.enc");
-    		long fileSize1 = encryptedFile1.length();
-            System.out.println("======999999암호화된 파일 크기: " + fileSize1 + " bytes");
-            
-			boolean decImgCheck = false;
-			boolean decVideoCheck = false;
-        
-			// 파라미터 추가
-//			List<String> paramList = new ArrayList<String>();
-//			if (eventListDetail.get("ev_img_path") != null)
-//			    paramList.add(eventListDetail.get("ev_img_path").toString());
-//			if (eventListDetail.get("ev_img_path2") != null)
-//			    paramList.add(eventListDetail.get("ev_img_path2").toString());
-			
-			// 이미지 복호화
-			File encryptedFile = new File("/home/dsic/Desktop/H100_system/output_images_enc/20260202175054_1_Cam1_1.png.enc");
-			long fileSize = encryptedFile.length();
-			System.out.println("======파일 경로 : " + imgEncPath + File.separator + eventListDetail.get("ev_img_path"));
-            System.out.println("======11111111암호화된 파일 크기: " + fileSize + " bytes");
-			
-			decImgCheck = decryptionService.decryptAndSaveFileAutoName1(String.valueOf(eventListDetail.get("ev_img_path")), imgEncPath, imgDecPath);
-			decImgCheck = decryptionService.decryptAndSaveFileAutoName1(String.valueOf(eventListDetail.get("ev_img_path2")), imgEncPath, imgDecPath);
-			if(!decImgCheck) {
-				logger.error("[이미지파일 복호화 실패] 파일명: " + decImgCheck + ", 암호화 된 이미지 경로: " +  imgEncPath + ", 복호화 된 이미지 경로" + imgDecPath);
-				return false;
+			// 이미지 1 복호화 (있을 때만)
+			Object img1 = eventListDetail.get("ev_img_path");
+			if (img1 != null && !img1.toString().isBlank()) {
+				boolean ok = decryptionService.decryptAndSaveFileAutoName1(img1.toString(), imgEncPath, imgDecPath);
+				if (!ok) logger.warn("[이미지1 복호화 실패-계속진행] 파일명: {}, encPath: {}, decPath: {}", img1, imgEncPath, imgDecPath);
 			}
-        
-			// 영상 복호화
+
+			// 이미지 2 복호화 (있을 때만)
+			Object img2 = eventListDetail.get("ev_img_path2");
+			if (img2 != null && !img2.toString().isBlank()) {
+				boolean ok = decryptionService.decryptAndSaveFileAutoName1(img2.toString(), imgEncPath, imgDecPath);
+				if (!ok) logger.warn("[이미지2 복호화 실패-계속진행] 파일명: {}, encPath: {}, decPath: {}", img2, imgEncPath, imgDecPath);
+			}
+
+			// 영상 복호화 (있을 때만, 통지서 엑셀엔 미사용 → 실패해도 엑셀 진행)
 			Object movObj = eventListDetail.get("ev_mov_path");
 			if (movObj != null && !movObj.toString().isBlank()) {
-				decVideoCheck = decryptionService.decryptAndSaveFileAutoName1(eventListDetail.get("ev_mov_path").toString(), videoEncPath, videoDecPath);
-			}
-        
-			if(!decVideoCheck) {
-				logger.error("[영상파일 복호화 실패] 파일명: " + eventListDetail.get("ev_mov_path") + ", 암호화 된 영상 경로: " +  videoEncPath + ", 복호화 된 영상 경로" + videoDecPath);
-				return false;
+				boolean ok = decryptionService.decryptAndSaveFileAutoName1(movObj.toString(), videoEncPath, videoDecPath);
+				if (!ok) logger.warn("[영상 복호화 실패-계속진행] 파일명: {}, encPath: {}, decPath: {}", movObj, videoEncPath, videoDecPath);
 			}
 		} catch (Exception e) {
-			logger.error("requestFileDec에서 파일 복호화 오류 발생 : ",e);
+			logger.error("requestFileDec에서 파일 복호화 오류 발생 : ", e);
 			return false;
 		}
-      
+
 		return true;
 	}
 	

@@ -136,7 +136,7 @@ public class ExcelGenerator {
 	    XSSFColor RED  = new XSSFColor(new java.awt.Color(0xFF, 0x00, 0x00), null);
 	    XSSFColor WHITE = new XSSFColor(new java.awt.Color(0xFF, 0xFF, 0xFF), null);
 
-	    try (XSSFWorkbook wb = new XSSFWorkbook(); OutputStream os = response.getOutputStream()) {
+	    try (XSSFWorkbook wb = new XSSFWorkbook()) {
 
 	        XSSFSheet sheet = wb.createSheet("사전통지서");
 
@@ -254,11 +254,17 @@ public class ExcelGenerator {
 	        addImageToArea(wb, drawing, spec.getPhoto1(), detectPictureType(spec.getPhoto1()), 7, 3, 11, 12);
 	        addImageToArea(wb, drawing, spec.getPhoto2(), detectPictureType(spec.getPhoto2()), 7, 12, 11, 22);
 
-	        wb.write(os);
-	        response.flushBuffer();
+	        // patches 2026-07-09(8): 워크북 빌드 완료 후에만 응답 스트림 획득·기록.
+	        //   빌드 중 예외가 나도 응답 본문을 열지 않아 '빈 200(손상 xlsx)' 대신 상위에서 에러 상태를 보낼 수 있음.
+	        try (OutputStream os = response.getOutputStream()) {
+	            wb.write(os);
+	            response.flushBuffer();
+	        }
 
 	    } catch (Exception e) {
 	        logger.error("사전통지서 엑셀 생성 중 오류", e);
+	        // patches 2026-07-09(8): 기존엔 예외를 삼켜 빈 응답(손상 파일)이 내려갔음 → 전파하여 상위에서 처리
+	        throw new RuntimeException("사전통지서 엑셀 생성 실패", e);
 	    }
 	}    
 
@@ -390,6 +396,13 @@ public class ExcelGenerator {
 	                            int col1, int row1, int col2, int row2) {
 	    if (imageBytes == null || imageBytes.length == 0) return;
 
+	    // patches 2026-07-09(8): 복호화 결과가 유효한 이미지(PNG/JPEG 매직바이트)가 아니면 임베드 생략.
+	    //   손상/오복호화된 바이트를 PNG 로 잘못 붙이면 Excel 이 파일 전체를 못 여는 문제("파일 형식이 잘못됨") 방지.
+	    if (!isSupportedImage(imageBytes)) {
+	        logger.warn("[통지서] 유효한 PNG/JPEG 이미지가 아니어서 임베드 생략 (len={})", imageBytes.length);
+	        return;
+	    }
+
 	    int pictureIdx = wb.addPicture(imageBytes, poiPictureType);
 	    CreationHelper helper = wb.getCreationHelper();
 	    ClientAnchor anchor = helper.createClientAnchor();
@@ -407,6 +420,14 @@ public class ExcelGenerator {
 	    return (s == null) ? "" : s;
 	}
 	
+	// 과태료부과 사전통지서 - 유효 이미지(PNG/JPEG) 여부 (매직바이트 검사)
+	private boolean isSupportedImage(byte[] b) {
+	    if (b == null || b.length < 4) return false;
+	    boolean png = (b[0] & 0xFF) == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47; // ‰PNG
+	    boolean jpg = (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8;                         // JPEG
+	    return png || jpg;
+	}
+
 	// 과태료부과 사전통지서 - 이미지 확장자 설정(png,jpg 호환 위함)
 	private int detectPictureType(byte[] bytes) {
 	    if (bytes == null || bytes.length < 4) return Workbook.PICTURE_TYPE_PNG;

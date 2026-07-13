@@ -17,11 +17,26 @@
 	.legend-card .legend-list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #555; }
 	.legend-card .legend-list i { margin-right: 5px; }
 	.legend-card h3 { margin: 0 0 8px; }
+	/* patches 2026-07-09(7): 지도 좌측 디바이스 목록 패널(클릭 시 지도 중심 이동) */
+	.map-area { gap: 12px; }
+	.device-list-panel { flex: 0 0 240px; width: 240px; display: flex; flex-direction: column; border: 1px solid #e3e6ea; border-radius: 6px; background: #fff; overflow: hidden; }
+	.dev-list-head { padding: 10px 12px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #eef0f3; background: #f6f7f9; }
+	.dev-list-head span { color: #4F4A85; }
+	.dev-list-items { flex: 1 1 auto; overflow-y: auto; }
+	.dev-item { display: flex; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f1f2f4; cursor: pointer; }
+	.dev-item:hover { background: #f5f2ff; }
+	.dev-item.selected { background: #ece7fb; }
+	.dev-item-icon { font-size: 18px; margin-top: 1px; flex: 0 0 auto; }
+	.dev-item-body { min-width: 0; }
+	.dev-item-name { font-weight: 600; font-size: 13px; color: #222; }
+	.dev-item-addr { font-size: 12px; color: #666; margin-top: 2px; word-break: break-all; }
+	.dev-item-meta { font-size: 11px; color: #999; margin-top: 3px; }
+	.dev-empty { padding: 16px 12px; color: #999; font-size: 13px; text-align: center; }
 </style>
 <!-- Font Awesome (상태 아이콘) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <!-- 카카오 지도 JavaScript SDK (services=Geocoder 등). autoload=false → kakao.maps.load 로 초기화 -->
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services&autoload=false"></script>
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services,clusterer&autoload=false"></script>
 <script>
 	const CONTEXT_PATH = "${pageContext.request.contextPath}";
 	const KAKAO_JS_KEY = "${kakaoMapJsKey}";
@@ -37,6 +52,13 @@
 	<div class="dashboard-container">
 		<!-- 좌측: 지도 (11번 완료) -->
 		<div class="map-area">
+			<%-- 지도 좌측 디바이스 목록: dv_name·serial·addr·lat·lng 모두 존재하는 디바이스만. 클릭 시 지도 중심 이동 --%>
+			<div class="device-list-panel">
+				<div class="dev-list-head">디바이스 목록 <span id="deviceListCount">0</span></div>
+				<div id="deviceListItems" class="dev-list-items">
+					<div class="dev-empty">불러오는 중...</div>
+				</div>
+			</div>
 			<div id="map"></div>
 		</div>
 
@@ -96,26 +118,38 @@
 var map = null;
 var markerMap = {};   // dv_id -> { marker, colorKey, device } — 부분 갱신용(전체 재생성 회피)
 var overlays = [];
+var clusterer = null; // MarkerClusterer (patches 2026-07-09(7): 겹친 마커 수 표시 → 확대 시 개별 마커)
 
-// 상태 색상 (DB v0.0.7: 상태 5종, dv_status_display 제외)
-function getStatusColor(device) {
-	// dv_status_updated 30분 이상 옛 → 회색
+// dv_status_updated 가 30분 이상 지났는지(미갱신 → 회색)
+function isStale(device) {
 	if (device.dv_status_updated) {
 		var updated = new Date(device.dv_status_updated);
-		if (!isNaN(updated.getTime()) && (Date.now() - updated.getTime() > 30 * 60 * 1000)) {
-			return "#808080";
-		}
+		if (!isNaN(updated.getTime()) && (Date.now() - updated.getTime() > 30 * 60 * 1000)) return true;
 	}
-	// 이상 개수 — 5종. (버그수정 2026-07-07) '정상(1)'이 아닌 값(이상 0 · null · 미보고)은 모두 '이상'으로 집계.
-	//   → 디바이스 리스트의 "값 없으면 이상" 정책과 일치. (기존 '=== 0' 은 null 을 이상으로 안 세어 초록으로 오표시)
-	var errorCount = [
+	return false;
+}
+// 이상 개수 — 상태 5종 중 '정상(1)'이 아닌 값(이상 0 · null · 미보고)을 모두 '이상'으로 집계
+//   → 디바이스 리스트의 "값 없으면 이상" 정책과 일치.
+function deviceErrorCount(device) {
+	return [
 		device.dv_status_pc,
 		device.dv_status_cctv,
 		device.dv_lens,
 		device.dv_status_speaker,
 		device.dv_status_sip
 	].filter(function(v) { return String(v) !== '1'; }).length;
+}
+// 상태 문자열 (리스트 표시용)
+function statusText(device) {
+	if (isStale(device)) return '미갱신';
+	var e = deviceErrorCount(device);
+	return e === 0 ? '정상' : ('이상 ' + e);
+}
 
+// 상태 색상 (DB v0.0.8: 상태 5종, dv_status_display 제외)
+function getStatusColor(device) {
+	if (isStale(device)) return "#808080";   // 회색: 30분+ 미갱신
+	var errorCount = deviceErrorCount(device);
 	if (errorCount === 0) return "#28a745"; // 초록: 5종 모두 정상
 	if (errorCount <= 2) return "#ffc107";  // 노랑: 이상 1~2
 	return "#dc3545";                        // 빨강: 이상 3+
@@ -149,15 +183,15 @@ function upsertMarkers(devices) {
 		var entry = markerMap[id];
 
 		if (!entry) {
-			// 신규 마커
+			// 신규 마커 — 지도에 직접 붙이지 않고 클러스터러에 추가(겹칠 때 숫자 표시)
 			var marker = new kakao.maps.Marker({
-				map: map,
 				position: new kakao.maps.LatLng(device.dv_lat, device.dv_lng),
 				title: device.dv_name,
 				image: markerImage(color)
 			});
 			kakao.maps.event.addListener(marker, "mouseover", function() { showDetailPopup(id); });
 			kakao.maps.event.addListener(marker, "mouseout", function() { hideDetailPopup(); });
+			if (clusterer) clusterer.addMarker(marker);
 			markerMap[id] = { marker: marker, colorKey: color, device: device };
 		} else {
 			// 기존 마커: 데이터 갱신 + 색상 바뀐 경우에만 이미지 교체
@@ -174,9 +208,10 @@ function upsertMarkers(devices) {
 		}
 	});
 
-	// 목록에서 사라진 디바이스의 마커만 제거
+	// 목록에서 사라진 디바이스의 마커만 제거(클러스터러에서도 제거)
 	Object.keys(markerMap).forEach(function(id) {
 		if (!seen[id]) {
+			if (clusterer) clusterer.removeMarker(markerMap[id].marker);
 			markerMap[id].marker.setMap(null);
 			delete markerMap[id];
 		}
@@ -249,15 +284,67 @@ function loadDevices() {
 		dataType: "json",
 		success: function(devices) {
 			upsertMarkers(devices);
+			renderDeviceList(devices);
 		}
 	});
 }
 
+// (3) 지도 좌측 디바이스 목록 — 등록되어 있고 마커까지 정상 표시되는 디바이스만:
+//     dv_name·dv_serial_number·dv_addr 가 null 아니고, lat·lng 도 null 아님.
+//     클릭 시 지도 중심을 해당 디바이스 좌표로 이동.
+function isPresent(v) { return v != null && String(v).trim() !== ''; }
+
+var lastDeviceListSig = null;   // 목록 변경 없을 때 재렌더 생략(스크롤·선택 유지)
+function renderDeviceList(devices) {
+	var items = (devices || []).filter(function(d) {
+		return isPresent(d.dv_name) && isPresent(d.dv_serial_number) && isPresent(d.dv_addr)
+			&& d.dv_lat != null && d.dv_lng != null;
+	});
+	// 목록 구성(디바이스·상태색)이 이전과 동일하면 다시 그리지 않음 → 10초 폴링 시 스크롤/선택 유지
+	var sig = items.map(function(d) { return d.dv_id + ':' + getStatusColor(d); }).join('|');
+	if (sig === lastDeviceListSig) return;
+	lastDeviceListSig = sig;
+
+	$('#deviceListCount').text(items.length);
+	if (!items.length) {
+		$('#deviceListItems').html('<div class="dev-empty">표시할 디바이스가 없습니다.</div>');
+		return;
+	}
+	var html = '';
+	items.forEach(function(d) {
+		var color = getStatusColor(d);
+		var addr = esc(d.dv_addr) + (d.dv_addr_detail ? ' ' + esc(d.dv_addr_detail) : '');
+		html += '<div class="dev-item" data-id="' + d.dv_id + '" data-lat="' + d.dv_lat + '" data-lng="' + d.dv_lng + '">'
+			+ '<i class="fas fa-map-marker-alt dev-item-icon" style="color:' + color + '"></i>'
+			+ '<div class="dev-item-body">'
+			+   '<div class="dev-item-name">' + esc(d.dv_name) + '</div>'
+			+   '<div class="dev-item-addr">' + addr + '</div>'
+			+   '<div class="dev-item-meta">SN ' + esc(d.dv_serial_number) + ' · ' + statusText(d) + '</div>'
+			+ '</div>'
+			+ '</div>';
+	});
+	$('#deviceListItems').html(html);
+}
+
+// 카카오맵 초기 위치 및 줌 설정
 function initMap() {
 	map = new kakao.maps.Map(document.getElementById("map"), {
 		center: new kakao.maps.LatLng(35.1595, 126.8526), // 광주시청
-		level: 8
+		level: 10 // 초기 줌
 	});
+
+	// (1) 줌 컨트롤(+/-) — 오른쪽 상단
+	map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.TOPRIGHT);
+
+	// (2) 마커 클러스터러 — 겹친 마커는 숫자로 묶고, 확대(레벨 < minLevel)하면 개별 마커 표시
+	clusterer = new kakao.maps.MarkerClusterer({
+		map: map,
+		averageCenter: true,   // 묶인 마커들의 평균 위치에 클러스터 표시
+		minLevel: 5,           // 지도 레벨 5 이상(축소 상태)에서 클러스터링. 확대하면 개별 마커
+		gridSize: 60,
+		disableClickZoom: false // 클러스터 클릭 시 확대
+	});
+
 	loadDevices();
 	setInterval(loadDevices, 10000); // 10초 폴링 (04 정합)
 	fitMapSoon();   // 생성 직후, 현재 카드 열 높이에 맞춰 1회 재배치(날씨가 먼저 로드된 경우 대비)
@@ -386,6 +473,21 @@ $(document).ready(function() {
 		var evId = $(this).data('ev');
 		var dvId = $(this).data('dv');
 		location.href = CONTEXT_PATH + '/eventList/eventListDetail?evId=' + evId + (dvId !== '' ? '&dvId=' + dvId : '');
+	});
+
+	// (3) 좌측 디바이스 목록 클릭 → 지도 중심을 해당 좌표로 이동(개별 마커가 보이도록 확대 후 상세 팝업)
+	$('#deviceListItems').on('click', '.dev-item', function() {
+		if (!map) return;
+		var lat = parseFloat($(this).attr('data-lat'));
+		var lng = parseFloat($(this).attr('data-lng'));
+		var id = $(this).attr('data-id');
+		if (isNaN(lat) || isNaN(lng)) return;
+		var pos = new kakao.maps.LatLng(lat, lng);
+		map.setLevel(3);        // 클러스터 해제 수준(minLevel 5 미만)까지 확대 → 개별 마커 표시
+		map.setCenter(pos);     // 지도 중심 이동
+		$('.dev-item').removeClass('selected');
+		$(this).addClass('selected');
+		showDetailPopup(id);    // 해당 디바이스 상세 팝업 표시
 	});
 
 	// 지도 (11번) — 키 있을 때만

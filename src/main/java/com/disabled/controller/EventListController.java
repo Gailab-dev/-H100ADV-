@@ -441,7 +441,7 @@ public class EventListController {
 			return "redirect:/eventList/viewEventList.do";
 		}
 
-		return "eventList/eventListDetail";
+		return "eventListDetail"; // Tiles 정의명(patches 2026-07-09(8)). defaultLayout chrome·신규 메뉴 적용
 	}
 	
 	// ====== ADR-008 디바이스 통신 우선순위 변경 — 비동기 사전검증 엔드포인트 (단일) ======
@@ -909,6 +909,8 @@ public class EventListController {
 		    decCheck = eventListService.requestFileDec(response, evId,eventListDetail);
 		    if(!decCheck) {
 		    	logger.error("이미지, 영상 파일 복호화 중 오류 발생 / response : " + response.getStatus() + "/ evId : "+evId + " / eventListDetail : " + eventListDetail);
+		    	// patches 2026-07-09(8): 빈 200 응답(손상 xlsx) 대신 에러 상태 전송 → 프론트가 다운로드 대신 오류 표시
+		    	if (!response.isCommitted()) { response.reset(); response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); }
 		    	return;
 		    }
 			
@@ -959,8 +961,10 @@ public class EventListController {
 
 		} catch (Exception e) {
 			logger.error("엑셀 파일 생성 중 오류 발생",e);
+			// patches 2026-07-09(8): 생성 실패 시 빈 200(손상 파일) 대신 에러 상태 전송 → 프론트가 오류 표시
+			if (!response.isCommitted()) { response.reset(); response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); }
 			return;
 		}
 	}
-	
+
 }

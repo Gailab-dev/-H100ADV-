@@ -10,7 +10,7 @@
 	-->
 	<select id="selectDeviceMapList" resultType="map">
 		SELECT
-			dv_id, dv_name, dv_addr, dv_addr_detail, dv_lat, dv_lng,
+			dv_id, dv_name, dv_serial_number, dv_addr, dv_addr_detail, dv_lat, dv_lng,
 			dv_status_pc, dv_status_cctv, dv_lens,
 			dv_status_speaker, dv_status_sip,
 			dv_status_updated
