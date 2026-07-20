@@ -54,7 +54,7 @@
 		<div class="map-area">
 			<%-- 지도 좌측 디바이스 목록: dv_name·serial·addr·lat·lng 모두 존재하는 디바이스만. 클릭 시 지도 중심 이동 --%>
 			<div class="device-list-panel">
-				<div class="dev-list-head">디바이스 목록 <span id="deviceListCount">0</span></div>
+				<div class="dev-list-head">디바이스 목록ㅇㅇㅇ <span id="deviceListCount">0</span></div>
 				<div id="deviceListItems" class="dev-list-items">
 					<div class="dev-empty">불러오는 중...</div>
 				</div>
