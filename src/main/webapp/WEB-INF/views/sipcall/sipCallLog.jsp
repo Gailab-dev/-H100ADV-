@@ -31,7 +31,7 @@
 
 <div class="sip-call-log-container">
 
-	<h2 class="sip-title">SIP 통화 로그</h2>
+	<h2 class="sip-title">응급 연락망</h2>
 
 	<!-- 최상단 필터 -->
 	<div class="filter-area">

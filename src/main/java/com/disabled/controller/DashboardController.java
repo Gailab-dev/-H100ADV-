@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.disabled.mapper.LoginMapper;
@@ -86,6 +87,21 @@ public class DashboardController {
 	}
 
 	/** (작업계획서 12) 하단 최근 이벤트 요약 (기본 5건) */
+	/** (작업계획서 14-4-5) 디바이스 상태 요약 — 정상/이상 건수 */
+	@GetMapping("/deviceStatusSummary")
+	@ResponseBody
+	public Map<String, Object> deviceStatusSummary() {
+		return dashboardService.getDeviceStatusSummary();
+	}
+
+	/** (작업계획서 14-4-7) 최근 SIP 통화 N건 (우하단 위젯, 기본 3건) */
+	@GetMapping("/recentSipCalls")
+	@ResponseBody
+	public List<Map<String, Object>> recentSipCalls(
+			@RequestParam(value = "limit", defaultValue = "3") int limit) {
+		return dashboardService.getRecentSipCalls(limit);
+	}
+
 	@GetMapping("/recentEvents")
 	@ResponseBody
 	public List<Map<String, Object>> getRecentEvents(

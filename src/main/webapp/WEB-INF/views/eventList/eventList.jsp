@@ -28,7 +28,7 @@
 </style>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/pagination.css">
-<title>eventList</title>
+<title>주차 단속 대상 내역</title>
 
 <%-- 상세 보기 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 <%-- ADR-008(2026-06-17): errorMsg alert 블록 제거. 상세 실패는 AJAX 사전검증 후 목록 오버레이 메시지로 처리(페이지 이동·alert 없음). --%>

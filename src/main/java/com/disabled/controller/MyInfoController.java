@@ -86,6 +86,32 @@ public class MyInfoController {
 		
 		return "myInfo"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
 	}
+
+	/**
+	 * (요청 2026-07-16) 헤더 사람아이콘 → 내 정보 '모달' 용 화면.
+	 * 모달 안 iframe 으로 로드되므로 공용 chrome(헤더/사이드바) 없이 내용만 렌더한다.
+	 * → Tiles 정의명이 아닌 'JSP 경로형' 이름을 반환해 InternalResourceViewResolver 가 처리(= chrome 미적용).
+	 */
+	@RequestMapping("/modal")
+	public String myInfoModal(Model model, HttpSession session) {
+
+		String uIdStr = session.getAttribute("uId") == null ? null : session.getAttribute("uId").toString();
+		if (uIdStr == null) {
+			return "/user/login.do";
+		}
+		Integer uId = Integer.parseInt(uIdStr);
+
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("uIdStr", uIdStr);
+
+		Map<String, Object> myInfoMap = myInfoService.getMyInfoMap(paramMap);
+		String uName = userService.getUNameBySession(uId);
+
+		model.addAttribute("uName", uName);
+		model.addAttribute("myInfoMap", myInfoMap);
+
+		return "myInfo/myInfoModal"; // 경로형 → chrome 없는 단독 문서(모달 iframe 전용)
+	}
 	
 	// 내 정보 수정
 	@ResponseBody

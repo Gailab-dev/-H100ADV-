@@ -5,60 +5,107 @@
 
 <%-- Tiles body fragment (patches 2026-07-06). 공용 chrome(헤더·사이드바·푸터)은 template.jsp/defaultLayout 제공. jQuery 는 template 에서 로드 --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/dashboard.css">
-<%-- patches 2026-07-07: 외부 CSS 캐시 대비 인라인 — 공용 .content 여백을 다른 화면(32 24 29 24)과 동일하게,
-     대시보드 자체 wrapper 이중여백 제거 → 화면 이동 시 틀 어긋남/여백 차이 해소 --%>
+<%-- patches 14: 대시보드 전면 재설계 — 지도가 콘텐츠 전체를 채우고, 정보는 지도 안 반투명 오버레이 6개로 배치.
+     기존 grid(좌 리스트·중앙 지도·우 카드·하단 이벤트)는 제거. 오버레이는 #map-container 기준 absolute. --%>
 <style>
-	.content { padding: 24px !important; }
-	.dashboard-wrap { padding: 0 !important; }
-	/* patches 2026-07-09(2): 지도를 우측 카드 열 높이에 맞춰 '채움' — 날씨 API 응답으로 카드가 커져도
-	   지도 하단에 여백이 생기지 않도록. grid(align-items:stretch)에서 map-area 를 flex 로 만들어
-	   #map 이 셀(=카드 열과 동일) 높이 전체를 채움. 카드 높이 변동 후에는 JS 에서 map.relayout() 호출. */
-	.map-area { display: flex; }
-	#map { flex: 1 1 auto; height: auto !important; min-height: 460px !important; }
-	/* 마커 상태 범례 카드(우측 상단) */
-	.legend-card .legend-list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #555; }
-	.legend-card .legend-list i { margin-right: 5px; }
-	.legend-card h3 { margin: 0 0 8px; }
-	/* patches 2026-07-09(7): 지도 좌측 디바이스 목록 패널(클릭 시 지도 중심 이동) */
-	.map-area { gap: 12px; }
-	.device-list-panel { flex: 0 0 240px; width: 240px; display: flex; flex-direction: column; border: 1px solid #e3e6ea; border-radius: 6px; background: #fff; overflow: hidden; }
-	.dev-list-head { padding: 10px 12px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #eef0f3; background: #f6f7f9; }
-	.dev-list-head span { color: #4F4A85; }
-	.dev-list-items { flex: 1 1 auto; overflow-y: auto; }
-	.dev-item { display: flex; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f1f2f4; cursor: pointer; }
-	.dev-item:hover { background: #f5f2ff; }
-	.dev-item.selected { background: #ece7fb; }
-	.dev-item-icon { font-size: 18px; margin-top: 1px; flex: 0 0 auto; }
+	/* ===== 레이아웃: 지도가 콘텐츠 영역을 가득 채움 ===== */
+	.content { padding: 16px !important; }
+	.dashboard-wrap { padding: 0 !important; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+	#map-container { position: relative; flex: 1 1 auto; min-height: 540px; border: 1px solid #e3e6ea; border-radius: 8px; overflow: hidden; }
+	#map { width: 100%; height: 100%; border: none !important; border-radius: 0 !important; }
+
+	/* ===== 오버레이 위젯 공용 (계획서 4-1) ===== */
+	.overlay-widget { position: absolute; z-index: 10; pointer-events: auto;
+		background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+		border: 1px solid rgba(105,85,162,0.15); border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.10); overflow: hidden; }
+	.overlay-widget .widget-header { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+		padding: 7px 10px; background: rgba(105,85,162,0.08); border-bottom: 1px solid rgba(105,85,162,0.15);
+		cursor: pointer; user-select: none; }
+	.overlay-widget .widget-title { font-size: 13px; font-weight: 600; color: #383351; white-space: nowrap; }
+	.overlay-widget .widget-count { color: #6955A2; font-weight: 700; }
+	.overlay-widget .header-actions { display: flex; align-items: center; gap: 6px; }
+	.overlay-widget .toggle-btn { background: none; border: none; cursor: pointer; font-size: 12px; color: #6955A2; padding: 2px 4px; }
+	.overlay-widget .widget-body { padding: 8px 10px; overflow-y: auto; transition: max-height .25s ease, padding .25s ease; }
+	.overlay-widget.collapsed .widget-body { max-height: 0 !important; padding-top: 0; padding-bottom: 0; overflow: hidden; }
+	.overlay-widget.collapsed .toggle-btn::before { content: '\25B2'; }        /* ▲ 확대 */
+	.overlay-widget:not(.collapsed) .toggle-btn::before { content: '\25BC'; }  /* ▼ 축소 */
+
+	/* ===== 우측 세로 스택 그룹 (마커 상태·날씨/처리·디바이스 상태) — 버튼 1개로 동시 축소/확대 ===== */
+	/* (요청 2026-07-16) 지도 우상단 줌(+/-) 컨트롤을 가리지 않도록 오른쪽에서 62px 띄움 */
+	.right-stack-group { position: absolute; top: 12px; right: 62px; width: 210px; z-index: 10; }
+	.right-stack-group .group-toggle-btn { position: absolute; top: -6px; right: -6px; z-index: 11;
+		background: rgba(105,85,162,0.92); color: #fff; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+	.right-stack-group .overlay-widget { position: relative; top: auto; right: auto; width: 100%; margin-bottom: 8px; }
+	.right-stack-group.collapsed .overlay-widget .widget-body { max-height: 0 !important; padding-top: 0; padding-bottom: 0; overflow: hidden; }
+
+	/* ===== ① 좌상: 검색·디바이스 리스트 ===== */
+	#deviceListOverlay { top: 12px; left: 12px; width: 285px; }
+	#deviceListOverlay .widget-body { max-height: 330px; }
+	.device-search-input { width: 100%; padding: 6px 10px; margin-bottom: 8px; border: 1px solid #D5D0E0; border-radius: 4px; font-size: 13px; box-sizing: border-box; background: #fff; }
+	.device-search-input:focus { outline: none; border-color: #6955A2; }
+	.dev-item { display: flex; gap: 8px; padding: 8px 6px; border-bottom: 1px solid rgba(0,0,0,0.06); cursor: pointer; }
+	.dev-item:hover { background: rgba(245,242,255,0.9); }
+	.dev-item.selected { background: rgba(236,231,251,0.95); }
+	.dev-item-icon { font-size: 16px; margin-top: 1px; flex: 0 0 auto; }
 	.dev-item-body { min-width: 0; }
-	.dev-item-name { font-weight: 600; font-size: 13px; color: #222; }
-	.dev-item-addr { font-size: 12px; color: #666; margin-top: 2px; word-break: break-all; }
-	.dev-item-meta { font-size: 11px; color: #999; margin-top: 3px; }
-	.dev-empty { padding: 16px 12px; color: #999; font-size: 13px; text-align: center; }
-	/* patches 13(4-2): 좌측 디바이스 목록 검색창 */
-	.device-list-search { padding: 8px 10px; border-bottom: 1px solid #eef0f3; background: #FCFBFF; }
-	.device-list-search input { width: 100%; padding: 6px 10px; border: 1px solid #D5D0E0; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
-	.device-list-search input:focus { outline: none; border-color: #6955A2; }
-	/* patches 13(4-3): 목록 이름/주소 말줄임 + title 툴팁(길면 hover 로 전체 확인) */
+	.dev-item-name { font-weight: 600; font-size: 12.5px; color: #222; }
+	.dev-item-addr { font-size: 11.5px; color: #666; margin-top: 2px; }
+	.dev-item-meta { font-size: 11px; color: #999; margin-top: 2px; }
+	.dev-empty { padding: 14px 8px; color: #999; font-size: 12.5px; text-align: center; }
+	/* 이름·주소 말줄임 + title 툴팁 (13번 정합 재사용) */
 	.dev-item-name .cell-ellipsis, .dev-item-addr .cell-ellipsis { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-	.dev-item-addr { word-break: normal; }
-	/* patches 13(4-4): 우측 카드 크기 축소 */
-	.cards-area { gap: 10px !important; }
-	.card { padding: 12px 15px !important; }
-	.card h3 { font-size: 13px !important; margin: 0 0 6px 0 !important; }
-	.card .card-value { font-size: 22px !important; }
-	/* patches 13(4-5): 계도·단속 통합 카드(클릭 시 오늘 날짜 + evAction 필터로 eventList 이동) */
-	.summary-card .split-row { display: flex; gap: 10px; }
-	.summary-card .split-item { flex: 1; text-align: center; padding: 8px 6px; border-radius: 6px; background: #FCFBFF; text-decoration: none; color: inherit; transition: background 0.2s; }
-	.summary-card .split-item:hover { background: #F0EBFA; }
-	.summary-card .split-item .label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
-	.summary-card .split-item .value { display: block; font-size: 22px; font-weight: 600; }
-	.summary-card .split-item.guide .value { color: #1a8a4a; }
-	.summary-card .split-item.enforce .value { color: #d33333; }
+
+	/* ===== ② 마커 상태 범례 (가로 압축) ===== */
+	.marker-legend-widget .widget-body { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+	.marker-legend-widget .legend-row { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #555; }
+	.marker-legend-widget .marker-icon { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+	/* ===== ③ 날씨·오늘 처리 (계도·단속 링크) ===== */
+	.weather-summary-widget .weather-row { display: flex; align-items: center; gap: 6px; padding: 2px 0 6px;
+		font-size: 13px; border-bottom: 1px solid rgba(105,85,162,0.1); margin-bottom: 6px; }
+	.weather-summary-widget .weather-row i { color: #4F4A85; }
+	.weather-summary-widget .weather-sub { margin-left: auto; font-size: 11px; color: #888; }
+	.weather-summary-widget .split-row { display: flex; gap: 6px; }
+	.weather-summary-widget .split-item { flex: 1; text-align: center; padding: 4px 0; background: rgba(252,251,255,0.7);
+		border-radius: 4px; text-decoration: none; color: inherit; }
+	.weather-summary-widget .split-item:hover { background: rgba(240,235,250,0.95); }
+	.weather-summary-widget .split-item .label { display: block; font-size: 11px; color: #666; }
+	.weather-summary-widget .split-item .value { display: block; font-size: 18px; font-weight: 700; }
+	.weather-summary-widget .split-item.guide .value { color: #1a8a4a; }
+	.weather-summary-widget .split-item.enforce .value { color: #d33333; }
+
+	/* ===== ④ 디바이스 상태 (정상/이상 건수) ===== */
+	.device-status-widget .status-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12.5px; color: #555; }
+	.device-status-widget .status-value { font-size: 19px; font-weight: 700; margin-left: auto; }
+	.device-status-widget .status-value.normal { color: #28a745; }
+	.device-status-widget .status-value.error { color: #dc3545; }
+	.device-status-widget .status-unit { font-size: 11px; color: #999; }
+
+	/* ===== ⑤ 좌하 최근 이벤트 / ⑥ 우하 응급 연락(SIP) ===== */
+	#eventListOverlay { bottom: 12px; left: 12px; width: 430px; }
+	#sipCallOverlay { bottom: 12px; right: 12px; width: 390px; }
+	#eventListOverlay .widget-body, #sipCallOverlay .widget-body { max-height: 220px; }
+	.view-all-btn { font-size: 11px; color: #6955A2; text-decoration: none; padding: 3px 8px; border: 1px solid #6955A2; border-radius: 4px; white-space: nowrap; }
+	.view-all-btn:hover { background: #6955A2; color: #fff; }
+	.event-mini-table, .sip-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+	.event-mini-table th, .sip-mini-table th { background: rgba(245,240,250,0.95); padding: 5px 6px; text-align: left; font-weight: 600; color: #555; position: sticky; top: 0; }
+	.event-mini-table td, .sip-mini-table td { padding: 5px 6px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+	.event-mini-table .empty-row, .sip-mini-table .empty-row { text-align: center; color: #999; padding: 12px 6px; }
+	.act-guide { color: #1a8a4a; font-weight: 600; }
+	.act-enforce { color: #d33333; font-weight: 600; }
+	.act-fine { color: #b5179e; font-weight: 600; }
+	.btn-mini-audio { border: 1px solid #cfc6ea; background: #fff; color: #4F4A85; border-radius: 4px; padding: 2px 7px; cursor: pointer; font-size: 11px; }
+	.btn-mini-audio:hover { background: #ece7fb; }
+	.sip-mini-audio-row > td { background: rgba(245,242,255,0.95); padding: 6px !important; }
+	.no-audio { color: #bbb; }
 </style>
 <!-- Font Awesome (상태 아이콘) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <!-- 카카오 지도 JavaScript SDK (services=Geocoder 등). autoload=false → kakao.maps.load 로 초기화 -->
 <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services,clusterer&autoload=false"></script>
+<%-- patches 14(4-7): SIP 위젯 미니 파형 재생(7/9 인라인 재생 방식 재사용). UMD 빌드로 전역 WaveSurfer 노출 --%>
+<script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
 <script>
 	const CONTEXT_PATH = "${pageContext.request.contextPath}";
 	const KAKAO_JS_KEY = "${kakaoMapJsKey}";
@@ -71,79 +118,121 @@
 		<br>globals.properties 의 <b>kakao.map.js-key</b>(환경변수 KAKAO_MAP_JS_KEY)를 확인하세요.
 	</div>
 
-	<div class="dashboard-container">
-		<!-- 좌측: 지도 (11번 완료) -->
-		<div class="map-area">
-			<%-- 지도 좌측 디바이스 목록: dv_name·serial·addr·lat·lng 모두 존재하는 디바이스만. 클릭 시 지도 중심 이동 --%>
-			<div class="device-list-panel">
-				<div class="dev-list-head">디바이스 목록 <span id="deviceListCount">0</span></div>
-				<%-- patches 13(4-2): 이름·주소 실시간 필터(목록만, 지도 마커 미연동) --%>
-				<div class="device-list-search">
-					<input type="text" id="deviceSearchInput" placeholder="이름·주소로 검색" />
-				</div>
-				<div id="deviceListItems" class="dev-list-items">
+	<%-- patches 14: 지도 전체 + 지도 안 오버레이 6개(하단 grid 제거). 초기 진입 시 전부 열림(효성 결정) --%>
+	<div id="map-container">
+		<div id="map"></div>
+
+		<%-- ① 좌상: 검색 · 디바이스 리스트 --%>
+		<div class="overlay-widget" id="deviceListOverlay">
+			<div class="widget-header">
+				<span class="widget-title">단속 장비 현황 <span class="widget-count" id="deviceListCount">0</span></span>
+				<button class="toggle-btn" type="button"></button>
+			</div>
+			<div class="widget-body">
+				<input type="text" id="deviceSearchInput" class="device-search-input" placeholder="이름·주소로 검색" />
+				<div id="deviceListItems">
 					<div class="dev-empty">불러오는 중...</div>
 				</div>
 			</div>
-			<div id="map"></div>
 		</div>
 
-		<!-- 우측: 일별 대시보드 카드 (신설, 화면설계서 v0.0.2 Slide4) -->
-		<div class="cards-area">
-			<%-- patches 2026-07-09: 마커 상태 범례 카드(우측 최상단, 다른 카드처럼 테두리) --%>
-			<div class="card legend-card">
-				<h3><i class="fas fa-map-marker-alt"></i> 마커 상태</h3>
-				<div class="legend-list">
-					<span><i class="fas fa-map-marker-alt" style="color:#28a745"></i> 정상</span>
-					<span><i class="fas fa-map-marker-alt" style="color:#ffc107"></i> 이상 1~2</span>
-					<span><i class="fas fa-map-marker-alt" style="color:#dc3545"></i> 이상 3+</span>
-					<span><i class="fas fa-map-marker-alt" style="color:#808080"></i> 30분+ 미갱신</span>
+		<%-- ②③④ 우측 세로 스택 그룹 — 토글 버튼 1개로 3개 위젯 동시 축소/확대(위치 유지) --%>
+		<div class="right-stack-group" id="rightStackGroup">
+			<button id="rightStackToggle" class="group-toggle-btn" type="button">&#9660;</button>
+
+			<%-- ② 마커 상태 --%>
+			<div class="overlay-widget marker-legend-widget">
+				<div class="widget-header"><span class="widget-title">마커 상태</span></div>
+				<div class="widget-body">
+					<div class="legend-row"><span class="marker-icon" style="background:#28a745"></span><span>정상</span></div>
+					<div class="legend-row"><span class="marker-icon" style="background:#ffc107"></span><span>이상 1~2</span></div>
+					<div class="legend-row"><span class="marker-icon" style="background:#dc3545"></span><span>이상 3+</span></div>
+					<div class="legend-row"><span class="marker-icon" style="background:#808080"></span><span>30분+ 미갱신</span></div>
 				</div>
 			</div>
-			<div class="card weather-card">
-				<h3><i class="fas fa-cloud-sun"></i> 오늘 날씨</h3>
-				<div class="card-value" id="weather-value">-</div>
-				<div class="card-sub" id="weather-sub"></div>
+
+			<%-- ③ 날씨 · 오늘 처리(계도/단속 → 오늘 날짜 + evAction 필터로 이동) --%>
+			<div class="overlay-widget weather-summary-widget">
+				<div class="widget-header"><span class="widget-title">날씨 · 오늘 처리</span></div>
+				<div class="widget-body">
+					<div class="weather-row">
+						<i class="fas fa-cloud-sun"></i>
+						<span id="weather-value">-</span>
+						<span class="weather-sub" id="weather-sub"></span>
+					</div>
+					<div class="split-row">
+						<a class="split-item guide"
+							href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=0">
+							<span class="label">계도</span>
+							<span class="value" id="guide-value">0</span>
+						</a>
+						<a class="split-item enforce"
+							href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=1">
+							<span class="label">단속</span>
+							<span class="value" id="enforce-value">0</span>
+						</a>
+					</div>
+				</div>
 			</div>
-			<%-- patches 13(4-5): 계도·단속 통합 카드. 숫자 클릭 시 오늘 날짜 + evAction 필터로 불법주차 리스트 이동 --%>
-			<div class="card summary-card">
-				<h3><i class="fas fa-clipboard-check"></i> 오늘 처리 현황</h3>
-				<div class="split-row">
-					<a class="split-item guide"
-						href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=0">
-						<span class="label">계도</span>
-						<span class="value" id="guide-value">0</span>
-					</a>
-					<a class="split-item enforce"
-						href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=1">
-						<span class="label">단속</span>
-						<span class="value" id="enforce-value">0</span>
-					</a>
+
+			<%-- ④ 디바이스 상태(정상/이상 건수) — 신규 --%>
+			<div class="overlay-widget device-status-widget">
+				<div class="widget-header"><span class="widget-title">디바이스 상태</span></div>
+				<div class="widget-body">
+					<div class="status-row">
+						<span class="status-label">정상</span>
+						<span class="status-value normal" id="deviceNormalCount">0</span>
+						<span class="status-unit">건</span>
+					</div>
+					<div class="status-row">
+						<span class="status-label">이상</span>
+						<span class="status-value error" id="deviceErrorCount">0</span>
+						<span class="status-unit">건</span>
+					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- 하단: 최근 이벤트 요약 (신설) -->
-		<div class="recent-events-area">
-			<div class="section-header">
-				<h3>최근 이벤트</h3>
-				<button type="button" id="btnMoreEvents" class="btn-more">전체보기</button>
+		<%-- ⑤ 좌하: 최근 이벤트(3건) --%>
+		<div class="overlay-widget event-list-widget" id="eventListOverlay">
+			<div class="widget-header">
+				<span class="widget-title">최근 이벤트</span>
+				<span class="header-actions">
+					<a href="${pageContext.request.contextPath}/eventList/viewEventList.do" class="view-all-btn">전체 보기</a>
+					<button class="toggle-btn" type="button"></button>
+				</span>
 			</div>
-			<table class="recent-events-table">
-				<thead>
-					<tr>
-						<th>발생시각</th>
-						<th>디바이스</th>
-						<th>차량번호</th>
-						<th>유형</th>
-						<th>처리</th>
-						<th>상세</th>
-					</tr>
-				</thead>
-				<tbody id="recent-events-body">
-					<tr><td colspan="6" class="empty-row">불러오는 중...</td></tr>
-				</tbody>
-			</table>
+			<div class="widget-body">
+				<table class="event-mini-table">
+					<thead>
+						<tr><th>디바이스</th><th>차량 번호</th><th>처리</th><th>시각</th></tr>
+					</thead>
+					<tbody id="recentEventListItems">
+						<tr><td colspan="4" class="empty-row">불러오는 중...</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<%-- ⑥ 우하: 최근 응급 연락(SIP) — 듣기 시 행 아래 미니 파형 인라인 재생 --%>
+		<div class="overlay-widget sip-widget" id="sipCallOverlay">
+			<div class="widget-header">
+				<span class="widget-title">최근 응급 연락</span>
+				<span class="header-actions">
+					<a href="${pageContext.request.contextPath}/sipcall/sipCallLog" class="view-all-btn">전체 보기</a>
+					<button class="toggle-btn" type="button"></button>
+				</span>
+			</div>
+			<div class="widget-body">
+				<table class="sip-mini-table">
+					<thead>
+						<tr><th>디바이스</th><th>통화 시각</th><th>듣기</th></tr>
+					</thead>
+					<tbody id="recentSipCallItems">
+						<tr><td colspan="3" class="empty-row">불러오는 중...</td></tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
 	</div>
 </div>
@@ -485,6 +574,89 @@ function loadWeather() {
 	});
 }
 
+// ===== patches 14(4-5): 디바이스 상태 요약(정상/이상 건수) =====
+function loadDeviceStatus() {
+	$.ajax({
+		url: CONTEXT_PATH + "/dashboard/deviceStatusSummary",
+		method: "GET", dataType: "json",
+		success: function(data) {
+			$('#deviceNormalCount').text((data && data.normal_cnt != null) ? data.normal_cnt : 0);
+			$('#deviceErrorCount').text((data && data.error_cnt != null) ? data.error_cnt : 0);
+		},
+		error: function() {
+			$('#deviceNormalCount').text(0);
+			$('#deviceErrorCount').text(0);
+		}
+	});
+}
+
+// ===== patches 14(4-7): 최근 응급 연락(SIP) 위젯 =====
+// 통화 시각: sc_start_date(yyyyMMddHHmmss) → MM-DD HH:mm, 통화시간(초) 병기
+function formatSipTime(v, duration) {
+	var s = (v == null) ? '' : String(v).trim();
+	var t = '-';
+	if (/^\d{14}$/.test(s)) {
+		t = s.substr(4,2) + '-' + s.substr(6,2) + ' ' + s.substr(8,2) + ':' + s.substr(10,2);
+	} else if (s) {
+		t = s;
+	}
+	return t + (duration != null ? ' (' + duration + '초)' : '');
+}
+
+function loadRecentSipCalls() {
+	$.ajax({
+		url: CONTEXT_PATH + "/dashboard/recentSipCalls?limit=3",
+		method: "GET", dataType: "json",
+		success: function(list) {
+			if (!list || !list.length) {
+				$('#recentSipCallItems').html('<tr><td colspan="3" class="empty-row">최근 통화가 없습니다.</td></tr>');
+				return;
+			}
+			var html = '';
+			list.forEach(function(item) {
+				var hasAudio = String(item.sc_has_audio) === '1' && item.sc_audio_path;
+				var btn = hasAudio
+					? '<button type="button" class="btn-mini-audio" data-scid="' + item.sc_id + '">듣기</button>'
+					: '<span class="no-audio">-</span>';
+				html += '<tr>'
+					+ '<td>' + esc(item.dv_name || ('ID ' + (item.sc_dv_id != null ? item.sc_dv_id : '-'))) + '</td>'
+					+ '<td>' + formatSipTime(item.sc_start_date, item.sc_duration) + '</td>'
+					+ '<td>' + btn + '</td>'
+					+ '</tr>';
+			});
+			$('#recentSipCallItems').html(html);
+		},
+		error: function() {
+			$('#recentSipCallItems').html('<tr><td colspan="3" class="empty-row">통화 조회 오류</td></tr>');
+		}
+	});
+}
+
+// 미니 파형 인라인 재생 — 단일 인스턴스(다른 것 자동 정리), 같은 행 재클릭 시 닫기(토글)
+var miniWavesurfer = null;
+function closeMiniAudio() {
+	if (miniWavesurfer) { miniWavesurfer.destroy(); miniWavesurfer = null; }
+	$('.sip-mini-audio-row').remove();
+}
+
+// ===== patches 14(4-1): 오버레이 축소/확대 =====
+function bindOverlayToggles() {
+	// 헤더 클릭(토글 버튼 포함) → 해당 위젯 축소/확대. 링크(전체 보기) 클릭은 제외.
+	// 우측 세로 스택 그룹의 3개 위젯은 그룹 버튼 1개로만 제어(§3-3 결정) → 개별 토글 제외.
+	$(document).on('click', '.overlay-widget .widget-header', function(e) {
+		if ($(e.target).closest('a').length) return;                 // '전체 보기' 링크는 이동만
+		var $w = $(this).closest('.overlay-widget');
+		if ($w.closest('.right-stack-group').length) return;         // 그룹 소속은 그룹 버튼으로만
+		$w.toggleClass('collapsed');
+	});
+	// 우측 세로 스택 그룹 — 버튼 1개로 3개 동시 축소/확대(위치 유지)
+	$('#rightStackToggle').on('click', function(e) {
+		e.stopPropagation();
+		var collapsed = $('#rightStackGroup').toggleClass('collapsed').hasClass('collapsed');
+		$(this).html(collapsed ? '&#9650;' : '&#9660;');   // ▲ / ▼
+	});
+}
+
 // 우측 카드 — 오늘 계도·단속 합계
 function loadTodaySummary() {
 	$.ajax({
@@ -503,50 +675,68 @@ function loadTodaySummary() {
 	});
 }
 
-// 하단 최근 이벤트 요약 (patches 2026-07-09: 5건 → 3건, 스크롤 최소화)
+// 좌하단 최근 이벤트 오버레이 (patches 14(4-6): 미니 테이블 — 디바이스·차량번호·처리·시각, 3건)
 function loadRecentEvents() {
 	$.ajax({
 		url: CONTEXT_PATH + "/dashboard/recentEvents?limit=3",
 		method: "GET", dataType: "json",
 		success: function(events) {
 			if (!events || !events.length) {
-				$('#recent-events-body').html('<tr><td colspan="6" class="empty-row">최근 이벤트가 없습니다.</td></tr>');
+				$('#recentEventListItems').html('<tr><td colspan="4" class="empty-row">최근 이벤트가 없습니다.</td></tr>');
 				return;
 			}
 			var html = '';
 			events.forEach(function(e) {
 				html += '<tr>'
-					+ '<td>' + formatEvDate(e) + '</td>'
 					+ '<td>' + esc(e.ev_dv_name) + '</td>'
 					+ '<td>' + esc(e.ev_car_num) + '</td>'
-					+ '<td>' + convertEvCd(e.ev_cd) + '</td>'
 					+ '<td class="' + actionClass(e.ev_action) + '">' + convertEvAction(e.ev_action) + '</td>'
-					+ '<td><button type="button" class="btn-detail" data-ev="' + e.ev_id + '" data-dv="' + (e.ev_dv_id != null ? e.ev_dv_id : '') + '">상세</button></td>'
+					+ '<td>' + formatEvDate(e) + '</td>'
 					+ '</tr>';
 			});
-			$('#recent-events-body').html(html);
+			$('#recentEventListItems').html(html);
 		},
 		error: function() {
-			$('#recent-events-body').html('<tr><td colspan="6" class="empty-row">이벤트 조회 오류</td></tr>');
+			$('#recentEventListItems').html('<tr><td colspan="4" class="empty-row">이벤트 조회 오류</td></tr>');
 		}
 	});
 }
 
 $(document).ready(function() {
-	// 카드·이벤트는 지도와 독립 로드 (지도 키가 없어도 동작)
+	// 오버레이 위젯 축소/확대 바인딩 (patches 14(4-1))
+	bindOverlayToggles();
+
+	// 위젯 데이터는 지도와 독립 로드 (지도 키가 없어도 동작). 진입 시 병렬 호출 — 순서 의존 X
 	loadTodaySummary();
 	loadRecentEvents();
 	loadWeather();
-	setInterval(loadTodaySummary, 60000);  // 1분 (카드 갱신)
-	setInterval(loadRecentEvents, 30000);  // 30초 (최근 이벤트 갱신)
+	loadDeviceStatus();     // patches 14(4-5)
+	loadRecentSipCalls();   // patches 14(4-7)
+	setInterval(loadTodaySummary, 60000);   // 1분
+	setInterval(loadRecentEvents, 30000);   // 30초
+	setInterval(loadDeviceStatus, 30000);   // 30초 (디바이스 상태)
+	setInterval(loadRecentSipCalls, 60000); // 1분 (최근 통화)
 
-	$('#btnMoreEvents').on('click', function() {
-		location.href = CONTEXT_PATH + '/eventList/viewEventList.do';
-	});
-	$('#recent-events-body').on('click', '.btn-detail', function() {
-		var evId = $(this).data('ev');
-		var dvId = $(this).data('dv');
-		location.href = CONTEXT_PATH + '/eventList/eventListDetail?evId=' + evId + (dvId !== '' ? '&dvId=' + dvId : '');
+	// SIP 위젯 '듣기' — 해당 행 아래 미니 파형 인라인 재생(단일 인스턴스, 재클릭 시 닫기)
+	$('#recentSipCallItems').on('click', '.btn-mini-audio', function() {
+		var scId = $(this).attr('data-scid');
+		var $tr = $(this).closest('tr');
+		var $next = $tr.next('.sip-mini-audio-row');
+		if ($next.length && String($next.attr('data-scid')) === String(scId)) { closeMiniAudio(); return; }
+		closeMiniAudio();
+		$tr.after('<tr class="sip-mini-audio-row" data-scid="' + scId + '"><td colspan="3">'
+			+ '<div id="mini-waveform-' + scId + '"></div></td></tr>');
+		miniWavesurfer = WaveSurfer.create({
+			container: '#mini-waveform-' + scId,
+			waveColor: '#4F4A85',
+			progressColor: '#383351',
+			height: 32,
+			url: CONTEXT_PATH + '/sipcall/audio/' + scId
+		});
+		miniWavesurfer.on('ready', function() { miniWavesurfer.play(); });
+		miniWavesurfer.on('error', function() {
+			$('#mini-waveform-' + scId).html('<span class="no-audio" style="font-size:11px;">오디오를 불러오지 못했습니다.</span>');
+		});
 	});
 
 	// (3) 좌측 디바이스 목록 클릭 → 마커 클릭과 동일 동작(공용 focusDevice, patches 13(4-6))

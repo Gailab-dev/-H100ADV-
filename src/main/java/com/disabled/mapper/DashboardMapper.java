@@ -32,4 +32,10 @@ public interface DashboardMapper {
 
 	// (작업계획서 12) 하단 최근 이벤트 요약 N건
 	List<Map<String, Object>> selectRecentEvents(Integer limit) throws IllegalStateException;
+
+	// (작업계획서 14) 디바이스 상태 요약 — 정상/이상 건수
+	Map<String, Object> selectDeviceStatusSummary() throws IllegalStateException;
+
+	// (작업계획서 14) 최근 SIP 통화 N건 (대시보드 우하단 위젯)
+	List<Map<String, Object>> selectRecentSipCalls(Integer limit) throws IllegalStateException;
 }

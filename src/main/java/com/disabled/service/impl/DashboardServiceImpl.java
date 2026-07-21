@@ -70,4 +70,27 @@ public class DashboardServiceImpl implements DashboardService {
 			throw e;
 		}
 	}
+
+	/** (작업계획서 14) 디바이스 상태 요약 — 정상/이상 건수 */
+	@Override
+	public Map<String, Object> getDeviceStatusSummary() {
+		try {
+			return dashboardMapper.selectDeviceStatusSummary();
+		} catch (DataAccessException e) {
+			logger.error("SQL문 수행 도중 오류 발생, dashboardMapper.selectDeviceStatusSummary() : ", e);
+			throw e;
+		}
+	}
+
+	/** (작업계획서 14) 최근 SIP 통화 N건 */
+	@Override
+	public List<Map<String, Object>> getRecentSipCalls(int limit) {
+		try {
+			if (limit <= 0 || limit > 50) limit = 3;
+			return dashboardMapper.selectRecentSipCalls(limit);
+		} catch (DataAccessException e) {
+			logger.error("SQL문 수행 도중 오류 발생, dashboardMapper.selectRecentSipCalls({}) : ", limit, e);
+			throw e;
+		}
+	}
 }

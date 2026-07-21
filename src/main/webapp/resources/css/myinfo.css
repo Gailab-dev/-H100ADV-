@@ -215,9 +215,10 @@ button {
 }
 
 /* 저장 버튼 */
+/* (요청 2026-07-16) 저장 버튼 왼쪽 아래 → 오른쪽 아래 */
 .saveBox {
     display: grid;
-    justify-content: flex-start;
+    justify-content: flex-end;
     gap:16px;
 }
 .error-message{

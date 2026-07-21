@@ -95,7 +95,14 @@
 	        		return;
 	        	}
 	        	
-	        	window.location.href = "${pageContext.request.contextPath}/stats/viewStat.do";
+	        	// (요청 2026-07-16) 헤더 모달(iframe)로 열린 경우: 모달만 닫고 호출 화면 갱신.
+	        	//   그 외(단독 화면 진입)는 기존 동작 유지.
+	        	if (window.parent && window.parent !== window && typeof window.parent.closeMyInfoModal === 'function') {
+	        		window.parent.closeMyInfoModal();
+	        		window.parent.location.reload();   // 헤더 사용자명 등 변경사항 반영
+	        	} else {
+	        		window.location.href = "${pageContext.request.contextPath}/stats/viewStat.do";
+	        	}
 	        }
 		    
 		}	

@@ -6,7 +6,7 @@
 
 <%-- [Tiles fragment] 공용 chrome(헤더/사이드바/푸터)은 defaultLayout 제공. 이하 이 페이지 전용 CSS/JS/콘텐츠 --%>
 <meta charset="UTF-8">
-<title>diviceList</title>
+<title>단속 장비 현황</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/deviceList.css?v=20260707">
