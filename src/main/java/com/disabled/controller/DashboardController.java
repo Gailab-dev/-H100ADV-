@@ -18,8 +18,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.service.DashboardService;
+import com.disabled.service.UserService;
 
 /**
  * 대시보드 지도기반 페이지 컨트롤러 (작업계획서 10)
@@ -41,6 +43,12 @@ public class DashboardController {
 	@Autowired
 	private LoginMapper loginMapper;
 
+	@Autowired
+	private UserService userService;
+
+	@Autowired
+	private LogDiskManager logDiskManager;
+
 	/**
 	 * 카카오 지도 JavaScript SDK 키(프론트). globals.properties kakao.map.js-key
 	 * (환경변수 KAKAO_MAP_JS_KEY 로 주입 — 코드/Git 미포함). 미설정 시 빈 값.
@@ -61,6 +69,11 @@ public class DashboardController {
 		logger.info("{}({}) 사용자의 {}에 대시보드 지도 화면 접속.", uId, loginMapper.getLoginId(uId), LocalDateTime.now());
 
 		model.addAttribute("kakaoMapJsKey", kakaoMapJsKey);
+		// (요청 2026-07-16) 공용 헤더(header.jsp)가 표시하는 사용자명. 다른 화면과 동일하게 모델에 담아야
+		//   대시보드에서도 내 정보 아이콘 옆에 사용자명이 보인다. (미설정 시 ${uName} 이 비어 이름만 사라짐)
+		model.addAttribute("uName", userService.getUNameBySession(uId));
+		// (요청 2026-07-16) 로그 저장공간 부족 경고 배너도 다른 화면과 통일 — 미설정 시 대시보드에서만 배너가 안 뜸
+		model.addAttribute("useTblLog", logDiskManager.hasEnoughLogSpace());
 		// Tiles 정의명 반환(patches 2026-07-06). defaultLayout(header·left·footer) 적용 → 공용 chrome 표시
 		return "dashboard";
 	}
