@@ -6,6 +6,13 @@
  * ========================================================= */
 
 .page-wrapper, .page-wrapper * { box-sizing: border-box; }
+/* 260721 서희원 공통 css 추가 START */
+.page-wrapper svg rect {fill:#1091ab;}
+.search-btn,
+.add-btn {background-color:#1091ab !important;}
+.saveButton {background:#1091ab !important;}
+.form-group input:focus {border-color:#1091ab !important;}
+/* 260721 서희원 공통 css 추가 END */
 
 .page-wrapper {
 	display: flex;
@@ -50,8 +57,10 @@
 }
 .menu { list-style-type: none; padding: 0; margin: 0; }
 .menu > li > a {
-	display: block;
+	display: flex;
+	align-items:center;
 	padding: 20px 0;
+	height:65px;
 	background: #1091ab;
 	text-decoration: none;
 	color: #fff;

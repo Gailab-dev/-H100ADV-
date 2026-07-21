@@ -322,9 +322,9 @@ button {
   transition: all 0.2s ease;
 }
 .device-table td .edit-btn:hover {
-  background-color: #f3f1ff;
-  color: #6955A2;
-  border-color: #b5a7f3;
+    background-color: #f1fffa;
+    color: #1c6b5c;
+    border-color: #3e7d63;
 }
 
 /* 셀 안에서 ... 처리 + tooltip 원본 유지용 */
@@ -335,12 +335,6 @@ button {
   white-space: nowrap; /* 줄바꿈 안 함 */
   text-overflow: ellipsis;  /* ... 으로 표시 */
   vertical-align: middle;
-}
-
-.device-table td .edit-btn:hover { 
-  background-color: #f3f1ff;
-  color: #6955A2;
-  border-color: #b5a7f3;
 }
 
 /* patches 2026-07-06: 상태 5열 추가(총 10열) + Tiles 사이드바로 가용폭 축소 대응 재조정.
