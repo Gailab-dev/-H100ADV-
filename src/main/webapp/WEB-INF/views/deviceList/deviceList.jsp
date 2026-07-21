@@ -17,16 +17,20 @@
 	.device-table-scroll { width: 100%; overflow-x: auto; }
 	#deviceTable { table-layout: fixed; width: 100%; min-width: 900px; }
 	/* patches 2026-07-07: 주소 auto(잔여폭 전부) → 균형 %. 화면폭에 비례 유지, 주소 과대 완화 */
+	/* (긴급복구 2026-07-16) 실시간 영상 열 복원으로 10 → 11열. 합계 100% 유지되도록 재배분 */
 	#deviceTable th:nth-child(1),  #deviceTable td:nth-child(1)  { width: 3%  !important; } /* 체크박스 */
-	#deviceTable th:nth-child(2),  #deviceTable td:nth-child(2)  { width: 13% !important; } /* 디바이스명 */
-	#deviceTable th:nth-child(3),  #deviceTable td:nth-child(3)  { width: 30% !important; } /* 주소 */
-	#deviceTable th:nth-child(4),  #deviceTable td:nth-child(4)  { width: 14% !important; } /* 등록날짜 */
+	#deviceTable th:nth-child(2),  #deviceTable td:nth-child(2)  { width: 12% !important; } /* 디바이스명 */
+	#deviceTable th:nth-child(3),  #deviceTable td:nth-child(3)  { width: 25% !important; } /* 주소 */
+	#deviceTable th:nth-child(4),  #deviceTable td:nth-child(4)  { width: 12% !important; } /* 등록날짜 */
 	#deviceTable th:nth-child(5),  #deviceTable td:nth-child(5),
 	#deviceTable th:nth-child(6),  #deviceTable td:nth-child(6),
 	#deviceTable th:nth-child(7),  #deviceTable td:nth-child(7),
 	#deviceTable th:nth-child(8),  #deviceTable td:nth-child(8),
 	#deviceTable th:nth-child(9),  #deviceTable td:nth-child(9)  { width: 6%  !important; } /* 상태 5종 */
-	#deviceTable th:nth-child(10), #deviceTable td:nth-child(10) { width: 10% !important; } /* 수정 */
+	#deviceTable th:nth-child(10), #deviceTable td:nth-child(10) { width: 8%  !important; } /* 실시간 영상 */
+	#deviceTable th:nth-child(11), #deviceTable td:nth-child(11) { width: 10% !important; } /* 수정 */
+	#deviceTable td .video-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; line-height: 0; }
+	#deviceTable td .video-btn:hover { background: #f1edff; border-radius: 4px; }
 	/* patches 2026-07-09(3): 10건 조회 시 오른쪽 스크롤 없이 한 화면에 꽉 차도록 세로 여백 미세 축소 */
 	.content { padding: 16px 24px 12px 24px !important; }        /* 상/하 32·29 → 16·12 */
 	.device-top { margin-bottom: 8px !important; }               /* 12 → 8 */
@@ -1214,12 +1218,14 @@
 											src="${pageContext.request.contextPath}/resources/images/icon_arrow_up.svg">
 									</button>
 								</th>
-								<!-- (작업계획서 04) 디바이스 상태 5종 실시간 표시 -->
+								<!-- 디바이스 상태 5종 실시간 표시 -->
 								<th>PC</th>
 								<th>CCTV</th>
 								<th>렌즈</th>
 								<th>스피커</th>
 								<th>SIP</th>
+								<%-- (긴급복구 2026-07-16) 실시간 영상 열 복원 --%>
+								<th>실시간 영상</th>
 								<th>디바이스 수정</th>
 							</tr>
 						</thead>
@@ -1227,7 +1233,7 @@
 							<c:choose>
 								<c:when test="${empty deviceList}">
 									<tr>
-										<td colspan="10"
+										<td colspan="11"
 											style="text-align: center; padding: 40px 0; color: #777;">
 											조회된 디바이스가 없습니다.</td>
 									</tr>
@@ -1290,6 +1296,18 @@
 											<td class="status-lens status-error" data-value="">이상</td>
 											<td class="status-speaker status-error" data-value="">이상</td>
 											<td class="status-sip status-error" data-value="">이상</td>
+											<%-- (긴급복구 2026-07-16) 실시간 영상 버튼 복원.
+											     기존에는 구 dv_status(=1)일 때만 노출되도록 주석 블록 안에 있었으나,
+											     상태 5종 체계로 바뀐 현재는 조건 없이 항상 클릭 가능하도록 복원(요청). --%>
+											<td>
+												<button type="button" class="video-btn" title="실시간 영상"
+													onclick="viewRealTimeVideoPopup(${item.dv_id})">
+													<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+														<path d="M17 12V8C17 7.47 16.79 6.96 16.41 6.59C16.04 6.21 15.53 6 15 6H5C4.47 6 3.96 6.21 3.59 6.59C3.21 6.96 3 7.47 3 8V16C3 16.53 3.21 17.04 3.59 17.41C3.96 17.79 4.47 18 5 18H15C15.53 18 16.04 17.79 16.41 17.41C16.79 17.04 17 16.53 17 16V12ZM17 12L21 8V16L17 12Z"
+															stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+													</svg>
+												</button>
+											</td>
 											<td>
 												<button class="edit-btn" type="button"
 													onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>

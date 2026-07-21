@@ -11,6 +11,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
@@ -55,7 +59,23 @@ public class ApiServiceImpl implements ApiService{
 	
 	@Value("${video.enc.path}")
 	private String videoFilePath;
-	
+
+	/**
+	 * (긴급복구 2026-07-16) 디바이스 실시간 스트리밍 포트 임시 하드코딩.
+	 *  - module_d 는 .env 의 PORT=8087 로 TLS listen 하는데, 기존 코드는 포트 없이 https://{ip} (=443) 로 호출해
+	 *    연결 자체가 실패하고 있었음(실시간 영상 장애 1순위 원인).
+	 *  - dv_ip 에 이미 포트가 포함된 경우(예: 192.168.0.31:8087)는 그대로 사용.
+	 *  ※ 임시 조치 — 추후 properties(또는 DB 컬럼)로 이관 필요.
+	 */
+	private static final String DEVICE_STREAM_PORT = "8087";
+
+	/** dvIp 에 포트가 없으면 스트리밍 포트를 붙여 반환 */
+	private static String withDevicePort(String dvIp) {
+		if (dvIp == null) return null;
+		String host = dvIp.trim();
+		return host.contains(":") ? host : host + ":" + DEVICE_STREAM_PORT;
+	}
+
 	/**
 	 * 실시간 영상 스트리밍
 	 * @param req : HttpServletRequest 객체
@@ -70,7 +90,7 @@ public class ApiServiceImpl implements ApiService{
 		String contentType = "application/x-www-form-urlencoded";
 		
 		// 디바이스Url
-		String targetUrl = "https://" + dvIp +"/video";
+		String targetUrl = "https://" + withDevicePort(dvIp) + "/video";
 		// connection 객체
 		HttpURLConnection conn = null;
 		// 인코딩 할 명령어
@@ -130,7 +150,25 @@ public class ApiServiceImpl implements ApiService{
 	        conn.setRequestProperty("Accept", "application/octet-stream");
 	        conn.setConnectTimeout(5000);   // ADR-008(2026-06-17): 연결 5초 — 죽은 디바이스 빨리 실패
 	        conn.setReadTimeout(10000);  // ADR-008(2026-06-17): 응답 10초 상한
-	        
+
+	        /*
+	         * (긴급복구 2026-07-21) 디바이스 인증서에 IP SAN 이 없어 기본 호스트명 검증에 실패하는 문제 대응.
+	         *   - 현재 디바이스 인증서: CN=example.com, 자체서명, 확장(SAN) 없음
+	         *   - Java 는 IP 로 접속할 때 CN 을 보지 않고 iPAddress SAN 만 확인 → 무조건 실패
+	         *   - 인증서 '체인 검증'은 그대로 유지하고(= 트러스트스토어에 디바이스 인증서 등록 필요),
+	         *     디바이스로 나가는 이 연결에 한해 '호스트명 검증'만 완화한다.
+	         *   ※ 임시 조치 — 디바이스 인증서를 IP SAN 포함해 재발급하면 이 블록을 반드시 제거할 것.
+	         *   ※ 전역(setDefaultHostnameVerifier) 적용 금지: 앱 전체 HTTPS 검증이 무력화됨.
+	         */
+	        if (conn instanceof HttpsURLConnection) {
+	        	((HttpsURLConnection) conn).setHostnameVerifier(new HostnameVerifier() {
+	        		@Override
+	        		public boolean verify(String hostname, SSLSession session) {
+	        			return true; // 체인 검증은 유지되므로, 신뢰된 인증서를 제시한 상대만 통과
+	        		}
+	        	});
+	        }
+
 	        // 요청 송신
 	        try(OutputStream os = conn.getOutputStream()){
 	        	
@@ -276,7 +314,7 @@ public class ApiServiceImpl implements ApiService{
 			
         	// 3. 디바이스 Url 검증
         	// targetUrl = "https://" + dvIp + path;
-        	targetUrl = "https://" + dvIp + path;
+        	targetUrl = "https://" + withDevicePort(dvIp) + path;
         	logger.info("통신할 디바이스 주소 : "+ targetUrl);
         	if(isValidUrl(targetUrl)) {
         		logger.error("targetUrl이 잘못되었습니다. : " + targetUrl);

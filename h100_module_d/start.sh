@@ -7,6 +7,8 @@ if pgrep -f "$TARGET" > /dev/null; then
     echo "Go 서버가 이미 실행 중입니다."
 else
     echo "Go 서버가 실행 중이 아닙니다. 실행합니다..."
-    nohup go run ./cmd/server > /dev/null 2>&1 &
+    # (긴급복구 2026-07-21) 기존 > /dev/null 2>&1 은 ffmpeg 의 표준출력/에러까지 통째로 버려
+    #   HLS 미생성 원인(카메라 연결 실패 등)을 전혀 볼 수 없었음 → 로그 파일로 남긴다.
+    nohup go run ./cmd/server >> ./module_d.log 2>&1 &
     echo "서버 실행 완료."
 fi

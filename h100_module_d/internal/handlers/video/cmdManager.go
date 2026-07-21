@@ -68,6 +68,14 @@ func cmdStart(cmd *exec.Cmd, oCmdManager *CmdManager) string {
 			logger.Log.Error(fmt.Sprintf("명령어 실행 실패: %s", id), zap.Error(err))
 		} else {
 			logger.Log.Info("명령어 실행 성공!")
+			// (긴급복구 2026-07-21) 기존에는 Start() 성공만 확인해, ffmpeg 이 곧바로 죽어도
+			//   "실행 성공"만 남고 HLS 미생성 원인을 알 수 없었음(브라우저는 index.m3u8 404).
+			//   종료를 기다려 종료코드를 남긴다. 정상 중지(cmdStop 의 Kill) 시에도 기록되며, 좀비 프로세스 회수 효과도 있음.
+			if werr := cmd.Wait(); werr != nil {
+				logger.Log.Error(fmt.Sprintf("FFmpeg 종료(비정상) id: %s", id), zap.Error(werr))
+			} else {
+				logger.Log.Info(fmt.Sprintf("FFmpeg 종료(정상) id: %s", id))
+			}
 		}
 
 		ids3 := make([]string, 0, len(oCmdManager.store))

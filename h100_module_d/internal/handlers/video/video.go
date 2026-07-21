@@ -123,11 +123,15 @@ func StartVideo(oCmdManager *CmdManager) string{
         // FFmpeg 명령어 구성
 	cmd := exec.Command(
                 os.Getenv("FFMPEG_PATH"),
-                "-i", os.Getenv("RTSP_URL"),
+                // ===== 입력(demuxer) 옵션 — 반드시 -i 앞에 와야 함 =====
+                // (긴급복구 2026-07-21) 기존에는 아래 옵션들이 -i 뒤에 있어 ffmpeg 이 출력 옵션으로 해석,
+                //   "Option rtsp_transport not found." 로 즉시 종료 → index.m3u8 미생성(브라우저 404) 원인.
                 "-rtsp_transport", "tcp",        // UDP 대신 TCP 사용 (더 안정적)
                 "-fflags", "+genpts",            // 타임스탬프 재생성
-                "-avoid_negative_ts", "make_zero", // 음수 타임스탬프 방지
                 "-err_detect", "ignore_err",     // 에러 무시하고 계속 진행
+                "-i", os.Getenv("RTSP_URL"),
+                // ===== 이하 출력 옵션 =====
+                "-avoid_negative_ts", "make_zero", // 음수 타임스탬프 방지
 		"-c:v", "libx264",
                 "-preset", "veryfast",
                 "-profile:v", "main",

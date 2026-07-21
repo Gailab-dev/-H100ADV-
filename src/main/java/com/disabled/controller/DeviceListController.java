@@ -346,7 +346,8 @@ public class DeviceListController {
 				return "";
 			}
 			
-			String playUrl = "https://"+ dvIp+ "/index.m3u8";
+			// (긴급복구 2026-07-16) 브라우저가 디바이스에 직접 접속하는 HLS URL. module_d 는 8087 로 listen 하므로 포트 필수.
+			String playUrl = "https://" + withDevicePort(dvIp) + "/index.m3u8";
 			String resultString = "";
 			if("start".equals(json.get("type"))) {
 				resultString = extractJsonObject(streamCheck,playUrl);
@@ -373,6 +374,20 @@ public class DeviceListController {
 
 	}
 	
+	/**
+	 * (긴급복구 2026-07-16) 디바이스 실시간 스트리밍 포트 임시 하드코딩.
+	 *  module_d 는 .env PORT=8087 로 TLS listen 하는데 기존 코드는 포트 없이 https://{ip}(=443) 를 사용해 연결 실패했음.
+	 *  dv_ip 에 이미 포트가 포함돼 있으면 그대로 사용. (ApiServiceImpl.withDevicePort 와 동일 규칙)
+	 *  ※ 임시 조치 — 추후 properties/DB 로 이관 필요.
+	 */
+	private static final String DEVICE_STREAM_PORT = "8087";
+
+	private static String withDevicePort(String dvIp) {
+		if (dvIp == null) return null;
+		String host = dvIp.trim();
+		return host.contains(":") ? host : host + ":" + DEVICE_STREAM_PORT;
+	}
+
 	/*
 	 * 유효성 검사를 통한 dvId를 파라미터로 dvIp 조회
 	 */
