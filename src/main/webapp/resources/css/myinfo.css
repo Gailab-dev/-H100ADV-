@@ -95,6 +95,7 @@ button {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding:0 14px;
 }
 
 .form-group {
@@ -112,13 +113,14 @@ button {
 }
 
 .inputBox {
+    width:100%;
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
 .form-group input {
-    width: 260px;  
+    width: 100%;
     height: 44px;
     padding: 0 16px;
     border: 1px solid #ddd;
@@ -127,7 +129,7 @@ button {
 }
 
 .form-group input:focus {
-    border-color: #6955A2;
+    border-color: #55a290;
     outline: none;
 }
 /* 1번째 input border 제거 */
@@ -206,19 +208,19 @@ button {
     position: relative; 
     display: flex;
     align-items: center;
+    width:100%;
 }
 
 .emailBox input {
     flex: 1; 
-    padding-right: 80px; 
-    width:360px;    
+    padding-right: 80px;
 }
 
 /* 저장 버튼 */
 /* (요청 2026-07-16) 저장 버튼 왼쪽 아래 → 오른쪽 아래 */
 .saveBox {
     display: grid;
-    justify-content: flex-end;
+    justify-content:center !important;
     gap:16px;
 }
 .error-message{
@@ -228,7 +230,7 @@ button {
 }
 
 .saveButton {
-    background: #6955A2;
+    background: #1091ab;
     color: white;
     border: none;
     border-radius: 4px;
@@ -237,3 +239,7 @@ button {
     width:56px;
     height:34px;
 }
+
+/* 260721 서희원 수정 START */
+.gi-modal-dialog {height:586px !important;}
+/* 260721 서희원 수정 END */
