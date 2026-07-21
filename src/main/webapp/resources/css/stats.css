@@ -23,27 +23,6 @@ button {
 	min-height: 100vh;
 }
 /* ================= 헤더 ================= */
-/* 헤더 전체 레이아웃 */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #fff;
-  border-bottom: 1px solid #ccc;
-  padding: 0px 40px;
-  height: 80px;
-}
-
-/* 로고 */
-.logo {
-  display: flex;
-  align-items: center;
-}
-.header-icon {
-  width: 150px;
-  vertical-align: middle;
-}
-
 /* 오른쪽 그룹 (유저 + 로그아웃) */
 .right-group {
   display: flex;
