@@ -99,6 +99,7 @@ public class EventListController {
 			@RequestParam(value="startDate", required=false) String startDate
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="evCd", required = false) Integer evCd
+			, @RequestParam(value="evAction", required=false) Integer evAction  // patches 13: 처리상태(0계도/1단속/2과태료) 필터
 			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
 			, @RequestParam(value="page", required=false) Integer page
 			, @RequestParam(value="pageSize", defaultValue = "10" ) Integer pageSize
@@ -175,6 +176,13 @@ public class EventListController {
 			return "error";
 
 		}
+
+		// 처리상태(evAction) 검증 — 0계도/1단속/2과태료 (patches 13)
+		if(evAction != null && (evAction < 0 || evAction > 2)) {
+			logger.warn("유효하지 않은 처리상태(evAction): {}", evAction);
+			model.addAttribute("errorMessage", "유효하지 않은 처리 상태입니다.");
+			return "error";
+		}
 		
 		// sortDir 검증
 		if(!"ASC".equals(sortDir) && !"DESC".equals(sortDir)) {
@@ -231,6 +239,7 @@ public class EventListController {
 			paramMap.put("startDate",startDate);
 			paramMap.put("endDate",endDate);
 			paramMap.put("evCd", evCd);
+			paramMap.put("evAction", evAction);  // patches 13: 처리상태 필터
 			
 			int recordCountPerPage = paginationInfo.getRecordCountPerPage();  //LIMIT count
 			totalRecordCount = eventListService.getTotalRecordCount(paramMap);
@@ -298,9 +307,10 @@ public class EventListController {
 		model.addAttribute("pageSize", pageSize);
 		model.addAttribute("totalRecordCount", totalRecordCount);
 		model.addAttribute("evCd", evCd);
+		model.addAttribute("evAction", evAction);  // patches 13: 화면에서 선택 상태 유지
 	    model.addAttribute("sortCol", sortCol);
 	    model.addAttribute("sortDir", sortDir);
-		
+
 		return "eventList"; // Tiles 정의명(patches 2026-07-06). defaultLayout chrome 적용
 	}
 	

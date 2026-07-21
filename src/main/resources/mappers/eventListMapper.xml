@@ -43,10 +43,14 @@
 			OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
 		</if>
 		<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-			AND A.ev_date BETWEEN #{startDate} AND #{endDate}	
+			<!-- patches 13: ev_date 는 yyyyMMddHHmmss(14) 라 raw BETWEEN 시 같은 날 검색이 시간 때문에 제외됨 → 날짜부(8자리)로 비교 -->
+			AND LEFT(A.ev_date, 8) BETWEEN #{startDate} AND #{endDate}
 		</if>
 		<if test="evCd != null and evCd != ''">
 			AND A.ev_cd = #{evCd}
+		</if>
+		<if test="evAction != null">
+			AND A.ev_action = #{evAction}
 		</if>
         <if test="recordCountPerPage != null">
         	LIMIT #{recordCountPerPage}
@@ -70,10 +74,14 @@
 				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
 			</if>
 			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
-				AND A.ev_date BETWEEN #{startDate} AND #{endDate} 
+				<!-- patches 13: 날짜부(8자리)로 비교 (getEventList 와 동일 기준) -->
+				AND LEFT(A.ev_date, 8) BETWEEN #{startDate} AND #{endDate}
 			</if>
 			<if test="evCd != null and evCd != ''">
 				AND A.ev_cd = #{evCd}
+			</if>
+			<if test="evAction != null">
+				AND A.ev_action = #{evAction}
 			</if>
 		</where>
 	</select>

@@ -181,6 +181,7 @@
 	  	const startDate = form.elements['startDate']?.value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate']?.value;
 	  	const evCd = form.elements['evCd']?.value;
+	  	const evAction = form.elements['evAction']?.value;   // patches 13: 처리상태 필터
 	  	const searchKeyword   = form.elements['searchKeyword']?.value;
 	 	const pageSize = document.getElementById('pageSize')?.value;
 	  	
@@ -206,8 +207,8 @@
 	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
 		
-		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&evCd=" + evCd + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
-		
+		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&evCd=" + evCd + "&evAction=" + evAction + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
+
 	}
 	
 	//  Pagination 
@@ -439,6 +440,15 @@
 									<option value="4" ${evCd == 4 ? 'selected' : ''}>위험상황</option>
 									<option value="5" ${evCd == 5 ? 'selected' : ''}>물건적재</option>
 									<option value="6" ${evCd == 6 ? 'selected' : ''}>이중주차</option>
+								</select>
+							</div>
+							<%-- patches 13: 처리상태(evAction) 필터. 대시보드 계도/단속 카드 링크와 동일 파라미터 --%>
+							<div class="filter-input-group">
+								<select name="evAction" class="selectOption">
+									<option value="" ${evAction == null ? 'selected' : ''}>처리 상태</option>
+									<option value="0" ${evAction == 0 ? 'selected' : ''}>계도</option>
+									<option value="1" ${evAction == 1 ? 'selected' : ''}>단속</option>
+									<option value="2" ${evAction == 2 ? 'selected' : ''}>과태료 부과</option>
 								</select>
 							</div>
 							<div class="search-box">

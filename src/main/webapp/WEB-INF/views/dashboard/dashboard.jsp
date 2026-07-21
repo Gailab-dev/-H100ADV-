@@ -1,5 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%-- patches 13: 계도/단속 카드 링크용 오늘 날짜(yyyy-MM-dd). eventList 컨트롤러가 '-' 제거하므로 이 형식으로 전달 --%>
+<% String today = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date()); %>
 
 <%-- Tiles body fragment (patches 2026-07-06). 공용 chrome(헤더·사이드바·푸터)은 template.jsp/defaultLayout 제공. jQuery 는 template 에서 로드 --%>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/dashboard.css">
@@ -32,6 +34,26 @@
 	.dev-item-addr { font-size: 12px; color: #666; margin-top: 2px; word-break: break-all; }
 	.dev-item-meta { font-size: 11px; color: #999; margin-top: 3px; }
 	.dev-empty { padding: 16px 12px; color: #999; font-size: 13px; text-align: center; }
+	/* patches 13(4-2): 좌측 디바이스 목록 검색창 */
+	.device-list-search { padding: 8px 10px; border-bottom: 1px solid #eef0f3; background: #FCFBFF; }
+	.device-list-search input { width: 100%; padding: 6px 10px; border: 1px solid #D5D0E0; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+	.device-list-search input:focus { outline: none; border-color: #6955A2; }
+	/* patches 13(4-3): 목록 이름/주소 말줄임 + title 툴팁(길면 hover 로 전체 확인) */
+	.dev-item-name .cell-ellipsis, .dev-item-addr .cell-ellipsis { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+	.dev-item-addr { word-break: normal; }
+	/* patches 13(4-4): 우측 카드 크기 축소 */
+	.cards-area { gap: 10px !important; }
+	.card { padding: 12px 15px !important; }
+	.card h3 { font-size: 13px !important; margin: 0 0 6px 0 !important; }
+	.card .card-value { font-size: 22px !important; }
+	/* patches 13(4-5): 계도·단속 통합 카드(클릭 시 오늘 날짜 + evAction 필터로 eventList 이동) */
+	.summary-card .split-row { display: flex; gap: 10px; }
+	.summary-card .split-item { flex: 1; text-align: center; padding: 8px 6px; border-radius: 6px; background: #FCFBFF; text-decoration: none; color: inherit; transition: background 0.2s; }
+	.summary-card .split-item:hover { background: #F0EBFA; }
+	.summary-card .split-item .label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+	.summary-card .split-item .value { display: block; font-size: 22px; font-weight: 600; }
+	.summary-card .split-item.guide .value { color: #1a8a4a; }
+	.summary-card .split-item.enforce .value { color: #d33333; }
 </style>
 <!-- Font Awesome (상태 아이콘) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -54,7 +76,11 @@
 		<div class="map-area">
 			<%-- 지도 좌측 디바이스 목록: dv_name·serial·addr·lat·lng 모두 존재하는 디바이스만. 클릭 시 지도 중심 이동 --%>
 			<div class="device-list-panel">
-				<div class="dev-list-head">디바이스 목록<span id="deviceListCount">0</span></div>
+				<div class="dev-list-head">디바이스 목록 <span id="deviceListCount">0</span></div>
+				<%-- patches 13(4-2): 이름·주소 실시간 필터(목록만, 지도 마커 미연동) --%>
+				<div class="device-list-search">
+					<input type="text" id="deviceSearchInput" placeholder="이름·주소로 검색" />
+				</div>
 				<div id="deviceListItems" class="dev-list-items">
 					<div class="dev-empty">불러오는 중...</div>
 				</div>
@@ -79,13 +105,21 @@
 				<div class="card-value" id="weather-value">-</div>
 				<div class="card-sub" id="weather-sub"></div>
 			</div>
-			<div class="card guide-card">
-				<h3><i class="fas fa-hand-paper"></i> 일별 계도</h3>
-				<div class="card-value" id="guide-value">0</div>
-			</div>
-			<div class="card enforce-card">
-				<h3><i class="fas fa-triangle-exclamation"></i> 일별 단속</h3>
-				<div class="card-value" id="enforce-value">0</div>
+			<%-- patches 13(4-5): 계도·단속 통합 카드. 숫자 클릭 시 오늘 날짜 + evAction 필터로 불법주차 리스트 이동 --%>
+			<div class="card summary-card">
+				<h3><i class="fas fa-clipboard-check"></i> 오늘 처리 현황</h3>
+				<div class="split-row">
+					<a class="split-item guide"
+						href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=0">
+						<span class="label">계도</span>
+						<span class="value" id="guide-value">0</span>
+					</a>
+					<a class="split-item enforce"
+						href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=1">
+						<span class="label">단속</span>
+						<span class="value" id="enforce-value">0</span>
+					</a>
+				</div>
 			</div>
 		</div>
 
@@ -119,6 +153,33 @@ var map = null;
 var markerMap = {};   // dv_id -> { marker, colorKey, device } — 부분 갱신용(전체 재생성 회피)
 var overlays = [];
 var clusterer = null; // MarkerClusterer (patches 2026-07-09(7): 겹친 마커 수 표시 → 확대 시 개별 마커)
+var isPopupPinned = false; // patches 13(4-6): 마커/리스트 클릭으로 상세 팝업 고정 여부(고정 중 hover 무시, 지도 조작 시 해제)
+var suppressUnpin = false; // focusDevice 의 프로그램적 setLevel/setCenter 가 유발하는 zoom_changed 로 즉시 해제되는 것 방지
+
+// patches 13(4-6): 좌측 리스트 클릭·마커 클릭 공용 동작 — 지도 중심 이동·확대·항목 선택·팝업 고정
+function focusDevice(id, lat, lng) {
+	if (!map) return;
+	var la = parseFloat(lat), ln = parseFloat(lng);
+	if (isNaN(la) || isNaN(ln)) return;
+	suppressUnpin = true;                             // 아래 setLevel/setCenter 로 인한 자동 해제 억제
+	map.setLevel(3);                                  // 클러스터 해제 수준까지 확대 → 개별 마커 노출
+	map.setCenter(new kakao.maps.LatLng(la, ln));     // 중심 이동
+	$('.dev-item').removeClass('selected');
+	$('.dev-item[data-id="' + id + '"]').addClass('selected');
+	showDetailPopup(id);                              // 상세 팝업 표시
+	isPopupPinned = true;                             // 고정(이후 사용자의 지도 drag/zoom 시 해제)
+	setTimeout(function() { suppressUnpin = false; }, 300); // 프로그램적 이동 이벤트 정리 후 억제 해제
+}
+
+// patches 13(4-6): 지도 조작(드래그·줌) 시 고정 팝업 해제
+function unpinPopup() {
+	if (suppressUnpin) return;   // 프로그램적 이동은 무시
+	if (isPopupPinned) {
+		hideDetailPopup();
+		isPopupPinned = false;
+		$('.dev-item').removeClass('selected');
+	}
+}
 
 // dv_status_updated 가 30분 이상 지났는지(미갱신 → 회색)
 function isStale(device) {
@@ -189,8 +250,11 @@ function upsertMarkers(devices) {
 				title: device.dv_name,
 				image: markerImage(color)
 			});
-			kakao.maps.event.addListener(marker, "mouseover", function() { showDetailPopup(id); });
-			kakao.maps.event.addListener(marker, "mouseout", function() { hideDetailPopup(); });
+			// hover — 고정 팝업 상태면 무시(patches 13(4-6))
+			kakao.maps.event.addListener(marker, "mouseover", function() { if (!isPopupPinned) showDetailPopup(id); });
+			kakao.maps.event.addListener(marker, "mouseout", function() { if (!isPopupPinned) hideDetailPopup(); });
+			// 마커 클릭 — 좌측 리스트 클릭과 동일 동작(중심 이동·확대·항목 선택·팝업 고정)
+			kakao.maps.event.addListener(marker, "click", function() { focusDevice(id, device.dv_lat, device.dv_lng); });
 			if (clusterer) clusterer.addMarker(marker);
 			markerMap[id] = { marker: marker, colorKey: color, device: device };
 		} else {
@@ -310,31 +374,41 @@ function renderDeviceList(devices) {
 		$('#deviceListItems').html('<div class="dev-empty">표시할 디바이스가 없습니다.</div>');
 		return;
 	}
+	// 속성값 안전 이스케이프(title 툴팁용): esc + 큰따옴표 처리
+	function attr(s) { return esc(s).replace(/"/g, '&quot;'); }
 	var html = '';
 	items.forEach(function(d) {
 		var color = getStatusColor(d);
-		var addr = esc(d.dv_addr) + (d.dv_addr_detail ? ' ' + esc(d.dv_addr_detail) : '');
+		var addrText = (d.dv_addr || '') + (d.dv_addr_detail ? ' ' + d.dv_addr_detail : '');
+		var addrHtml = esc(d.dv_addr) + (d.dv_addr_detail ? ' ' + esc(d.dv_addr_detail) : '');
+		// patches 13(4-3): 이름·주소를 cell-ellipsis 말줄임 + title 툴팁(길면 hover 로 전체 확인)
 		html += '<div class="dev-item" data-id="' + d.dv_id + '" data-lat="' + d.dv_lat + '" data-lng="' + d.dv_lng + '">'
 			+ '<i class="fas fa-map-marker-alt dev-item-icon" style="color:' + color + '"></i>'
 			+ '<div class="dev-item-body">'
-			+   '<div class="dev-item-name">' + esc(d.dv_name) + '</div>'
-			+   '<div class="dev-item-addr">' + addr + '</div>'
+			+   '<div class="dev-item-name"><span class="cell-ellipsis" title="' + attr(d.dv_name) + '">' + esc(d.dv_name) + '</span></div>'
+			+   '<div class="dev-item-addr"><span class="cell-ellipsis" title="' + attr(addrText) + '">' + addrHtml + '</span></div>'
 			+   '<div class="dev-item-meta">SN ' + esc(d.dv_serial_number) + ' · ' + statusText(d) + '</div>'
 			+ '</div>'
 			+ '</div>';
 	});
 	$('#deviceListItems').html(html);
+	// 재렌더 후 현재 검색어 필터 재적용(폴링으로 목록이 갱신돼도 필터 유지)
+	if ($('#deviceSearchInput').val()) $('#deviceSearchInput').trigger('input');
 }
 
 // 카카오맵 초기 위치 및 줌 설정
 function initMap() {
 	map = new kakao.maps.Map(document.getElementById("map"), {
 		center: new kakao.maps.LatLng(35.1595, 126.8526), // 광주시청
-		level: 10 // 초기 줌
+		level: 9 // 초기 줌 (patches 13(4-1): 10 → 9 살짝 확대)
 	});
 
 	// (1) 줌 컨트롤(+/-) — 오른쪽 상단
 	map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.TOPRIGHT);
+
+	// patches 13(4-6): 지도 조작(드래그·줌) 시 고정 팝업 해제
+	kakao.maps.event.addListener(map, "dragstart", unpinPopup);
+	kakao.maps.event.addListener(map, "zoom_changed", unpinPopup);
 
 	// (2) 마커 클러스터러 — 겹친 마커는 숫자로 묶고, 확대(레벨 < minLevel)하면 개별 마커 표시
 	clusterer = new kakao.maps.MarkerClusterer({
@@ -475,19 +549,19 @@ $(document).ready(function() {
 		location.href = CONTEXT_PATH + '/eventList/eventListDetail?evId=' + evId + (dvId !== '' ? '&dvId=' + dvId : '');
 	});
 
-	// (3) 좌측 디바이스 목록 클릭 → 지도 중심을 해당 좌표로 이동(개별 마커가 보이도록 확대 후 상세 팝업)
+	// (3) 좌측 디바이스 목록 클릭 → 마커 클릭과 동일 동작(공용 focusDevice, patches 13(4-6))
 	$('#deviceListItems').on('click', '.dev-item', function() {
-		if (!map) return;
-		var lat = parseFloat($(this).attr('data-lat'));
-		var lng = parseFloat($(this).attr('data-lng'));
-		var id = $(this).attr('data-id');
-		if (isNaN(lat) || isNaN(lng)) return;
-		var pos = new kakao.maps.LatLng(lat, lng);
-		map.setLevel(3);        // 클러스터 해제 수준(minLevel 5 미만)까지 확대 → 개별 마커 표시
-		map.setCenter(pos);     // 지도 중심 이동
-		$('.dev-item').removeClass('selected');
-		$(this).addClass('selected');
-		showDetailPopup(id);    // 해당 디바이스 상세 팝업 표시
+		focusDevice($(this).attr('data-id'), $(this).attr('data-lat'), $(this).attr('data-lng'));
+	});
+
+	// patches 13(4-2): 좌측 목록 이름·주소 실시간 필터(목록만, 지도 마커 미연동)
+	$('#deviceSearchInput').on('input', function() {
+		var kw = $(this).val().trim().toLowerCase();
+		$('#deviceListItems .dev-item').each(function() {
+			var name = ($(this).find('.dev-item-name').text() || '').toLowerCase();
+			var addr = ($(this).find('.dev-item-addr').text() || '').toLowerCase();
+			$(this).toggle(kw === '' || name.indexOf(kw) !== -1 || addr.indexOf(kw) !== -1);
+		});
 	});
 
 	// 지도 (11번) — 키 있을 때만
