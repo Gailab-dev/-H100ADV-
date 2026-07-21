@@ -90,7 +90,7 @@
 }
 
 /* 260721 서희원 공통 css 추가 START */
-.header-icon-btn {background:#fff !important; color: #1091ab !important; border: 1px solid #1091ab !important; line-height: normal;}
+.header-icon-btn {background:#fff !important; color: #1091ab !important; border: 1px solid #1091ab !important; line-height: normal; font-size:14px !important;}
 .header-icon-btn::after {content:'마이페이지';}
 
 .page-wrapper svg rect {fill:#1091ab;}
