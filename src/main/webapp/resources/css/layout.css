@@ -45,27 +45,25 @@
 .container { display: flex; flex: 1; }
 .sidebar {
 	width: 234px;
-	padding: 20px;
-	border-right: 1px solid #E5E5EC;
-	background: #FCFBFF;
+	background: #1091ab;
 	flex-shrink: 0;
 }
 .menu { list-style-type: none; padding: 0; margin: 0; }
-.menu > li { margin-bottom: 12px; }
 .menu > li > a {
 	display: block;
-	padding: 10px;
-	background: #FCFBFF;
+	padding: 20px 0;
+	background: #1091ab;
 	text-decoration: none;
-	color: #000;
+	color: #fff;
+	font-weight:700;
 	transition: background 0.2s ease;
 }
-.menu > li > a:hover { background: #f1edff; }
+.menu > li > a:hover { background: #fff; color: #1091ab;}
 /* 활성 메뉴 (요청 URL 기반, JSP 에서 .active 부여) — 기존의 nth-child(3) 고정 대체 */
 .menu > li > a.active {
-	background: #F1EDFF;
+	background: #fff;
 	font-weight: bold;
-	color: #6955A2;
+	color: #1091ab;
 }
 .menu > li > a.active svg { stroke-width: 2; }
 .menu-icon { width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; }

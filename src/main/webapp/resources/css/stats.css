@@ -70,37 +70,6 @@ button {
   min-height: 0;
   overflow-x:hidden;
 }
-/* 헤더와 푸터 사이영역-sidebar(홈, 디바이스리스트, 불법주차리스트) */
-.sidebar {
-    width: 234px;
-    padding: 20px;
-    border-right: 1px solid #E5E5EC;
-    background: #FCFBFF;
-}
-.menu {
-    list-style-type: none;
-    padding: 0;
-}
-.menu > li {
-    margin-bottom: 12px;
-}
-.menu > li > a {
-    display: block;
-    padding: 10px;
-    background: #FCFBFF;
-    text-decoration: none;
-    color: #000;
-    transition: background 0.2s ease;
-}
-.menu > li > a:hover {
-    background: #FCFBFF;
-}
-.menu-icon {
-    width: 20px;
-    height: 20px;
-    vertical-align: middle;
-    margin-right: 8px;
-}
 /* 헤더와 푸터 사이영역-차트 및 표 */
 .content {
     display: flex;

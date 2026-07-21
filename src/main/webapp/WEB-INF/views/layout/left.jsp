@@ -17,7 +17,7 @@
      CSS 파일 경유로는 계속 무력화되던 이력이 있어 각 링크에 인라인 !important 로 직접 부여(최상위 우선순위).
      linkPad(좌우 20px)는 사이드바 좌우 패딩 0 이후에도 텍스트 위치 유지 → 배경이 폭을 꽉 채움. --%>
 <c:set var="linkPad" value="padding-left:20px;padding-right:20px;" />
-<c:set var="actSty" value="background:#f1edff !important;" />
+<c:set var="actSty" />
 <c:set var="onDashboard" value="${fn:contains(uri, '/dashboard')}" />
 <c:set var="onEventList" value="${fn:contains(uri, '/eventList')}" />
 <c:set var="onStats"     value="${fn:contains(uri, '/stats')}" />

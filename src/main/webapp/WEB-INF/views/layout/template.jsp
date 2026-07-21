@@ -28,14 +28,8 @@
 		   하단 여백 + 오른쪽 스크롤이 항상 생기던 문제. 바깥(body>.page-wrapper)은 100vh 유지(사이드바 하단까지). */
 		.content .page-wrapper { min-height: 0 !important; height: auto !important; }
 		/* ③ 메뉴 폰트 통일 + 좌우 패딩을 링크로 이전(사이드바 좌우 패딩 제거 → 배경이 폭을 꽉 채움) */
-		.menu > li > a { font-family: Arial, sans-serif !important; line-height: 20px !important; padding-left: 20px !important; padding-right: 20px !important; }
-		/* ④ 사이드바 좌우 여백 제거 → hover/active 배경이 사이드바 폭을 양쪽 여백 없이 꽉 채움 */
-		.sidebar { padding-left: 0 !important; padding-right: 0 !important; }
-		.menu > li > a:hover { background: #f1edff !important; }
 		/* ⑤ 현재 화면(active) = hover 와 '똑같은 색(#f1edff)' 을 마우스 위치와 무관하게 항상 유지(요구사항).
 		   실제 적용은 left.jsp 의 인라인 !important 가 담당(최상위 우선순위). 여기는 일관성용 보조 규칙. */
-		.menu > li > a.active,
-		.menu > li > a.active:hover { background: #f1edff !important; }
 	</style>
 	<!-- ---------------------- 공통 자바스크립트 함수 ---------------------- -->
 	<script src="${pageContext.request.contextPath}/resources/js/common.js"></script>
