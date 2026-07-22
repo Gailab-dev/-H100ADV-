@@ -73,6 +73,16 @@ func FileSendHandler(res http.ResponseWriter, req *http.Request) {
         } else if tType == "video" {
 			filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_videos/")
 			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("https://%s/videoFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
+		} else if tType == "audio" {
+			// (2026-07-22 신규) SIP 통화 녹음(wav) 전송.
+			//   녹음 폴더는 module_d 실행 경로(FILE_PATH) 밖에 있으므로 전용 env(AUDIO_PATH)로 지정한다.
+			//   예) AUDIO_PATH=/home/gailab/H100_system/0924_3/sip_test/recordings
+			//   미설정 시에는 FILE_PATH/recordings/ 로 폴백.
+			filePath = os.Getenv("AUDIO_PATH")
+			if filePath == "" {
+				filePath = filepath.Join(os.Getenv("FILE_PATH"), "recordings/")
+			}
+			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("https://%s/audioFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
 		} else {
 			http.Error(res, "Invalid body content", http.StatusBadRequest)
 		}

@@ -67,6 +67,16 @@ func FileReceive(res http.ResponseWriter, req *http.Request, stype string) bool 
 		saveDir = filepath.Join(os.Getenv("FILE_UPLOAD_PATH"), "output_images_enc")
 	} else if stype == "video" {
 		saveDir = filepath.Join(os.Getenv("FILE_UPLOAD_PATH"), "output_videos_enc")
+	} else if stype == "audio" {
+		// (2026-07-22) SIP 통화 녹음(wav) 수신. 이미지·영상과 달리 '평문'으로 운용하기로 결정되어
+		//   암호화 디렉토리(_enc)가 아닌 output_audios 에 그대로 저장한다.
+		//   → 웹(Java)의 audio.dec.path 와 동일 경로이므로 별도 복호화 없이 바로 재생된다.
+		saveDir = filepath.Join(os.Getenv("FILE_UPLOAD_PATH"), "output_audios")
+	} else {
+		// 알 수 없는 유형은 저장하지 않음(빈 saveDir 로 인한 엉뚱한 위치 저장 방지)
+		logger.Log.Error(fmt.Sprintf("지원하지 않는 파일 유형: %s", stype))
+		http.Error(res, "Unsupported file type", http.StatusBadRequest)
+		return false
 	}
 
 	os.MkdirAll(saveDir, os.ModePerm)
@@ -134,6 +144,35 @@ func VideoFileReceive(res http.ResponseWriter, req *http.Request) {
 	sFileName := handler.Filename
 
 	database.DBConn.Exec("UPDATE tbl_event_data SET ev_has_mov = 1 WHERE ev_mov_path = ?", sFileName)
+
+	fmt.Fprintf(res, "OK")
+}
+
+/**
+ * (2026-07-22 신규) SIP 통화 녹음(wav) 단일 파일 수신 함수
+ *  - 저장 위치: FILE_UPLOAD_PATH/output_audios (평문)
+ *  - 파일명은 tbl_sip_call.sc_audio_path 와 동일해야 웹에서 재생 가능
+ *  - 이미지·영상과 동일하게 HMAC 디바이스 인증 필수(FileReceive 내부에서 검증)
+ * @param	file    수신 file
+ */
+func AudioFileReceive(res http.ResponseWriter, req *http.Request) {
+	resVal := FileReceive(res, req, "audio")
+	if !resVal {
+		// FileReceive 가 이미 상태코드/메시지(401/400/500)를 기록함 — 중복 출력 방지
+		return
+	}
+
+	file, handler, err := req.FormFile("file")
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	sFileName := handler.Filename
+
+	// 파일이 실제로 도착했으므로 음성 보유 플래그를 확정(로그 INSERT 시 파일명 유무로만 파생돼 있었음)
+	database.DBConn.Exec("UPDATE tbl_sip_call SET sc_has_audio = 1 WHERE sc_audio_path = ?", sFileName)
+	logger.Log.Info(fmt.Sprintf("UPDATE tbl_sip_call SET sc_has_audio = 1 WHERE sc_audio_path = %s", sFileName))
 
 	fmt.Fprintf(res, "OK")
 }

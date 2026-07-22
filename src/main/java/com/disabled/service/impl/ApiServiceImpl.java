@@ -402,7 +402,18 @@ public class ApiServiceImpl implements ApiService{
 	        	}
 	        	
 	        	return "true";
-	        	
+
+	        // 7-4. (2026-07-22 신규) SIP 통화 녹음(wav) 전송 요청
+	        //   디바이스(module_d)는 파일을 '응답 본문'으로 주지 않고, module_c(/audioFileReceive)로 업로드한 뒤
+	        //   결과 JSON({"result":"true"})만 응답한다. 따라서 이미지·영상처럼 fileResponse() 로
+	        //   응답 본문을 파일에 쓰면 안 된다(그 경우 JSON 문자열이 파일로 저장돼 파일이 깨진다).
+	        //   → 여기서는 응답 JSON 을 그대로 돌려주고, 실제 도착 여부는 호출측이 파일 존재로 확인한다.
+	        } else if(type.equals("audio")) {
+
+	            try (InputStream in = conn.getInputStream()) {
+	                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+	            }
+
 	        }  else {
 	        	logger.error("잘못된 type 값 전송");
 	        	return "error";

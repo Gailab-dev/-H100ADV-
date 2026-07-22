@@ -38,6 +38,14 @@ public class SipCallServiceImpl implements SipCallService {
 	@Autowired
 	private VideoDecryptionService decryptionService;
 
+	/** (2026-07-22) tier-3 디바이스 녹음 요청용 — 이미지·영상과 동일 경로(/fileSend) 재사용 */
+	@Autowired
+	private com.disabled.service.ApiService apiService;
+
+	/** (2026-07-22) sc_dv_id → dv_ip 조회 */
+	@Autowired
+	private com.disabled.service.DeviceListService deviceListService;
+
 	// 암호화된 오디오 파일 경로
 	@Value("${audio.enc.path}")
 	private String audioEncPath;
@@ -135,10 +143,68 @@ public class SipCallServiceImpl implements SipCallService {
 			return HttpServletResponse.SC_NOT_FOUND;
 		}
 
-		// 4. tier-3(디바이스 실시간 fetch)·module_d 는 부수 영역으로 별도(작업계획서 §6-12, §8).
-		//    서버에 파일이 없으면 "파일 없음" 으로 정직하게 응답.
-		logger.info("[SIP] 서버에 오디오 파일 없음(dec·enc 모두 부재) scId={} name={} — 디바이스 fetch(tier-3)는 후속 예정", scId, audioPath);
+		// 4. tier-3: 서버에 없으면 디바이스에 요청(이미지·영상의 ADR-008 패턴과 동일).
+		//    흐름: 웹 → 디바이스(module_d) /fileSend {type:audio} → 디바이스가 module_c(/audioFileReceive)로 업로드
+		//          → module_c 가 audio.dec.path 에 평문 저장 → 아래 폴링으로 도착 확인 후 스트리밍.
+		//    한 번 받아오면 서버에 남으므로 다음 재생부터는 tier-1 에서 즉시 처리된다.
+		if (fetchAudioFromDevice(res, scId, sipCall, audioPath)) {
+			return streamFile(plainFile, audioPath, res);
+		}
+
+		logger.info("[SIP] 서버에 오디오 파일 없음(dec·enc·디바이스 모두 실패) scId={} name={}", scId, audioPath);
 		return HttpServletResponse.SC_NOT_FOUND;
+	}
+
+	/**
+	 * (2026-07-22) 디바이스에 녹음 파일 전송을 요청하고, module_c 를 통해 서버에 도착할 때까지 대기한다.
+	 *  - 디바이스 응답은 "보냈다"는 결과일 뿐이므로, 실제 도착 여부는 파일 존재로 확인해야 한다.
+	 * @return 파일이 도착해 재생 가능하면 true
+	 */
+	private boolean fetchAudioFromDevice(HttpServletResponse res, Integer scId,
+			Map<String, Object> sipCall, String audioPath) {
+		try {
+			Object dvIdObj = sipCall.get("sc_dv_id");
+			if (dvIdObj == null) {
+				logger.warn("[SIP] 디바이스 ID 없음 → 디바이스 요청 불가 scId={}", scId);
+				return false;
+			}
+			int dvId = Integer.parseInt(dvIdObj.toString());
+
+			String dvIp = deviceListService.getDvIpByDvID(dvId);
+			if (dvIp == null || dvIp.isBlank()) {
+				logger.warn("[SIP] 디바이스 IP 없음 scId={} dvId={}", scId, dvId);
+				return false;
+			}
+
+			HashMap<String, Object> json = new HashMap<String, Object>();
+			json.put("type", "audio");
+			json.put("fileName", audioPath);
+
+			String r = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
+			if ("error".equals(r)) {
+				logger.error("[SIP] 디바이스 녹음 전송 요청 실패 scId={} dvId={} name={}", scId, dvId, audioPath);
+				return false;
+			}
+
+			// 디바이스 → module_c → 디스크 저장까지는 비동기이므로 도착을 잠시 기다린다(최대 약 10초).
+			File plainFile = new File(audioDecPath, audioPath);
+			for (int i = 0; i < 20; i++) {
+				if (plainFile.exists() && plainFile.length() > 0) {
+					logger.info("[SIP] 디바이스에서 녹음 수신 완료 scId={} name={} size={}", scId, audioPath, plainFile.length());
+					return true;
+				}
+				Thread.sleep(500);
+			}
+			logger.warn("[SIP] 디바이스 요청은 성공했으나 파일이 도착하지 않음(module_c 확인 필요) scId={} name={}", scId, audioPath);
+			return false;
+
+		} catch (InterruptedException ie) {
+			Thread.currentThread().interrupt();
+			return false;
+		} catch (Exception e) {
+			logger.error("[SIP] 디바이스 녹음 수신 중 오류 scId=" + scId + " name=" + audioPath, e);
+			return false;
+		}
 	}
 
 	/** 파일을 응답 스트림으로 송출. 성공 시 200, 실패 시 500 반환. */

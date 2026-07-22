@@ -615,6 +615,28 @@
 		* 1~2초 대기
 		*/
 		function sleep(ms) { return new Promise(r => setTimeout(r,ms));}
+
+		/*
+		 * (긴급복구 2026-07-22) HLS 플레이리스트(index.m3u8)가 실제로 생성될 때까지 대기.
+		 *  - 404  : ffmpeg 이 아직 첫 세그먼트를 못 만든 상태 → 계속 재시도
+		 *  - 예외 : TLS 인증서 미승인·디바이스 연결 불가 → 'NETWORK' 로 구분해 사용자 안내
+		 *  @return {ok:true} | {ok:false, reason:'HTTP 404'|'NETWORK'|'TIMEOUT'}
+		 */
+		async function waitForManifest(url, timeoutMs) {
+			const deadline = Date.now() + (timeoutMs || 25000);
+			let lastReason = 'TIMEOUT';
+			while (Date.now() < deadline) {
+				try {
+					const r = await fetch(url, { method: 'GET', cache: 'no-store', mode: 'cors' });
+					if (r.ok) return { ok: true };
+					lastReason = 'HTTP ' + r.status;   // 준비 전(404) — 재시도
+				} catch (e) {
+					lastReason = 'NETWORK';            // TLS 미승인/연결 불가 — 재시도해도 대개 동일
+				}
+				await sleep(1000);
+			}
+			return { ok: false, reason: lastReason };
+		}
 		
 		/*
 		* 실시간 스트리밍 실행
@@ -634,9 +656,23 @@
 			  if (hls) { try { hls.destroy(); } catch(_){} hls = null; }
 			
 			if(Hls.isSupported()){
-				
-				await sleep(3000); 
-				
+
+				/*
+				 * (긴급복구 2026-07-22) 고정 대기(3초) → 플레이리스트 준비 확인으로 변경.
+				 *   ffmpeg 은 시작 시 기존 index.m3u8 을 삭제하고, '첫 세그먼트가 완성된 뒤'에야 플레이리스트를 쓴다.
+				 *   (초기화 ~2초 + hls_time 3초 ≈ 5~6초) → 고정 대기로는 경계에 걸려 404 가 났다.
+				 *   준비될 때까지 1초 간격으로 확인하고, 네트워크/인증서 오류는 구분해 안내한다.
+				 */
+				const ready = await waitForManifest(playUrl, 25000);
+				if (!ready.ok) {
+					if (ready.reason === 'NETWORK') {
+						alert("디바이스에 연결할 수 없습니다.\n새 탭에서 아래 주소에 접속해 인증서 예외를 1회 허용한 뒤 다시 시도해 주세요.\n\n" + playUrl);
+					} else {
+						alert("영상 준비가 지연되고 있습니다. 잠시 후 다시 시도해 주세요. (" + ready.reason + ")");
+					}
+					return;
+				}
+
 				hls = new Hls({
 					autoStartLoad:false
 					, maxBufferLength:10
@@ -650,7 +686,7 @@
 				
 			  hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
 			    hls.loadSource(playUrl);        // 소스만 로드
-			    await sleep(2000);            // 1~2초 대기
+			    // (2026-07-22) 위에서 플레이리스트 준비를 이미 확인했으므로 추가 대기 불필요
 			    hls.startLoad(-1);               // ★ 실제 로드 시작(라이브 엣지)
 			  });
 

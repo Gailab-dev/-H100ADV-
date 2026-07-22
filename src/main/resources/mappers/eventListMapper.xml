@@ -21,7 +21,10 @@
   				<otherwise>DESC</otherwise>
 			</choose>	
 			, ev_id DESC
-			) AS rn 
+			) AS rn
+			<!-- (긴급수정 2026-07-22) ev_id 누락 → 화면의 상세보기 버튼에 evId 가 비어 전달되어
+			     "파일이 존재하지 않습니다" 로 실패하던 문제. ORDER BY 에는 쓰였으나 SELECT 목록에 없었음. -->
+			, A.ev_id
 			, A.ev_date
 			, A.ev_dv_name
 			, A.ev_dv_addr

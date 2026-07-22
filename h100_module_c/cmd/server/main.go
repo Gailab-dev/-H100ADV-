@@ -41,6 +41,7 @@ func main() {
         mux.HandleFunc("/fileReceive", middlewares.WithCORS(fileReceive.OneFileReceive))
         mux.HandleFunc("/imageFileReceive", middlewares.WithCORS(fileReceive.ImageFileReceive))
         mux.HandleFunc("/videoFileReceive", middlewares.WithCORS(fileReceive.VideoFileReceive))
+        mux.HandleFunc("/audioFileReceive", middlewares.WithCORS(fileReceive.AudioFileReceive)) // 2026-07-22: SIP 통화 녹음(wav) 수신
         mux.HandleFunc("/insertEventData",insertEvent.InsertEventData())
         mux.HandleFunc("/deviceStatus", middlewares.WithCORS(deviceStatus.DeviceStatusHandler)) // 작업계획서 04: 디바이스 상태 Heartbeat 수신
         mux.HandleFunc("/insertSipCallLog", middlewares.WithCORS(insertSipCall.InsertSipCallHandler)) // 작업계획서 07: SIP CALL 로그 수신

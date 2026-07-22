@@ -489,13 +489,13 @@ function renderDeviceList(devices) {
 function initMap() {
 	map = new kakao.maps.Map(document.getElementById("map"), {
 		center: new kakao.maps.LatLng(35.1595, 126.8526), // 광주시청
-		level: 9 // 초기 줌 (patches 13(4-1): 10 → 9 살짝 확대)
+		level: 7 // 초기 줌 
 	});
 
 	// (1) 줌 컨트롤(+/-) — 오른쪽 상단
 	map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.TOPRIGHT);
 
-	// patches 13(4-6): 지도 조작(드래그·줌) 시 고정 팝업 해제
+	// 지도 조작(드래그·줌) 시 고정 팝업 해제
 	kakao.maps.event.addListener(map, "dragstart", unpinPopup);
 	kakao.maps.event.addListener(map, "zoom_changed", unpinPopup);
 
