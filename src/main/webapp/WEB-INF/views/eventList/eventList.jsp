@@ -370,6 +370,19 @@
 					downloadFilename:'불법주차_리스트.xlsx'
 				}).catch(function(e){alert(e.message);});
 			})
+
+			// 날짜 표기 방식 변경
+			document.querySelectorAll(".ev-date").forEach(function(el){
+				let text = el.textContent.trim();
+
+				// 소수점 제거
+				text = text.replace(/\.\d+$/, "");
+				// 앞의 '20' 제거 (2026 → 26)
+				text = text.substring(2);
+
+				el.textContent = text;
+				el.title = text;
+			});
 		});
   		/*
 		async function excelDownload(){
@@ -413,8 +426,6 @@
 		}
   		*/
 		// --------------------------- 엑셀 다운로드 -----------------------------
-
-	
 </script>
 
 	<div class=page-wrapper>
@@ -565,9 +576,9 @@
 										<td><input type="checkbox" class="row-check" /></td>
 										<td><c:out value="${totalRecordCount - item.rn + 1}"
 												escapeXml="true" /></td>
-										<td><span class="cell-ellipsis"
-											title="${fn:escapeXml(item.ev_date)}"> <c:out
-													value="${fn:substring(item.ev_date,0,8)}" escapeXml="true" />
+										<td><span class="cell-ellipsis ev-date"
+											title="${fn:escapeXml(item.ev_reg_date)}"> <c:out
+													value="${item.ev_reg_date}" />
 										</span></td>
 										<td><c:choose>
 												<c:when test="${item.ev_cd eq 1}">미등록차량</c:when>
@@ -616,6 +627,5 @@
 			<div id="h100OverlaySpinner" class="h100-overlay-spinner" aria-hidden="true"></div>
 			<div id="h100OverlayMsg" class="h100-overlay-msg">처리 중...</div>
 			<button type="button" id="h100OverlayClose" class="h100-overlay-close" onclick="hideLoadingOverlay()">닫기</button>
-		
-	
-
+		</div>
+	</div>

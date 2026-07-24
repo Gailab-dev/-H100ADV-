@@ -32,6 +32,7 @@
 			, A.ev_cd
 			, A.ev_serial_number
 			, A.ev_dv_ip
+			, A.ev_reg_date
 			, B.dv_id			
 			, B.dv_addr
 			, B.dv_name
