@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 디바이스 이상 로그 SQL (작업계획서 15 §4-5 / 신설 테이블 tbl_device_error_log) -->
+<mapper namespace="com.disabled.mapper.DeviceErrorLogMapper">
+
+	<!--
+		특정 디바이스의 최근 이상 로그.
+		idx_dv_reg(del_dv_id, del_reg_date DESC) 인덱스 활용.
+		del_reg_date 는 DATETIME → 화면 표시용 문자열로 변환해 내려준다.
+	-->
+	<select id="selectRecentByDevice" parameterType="map" resultType="map">
+		SELECT
+			del_id,
+			del_dv_id,
+			del_status_type,
+			del_old_value,
+			del_new_value,
+			DATE_FORMAT(del_reg_date, '%Y-%m-%d %H:%i:%s') AS del_reg_date
+		FROM tbl_device_error_log
+		WHERE del_dv_id = #{dvId}
+		ORDER BY del_reg_date DESC, del_id DESC
+		LIMIT #{limit}
+	</select>
+
+</mapper>

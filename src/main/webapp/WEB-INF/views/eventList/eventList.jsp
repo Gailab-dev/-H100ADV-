@@ -142,6 +142,27 @@
 	    var dvAddr = btn.getAttribute('data-dv-addr') || '';
 	    eventListDetail((dvId === '' ? null : dvId), evId, dvAddr);
 	});
+
+	// (15번 4-2) 이벤트 알림 클릭 이동 수신 처리.
+	//   헤더 알림에서 ?evId=X 로 진입하면 해당 행을 강조·스크롤한다.
+	//   ※ 목록은 서버 페이지네이션이라 대상이 현재 페이지에 없을 수 있음 → 없으면 안내만.
+	document.addEventListener('DOMContentLoaded', function(){
+	    var evId = new URLSearchParams(window.location.search).get('evId');
+	    if(!evId) return;
+
+	    var btn = document.querySelector('.detailButton[data-ev-id="'
+	        + (window.CSS && CSS.escape ? CSS.escape(evId) : evId) + '"]');
+	    if(!btn){
+	        console.warn('evId 에 해당하는 이벤트가 현재 페이지 목록에 없습니다:', evId);
+	        return;
+	    }
+	    var row = btn.closest('tr');
+	    if(!row) return;
+	    row.style.transition = 'background .4s';
+	    row.style.background = '#fff6d6';   // 잠시 강조 후 원복
+	    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	    setTimeout(function(){ row.style.background = ''; }, 2600);
+	});
 	
 	// ===== ADR-008 로딩/메시지 오버레이 헬퍼 (목록 페이지 위) =====
 	function showLoadingOverlay(msg){

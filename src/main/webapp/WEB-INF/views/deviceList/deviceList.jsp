@@ -20,7 +20,7 @@
 	/* (긴급복구 2026-07-16) 실시간 영상 열 복원으로 10 → 11열. 합계 100% 유지되도록 재배분 */
 	#deviceTable th:nth-child(1),  #deviceTable td:nth-child(1)  { width: 3%  !important; } /* 체크박스 */
 	#deviceTable th:nth-child(2),  #deviceTable td:nth-child(2)  { width: 12% !important; } /* 디바이스명 */
-	#deviceTable th:nth-child(3),  #deviceTable td:nth-child(3)  { width: 25% !important; } /* 주소 */
+	#deviceTable th:nth-child(3),  #deviceTable td:nth-child(3)  { width: 23% !important; } /* 주소 (15번: 관리열 확장분 흡수) */
 	#deviceTable th:nth-child(4),  #deviceTable td:nth-child(4)  { width: 12% !important; } /* 등록날짜 */
 	#deviceTable th:nth-child(5),  #deviceTable td:nth-child(5),
 	#deviceTable th:nth-child(6),  #deviceTable td:nth-child(6),
@@ -28,9 +28,35 @@
 	#deviceTable th:nth-child(8),  #deviceTable td:nth-child(8),
 	#deviceTable th:nth-child(9),  #deviceTable td:nth-child(9)  { width: 6%  !important; } /* 상태 5종 */
 	#deviceTable th:nth-child(10), #deviceTable td:nth-child(10) { width: 8%  !important; } /* 실시간 영상 */
-	#deviceTable th:nth-child(11), #deviceTable td:nth-child(11) { width: 10% !important; } /* 수정 */
+	#deviceTable th:nth-child(11), #deviceTable td:nth-child(11) { width: 12% !important; } /* 관리(수정·로그) */
 	#deviceTable td .video-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; line-height: 0; }
 	#deviceTable td .video-btn:hover { background: #f1edff; border-radius: 4px; }
+	/* (15번 4-5) 이상 로그 버튼 — 수정 버튼과 나란히, 크기 통일 */
+	#deviceTable td .err-log-btn { margin-left: 4px; padding: 3px 8px; font-size: 12px; cursor: pointer;
+		background: #fff; color: #6955A2; border: 1px solid #cfc6ea; border-radius: 4px; }
+	#deviceTable td .err-log-btn:hover { background: #ece7fb; }
+
+	/* ===== (15번 4-5) 디바이스 이상 로그 slide-in 패널 ===== */
+	.err-log-panel { position: fixed; top: 0; right: -420px; width: 420px; max-width: 92vw; height: 100vh;
+		background: #fff; box-shadow: -2px 0 12px rgba(0,0,0,0.2); transition: right .3s ease; z-index: 2000;
+		display: flex; flex-direction: column; }
+	.err-log-panel.open { right: 0; }
+	.err-log-panel .panel-header { display: flex; align-items: center; justify-content: space-between;
+		padding: 14px 18px; background: #6955A2; color: #fff; }
+	.err-log-panel .panel-header .panel-title { font-size: 14px; font-weight: 700; word-break: break-all; }
+	.err-log-panel .panel-header .panel-close { background: none; border: none; color: #fff; font-size: 20px;
+		line-height: 1; cursor: pointer; padding: 2px 6px; }
+	.err-log-panel .panel-body { flex: 1; overflow-y: auto; padding: 10px 14px; }
+	.err-log-item { padding: 9px 4px; border-bottom: 1px solid #eee; font-size: 13px; }
+	.err-log-item .time { color: #999; font-size: 12px; margin-right: 8px; }
+	.err-log-item .type-tag { display: inline-block; margin-right: 6px; padding: 1px 6px; border-radius: 3px;
+		font-size: 11px; color: #fff; background: #8a7fb8; }
+	.err-log-item .change { color: #383351; }
+	.err-log-item .change .to-error  { color: #dc3545; font-weight: 700; }
+	.err-log-item .change .to-normal { color: #28a745; font-weight: 700; }
+	.err-log-empty { padding: 24px 4px; text-align: center; color: #999; font-size: 13px; }
+	.err-log-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.15); z-index: 1999; display: none; }
+	.err-log-backdrop.open { display: block; }
 	/* patches 2026-07-09(3): 10건 조회 시 오른쪽 스크롤 없이 한 화면에 꽉 차도록 세로 여백 미세 축소 */
 	.content { padding: 16px 24px 12px 24px !important; }        /* 상/하 32·29 → 16·12 */
 	.device-top { margin-bottom: 8px !important; }               /* 12 → 8 */
@@ -1275,7 +1301,8 @@
 								<th>SIP</th>
 								<%-- (긴급복구 2026-07-16) 실시간 영상 열 복원 --%>
 								<th>실시간 영상</th>
-								<th>디바이스 수정</th>
+								<%-- (15번 4-5) 열 추가 없이 관리 열에 '이상 로그' 버튼을 함께 배치 --%>
+								<th>관리</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -1290,7 +1317,8 @@
 								<c:otherwise>
 									<c:forEach var="item" items="${deviceList}">
 										<tr id="device-${item.dv_id}"
-											data-dv-id="<c:out value='${item.dv_id}' escapeXml ='true'/>">
+											data-dv-id="<c:out value='${item.dv_id}' escapeXml ='true'/>"
+											data-serial="<c:out value='${item.dv_serial_number}' escapeXml='true'/>">
 											<td><input type="checkbox" class="row-check" /></td>
 											<td><span class="cell-ellipsis"
 												title="${fn:escapeXml(item.dv_name)}"> <c:out
@@ -1360,6 +1388,10 @@
 											<td>
 												<button class="edit-btn" type="button"
 													onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>
+												<%-- (15번 4-5) 이상 로그 slide-in 패널 열기. dv_name 은 패널 제목용 --%>
+												<button class="err-log-btn" type="button"
+													data-dv-id="${item.dv_id}"
+													data-dv-name="<c:out value='${item.dv_name}' escapeXml='true'/>">로그</button>
 											</td>
 										</tr>
 									</c:forEach>
@@ -1378,6 +1410,16 @@
 					<div id="realTimeVideoPopup" style="display: none;"></div>
 					<div id="deviceInfoPopup" style="display: none;"></div>
 					<div id="deleteDevicePopup" style="display: none;"></div>
+
+					<%-- (15번 4-5) 디바이스 이상 로그 slide-in 패널 --%>
+					<div class="err-log-backdrop" id="errLogBackdrop"></div>
+					<div class="err-log-panel" id="errLogPanel" role="dialog" aria-modal="true" aria-label="디바이스 이상 로그">
+						<div class="panel-header">
+							<span class="panel-title" id="errLogTitle">디바이스 이상 로그</span>
+							<button type="button" class="panel-close" id="errLogClose" aria-label="닫기">&times;</button>
+						</div>
+						<div class="panel-body" id="errLogBody"></div>
+					</div>
 				
 			
 		
@@ -1426,6 +1468,118 @@
 	  document.addEventListener('DOMContentLoaded', function(){
 	    pollDeviceStatus();                   // 즉시 1회(초기 '-' 채움)
 	    setInterval(pollDeviceStatus, 5000);  // 5초 주기 폴링
+	  });
+	})();
+	</script>
+
+	<%-- (15번 4-5·4-2) 이상 로그 slide-in 패널 + 알림 클릭 이동 수신 처리.
+	     상태 폴링과 동일하게 vanilla JS + fetch 로 작성(이 페이지는 jQuery 비의존 정책). --%>
+	<script>
+	(function(){
+	  // 상태 5종 한글 라벨 — module_c 가 넣는 del_status_type(pc·cctv·lens·speaker·sip) 과 1:1
+	  var STATUS_LABEL = { pc: 'PC', cctv: 'CCTV', lens: '렌즈', speaker: '스피커', sip: 'SIP' };
+
+	  function esc(s){
+	    return String(s == null ? '' : s)
+	      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+	      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+	  }
+	  // 1=정상, 그 외=이상. 값 자체도 함께 보여줘 담당자가 원본을 확인할 수 있게 한다.
+	  function valLabel(v){ return (String(v) === '1') ? '정상' : '이상'; }
+	  function valClass(v){ return (String(v) === '1') ? 'to-normal' : 'to-error'; }
+
+	  var panel    = document.getElementById('errLogPanel');
+	  var backdrop = document.getElementById('errLogBackdrop');
+	  var titleEl  = document.getElementById('errLogTitle');
+	  var bodyEl   = document.getElementById('errLogBody');
+
+	  function openPanel(){ panel.classList.add('open'); backdrop.classList.add('open'); }
+	  function closePanel(){ panel.classList.remove('open'); backdrop.classList.remove('open'); }
+
+	  function renderLogs(list){
+	    if(!list || !list.length){
+	      bodyEl.innerHTML = '<div class="err-log-empty">이상 로그가 없습니다.</div>';
+	      return;
+	    }
+	    var html = '';
+	    list.forEach(function(it){
+	      var typeLabel = STATUS_LABEL[it.del_status_type] || esc(it.del_status_type);
+	      html += '<div class="err-log-item">'
+	            +   '<div>'
+	            +     '<span class="time">' + esc(it.del_reg_date) + '</span>'
+	            +     '<span class="type-tag">' + typeLabel + '</span>'
+	            +   '</div>'
+	            +   '<div class="change">'
+	            +     '<span class="' + valClass(it.del_old_value) + '">' + valLabel(it.del_old_value) + '</span>'
+	            +     ' &rarr; '
+	            +     '<span class="' + valClass(it.del_new_value) + '">' + valLabel(it.del_new_value) + '</span>'
+	            +     ' <span style="color:#aaa;">(' + esc(it.del_old_value) + '→' + esc(it.del_new_value) + ')</span>'
+	            +   '</div>'
+	            + '</div>';
+	    });
+	    bodyEl.innerHTML = html;
+	  }
+
+	  function loadErrorLog(dvId, dvName){
+	    titleEl.textContent = (dvName ? dvName : '디바이스') + ' 이상 로그';
+	    bodyEl.innerHTML = '<div class="err-log-empty">불러오는 중...</div>';
+	    openPanel();
+
+	    fetch(CONTEXT_PATH + '/deviceErrorLog/list?dvId=' + encodeURIComponent(dvId) + '&limit=30',
+	          { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin', cache: 'no-store' })
+	      .then(function(r){ if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
+	      .then(renderLogs)
+	      .catch(function(e){
+	        console.error('이상 로그 조회 실패', e);
+	        bodyEl.innerHTML = '<div class="err-log-empty">이상 로그를 불러오지 못했습니다.</div>';
+	      });
+	  }
+
+	  document.addEventListener('DOMContentLoaded', function(){
+	    // 로그 버튼(이벤트 위임 — 페이지 재조회 후에도 유지)
+	    document.querySelector('#deviceTable').addEventListener('click', function(e){
+	      var btn = e.target.closest('.err-log-btn');
+	      if(!btn) return;
+	      loadErrorLog(btn.getAttribute('data-dv-id'), btn.getAttribute('data-dv-name'));
+	    });
+	    document.getElementById('errLogClose').addEventListener('click', closePanel);
+	    backdrop.addEventListener('click', closePanel);
+	    document.addEventListener('keydown', function(e){
+	      if(e.key === 'Escape' && panel.classList.contains('open')) closePanel();
+	    });
+
+	    // ===== 알림 클릭 이동 수신 처리 (15번 4-2) =====
+	    var params = new URLSearchParams(window.location.search);
+
+	    // (A) 장비이상 알림 → 해당 디바이스 이상 로그 패널 자동 열기
+	    if(params.get('openErrorLog') === 'true'){
+	      var dvId = params.get('dvId');
+	      if(dvId){
+	        var row = document.getElementById('device-' + dvId);
+	        var nameCell = row ? row.querySelector('.cell-ellipsis') : null;
+	        var dvName = nameCell ? nameCell.textContent.trim() : '';
+	        loadErrorLog(dvId, dvName);
+	        if(row){ row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+	      }
+	    }
+
+	    // (B) 응급콜 알림 → 시리얼로 행 자동 선택 + 실시간 영상 자동 실행
+	    var triggerSerial = params.get('triggerSerial');
+	    if(triggerSerial){
+	      var trow = document.querySelector('#deviceTable tr[data-serial="' + (window.CSS && CSS.escape ? CSS.escape(triggerSerial) : triggerSerial) + '"]');
+	      if(trow){
+	        trow.style.transition = 'background .3s';
+	        trow.style.background = 'rgba(236,231,251,0.95)';
+	        trow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	        // 렌더 완료 후 실시간 영상 팝업 자동 실행 (viewRealTimeVideoPopup 은 위 메인 스크립트에 정의됨)
+	        var dvId2 = trow.getAttribute('data-dv-id');
+	        if(dvId2 && typeof viewRealTimeVideoPopup === 'function'){
+	          setTimeout(function(){ viewRealTimeVideoPopup(dvId2); }, 400);
+	        }
+	      } else {
+	        console.warn('triggerSerial 에 해당하는 디바이스가 현재 목록에 없습니다:', triggerSerial);
+	      }
+	    }
 	  });
 	})();
 	</script>
