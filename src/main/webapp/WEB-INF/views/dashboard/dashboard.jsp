@@ -9,9 +9,9 @@
      기존 grid(좌 리스트·중앙 지도·우 카드·하단 이벤트)는 제거. 오버레이는 #map-container 기준 absolute. --%>
 <style>
 	/* ===== 레이아웃: 지도가 콘텐츠 영역을 가득 채움 ===== */
-	.content { padding: 16px !important; }
-	.dashboard-wrap { padding: 0 !important; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-	#map-container { position: relative; flex: 1 1 auto; min-height: 540px; border: 1px solid #e3e6ea; border-radius: 8px; overflow: hidden; }
+	.content { padding: 16px !important;}
+	.dashboard-wrap { padding: 0 !important; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; gap:16px;}
+	#map-container { position: relative; flex: 1 1 auto; width:calc(100% - 316px); hegiht:100%; border: 1px solid #e3e6ea; border-radius: 8px; overflow: hidden; }
 	#map { width: 100%; height: 100%; border: none !important; border-radius: 0 !important; }
 
 	/* ===== 오버레이 위젯 공용 (계획서 4-1) ===== */
@@ -92,9 +92,10 @@
 	.weather-summary-widget .weather-sub { margin-left: auto; font-size: 11px; color: #888; }
 
 	/* ===== ⑤ 좌하 최근 이벤트 / ⑥ 우하 응급 연락(SIP) ===== */
-	#eventListOverlay { bottom: 12px; left: 12px; width: 430px; }
-	#sipCallOverlay { bottom: 12px; right: 12px; width: 390px; }
-	#eventListOverlay .widget-body, #sipCallOverlay .widget-body { max-height: 220px; }
+	.list-area {display:flex; gap:16px; height:163px;}
+	#eventListOverlay {position:relative; width:100%; height:100%;}
+	#sipCallOverlay {position:relative; width:100%; height:100%;}
+	#eventListOverlay .widget-body, #sipCallOverlay .widget-body { height:calc(100% - 38px); overflow-y:scroll; }
 	.view-all-btn { font-size: 11px; color: #6955A2; text-decoration: none; padding: 3px 8px; border: 1px solid #6955A2; border-radius: 4px; white-space: nowrap; }
 	.view-all-btn:hover { background: #6955A2; color: #fff; }
 	.event-mini-table, .sip-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -108,6 +109,14 @@
 	.btn-mini-audio:hover { background: #ece7fb; }
 	.sip-mini-audio-row > td { background: rgba(245,242,255,0.95); padding: 6px !important; }
 	.no-audio { color: #bbb; }
+
+	/* 260724 서희원 추가 */
+	.main-content-wrap {width:100%; height:calc(100% - 179px); display:flex; gap:16px;}
+	.checkdown-state {width: 200px;height: 100%;margin: 0;list-style: none;padding: 0;display: grid;grid-template-rows: repeat(6, 1fr);gap: 8px;}
+	.checkdown-state li {width: 100%;background: #fff;border: 1px solid rgba(105, 85, 162, 0.15);border-radius: 8px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);display: flex;padding: 16px;gap: 10px;}
+	.ico-checkdown {width: 54px;display: flex;align-items: center;justify-content: center;}
+	.checkdown-text {display: flex;flex-wrap: wrap;align-content: center;justify-content: center;}
+	.checkdown-text .label {font-size: 14px;font-weight: 400;color: #8d8d8d;}
 </style>
 <!-- Font Awesome (상태 아이콘) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -121,106 +130,155 @@
 </script>
 
 <div class="dashboard-wrap">
-	<%-- patches 2026-07-09: 최상단 제목 제거(피드백). 마커 상태 범례는 우측 카드로 이동 --%>
-	<div id="mapWarning" class="map-warning" style="display:none;">
+	<div class="main-content-wrap">
+		<%-- patches 2026-07-24: 주차 단속 현황 --%>
+		<ul class="checkdown-state">
+			<li>
+				<div class="ico-checkdown">아이콘</div>
+				<div class="checkdown-text">
+					<div class="label">미등록차량</div>
+					<div class="value">20건</div>
+				</div>
+			</li>
+			<li>
+				<div class="ico-checkdown">아이콘</div>
+				<div class="checkdown-text">
+					<div class="label">장애인미탑승</div>
+					<div class="value">20건</div>
+				</div>
+			</li>
+			<li>
+				<div class="ico-checkdown">아이콘</div>
+				<div class="checkdown-text">
+					<div class="label">스티커 불법 사용</div>
+					<div class="value">20건</div>
+				</div>
+			</li>
+			<li>
+				<div class="ico-checkdown">아이콘</div>
+				<div class="checkdown-text">
+					<div class="label">위험상황</div>
+					<div class="value">20건</div>
+				</div>
+			</li>
+			<li>
+				<div class="ico-checkdown">아이콘</div>
+				<div class="checkdown-text">
+					<div class="label">물건적재</div>
+					<div class="value">20건</div>
+				</div>
+			</li>
+			<li>
+				<div class="ico-checkdown">아이콘</div>
+				<div class="checkdown-text">
+					<div class="label">이중주차</div>
+					<div class="value">20건</div>
+				</div>
+			</li>
+		</ul>
+
+		<%-- patches 2026-07-09: 최상단 제목 제거(피드백). 마커 상태 범례는 우측 카드로 이동 --%>
+		<div id="mapWarning" class="map-warning" style="display:none;">
 		카카오 지도 키(kakao.map.js-key)가 설정되지 않았거나 지도를 불러올 수 없습니다.
 		<br>globals.properties 의 <b>kakao.map.js-key</b>(환경변수 KAKAO_MAP_JS_KEY)를 확인하세요.
 	</div>
 
-	<%-- patches 14: 지도 전체 + 지도 안 오버레이 6개(하단 grid 제거). 초기 진입 시 전부 열림(효성 결정) --%>
-	<div id="map-container">
-		<div id="map"></div>
+		<%-- patches 14: 지도 전체 + 지도 안 오버레이 6개(하단 grid 제거). 초기 진입 시 전부 열림(효성 결정) --%>
+		<div id="map-container">
+			<div id="map"></div>
 
-		<%-- ① 좌측 통합 컨테이너 (15번 4-1): 검색·리스트 상시 + 하위 2컬럼(계도·단속 / 디바이스 상태) --%>
-		<div class="overlay-widget" id="leftUnifiedOverlay">
-			<div class="widget-header">
-				<span class="widget-title">단속 장비 현황 <span class="widget-count" id="deviceListCount">0</span></span>
-				<button class="toggle-btn" type="button"></button>
-			</div>
-			<div class="widget-body">
-				<input type="text" id="deviceSearchInput" class="device-search-input" placeholder="이름·주소로 검색" />
-				<div id="deviceListItems">
-					<div class="dev-empty">불러오는 중...</div>
+			<%-- ① 좌측 통합 컨테이너 (15번 4-1): 검색·리스트 상시 + 하위 2컬럼(계도·단속 / 디바이스 상태) --%>
+			<div class="overlay-widget" id="leftUnifiedOverlay">
+				<div class="widget-header" id="widget-header">
+					<span class="widget-title">단속 장비 현황 <span class="widget-count" id="deviceListCount">0</span></span>
+					<button class="toggle-btn" type="button"></button>
 				</div>
-
-				<%-- 하위 컬럼 그룹 — 우측 스택에서 이관(우측은 마커 범례·날씨 2개로 축소) --%>
-				<div class="sub-columns-group">
-					<%-- 하위 컬럼 1: 오늘 계도·단속 (클릭 시 오늘 날짜 + evAction 필터로 이동) --%>
-					<div class="sub-column split-item-column">
-						<div class="split-row">
-							<a class="split-item guide"
-								href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=0">
-								<span class="label">계도</span>
-								<span class="value" id="guide-value">0</span>
-							</a>
-							<a class="split-item enforce"
-								href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=1">
-								<span class="label">단속</span>
-								<span class="value" id="enforce-value">0</span>
-							</a>
-						</div>
+				<div class="widget-body">
+					<input type="text" id="deviceSearchInput" class="device-search-input" placeholder="이름·주소로 검색" />
+					<div id="deviceListItems">
+						<div class="dev-empty">불러오는 중...</div>
 					</div>
 
-					<%-- 하위 컬럼 2: 디바이스 상태(정상·이상 건수) --%>
-					<div class="sub-column device-status-column">
-						<div class="status-row">
-							<span class="status-label">정상</span>
-							<span class="status-value normal" id="deviceNormalCount">0</span>
+					<%-- 하위 컬럼 그룹 — 우측 스택에서 이관(우측은 마커 범례·날씨 2개로 축소) --%>
+					<div class="sub-columns-group">
+						<%-- 하위 컬럼 1: 오늘 계도·단속 (클릭 시 오늘 날짜 + evAction 필터로 이동) --%>
+						<div class="sub-column split-item-column">
+							<div class="split-row">
+								<a class="split-item guide"
+									href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=0">
+									<span class="label">계도</span>
+									<span class="value" id="guide-value">0</span>
+								</a>
+								<a class="split-item enforce"
+									href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=1">
+									<span class="label">단속</span>
+									<span class="value" id="enforce-value">0</span>
+								</a>
+							</div>
 						</div>
-						<div class="status-row">
-							<span class="status-label">이상</span>
-							<span class="status-value error" id="deviceErrorCount">0</span>
+
+						<%-- 하위 컬럼 2: 디바이스 상태(정상·이상 건수) --%>
+						<div class="sub-column device-status-column">
+							<div class="status-row">
+								<span class="status-label">정상</span>
+								<span class="status-value normal" id="deviceNormalCount">0</span>
+							</div>
+							<div class="status-row">
+								<span class="status-label">이상</span>
+								<span class="status-value error" id="deviceErrorCount">0</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<%-- ②③ 우측 세로 스택 그룹 — 토글 버튼 1개로 동시 축소/확대(위치 유지).
+				 (15번 4-1) 3개 → 2개로 축소: 계도·단속과 디바이스 상태는 좌측 통합 컨테이너로 이관 --%>
+			<div class="right-stack-group" id="rightStackGroup">
+				<button id="rightStackToggle" class="group-toggle-btn" type="button">&#9660;</button>
+
+				<%-- ② 마커 상태 --%>
+				<div class="overlay-widget marker-legend-widget">
+					<div class="widget-header" id="widget-header"><span class="widget-title">마커 상태</span></div>
+					<div class="widget-body">
+						<div class="legend-row"><span class="marker-icon" style="background:#28a745"></span><span>정상</span></div>
+						<div class="legend-row"><span class="marker-icon" style="background:#ffc107"></span><span>이상 1~2</span></div>
+						<div class="legend-row"><span class="marker-icon" style="background:#dc3545"></span><span>이상 3+</span></div>
+						<div class="legend-row"><span class="marker-icon" style="background:#808080"></span><span>30분+ 미갱신</span></div>
+					</div>
+				</div>
+
+				<%-- ③ 날씨 (계도·단속은 좌측 통합 컨테이너로 이관) --%>
+				<div class="overlay-widget weather-summary-widget">
+					<div class="widget-header"><span class="widget-title">날씨</span></div>
+					<div class="widget-body">
+						<div class="weather-row">
+							<i class="fas fa-cloud-sun"></i>
+							<span id="weather-value">-</span>
+							<span class="weather-sub" id="weather-sub"></span>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
+	</div>
 
-		<%-- ②③ 우측 세로 스택 그룹 — 토글 버튼 1개로 동시 축소/확대(위치 유지).
-		     (15번 4-1) 3개 → 2개로 축소: 계도·단속과 디바이스 상태는 좌측 통합 컨테이너로 이관 --%>
-		<div class="right-stack-group" id="rightStackGroup">
-			<button id="rightStackToggle" class="group-toggle-btn" type="button">&#9660;</button>
-
-			<%-- ② 마커 상태 --%>
-			<div class="overlay-widget marker-legend-widget">
-				<div class="widget-header"><span class="widget-title">마커 상태</span></div>
-				<div class="widget-body">
-					<div class="legend-row"><span class="marker-icon" style="background:#28a745"></span><span>정상</span></div>
-					<div class="legend-row"><span class="marker-icon" style="background:#ffc107"></span><span>이상 1~2</span></div>
-					<div class="legend-row"><span class="marker-icon" style="background:#dc3545"></span><span>이상 3+</span></div>
-					<div class="legend-row"><span class="marker-icon" style="background:#808080"></span><span>30분+ 미갱신</span></div>
-				</div>
-			</div>
-
-			<%-- ③ 날씨 (계도·단속은 좌측 통합 컨테이너로 이관) --%>
-			<div class="overlay-widget weather-summary-widget">
-				<div class="widget-header"><span class="widget-title">날씨</span></div>
-				<div class="widget-body">
-					<div class="weather-row">
-						<i class="fas fa-cloud-sun"></i>
-						<span id="weather-value">-</span>
-						<span class="weather-sub" id="weather-sub"></span>
-					</div>
-				</div>
-			</div>
-		</div>
-
+	<div class="list-area">
 		<%-- ⑤ 좌하: 최근 이벤트(3건) --%>
 		<div class="overlay-widget event-list-widget" id="eventListOverlay">
 			<div class="widget-header">
 				<span class="widget-title">최근 이벤트</span>
 				<span class="header-actions">
 					<a href="${pageContext.request.contextPath}/eventList/viewEventList.do" class="view-all-btn">전체 보기</a>
-					<button class="toggle-btn" type="button"></button>
 				</span>
 			</div>
 			<div class="widget-body">
 				<table class="event-mini-table">
 					<thead>
-						<tr><th>디바이스</th><th>차량 번호</th><th>처리</th><th>시각</th></tr>
+					<tr><th>디바이스</th><th>차량 번호</th><th>처리</th><th>시각</th></tr>
 					</thead>
 					<tbody id="recentEventListItems">
-						<tr><td colspan="4" class="empty-row">불러오는 중...</td></tr>
+					<tr><td colspan="4" class="empty-row">불러오는 중...</td></tr>
 					</tbody>
 				</table>
 			</div>
@@ -232,16 +290,15 @@
 				<span class="widget-title">최근 응급 연락</span>
 				<span class="header-actions">
 					<a href="${pageContext.request.contextPath}/sipcall/sipCallLog" class="view-all-btn">전체 보기</a>
-					<button class="toggle-btn" type="button"></button>
 				</span>
 			</div>
 			<div class="widget-body">
 				<table class="sip-mini-table">
 					<thead>
-						<tr><th>디바이스</th><th>통화 시각</th><th>듣기</th></tr>
+					<tr><th>디바이스</th><th>통화 시각</th><th>듣기</th></tr>
 					</thead>
 					<tbody id="recentSipCallItems">
-						<tr><td colspan="3" class="empty-row">불러오는 중...</td></tr>
+					<tr><td colspan="3" class="empty-row">불러오는 중...</td></tr>
 					</tbody>
 				</table>
 			</div>
@@ -655,7 +712,7 @@ function closeMiniAudio() {
 function bindOverlayToggles() {
 	// 헤더 클릭(토글 버튼 포함) → 해당 위젯 축소/확대. 링크(전체 보기) 클릭은 제외.
 	// 우측 세로 스택 그룹의 3개 위젯은 그룹 버튼 1개로만 제어(§3-3 결정) → 개별 토글 제외.
-	$(document).on('click', '.overlay-widget .widget-header', function(e) {
+	$(document).on('click', '.overlay-widget #widget-header', function(e) {
 		if ($(e.target).closest('a').length) return;                 // '전체 보기' 링크는 이동만
 		var $w = $(this).closest('.overlay-widget');
 		if ($w.closest('.right-stack-group').length) return;         // 그룹 소속은 그룹 버튼으로만
@@ -717,10 +774,6 @@ function loadRecentEvents() {
 $(document).ready(function() {
 	// 오버레이 위젯 축소/확대 바인딩 (patches 14(4-1))
 	bindOverlayToggles();
-
-	// (15번 4-1) 진입 시 좌하 '최근 이벤트' · 우하 '최근 응급 연락'만 접어 둔다.
-	//   지도 시야 확보 목적이며, 헤더 클릭으로 즉시 펼칠 수 있다. 다른 오버레이는 14번대로 열림 유지.
-	$('#eventListOverlay, #sipCallOverlay').addClass('collapsed');
 
 	// 위젯 데이터는 지도와 독립 로드 (지도 키가 없어도 동작). 진입 시 병렬 호출 — 순서 의존 X
 	loadTodaySummary();
