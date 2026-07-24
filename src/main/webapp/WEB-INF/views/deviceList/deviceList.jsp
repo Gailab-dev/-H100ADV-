@@ -112,6 +112,19 @@
 		      alert("검색어는 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
 		    } 
 		  });
+
+			// 날짜 표기 방식 변경
+			document.querySelectorAll(".ev-date").forEach(function(el){
+				let text = el.textContent.trim();
+
+				// 소수점 제거
+				text = text.replace(/\.\d+$/, "");
+				// 앞의 '20' 제거 (2026 → 26)
+				text = text.substring(2);
+
+				el.textContent = text;
+				el.title = text;
+			});
 		});
 	 
 		// 디바이스 및 주소 검색
@@ -1289,7 +1302,7 @@
 												title="${fn:escapeXml(addrFull)}"> <c:out
 														value="${addrFull}" escapeXml="true" />
 											</span></td>
-											<td><span class="cell-ellipsis"
+											<td><span class="cell-ellipsis ev-date"
 												title="${fn:escapeXml(item.dv_reg_date)}"> <c:out
 														value="${item.dv_reg_date}" escapeXml="true" />
 											</span></td>
