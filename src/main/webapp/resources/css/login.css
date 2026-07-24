@@ -21,7 +21,7 @@ html,body{height:100%;font-family: Pretendard;letter-spacing: -0.325px;}
   width:496px;              
   max-width:90%;
   background:#fff;
-  box-shadow: 10px 10px 30px 0px #6955A20F;
+  box-shadow: 0px 0px 30px 0px #d4d6dd85;
   
 }
 
@@ -121,7 +121,7 @@ html,body{height:100%;font-family: Pretendard;letter-spacing: -0.325px;}
   max-width:416px;
   height:56px;
   border:0;
-  background: #21a5bd;
+  background: linear-gradient(302deg, #6584c1, #9abbdc);
   color:#fff;font-weight:600;font-size:16px;
   cursor:pointer;transition:filter .15s ease, transform .02s ease;
 }

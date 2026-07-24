@@ -873,7 +873,7 @@
 </head>
 <body>
 	<!-- 헤더 -->
-	<header class="header">
+	<header >
 	  <div class="logo">
 	    <img src="${pageContext.request.contextPath}/resources/images/지아이랩-로고.png"
 	         alt="GAILAB" class="header-icon">
