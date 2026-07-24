@@ -20,47 +20,6 @@ button {
 	flex-direction: column;
 	min-height: 100vh;
 }
-/* ================= 헤더 ================= */
-/* 오른쪽 그룹 (유저 + 로그아웃) */
-.right-group {
-  display: flex;
-  align-items: center;
-  gap: 24px; /* 유저와 로그아웃 버튼 간격 */
-}
-
-/* 유저 */
-.user {
-  display: flex;
-  align-items: center;
-  gap:12px;
-}
-.user-image {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.user-name {
-
-  font-size: 14px;
-  color: #444;
-}
-
-/* 로그아웃 버튼 */
-.logout button {
-  background: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 6px 14px;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.logout button:hover {
-  background: #f6f6f6;
-  border-color: #aaa;
-}
 
 
 /* 헤더와 푸터 사이영역 */
