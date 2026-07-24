@@ -27,7 +27,9 @@
 	.overlay-widget .header-actions { display: flex; align-items: center; gap: 6px; }
 	.overlay-widget .toggle-btn { background: none; border: none; cursor: pointer; font-size: 12px; color: #6955A2; padding: 2px 4px; }
 	.overlay-widget .widget-body { padding: 8px 10px; overflow-y: auto; transition: max-height .25s ease, padding .25s ease; }
-	.overlay-widget.collapsed .widget-body { max-height: 0 !important; padding-top: 0; padding-bottom: 0; overflow: hidden; }
+	<%-- overflow 는 !important — 좌측 통합 컨테이너가 id 선택자로 visible 을 지정하므로,
+	     접었을 때 내용이 밖으로 삐져나오지 않도록 여기서 반드시 이겨야 한다 (15번 4-1) --%>
+	.overlay-widget.collapsed .widget-body { max-height: 0 !important; padding-top: 0; padding-bottom: 0; overflow: hidden !important; }
 	.overlay-widget.collapsed .toggle-btn::before { content: '\25B2'; }        /* ▲ 확대 */
 	.overlay-widget:not(.collapsed) .toggle-btn::before { content: '\25BC'; }  /* ▼ 축소 */
 
@@ -39,9 +41,12 @@
 	.right-stack-group .overlay-widget { position: relative; top: auto; right: auto; width: 100%; margin-bottom: 8px; }
 	.right-stack-group.collapsed .overlay-widget .widget-body { max-height: 0 !important; padding-top: 0; padding-bottom: 0; overflow: hidden; }
 
-	/* ===== ① 좌상: 검색·디바이스 리스트 ===== */
-	#deviceListOverlay { top: 12px; left: 12px; width: 285px; }
-	#deviceListOverlay .widget-body { max-height: 330px; }
+	/* ===== ① 좌측 통합 컨테이너: 검색·디바이스 리스트 + 하위 2컬럼 (15번 4-1) ===== */
+	/* 기존 좌상 리스트 오버레이를 확장. 목록만 스크롤하고 하위 2컬럼은 항상 보이도록
+	   widget-body 가 아닌 #deviceListItems 에 max-height 를 준다. */
+	#leftUnifiedOverlay { top: 12px; left: 12px; width: 320px; }
+	#leftUnifiedOverlay .widget-body { overflow: visible; }
+	#deviceListItems { max-height: 260px; overflow-y: auto; }
 	.device-search-input { width: 100%; padding: 6px 10px; margin-bottom: 8px; border: 1px solid #D5D0E0; border-radius: 4px; font-size: 13px; box-sizing: border-box; background: #fff; }
 	.device-search-input:focus { outline: none; border-color: #6955A2; }
 	.dev-item { display: flex; gap: 8px; padding: 8px 6px; border-bottom: 1px solid rgba(0,0,0,0.06); cursor: pointer; }
@@ -61,26 +66,30 @@
 	.marker-legend-widget .legend-row { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #555; }
 	.marker-legend-widget .marker-icon { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
-	/* ===== ③ 날씨·오늘 처리 (계도·단속 링크) ===== */
-	.weather-summary-widget .weather-row { display: flex; align-items: center; gap: 6px; padding: 2px 0 6px;
-		font-size: 13px; border-bottom: 1px solid rgba(105,85,162,0.1); margin-bottom: 6px; }
+	/* ===== ①-하위 2컬럼: 계도/단속 · 디바이스 상태 (15번 4-1) ===== */
+	.sub-columns-group { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px;
+		border-top: 1px solid rgba(105,85,162,0.15); }
+	.sub-column { flex: 1; background: rgba(252,251,255,0.6); border-radius: 6px; padding: 8px; }
+	.sub-column .split-row { display: flex; gap: 6px; }
+	.sub-column .split-item { flex: 1; text-align: center; text-decoration: none; color: inherit;
+		border-radius: 4px; padding: 2px 0; }
+	.sub-column .split-item:hover { background: rgba(240,235,250,0.95); }
+	.sub-column .split-item .label { display: block; font-size: 11px; color: #666; }
+	.sub-column .split-item .value { display: block; font-size: 16px; font-weight: 700; color: #383351; }
+	.sub-column .split-item.guide .value { color: #1a8a4a; }
+	.sub-column .split-item.enforce .value { color: #d33333; }
+	.sub-column .status-row { display: flex; justify-content: space-between; align-items: center;
+		padding: 3px 0; font-size: 12px; color: #555; }
+	.sub-column .status-value { font-size: 16px; font-weight: 700; }
+	.sub-column .status-value.normal { color: #28a745; }
+	.sub-column .status-value.error { color: #dc3545; }
+
+	/* ===== ③ 날씨 =====
+	   (15번 4-1) 계도·단속 split-item 과 디바이스 상태 위젯 스타일은 좌측 .sub-column 으로 이관되어 제거 */
+	.weather-summary-widget .weather-row { display: flex; align-items: center; gap: 6px; padding: 2px 0;
+		font-size: 13px; }
 	.weather-summary-widget .weather-row i { color: #4F4A85; }
 	.weather-summary-widget .weather-sub { margin-left: auto; font-size: 11px; color: #888; }
-	.weather-summary-widget .split-row { display: flex; gap: 6px; }
-	.weather-summary-widget .split-item { flex: 1; text-align: center; padding: 4px 0; background: rgba(252,251,255,0.7);
-		border-radius: 4px; text-decoration: none; color: inherit; }
-	.weather-summary-widget .split-item:hover { background: rgba(240,235,250,0.95); }
-	.weather-summary-widget .split-item .label { display: block; font-size: 11px; color: #666; }
-	.weather-summary-widget .split-item .value { display: block; font-size: 18px; font-weight: 700; }
-	.weather-summary-widget .split-item.guide .value { color: #1a8a4a; }
-	.weather-summary-widget .split-item.enforce .value { color: #d33333; }
-
-	/* ===== ④ 디바이스 상태 (정상/이상 건수) ===== */
-	.device-status-widget .status-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12.5px; color: #555; }
-	.device-status-widget .status-value { font-size: 19px; font-weight: 700; margin-left: auto; }
-	.device-status-widget .status-value.normal { color: #28a745; }
-	.device-status-widget .status-value.error { color: #dc3545; }
-	.device-status-widget .status-unit { font-size: 11px; color: #999; }
 
 	/* ===== ⑤ 좌하 최근 이벤트 / ⑥ 우하 응급 연락(SIP) ===== */
 	#eventListOverlay { bottom: 12px; left: 12px; width: 430px; }
@@ -122,8 +131,8 @@
 	<div id="map-container">
 		<div id="map"></div>
 
-		<%-- ① 좌상: 검색 · 디바이스 리스트 --%>
-		<div class="overlay-widget" id="deviceListOverlay">
+		<%-- ① 좌측 통합 컨테이너 (15번 4-1): 검색·리스트 상시 + 하위 2컬럼(계도·단속 / 디바이스 상태) --%>
+		<div class="overlay-widget" id="leftUnifiedOverlay">
 			<div class="widget-header">
 				<span class="widget-title">단속 장비 현황 <span class="widget-count" id="deviceListCount">0</span></span>
 				<button class="toggle-btn" type="button"></button>
@@ -133,10 +142,42 @@
 				<div id="deviceListItems">
 					<div class="dev-empty">불러오는 중...</div>
 				</div>
+
+				<%-- 하위 컬럼 그룹 — 우측 스택에서 이관(우측은 마커 범례·날씨 2개로 축소) --%>
+				<div class="sub-columns-group">
+					<%-- 하위 컬럼 1: 오늘 계도·단속 (클릭 시 오늘 날짜 + evAction 필터로 이동) --%>
+					<div class="sub-column split-item-column">
+						<div class="split-row">
+							<a class="split-item guide"
+								href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=0">
+								<span class="label">계도</span>
+								<span class="value" id="guide-value">0</span>
+							</a>
+							<a class="split-item enforce"
+								href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=1">
+								<span class="label">단속</span>
+								<span class="value" id="enforce-value">0</span>
+							</a>
+						</div>
+					</div>
+
+					<%-- 하위 컬럼 2: 디바이스 상태(정상·이상 건수) --%>
+					<div class="sub-column device-status-column">
+						<div class="status-row">
+							<span class="status-label">정상</span>
+							<span class="status-value normal" id="deviceNormalCount">0</span>
+						</div>
+						<div class="status-row">
+							<span class="status-label">이상</span>
+							<span class="status-value error" id="deviceErrorCount">0</span>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 
-		<%-- ②③④ 우측 세로 스택 그룹 — 토글 버튼 1개로 3개 위젯 동시 축소/확대(위치 유지) --%>
+		<%-- ②③ 우측 세로 스택 그룹 — 토글 버튼 1개로 동시 축소/확대(위치 유지).
+		     (15번 4-1) 3개 → 2개로 축소: 계도·단속과 디바이스 상태는 좌측 통합 컨테이너로 이관 --%>
 		<div class="right-stack-group" id="rightStackGroup">
 			<button id="rightStackToggle" class="group-toggle-btn" type="button">&#9660;</button>
 
@@ -151,43 +192,14 @@
 				</div>
 			</div>
 
-			<%-- ③ 날씨 · 오늘 처리(계도/단속 → 오늘 날짜 + evAction 필터로 이동) --%>
+			<%-- ③ 날씨 (계도·단속은 좌측 통합 컨테이너로 이관) --%>
 			<div class="overlay-widget weather-summary-widget">
-				<div class="widget-header"><span class="widget-title">날씨 · 오늘 처리</span></div>
+				<div class="widget-header"><span class="widget-title">날씨</span></div>
 				<div class="widget-body">
 					<div class="weather-row">
 						<i class="fas fa-cloud-sun"></i>
 						<span id="weather-value">-</span>
 						<span class="weather-sub" id="weather-sub"></span>
-					</div>
-					<div class="split-row">
-						<a class="split-item guide"
-							href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=0">
-							<span class="label">계도</span>
-							<span class="value" id="guide-value">0</span>
-						</a>
-						<a class="split-item enforce"
-							href="${pageContext.request.contextPath}/eventList/viewEventList.do?startDate=<%= today %>&endDate=<%= today %>&evAction=1">
-							<span class="label">단속</span>
-							<span class="value" id="enforce-value">0</span>
-						</a>
-					</div>
-				</div>
-			</div>
-
-			<%-- ④ 디바이스 상태(정상/이상 건수) — 신규 --%>
-			<div class="overlay-widget device-status-widget">
-				<div class="widget-header"><span class="widget-title">디바이스 상태</span></div>
-				<div class="widget-body">
-					<div class="status-row">
-						<span class="status-label">정상</span>
-						<span class="status-value normal" id="deviceNormalCount">0</span>
-						<span class="status-unit">건</span>
-					</div>
-					<div class="status-row">
-						<span class="status-label">이상</span>
-						<span class="status-value error" id="deviceErrorCount">0</span>
-						<span class="status-unit">건</span>
 					</div>
 				</div>
 			</div>
@@ -705,6 +717,10 @@ function loadRecentEvents() {
 $(document).ready(function() {
 	// 오버레이 위젯 축소/확대 바인딩 (patches 14(4-1))
 	bindOverlayToggles();
+
+	// (15번 4-1) 진입 시 좌하 '최근 이벤트' · 우하 '최근 응급 연락'만 접어 둔다.
+	//   지도 시야 확보 목적이며, 헤더 클릭으로 즉시 펼칠 수 있다. 다른 오버레이는 14번대로 열림 유지.
+	$('#eventListOverlay, #sipCallOverlay').addClass('collapsed');
 
 	// 위젯 데이터는 지도와 독립 로드 (지도 키가 없어도 동작). 진입 시 병렬 호출 — 순서 의존 X
 	loadTodaySummary();

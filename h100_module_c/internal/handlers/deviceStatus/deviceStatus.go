@@ -42,10 +42,103 @@ type StatusReq struct {
 type Tbl_Device struct {
 	DvId           uint   `gorm:"primaryKey"`
 	DvSerialNumber string
+	// (15번 4-5) 이상 로그 감지를 위해 '이전 상태값' 도 함께 조회한다.
+	DvName          string `gorm:"column:dv_name"`
+	DvStatusPc      int    `gorm:"column:dv_status_pc"`
+	DvStatusCctv    int    `gorm:"column:dv_status_cctv"`
+	DvLens          int    `gorm:"column:dv_lens"`
+	DvStatusSpeaker int    `gorm:"column:dv_status_speaker"`
+	DvStatusSip     int    `gorm:"column:dv_status_sip"`
 }
 
 func (Tbl_Device) TableName() string {
 	return "tbl_device"
+}
+
+// (15번 4-5 신설) 디바이스 상태 변경 이력
+type Tbl_Device_Error_Log struct {
+	DelId         uint      `gorm:"primaryKey;column:del_id"`
+	DelDvId       uint      `gorm:"column:del_dv_id"`
+	DelStatusType string    `gorm:"column:del_status_type"`
+	DelOldValue   int       `gorm:"column:del_old_value"`
+	DelNewValue   int       `gorm:"column:del_new_value"`
+	DelRegDate    time.Time `gorm:"column:del_reg_date"`
+}
+
+func (Tbl_Device_Error_Log) TableName() string { return "tbl_device_error_log" }
+
+// (15번 4-2 신설) 헤더 알림
+type Tbl_Notification struct {
+	NotiId       uint      `gorm:"primaryKey;column:noti_id"`
+	NotiType     string    `gorm:"column:noti_type"`
+	NotiDvId     uint      `gorm:"column:noti_dv_id"`
+	NotiSerial   string    `gorm:"column:noti_serial"`
+	NotiTargetId int       `gorm:"column:noti_target_id"`
+	NotiTitle    string    `gorm:"column:noti_title"`
+	NotiIsRead   int       `gorm:"column:noti_is_read"`
+	NotiRegDate  time.Time `gorm:"column:noti_reg_date"`
+}
+
+func (Tbl_Notification) TableName() string { return "tbl_notification" }
+
+/**
+ * (15번 4-5) 상태 5종 중 '값이 바뀐 항목'만 이상 로그로 남기고,
+ * 새로 이상이 된 항목(정상 1 → 그 외)은 헤더 알림도 함께 생성한다.
+ *  - 매 heartbeat 마다가 아니라 '변경 시점'에만 INSERT (계획서 §8 주의영역)
+ *  - 로그/알림 INSERT 실패가 heartbeat 본 처리를 막지 않도록 오류는 로그만 남긴다.
+ */
+func recordStatusChanges(old Tbl_Device, req StatusReq) {
+	type change struct {
+		name string
+		o    int
+		n    int
+	}
+	changes := []change{
+		{"pc", old.DvStatusPc, req.DvStatusPc},
+		{"cctv", old.DvStatusCctv, req.DvStatusCctv},
+		{"lens", old.DvLens, req.DvLens},
+		{"speaker", old.DvStatusSpeaker, req.DvStatusSpeaker},
+		{"sip", old.DvStatusSip, req.DvStatusSip},
+	}
+
+	for _, c := range changes {
+		if c.o == c.n {
+			continue // 변경 없음 → 기록하지 않음
+		}
+
+		errorLog := Tbl_Device_Error_Log{
+			DelDvId:       old.DvId,
+			DelStatusType: c.name,
+			DelOldValue:   c.o,
+			DelNewValue:   c.n,
+			DelRegDate:    time.Now(),
+		}
+		if ins := database.DBConn.Create(&errorLog); ins.Error != nil {
+			logger.Log.Error("[ERR_LOG_DB] 이상 로그 INSERT 실패",
+				zap.String("type", c.name), zap.Error(ins.Error))
+			continue
+		}
+
+		// 정상(1) 이 아닌 값으로 바뀐 경우에만 알림 생성 (정상 복구는 알림 X)
+		if c.n != 1 {
+			noti := Tbl_Notification{
+				NotiType:     "device_error",
+				NotiDvId:     old.DvId,
+				NotiSerial:   req.SerialNumber,
+				NotiTargetId: int(errorLog.DelId),
+				NotiTitle:    fmt.Sprintf("디바이스 이상 - %s (%s)", old.DvName, c.name),
+				NotiIsRead:   0,
+				NotiRegDate:  time.Now(),
+			}
+			if ins := database.DBConn.Create(&noti); ins.Error != nil {
+				logger.Log.Error("[NOTI_DB] 이상 알림 INSERT 실패", zap.Error(ins.Error))
+			}
+		}
+
+		logger.Log.Info("[ERR_LOG] 디바이스 상태 변경 기록",
+			zap.Uint("dv_id", old.DvId), zap.String("type", c.name),
+			zap.Int("old", c.o), zap.Int("new", c.n))
+	}
 }
 
 // 시리얼 규칙: 13자리 숫자 (작업계획서). DB dv_serial_number 는 varchar(15)
@@ -102,6 +195,10 @@ func DeviceStatusHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "DB 조회 실패", http.StatusInternalServerError)
 		return
 	}
+
+	// (15번 4-5) UPDATE 전에 '이전 값 ↔ 새 값' 을 비교해 변경분만 이상 로그·알림으로 남긴다.
+	//   UPDATE 이후에는 이전 값을 알 수 없으므로 반드시 이 위치여야 한다.
+	recordStatusChanges(device, req)
 
 	// 3. 기존 디바이스 → 상태 5종 + 갱신시각 UPDATE
 	// map 사용: 값 0(이상)도 누락 없이 반영(GORM zero-value 생략 회피), 지정 컬럼만 갱신

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 헤더 알림 SQL (작업계획서 15 §4-2 / 신설 테이블 tbl_notification) -->
+<mapper namespace="com.disabled.mapper.NotificationMapper">
+
+	<!-- 안읽은 개수. idx_read_date(noti_is_read, noti_reg_date DESC) 인덱스 활용 -->
+	<select id="countUnread" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_notification
+		WHERE noti_is_read = 0
+	</select>
+
+	<!--
+		최근 알림 목록.
+		noti_reg_date 는 DATETIME 이므로 화면 표시용 문자열로 변환해 내려준다
+		(JS 에서 Date 파싱 시 브라우저별 편차를 피하기 위함).
+	-->
+	<select id="selectRecent" parameterType="map" resultType="map">
+		SELECT
+			noti_id,
+			noti_type,
+			noti_dv_id,
+			noti_serial,
+			noti_target_id,
+			noti_title,
+			noti_is_read,
+			DATE_FORMAT(noti_reg_date, '%Y-%m-%d %H:%i:%s') AS noti_reg_date
+		FROM tbl_notification
+		ORDER BY noti_reg_date DESC, noti_id DESC
+		LIMIT #{limit}
+	</select>
+
+	<!-- 단건 읽음 처리 (이미 읽은 건은 read_date 를 덮어쓰지 않는다) -->
+	<update id="updateRead" parameterType="int">
+		UPDATE tbl_notification
+		   SET noti_is_read = 1,
+		       noti_read_date = NOW()
+		 WHERE noti_id = #{notiId}
+		   AND noti_is_read = 0
+	</update>
+
+	<!-- 전체 읽음 처리 -->
+	<update id="updateReadAll">
+		UPDATE tbl_notification
+		   SET noti_is_read = 1,
+		       noti_read_date = NOW()
+		 WHERE noti_is_read = 0
+	</update>
+
+</mapper>

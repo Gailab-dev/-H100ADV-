@@ -10,6 +10,20 @@ import (
 	"local.dev/h100_module_c/database"
 )
 
+// (15번 4-2 신설) 헤더 알림. 이벤트 INSERT 성공 시 함께 생성한다.
+type Tbl_Notification struct {
+	NotiId       uint      `gorm:"primaryKey;column:noti_id"`
+	NotiType     string    `gorm:"column:noti_type"`
+	NotiDvId     uint      `gorm:"column:noti_dv_id"`
+	NotiSerial   string    `gorm:"column:noti_serial"`
+	NotiTargetId int       `gorm:"column:noti_target_id"`
+	NotiTitle    string    `gorm:"column:noti_title"`
+	NotiIsRead   int       `gorm:"column:noti_is_read"`
+	NotiRegDate  time.Time `gorm:"column:noti_reg_date"`
+}
+
+func (Tbl_Notification) TableName() string { return "tbl_notification" }
+
 type Tbl_Event_Data struct {
 	EvId           uint      `gorm:"primaryKey" json:"id"`
 	EvDvId         uint      `json:"ev_dv_id"`
@@ -115,6 +129,21 @@ func InsertEventData() http.HandlerFunc {
 			insertedCount++
 			insertedIds = append(insertedIds, newEventData.EvId)
 			fmt.Printf("INSERT 성공 - 디바이스 ID: %d, 이벤트 ID: %d\n", device.DvId, newEventData.EvId)
+
+			// (15번 4-2) 헤더 알림 생성 — 이벤트 사후 로그 성격.
+			//   알림 INSERT 실패가 이벤트 저장을 되돌리지 않도록 로그만 남기고 계속 진행한다.
+			notification := Tbl_Notification{
+				NotiType:     "event",
+				NotiDvId:     device.DvId,
+				NotiSerial:   eventData.EvSerialNumber,
+				NotiTargetId: int(newEventData.EvId),
+				NotiTitle:    fmt.Sprintf("불법주차 이벤트 발생 - %s", device.DvName),
+				NotiIsRead:   0,
+				NotiRegDate:  time.Now(),
+			}
+			if notiResult := database.DBConn.Create(&notification); notiResult.Error != nil {
+				log.Printf("알림 INSERT 실패 (이벤트 ID: %d): %v\n", newEventData.EvId, notiResult.Error)
+			}
 		}
 
 		// 응답

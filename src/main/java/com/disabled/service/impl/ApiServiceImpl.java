@@ -357,10 +357,13 @@ public class ApiServiceImpl implements ApiService{
 	                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
 	            }
 				
-			// 7-2. 디바이스 화각 변경
-	        } else if(type.equals("U") | type.equals("D") | type.equals("L") | type.equals("R")) {
-	        	// 추후 고도화
+			// 7-2. 디바이스 카메라 조종 — 화각 4방향 + 홈(H) + 줌
+	        //   (15번 4-4) 기존에는 U·D·L·R 만 허용해 H·zoomIn·zoomOut 이 "잘못된 type" 으로 거부되고 있었다.
+	        //   호출 경로는 DeviceListController 에서 module_d 의 /tilting 으로 지정한다.
+	        } else if(type.equals("U") || type.equals("D") || type.equals("L") || type.equals("R")
+	        		|| type.equals("H") || type.equals("zoomIn") || type.equals("zoomOut")) {
 
+	        	// 디바이스가 200 을 반환한 시점에 명령 전달은 성공. 실제 카메라 구동 결과는 디바이스 담당 영역.
 	        	return "true";
 	        
 	        // 7-3. 이벤트 발생시 이미지, 영상 파일 송수신	

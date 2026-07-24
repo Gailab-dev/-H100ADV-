@@ -809,8 +809,8 @@
 		    		return "end";	
 		    	}
 		    	
-		    	// 화각변환
-		    	if(command === 'U' || command === 'D' || command === 'L' || command === 'R'){
+		    	// 화각변환 ('H' = 중앙 복귀. 15번 4-4 이전에는 누락돼 항상 "틸팅 실패" 로 처리됐음)
+		    	if(command === 'U' || command === 'D' || command === 'L' || command === 'R' || command === 'H'){
 		    		return "ok";
 		    	}
 		    	

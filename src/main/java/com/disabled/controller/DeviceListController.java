@@ -339,9 +339,15 @@ public class DeviceListController {
 				throw new IllegalArgumentException("유효하지 않은 device ID.");
 			}
 			
-			// 디바이스 IP를 통한 실시간 스트리밍
+			// (15번 4-4) 명령 종류에 따라 디바이스 엔드포인트 분기.
+			//   - 스트리밍 시작/종료(start·end) : module_d /video
+			//   - 카메라 화각·줌(U·D·L·R·H·zoom) : module_d /tilting  ← 기존 엔드포인트 재사용
+			//   기존에는 전부 /video 로 보내 틸팅 명령이 module_d 에서 무시되고 있었다.
+			String cmdType = String.valueOf(json.get("type"));
+			String devicePath = isTiltingCommand(cmdType) ? "/tilting" : "/video";
+
 			String streamCheck;
-			streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, "/video");
+			streamCheck = apiService.forwardStreamToJSON(res, json, dvIp, devicePath);
 			if("error".equals(streamCheck)) {
 				return "";
 			}
@@ -356,11 +362,10 @@ public class DeviceListController {
 				resultString = "{\"result\":null,\"playUrl\":null}";
 
 			}
-			if("U".equals(json.get("type")) || "D".equals(json.get("type")) || "L".equals(json.get("type")) || "R".equals(json.get("type"))) {
-				resultString = "{\"result\":ok,\"playUrl\":null}";
-			}
-			if("zoomIn".equals(json.get("type")) || "zoomOut".equals(json.get("type"))) {
-				resultString = "{\"result\":ok,\"playUrl\":null}";
+			// (15번 4-4 수정) 기존에는 ok 에 따옴표가 없어 '유효하지 않은 JSON' 이 내려갔고,
+			//   프론트의 response.json() 이 예외를 던져 틸팅·줌이 항상 "실패" 로 처리되고 있었다.
+			if(isTiltingCommand(String.valueOf(json.get("type")))) {
+				resultString = "{\"result\":\"ok\",\"playUrl\":null}";
 			}
 			
 			logger.info("resultString : " + resultString);
@@ -381,6 +386,21 @@ public class DeviceListController {
 	 *  ※ 임시 조치 — 추후 properties/DB 로 이관 필요.
 	 */
 	private static final String DEVICE_STREAM_PORT = "8087";
+
+	/**
+	 * (15번 4-4) 카메라 조종 명령 여부. 화각 4방향 + 홈(H) + 줌.
+	 *  이 명령들은 스트리밍(/video)이 아니라 module_d 의 /tilting 으로 보낸다.
+	 */
+	private static boolean isTiltingCommand(String type) {
+		if (type == null) return false;
+		switch (type) {
+			case "U": case "D": case "L": case "R": case "H":
+			case "zoomIn": case "zoomOut":
+				return true;
+			default:
+				return false;
+		}
+	}
 
 	private static String withDevicePort(String dvIp) {
 		if (dvIp == null) return null;
