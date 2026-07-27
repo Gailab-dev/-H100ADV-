@@ -130,12 +130,14 @@
 <!-- Font Awesome (상태 아이콘) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <!-- 카카오 지도 JavaScript SDK (services=Geocoder 등). autoload=false → kakao.maps.load 로 초기화 -->
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services,clusterer&autoload=false"></script>
+<%--<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services,clusterer&autoload=false"></script>--%>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=155ad6c4666c437c10968bd237df751d&libraries=services,clusterer&autoload=false"></script>
 <%-- patches 14(4-7): SIP 위젯 미니 파형 재생(7/9 인라인 재생 방식 재사용). UMD 빌드로 전역 WaveSurfer 노출 --%>
 <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
 <script>
 	const CONTEXT_PATH = "${pageContext.request.contextPath}";
-	const KAKAO_JS_KEY = "${kakaoMapJsKey}";
+	<%--const KAKAO_JS_KEY = "${kakaoMapJsKey}";--%>
+	const KAKAO_JS_KEY = "155ad6c4666c437c10968bd237df751d";
 </script>
 
 <div class="dashboard-wrap">
