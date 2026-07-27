@@ -112,7 +112,7 @@
 
 	/* 260724 서희원 추가 */
 	.main-content-wrap {width:100%; height:calc(100% - 179px); display:flex; gap:16px;}
-	.checkdown-state {width: 200px;height: 100%;margin: 0;list-style: none;padding: 0;display: grid;grid-template-rows: repeat(6, 1fr);gap: 8px;}
+	.checkdown-state {width: 200px;height: 100%;margin: 0;list-style: none;padding: 0;display: grid;grid-template-rows: repeat(4, 1fr);gap: 8px;}
 	.checkdown-state li {width: 100%;background: #fff;border: 1px solid rgba(105, 85, 162, 0.15);border-radius: 8px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);display: flex;padding: 16px;gap: 10px;}
 	.checkdown-state li > div {height:100%;}
 	.ico-checkdown {width: 54px;display: flex;align-items: center;justify-content: center;}
@@ -130,14 +130,14 @@
 <!-- Font Awesome (상태 아이콘) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <!-- 카카오 지도 JavaScript SDK (services=Geocoder 등). autoload=false → kakao.maps.load 로 초기화 -->
-<%--<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services,clusterer&autoload=false"></script>--%>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=155ad6c4666c437c10968bd237df751d&libraries=services,clusterer&autoload=false"></script>
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services,clusterer&autoload=false"></script>
+<%--<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=155ad6c4666c437c10968bd237df751d&libraries=services,clusterer&autoload=false"></script>--%>
 <%-- patches 14(4-7): SIP 위젯 미니 파형 재생(7/9 인라인 재생 방식 재사용). UMD 빌드로 전역 WaveSurfer 노출 --%>
 <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
 <script>
 	const CONTEXT_PATH = "${pageContext.request.contextPath}";
-	<%--const KAKAO_JS_KEY = "${kakaoMapJsKey}";--%>
-	const KAKAO_JS_KEY = "155ad6c4666c437c10968bd237df751d";
+	const KAKAO_JS_KEY = "${kakaoMapJsKey}";
+	// const KAKAO_JS_KEY = "155ad6c4666c437c10968bd237df751d";
 </script>
 
 <div class="dashboard-wrap">
@@ -155,35 +155,35 @@
 					<div class="value"><span id="eventCount1">0</span>건</div>
 				</div>
 			</li>
-			<li>
-				<div class="ico-checkdown noDisability">
-					<svg viewBox="0 0 19.04 20.79">
-						<g>
-							<path d="M9.52,15.14h1.14l-4.14-4.6v1.6c0,1.66,1.34,3,3,3Z"/>
-							<path d="M12.52,10.72v-2.59c0-1.66-1.34-3-3-3-.59,0-1.14.18-1.6.47l4.6,5.11Z"/>
-							<path d="M9.52,5.14c1.38,0,2.5-1.12,2.5-2.5S10.9.14,9.52.14s-2.5,1.12-2.5,2.5,1.12,2.5,2.5,2.5Z"/>
-							<path d="M11.56,16.14h-.58c-.69,1.2-1.98,2-3.46,2-2.21,0-4-1.79-4-4,0-1.48.8-2.77,2-3.46v-1.25s-.61-.67-.61-.67c-2,.97-3.39,3.01-3.39,5.39,0,3.31,2.69,6,6,6,2.15,0,4.02-1.14,5.08-2.84l-1.04-1.16Z"/>
-						</g>
-						<rect x="8.35" y="-2.53" width="2.35" height="25.86"
-							  transform="translate(-4.51 9.04) rotate(-41.98)"/>
-					</svg>
-				</div>
-				<div class="checkdown-text">
-					<div class="label">장애인미탑승</div>
-					<div class="value"><span id="eventCount2">0</span>건</div>
-				</div>
-			</li>
-			<li>
-				<div class="ico-checkdown illegalStickers">
-					<svg viewBox="0 0 24 24" fill="currentColor">
-						<path d="M21.9024 10.5976C21.4442 10.5333 20.976 10.5 20.5 10.5C17.2404 10.5 14.3455 12.0604 12.5212 14.471C12.3501 14.4887 12.1763 14.4978 12 14.4978C10.7188 14.4978 9.55217 14.0172 8.66691 13.2248L7.33309 14.7151C8.41871 15.6868 9.81141 16.3253 11.3466 16.4676C10.8023 17.7016 10.5 19.0662 10.5 20.5C10.5 20.976 10.5333 21.4442 10.5976 21.9024C5.7387 21.2205 2 17.0469 2 12C2 6.47715 6.47715 2 12 2C17.0469 2 21.2205 5.7387 21.9024 10.5976ZM21.8707 12.617C21.4254 12.5401 20.9674 12.5 20.5 12.5C17.7656 12.5 15.3512 13.8709 13.9068 15.9675C13.0194 17.2556 12.5 18.8156 12.5 20.5C12.5 20.9674 12.5401 21.4254 12.617 21.8707L21.8707 12.617ZM8.5 11.5C9.32843 11.5 10 10.8284 10 10C10 9.17157 9.32843 8.5 8.5 8.5C7.67157 8.5 7 9.17157 7 10C7 10.8284 7.67157 11.5 8.5 11.5ZM15.5 11.5C16.3284 11.5 17 10.8284 17 10C17 9.17157 16.3284 8.5 15.5 8.5C14.6716 8.5 14 9.17157 14 10C14 10.8284 14.6716 11.5 15.5 11.5Z"/>
-					</svg>
-				</div>
-				<div class="checkdown-text">
-					<div class="label">스티커 불법 사용</div>
-					<div class="value"><span id="eventCount3">0</span>건</div>
-				</div>
-			</li>
+<%--			<li>--%>
+<%--				<div class="ico-checkdown noDisability">--%>
+<%--					<svg viewBox="0 0 19.04 20.79">--%>
+<%--						<g>--%>
+<%--							<path d="M9.52,15.14h1.14l-4.14-4.6v1.6c0,1.66,1.34,3,3,3Z"/>--%>
+<%--							<path d="M12.52,10.72v-2.59c0-1.66-1.34-3-3-3-.59,0-1.14.18-1.6.47l4.6,5.11Z"/>--%>
+<%--							<path d="M9.52,5.14c1.38,0,2.5-1.12,2.5-2.5S10.9.14,9.52.14s-2.5,1.12-2.5,2.5,1.12,2.5,2.5,2.5Z"/>--%>
+<%--							<path d="M11.56,16.14h-.58c-.69,1.2-1.98,2-3.46,2-2.21,0-4-1.79-4-4,0-1.48.8-2.77,2-3.46v-1.25s-.61-.67-.61-.67c-2,.97-3.39,3.01-3.39,5.39,0,3.31,2.69,6,6,6,2.15,0,4.02-1.14,5.08-2.84l-1.04-1.16Z"/>--%>
+<%--						</g>--%>
+<%--						<rect x="8.35" y="-2.53" width="2.35" height="25.86"--%>
+<%--							  transform="translate(-4.51 9.04) rotate(-41.98)"/>--%>
+<%--					</svg>--%>
+<%--				</div>--%>
+<%--				<div class="checkdown-text">--%>
+<%--					<div class="label">장애인미탑승</div>--%>
+<%--					<div class="value"><span id="eventCount2">0</span>건</div>--%>
+<%--				</div>--%>
+<%--			</li>--%>
+<%--			<li>--%>
+<%--				<div class="ico-checkdown illegalStickers">--%>
+<%--					<svg viewBox="0 0 24 24" fill="currentColor">--%>
+<%--						<path d="M21.9024 10.5976C21.4442 10.5333 20.976 10.5 20.5 10.5C17.2404 10.5 14.3455 12.0604 12.5212 14.471C12.3501 14.4887 12.1763 14.4978 12 14.4978C10.7188 14.4978 9.55217 14.0172 8.66691 13.2248L7.33309 14.7151C8.41871 15.6868 9.81141 16.3253 11.3466 16.4676C10.8023 17.7016 10.5 19.0662 10.5 20.5C10.5 20.976 10.5333 21.4442 10.5976 21.9024C5.7387 21.2205 2 17.0469 2 12C2 6.47715 6.47715 2 12 2C17.0469 2 21.2205 5.7387 21.9024 10.5976ZM21.8707 12.617C21.4254 12.5401 20.9674 12.5 20.5 12.5C17.7656 12.5 15.3512 13.8709 13.9068 15.9675C13.0194 17.2556 12.5 18.8156 12.5 20.5C12.5 20.9674 12.5401 21.4254 12.617 21.8707L21.8707 12.617ZM8.5 11.5C9.32843 11.5 10 10.8284 10 10C10 9.17157 9.32843 8.5 8.5 8.5C7.67157 8.5 7 9.17157 7 10C7 10.8284 7.67157 11.5 8.5 11.5ZM15.5 11.5C16.3284 11.5 17 10.8284 17 10C17 9.17157 16.3284 8.5 15.5 8.5C14.6716 8.5 14 9.17157 14 10C14 10.8284 14.6716 11.5 15.5 11.5Z"/>--%>
+<%--					</svg>--%>
+<%--				</div>--%>
+<%--				<div class="checkdown-text">--%>
+<%--					<div class="label">스티커 불법 사용</div>--%>
+<%--					<div class="value"><span id="eventCount3">0</span>건</div>--%>
+<%--				</div>--%>
+<%--			</li>--%>
 			<li>
 				<div class="ico-checkdown warning">
 					<svg viewBox="0 0 24 24" fill="currentColor">
