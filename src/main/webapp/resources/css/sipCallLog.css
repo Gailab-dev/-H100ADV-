@@ -1,3 +1,5 @@
+html, body {height: 100%;}
+
 /* SIP 통화 로그 화면 (작업계획서 07) */
 .sip-call-log-container {
 	/* patches 2026-07-07: 이중 여백 제거 — 공용 .content(layout.css)가 이미 padding 제공 */
