@@ -122,4 +122,34 @@
 		WHERE ev_id = #{evId} 
 	</update>
 
+	<!-- ev_cd별 이벤트 건수 -->
+	<select id="getEventCountByEvCd" parameterType="map" resultType="map">
+		SELECT
+		A.ev_cd,
+		COUNT(*) AS event_count
+		FROM tbl_event_data A
+		LEFT JOIN tbl_device B
+		ON A.ev_dv_id = B.dv_id
+		WHERE 1=1
+
+		<if test="searchKeyword != null and searchKeyword != ''">
+			AND (
+			A.ev_car_num LIKE CONCAT('%', #{searchKeyword}, '%')
+			OR B.dv_addr LIKE CONCAT('%', #{searchKeyword}, '%')
+			OR B.dv_name LIKE CONCAT('%', #{searchKeyword}, '%')
+			)
+		</if>
+
+		<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+			AND LEFT(A.ev_date, 8) BETWEEN #{startDate} AND #{endDate}
+		</if>
+
+		<if test="evAction != null">
+			AND A.ev_action = #{evAction}
+		</if>
+
+		GROUP BY A.ev_cd
+		ORDER BY A.ev_cd
+	</select>
+
 </mapper>

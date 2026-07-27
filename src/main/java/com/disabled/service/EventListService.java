@@ -28,4 +28,6 @@ public interface EventListService {
 	boolean plainImagesExistOnServer(Map<String, Object> eventListDetail);
 	String getDvIpByEvId(Integer dvId, Integer evId);
 	int getTotalRecordCount(Map<String, Object> paramMap);
+
+    List<Map<String, Object>> getEventCountByEvCd(Map<String, Object> paramMap);
 }

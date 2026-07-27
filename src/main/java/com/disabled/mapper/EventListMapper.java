@@ -20,5 +20,6 @@ public interface EventListMapper {
 	void updateEvHasMovOne(@Param("evId") Integer evId) throws RuntimeException;
 	int getTotalRecordCountJoinSerial(@Param("startDate") String startDate, @Param("endDate") String endDate, @Param("searchKeyword") String searchKeyword) throws RuntimeException;
 	int getTotalRecordCount(Map<String, Object> paramMap) throws RuntimeException;
+	List<Map<String, Object>> getEventCountByEvCd(Map<String, Object> paramMap) throws RuntimeException; // ev_cd별 이벤트 건수
 
 }

@@ -684,5 +684,21 @@ public class EventListServiceImpl implements EventListService{
 			throw e;
 		}
 	}
+
+	/**
+	 * ev_cd별 이벤트 건수 조회
+	 * @param paramMap 검색 조건
+	 * @return ev_cd별 이벤트 건수
+	 */
+	@Override
+	public List<Map<String, Object>> getEventCountByEvCd(Map<String, Object> paramMap) {
+
+		try {
+			return eventListMapper.getEventCountByEvCd(paramMap);
+		} catch (RuntimeException e) {
+			logger.error("getEventCountByEvCd에서 오류 발생 : ", e);
+			throw e;
+		}
+	}
 	
 }

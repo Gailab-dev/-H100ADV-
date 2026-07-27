@@ -120,7 +120,10 @@ public class EventListController {
 		boolean useTblLog = false;	// 로그 스토리지 사용 가능 여부
 		
 		List<Map<String, Object>> eventList = new ArrayList<Map<String,Object>>();
-		
+
+		// ev_cd별 이벤트 건수
+		Map<Integer, Long> eventCounts = new HashMap<Integer, Long>();
+
 		int totalRecordCount = 0;
 
 		// ====== 유효성 검증 [S] ====== //
@@ -264,7 +267,7 @@ public class EventListController {
 		    
 			// 검색 조건에 따른 이벤트 리스트 조회
 			eventList = eventListService.getEventList(paramMap);
-			
+
 			// date 타입 input태그에 날짜가 표시되도록 format 변환
 			// stringTypeInputTagFormat: 문자열을 날짜로 변환
 			SimpleDateFormat stringTypeInputTagFormat = new SimpleDateFormat("yyyyMMdd");
@@ -307,6 +310,7 @@ public class EventListController {
 		model.addAttribute("pageSize", pageSize);
 		model.addAttribute("totalRecordCount", totalRecordCount);
 		model.addAttribute("evCd", evCd);
+		model.addAttribute("eventCounts", eventCounts); //ev_cd별 이벤트 건수
 		model.addAttribute("evAction", evAction);  // patches 13: 화면에서 선택 상태 유지
 	    model.addAttribute("sortCol", sortCol);
 	    model.addAttribute("sortDir", sortDir);
@@ -516,6 +520,32 @@ public class EventListController {
 		out.put("scenario", scenario);
 		out.put("message", message);
 		return out;
+	}
+
+	// ev_cd별 총합
+	@GetMapping("/eventCounts")
+	@ResponseBody
+	public Map<Integer, Long> getEventCounts() {
+
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+
+		List<Map<String, Object>> eventCountList =
+				eventListService.getEventCountByEvCd(paramMap);
+
+		Map<Integer, Long> eventCounts = new HashMap<Integer, Long>();
+
+		for (int i = 1; i <= 6; i++) {
+			eventCounts.put(i, 0L);
+		}
+
+		for (Map<String, Object> row : eventCountList) {
+			Integer code = ((Number) row.get("ev_cd")).intValue();
+			Long count = ((Number) row.get("event_count")).longValue();
+
+			eventCounts.put(code, count);
+		}
+
+		return eventCounts;
 	}
 
 	/**
