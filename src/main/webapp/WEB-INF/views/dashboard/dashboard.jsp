@@ -138,6 +138,7 @@
 	const CONTEXT_PATH = "${pageContext.request.contextPath}";
 	const KAKAO_JS_KEY = "${kakaoMapJsKey}";
 	// const KAKAO_JS_KEY = "155ad6c4666c437c10968bd237df751d";
+
 </script>
 
 <div class="dashboard-wrap">

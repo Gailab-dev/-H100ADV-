@@ -1,0 +1,344 @@
+[대상]
+h100_module_c (웹서버)
+
+[기본 정보]
+서버 IP        <웹서버 IP>
+서버 포트       8189
+설치 경로       /home/<계정>/h100_module_c
+Go 경로        /usr/local/go/bin/go
+사용자         <계정> / <그룹>
+
+
+===================================================
+1. SSL 키 자체 서명 재발급
+===================================================
+
+[Windows 로컬 발급 - PowerShell 한 줄]
+
+mkdir C:\Users\<계정>\workspace\ssl-keys\module_c
+cd C:\Users\<계정>\workspace\ssl-keys\module_c
+
+openssl req -x509 -nodes -days 365 -subj "/CN=<웹서버 IP>" -newkey rsa:2048 -keyout server.key.pem -out server.cert.pem
+
+
+[발급 확인]
+
+openssl x509 -in server.cert.pem -noout -subject -dates
+
+
+[서버 배포]
+
+scp C:\Users\<계정>\workspace\ssl-keys\module_c\server.key.pem C:\Users\<계정>\workspace\ssl-keys\module_c\server.cert.pem <계정>@<웹서버 IP>:/home/<계정>/h100_module_c/ssl/
+
+
+[서버 권한]
+
+chmod 600 /home/<계정>/h100_module_c/ssl/server.key.pem
+chmod 644 /home/<계정>/h100_module_c/ssl/server.cert.pem
+
+
+[유효 기간]
+1년 (365일), 매년 재발급
+
+
+===================================================
+2. .env 파일 설정
+===================================================
+
+[파일 경로]
+/home/<계정>/h100_module_c/.env
+
+
+[파일 내용]
+
+PORT=8189
+TLS_CERT_FILE=/home/<계정>/h100_module_c/ssl/server.cert.pem
+TLS_KEY_FILE=/home/<계정>/h100_module_c/ssl/server.key.pem
+DEVICE_HMAC_KEY=<64byte hex 문자열>
+
+
+[편집·권한]
+
+sudo vi /home/<계정>/h100_module_c/.env
+chmod 600 /home/<계정>/h100_module_c/.env
+
+
+[반영 확인]
+
+cat /home/<계정>/h100_module_c/.env
+
+
+===================================================
+3. HMAC 64byte 난수 생성·설정
+===================================================
+
+[생성 방법 - Linux]
+
+방법 1 - openssl
+openssl rand -hex 32
+
+방법 2 - /dev/urandom
+head -c 32 /dev/urandom | xxd -p -c 64
+
+방법 3 - python3
+python3 -c "import secrets; print(secrets.token_hex(32))"
+
+
+[출력 예시]
+a3f2e1b8c94d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f
+
+
+[적용]
+1. 위 값을 .env 의 DEVICE_HMAC_KEY 에 반영
+2. module_d 의 .env 에도 동일한 값 반영 (필수)
+3. 서비스 재시작
+
+
+[재발급 시점]
+- 유출 의심 시 즉시
+- 정기 재발급 (분기 1회 권장)
+- 담당자 이직·퇴사 시
+
+
+===================================================
+4. Go 바이너리 빌드
+===================================================
+
+cd /home/<계정>/h100_module_c
+/usr/local/go/bin/go build -o h100_module_c ./cmd/server/
+
+
+[확인]
+
+ls -la h100_module_c
+
+
+===================================================
+5. systemctl 등록
+===================================================
+
+[서비스 파일 경로]
+/etc/systemd/system/h100_module_c.service
+
+
+[서비스 파일 내용]
+
+[Unit]
+Description=H100 Module C - Web Server
+After=network.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<계정>
+Group=<그룹>
+WorkingDirectory=/home/<계정>/h100_module_c
+ExecStart=/home/<계정>/h100_module_c/h100_module_c
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/<계정>/h100_module_c/logs/systemd.log
+StandardError=append:/home/<계정>/h100_module_c/logs/systemd_error.log
+Environment="PATH=/usr/local/go/bin:/usr/bin:/bin"
+
+[Install]
+WantedBy=multi-user.target
+
+
+[로그 폴더 신설]
+
+mkdir -p /home/<계정>/h100_module_c/logs
+chown <계정>:<그룹> /home/<계정>/h100_module_c/logs
+
+
+[등록·시작]
+
+sudo systemctl daemon-reload
+sudo systemctl enable h100_module_c
+sudo systemctl start h100_module_c
+
+
+===================================================
+6. 서비스 관리 명령
+===================================================
+
+시작        sudo systemctl start h100_module_c
+정지        sudo systemctl stop h100_module_c
+재시작      sudo systemctl restart h100_module_c
+상태        sudo systemctl status h100_module_c
+자동시작    sudo systemctl enable h100_module_c
+자동취소    sudo systemctl disable h100_module_c
+
+
+[로그 확인]
+
+실시간           sudo journalctl -u h100_module_c -f
+최근 100줄       sudo journalctl -u h100_module_c -n 100
+오늘             sudo journalctl -u h100_module_c --since today
+특정 시간        sudo journalctl -u h100_module_c --since "2026-07-22 09:00" --until "2026-07-22 18:00"
+
+
+[서비스 파일 변경 후]
+
+sudo systemctl daemon-reload
+sudo systemctl restart h100_module_c
+
+
+===================================================
+7. 재배포 절차
+===================================================
+
+[재배포 전 백업]
+
+cp /home/<계정>/h100_module_c/.env /tmp/env_backup
+cp -r /home/<계정>/h100_module_c/ssl /tmp/ssl_backup
+cp /home/<계정>/h100_module_c/config/database.yml /tmp/database_yml_backup
+
+
+[소스 업데이트]
+
+cd /home/<계정>/h100_module_c
+git pull origin main
+
+
+[백업 복원 (유실 시)]
+
+cp /tmp/env_backup /home/<계정>/h100_module_c/.env
+cp -r /tmp/ssl_backup/* /home/<계정>/h100_module_c/ssl/
+cp /tmp/database_yml_backup /home/<계정>/h100_module_c/config/database.yml
+
+[재빌드]
+
+/usr/local/go/bin/go build -o h100_module_c ./cmd/server/
+
+
+[서비스 재시작]
+
+sudo systemctl restart h100_module_c
+
+
+[로그 확인]
+
+sudo journalctl -u h100_module_c -n 50
+
+
+===================================================
+8. 방화벽·포트
+===================================================
+
+[포트 개방]
+
+sudo ufw allow 8189/tcp
+
+
+[상태 확인]
+
+sudo ufw status
+
+
+[포트 사용 확인]
+
+sudo netstat -tlnp | grep 8189
+sudo lsof -i:8189
+
+
+[프로세스 강제 종료]
+
+sudo pkill -f "cmd/server"
+sudo pkill -f "h100_module_c"
+
+
+===================================================
+9. Windows CRLF 오류 해결
+===================================================
+
+[오류 메시지]
+-bash: ./start.sh: /bin/bash^M: 잘못된 인터프리터
+
+
+[해결]
+
+방법 1 - dos2unix
+sudo apt-get install dos2unix
+dos2unix start.sh stop.sh
+chmod +x start.sh stop.sh
+
+방법 2 - sed
+sed -i 's/\r$//' start.sh stop.sh
+chmod +x start.sh stop.sh
+
+
+[확인]
+
+file start.sh
+정상: ASCII text
+비정상: ASCII text, with CRLF line terminators
+
+
+===================================================
+10. DB 설정 파일 및 DB 접속 확인
+===================================================
+
+[파일 경로]
+/home/<계정>/h100_module_c/config/database.yml
+
+[참고]
+DB 접속 정보는 .env 가 아닌 이 YAML 파일에서 관리
+
+[재배포 시 보존 필수]
+env·SSL 과 동일하게 백업·복원 대상
+
+[DB 접속 확인]
+mysql -h <DB IP> -P 3307 -u <계정> -p<비밀번호> <DB이름> -e "SELECT 1;"
+
+
+===================================================
+11. 서비스 검증
+===================================================
+
+[상태]
+
+sudo systemctl status h100_module_c
+
+
+[포트 응답]
+
+curl -k https://localhost:8189/
+
+
+[프로세스]
+
+ps -ef | grep h100_module_c | grep -v grep
+
+
+[시작 시각]
+
+ps -o pid,lstart,cmd -p $(pgrep -f h100_module_c)
+
+
+===================================================
+12. 재배포 시 확인 체크리스트
+===================================================
+
+[ ] SSL 인증서 파일 존재 (ls ssl/)
+[ ] .env 파일 존재·값 정합
+[ ] 로그 폴더 존재 (logs/)
+[ ] Go 바이너리 재빌드 완료
+[ ] 서비스 재시작 완료
+[ ] 시작 로그 정상 (systemctl status)
+[ ] 포트 응답 확인 (curl -k https://localhost:8189)
+[ ] DB 접속 확인
+[ ] config/database.yml 존재·값 정합
+
+
+===================================================
+13. 관련 파일 경로
+===================================================
+
+설치 경로       /home/<계정>/h100_module_c
+소스 코드       /home/<계정>/h100_module_c/cmd/server/
+SSL 폴더        /home/<계정>/h100_module_c/ssl/
+DB 설정         /home/<계정>/h100_module_c/config/database.yml
+환경 변수       /home/<계정>/h100_module_c/.env
+로그 폴더       /home/<계정>/h100_module_c/logs/
+서비스 파일     /etc/systemd/system/h100_module_c.service
+백업 폴더       /home/<계정>/backup/module_c/ (권장)

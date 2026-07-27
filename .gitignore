@@ -1,29 +1,42 @@
-# git hub에 올리지 말아야 할 전자정부프레임워크 프로젝트 파일들
+# ================================================
+# GitHub 커밋 제외 - 전자정부프레임워크 프로젝트
+# ================================================
+
 # 빌드 디렉토리
 /target/
 /build/
+/dist/
 
-# IDE 설정
+# Go 빌드 산출물
+h100_module_c/h100_module_c
+h100_module_d/h100_module_d
+h100_module_c/vendor/
+h100_module_d/vendor/
+
+# IDE 설정(eclipse뿐만 아니라 VSCode, IntelliJ도 포함)
 .classpath
 .project
 .settings/
+.idea/          # IntelliJ
+*.iml           # IntelliJ
+.vscode/        # VS Code
 
-# 로그
+# 로그 및 임시파일
 .log
-
-# OS, 임시 파일
+logs/
 .DS_Store
 *.tmp
+*.swp
+
+# 백업·압축 파일
+*.zip
+*.tar.gz
+*.bak
+*.backup
 
 # Eclipse 서버 설정 (Tomcat 로컬서버 등)
 .metadata/
 wtpwebapps/
-
-# key 파일
-.env
-*.key
-*.pem
-*.crt
 
 # Claude Code 개인 설정 (로컬 전용)
 .claude/settings.local.json
@@ -31,3 +44,19 @@ wtpwebapps/
 # 디바이스와 송수신을 위한 테스트 코드(운영·Git 추적 제외)
 H100_system/
 
+# SSL 인증서·개인 키
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+ssl/
+h100_module_c/ssl/
+h100_module_d/ssl/
+
+# 환경 변수·비밀 정보
+.env
+.env.local
+.env.*.local
+h100_module_c/.env
+h100_module_d/.env

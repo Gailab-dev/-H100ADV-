@@ -1,0 +1,387 @@
+[대상]
+h100_module_d (디바이스·Jetson)
+
+[기본 정보]
+디바이스 IP     <디바이스 IP>
+디바이스 포트    8087
+설치 경로       /home/<계정>/H100/server/h100_module_d
+Go 경로        /usr/local/go/bin/go
+사용자         <계정> / <그룹>
+
+
+===================================================
+1. SSL 키 자체 서명 재발급
+===================================================
+
+[Windows 로컬 발급 - PowerShell 한 줄]
+
+mkdir C:\Users\<계정>\workspace\ssl-keys\module_d
+cd C:\Users\<계정>\workspace\ssl-keys\module_d
+
+openssl req -x509 -nodes -days 365 -subj "/CN=<디바이스 IP>" -newkey rsa:2048 -keyout server.key.pem -out server.cert.pem
+
+
+[발급 확인]
+
+openssl x509 -in server.cert.pem -noout -subject -dates
+
+
+[디바이스 배포]
+
+scp C:\Users\<계정>\workspace\ssl-keys\module_d\server.key.pem C:\Users\<계정>\workspace\ssl-keys\module_d\server.cert.pem <계정>@<디바이스 IP>:/home/<계정>/H100/server/h100_module_d/ssl/
+
+
+[디바이스 권한]
+
+chmod 600 /home/<계정>/H100/server/h100_module_d/ssl/server.key.pem
+chmod 644 /home/<계정>/H100/server/h100_module_d/ssl/server.cert.pem
+
+
+[파일명 참고]
+module_d 는 server.key.pem·server.cert.pem 또는
+server.fullchain.pem·server.key.pem 사용 (구현에 따라)
+
+
+[유효 기간]
+1년 (365일), 매년 재발급
+
+
+===================================================
+2. .env 파일 설정
+===================================================
+
+[파일 경로]
+/home/<계정>/H100/server/h100_module_d/.env
+
+
+[파일 내용]
+
+PORT=8087
+TLS_CERT_FILE=/home/<계정>/H100/server/h100_module_d/ssl/server.cert.pem
+TLS_KEY_FILE=/home/<계정>/H100/server/h100_module_d/ssl/server.key.pem
+DEVICE_SERIAL=<13자리 시리얼 번호>
+CLOUD_RECEIVE_IP=https://<웹서버 IP>:8189
+FILE_PATH=/home/<계정>/H100/recorded
+DEVICE_HMAC_KEY=<module_c 와 동일한 64byte hex 문자열>
+
+
+[편집·권한]
+
+sudo vi /home/<계정>/H100/server/h100_module_d/.env
+chmod 600 /home/<계정>/H100/server/h100_module_d/.env
+
+
+[반영 확인]
+
+cat /home/<계정>/H100/server/h100_module_d/.env
+
+
+[파일 저장 폴더 신설]
+
+mkdir -p /home/<계정>/H100/recorded/image
+mkdir -p /home/<계정>/H100/recorded/video
+mkdir -p /home/<계정>/H100/recorded/audio
+
+===================================================
+3. HMAC 64byte 값 (module_c 와 동기화)
+===================================================
+
+[중요]
+module_c 의 .env 와 반드시 동일한 값
+
+
+[동기화 확인]
+
+module_c 서버:
+grep DEVICE_HMAC_KEY /home/<계정>/h100_module_c/.env
+
+module_d 디바이스:
+grep DEVICE_HMAC_KEY /home/<계정>/H100/server/h100_module_d/.env
+
+두 결과가 반드시 일치
+
+
+[불일치 시]
+API 요청 모두 401 Unauthorized 실패
+
+
+[재발급 절차]
+1. module_c 에서 새 64byte 생성 (openssl rand -hex 32)
+2. module_c/.env 반영
+3. module_d/.env 에 동일한 값 반영
+4. 두 서비스 재시작
+
+
+===================================================
+4. Go 바이너리 빌드
+===================================================
+
+cd /home/<계정>/H100/server/h100_module_d
+/usr/local/go/bin/go build -o h100_module_d ./cmd/server/
+
+
+[확인]
+
+ls -la h100_module_d
+
+
+===================================================
+5. systemctl 등록
+===================================================
+
+[서비스 파일 경로]
+/etc/systemd/system/h100_module_d.service
+
+
+[서비스 파일 내용]
+
+[Unit]
+Description=H100 Module D - Device Server
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<계정>
+Group=<그룹>
+WorkingDirectory=/home/<계정>/H100/server/h100_module_d
+ExecStart=/home/<계정>/H100/server/h100_module_d/h100_module_d
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/<계정>/H100/server/h100_module_d/logs/systemd.log
+StandardError=append:/home/<계정>/H100/server/h100_module_d/logs/systemd_error.log
+Environment="PATH=/usr/local/go/bin:/usr/bin:/bin"
+
+[Install]
+WantedBy=multi-user.target
+
+
+[로그 폴더 신설]
+
+mkdir -p /home/<계정>/H100/server/h100_module_d/logs
+chown <계정>:<그룹> /home/<계정>/H100/server/h100_module_d/logs
+
+
+[등록·시작]
+
+sudo systemctl daemon-reload
+sudo systemctl enable h100_module_d
+sudo systemctl start h100_module_d
+
+
+===================================================
+6. 서비스 관리 명령
+===================================================
+
+시작        sudo systemctl start h100_module_d
+정지        sudo systemctl stop h100_module_d
+재시작      sudo systemctl restart h100_module_d
+상태        sudo systemctl status h100_module_d
+자동시작    sudo systemctl enable h100_module_d
+자동취소    sudo systemctl disable h100_module_d
+
+
+[로그 확인]
+
+실시간           sudo journalctl -u h100_module_d -f
+최근 100줄       sudo journalctl -u h100_module_d -n 100
+오늘             sudo journalctl -u h100_module_d --since today
+특정 시간        sudo journalctl -u h100_module_d --since "2026-07-22 09:00" --until "2026-07-22 18:00"
+
+
+[서비스 파일 변경 후]
+
+sudo systemctl daemon-reload
+sudo systemctl restart h100_module_d
+
+
+===================================================
+7. 재배포 절차
+===================================================
+
+[재배포 전 백업]
+
+cp /home/<계정>/H100/server/h100_module_d/.env /tmp/env_backup
+cp -r /home/<계정>/H100/server/h100_module_d/ssl /tmp/ssl_backup
+
+
+[소스 업데이트]
+
+cd /home/<계정>/H100/server/h100_module_d
+git pull origin main
+
+
+[백업 복원 (유실 시)]
+
+cp /tmp/env_backup /home/<계정>/H100/server/h100_module_d/.env
+cp -r /tmp/ssl_backup/* /home/<계정>/H100/server/h100_module_d/ssl/
+
+
+[재빌드]
+
+/usr/local/go/bin/go build -o h100_module_d ./cmd/server/
+
+
+[서비스 재시작]
+
+sudo systemctl restart h100_module_d
+
+
+[로그 확인]
+
+sudo journalctl -u h100_module_d -n 50
+
+
+===================================================
+8. 방화벽·포트
+===================================================
+
+[포트 개방]
+
+sudo ufw allow 8087/tcp
+
+
+[상태 확인]
+
+sudo ufw status
+
+
+[포트 사용 확인]
+
+sudo netstat -tlnp | grep 8087
+sudo lsof -i:8087
+
+
+[프로세스 강제 종료]
+
+sudo pkill -f "cmd/server"
+sudo pkill -f "h100_module_d"
+
+
+===================================================
+9. Windows CRLF 오류 해결
+===================================================
+
+[오류 메시지]
+-bash: ./start.sh: /bin/bash^M: 잘못된 인터프리터
+
+
+[해결]
+
+방법 1 - dos2unix
+sudo apt-get install dos2unix
+dos2unix start.sh stop.sh
+chmod +x start.sh stop.sh
+
+방법 2 - sed
+sed -i 's/\r$//' start.sh stop.sh
+chmod +x start.sh stop.sh
+
+
+[확인]
+
+file start.sh
+정상: ASCII text
+비정상: ASCII text, with CRLF line terminators
+
+
+===================================================
+10. module_c 통신 확인
+===================================================
+
+[module_c 접근 가능한지]
+
+curl -k https://<웹서버 IP>:8189/
+
+
+[network 연결 확인]
+
+ping <웹서버 IP>
+
+
+[SSL 인증서 확인]
+
+openssl s_client -connect <웹서버 IP>:8189 -showcerts
+
+
+===================================================
+11. 서비스 검증
+===================================================
+
+[상태]
+
+sudo systemctl status h100_module_d
+
+
+[포트 응답]
+
+curl -k https://localhost:8087/
+
+
+[프로세스]
+
+ps -ef | grep h100_module_d | grep -v grep
+
+
+[시작 시각]
+
+ps -o pid,lstart,cmd -p $(pgrep -f h100_module_d)
+
+
+===================================================
+12. Jetson 환경 특이사항
+===================================================
+
+[Go 설치 확인]
+
+/usr/local/go/bin/go version
+
+
+[Go 없으면 설치 (ARM64)]
+
+wget https://go.dev/dl/go1.21.5.linux-arm64.tar.gz
+sudo tar -C /usr/local -xzf go1.21.5.linux-arm64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+
+
+[Jetson 성능 모드]
+
+sudo nvpmodel -m 0
+sudo jetson_clocks
+
+
+[Jetson 상태 모니터링]
+
+tegrastats
+
+===================================================
+13. 재배포 시 확인 체크리스트
+===================================================
+
+[ ] SSL 인증서 파일 존재 (ls ssl/)
+[ ] .env 파일 존재·값 정합
+[ ] DEVICE_HMAC_KEY 이 module_c 와 일치
+[ ] 파일 저장 폴더 존재 (image/video/audio)
+[ ] 로그 폴더 존재 (logs/)
+[ ] Go 바이너리 재빌드 완료
+[ ] 서비스 재시작 완료
+[ ] 시작 로그 정상 (systemctl status)
+[ ] 포트 응답 확인 (curl -k https://localhost:8087)
+[ ] module_c 통신 확인 (curl -k https://<웹서버 IP>:8189)
+[ ] 시리얼 번호 정합 확인
+
+
+===================================================
+14. 관련 파일 경로
+===================================================
+
+설치 경로       /home/<계정>/H100/server/h100_module_d
+소스 코드       /home/<계정>/H100/server/h100_module_d/cmd/server/
+SSL 폴더        /home/<계정>/H100/server/h100_module_d/ssl/
+환경 변수       /home/<계정>/H100/server/h100_module_d/.env
+로그 폴더       /home/<계정>/H100/server/h100_module_d/logs/
+이미지 저장    /home/<계정>/H100/recorded/image/
+영상 저장       /home/<계정>/H100/recorded/video/
+음성 저장       /home/<계정>/H100/recorded/audio/
+서비스 파일    /etc/systemd/system/h100_module_d.service
+백업 폴더       /home/<계정>/backup/module_d/ (권장)
