@@ -1,3 +1,5 @@
+html,body {height:100%;}
+.container {height:100%;}
 /* 대시보드 지도기반 페이지 (작업계획서 10) + 우측 카드·하단 이벤트 (작업계획서 12) */
 .dashboard-wrap {
 	/* patches 2026-07-07: 이중 여백 제거 — 공용 .content(layout.css)가 이미 padding 제공.
