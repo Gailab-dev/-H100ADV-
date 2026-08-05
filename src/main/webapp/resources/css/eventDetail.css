@@ -1,5 +1,5 @@
 /* 공통 요소 스타일 */
-/* 초기화: 모든 요소의 margin/padding 제거 */
+html, body {width:100%; height:100%;}
 * {
     margin: 0;
 	padding: 0;
@@ -14,187 +14,140 @@ button {
     cursor: pointer;
     outline: none;
 }
-/* ================= 헤더 ================= */
-/* 헤더 전체 레이아웃 */
+/* ===== 헤더 ===== */
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #fff;
-  border-bottom: 1px solid #ccc;
-  padding: 0px 40px;
-  height: 80px;
-}
-
-/* 로고 */
-.logo {
-  display: flex;
-  align-items: center;
-}
-.header-icon {
-  width: 150px;
-  vertical-align: middle;
-}
-
-/* 오른쪽 그룹 (유저 + 로그아웃) */
-.right-group {
-  display: flex;
-  align-items: center;
-  gap: 24px; /* 유저와 로그아웃 버튼 간격 */
-}
-
-/* 유저 */
-.user {
-  display: flex;
-  align-items: center;
-}
-.user-image {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.user-name {
-  margin-left: 8px;
-  font-size: 14px;
-  color: #444;
-}
-
-/* 로그아웃 버튼 */
-.logout button {
-  background: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 6px 14px;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.logout button:hover {
-  background: #f6f6f6;
-  border-color: #aaa;
-}
-
-/* 헤더와 푸터 사이영역 */
-.container {
     display: flex;
-    height: calc(100vh - 70px);
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    border-bottom: 1px solid #ccc;
+    padding: 0 20px;
+    height: 80px;
 }
-/* 헤더와 푸터 사이영역-sidebar(홈, 디바이스리스트, 불법주차리스트) */
+.logo { display: flex; align-items: center; justify-content:center;height:92px;}
+.header-icon { width: 160px; margin-left:-12px;}
+.right-group { display: flex; flex-wrap:wrap; gap:6px; height:132px;}
+.user { display: flex; align-items: center; gap: 12px; justify-content:center; padding:14px 20px;}
+.user-name { font-size: 14px; color: #fff; }
+.logout button {
+    background: none;
+    border: 1px solid #fff;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width:100%;
+    height:100%;
+}
+.logout button:hover { background: #fff; color:#4a6385; border-color: #aaa; }
+
+/* ===== 전체 레이아웃 ===== */
+.container { display: flex; flex: 1; height:100%;}
 .sidebar {
-    width: 200px;
-    background: #fff;
-    padding: 20px;
-    border-right: 1px solid #ddd;
+    width: 234px;
+    background:linear-gradient(302deg, #354667, #6284a7);
+    display: flex;
+    flex-wrap: wrap;
+    padding-bottom: 24px;
 }
-.menu {
-    list-style-type: none;
-    padding: 0;
-}
-.menu > li {
-    margin-bottom: 12px;
-}
+.sidebar > * {width:100%;}
+.menu { list-style-type: none; padding: 0; margin: 0; height:calc(100% - 224px);}
 .menu > li > a {
-    display: block;
-    padding: 10px;
-    background: #fff;
+    display: flex;
+    align-items:center;
+    padding: 20px 0;
+    height:65px;
+    background: linear-gradient(302deg, #4a6385, #5f80a2);
     text-decoration: none;
-    color: #000;
+    color: #fff;
+    font-weight:700;
     transition: background 0.2s ease;
 }
+.menu > li > a:hover { background: #fff; color: #4a6385;}
+/* 활성 메뉴 (요청 URL 기반, JSP 에서 .active 부여) — 기존의 nth-child(3) 고정 대체 */
+.menu > li > a.active {
+    background: #fff;
+    font-weight: bold;
+    color: #4a6385;
+}
+.menu > li > a.active svg { stroke-width: 2; }
+.menu-icon { width: 20px; height: 20px; vertical-align: middle; margin-right: 8px; }
 
-/* patches 2026-07-09(8): 구 하드코딩 active(nth-child 고정) 제거 — 공통 left.jsp 의 요청 URL 기반 active 사용 */
-.menu > li > a:hover {
-    background: #eee;
-}
-.menu-icon {
-    width: 18px;
-    height: 18px;
-    vertical-align: middle;
-    margin-right: 8px;
-}
-/* 헤더와 푸터 사이영역 */
+/* ===== 메인 콘텐츠 ===== */
 .content {
     display: flex;
     flex-direction: column;
     flex: 1;
-    padding: 32px 0 0 46px;
-    overflow-y: auto;
-}
-
-.topTitle {
-    margin-bottom: 20px;
-    display: flex;
-    gap:8px;
-}
-/* 상세 타이틀 */
-.detail-title {
-    font-size: 20px;
-    font-weight: bold;
-}
-
-/* 이미지 스타일 */
-.image-wrapper {
-    display: flex;
-    justify-content: flex-start;  /* 왼쪽 정렬 */
-    margin-bottom: 20px;
-    gap:24px;
-}
-.image-container {
-    display:flex;
-    flex-direction: column;
-    width: 440px;
-    height: 304px;            
-    object-fit: cover;        
-    box-shadow: 10px 10px 30px 0px #0000000F;
-    gap: 12px;
+    min-width: 0;
+    height: 100%;
     padding: 24px;
 }
 
-.detail-image{
-  width: 392px;
-  height: 222px;
-  margin: 0 auto;
-}
-.imgeTitle{
-  font-weight: 600;
-  font-size: 16px;
-  color:#505050;
+/* ===== 공용 푸터 ===== */
+.app-footer {
+    padding: 14px 40px;
+    border-top: 1px solid #E5E5EC;
+    background: #fff;
+    color: #999;
+    font-size: 12px;
+    text-align: center;
 }
 
+/* 260721~ 서희원 공통 css 추가 START */
+.header-icon-btn {background:rgba(255,255,255,0) !important;color: #fff !important;border: 1px solid #fff !important;font-size: 14px !important;justify-content:center;}
+.header-icon-btn:hover {background:rgba(255,255,255,1) !important; color:#4a6385 !important;}
+.header-icon-btn::after {content:'내정보';}
+
+.page-wrapper svg rect {fill:#1091ab;}
+.search-btn,
+.add-btn {background-color:#1091ab !important;}
+.saveButton {background:#1091ab !important;}
+.form-group input:focus {border-color:#1091ab !important;}
+
+.right-group > * {width: 100%;}
+.rg-option {width: 100%;display: flex;padding: 0 20px;gap: 10px;height: 36px;}
+.rg-option > * {width: 100%;}
+.noti-icon-btn {color:#fff !important; border-radius:6px !important; justify-content: center; border: 1px solid #fff !important; width:100%;}
+.noti-icon-btn:hover {background:#fff !important; color:#4a6385 !important;}
+.noti-icon-btn::after {content: '알림';font-size: 14px;}
+.user-name::after {content: '님 접속을 환영합니다.';}
+.logout {padding: 0 20px;height: 36px;}
+
+/* 모달창 관련 */
+.gi-modal-dialog {height:586px;}
+.noti-popup {top: calc(100% + -106px) !important; right: calc(100% - 574px) !important;}
+.noti-popup-header button {color:#4a6385 !important;}
+/* 260721~ 서희원 공통 css 추가 END */
+
+
+
+/* 아래는 이벤트 상세화면 관련 css */
+.topTitle {margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;}
+/* 상세 타이틀 */
+.detail-title {font-size: 24px;font-weight: bold;line-height:1rem;}
+
+/* 이미지 스타일 */
+.image-wrapper {display:flex;margin-bottom: 20px;gap: 24px;width: 100%;height:calc(100% - 412px);border: 1px solid #e1e3e7;padding: 24px;border-radius: 16px;}
+.image-container {display:flex;width:calc(50% - 24px);height:100%;flex:1;}
+
+.detail-image{width:100%;height:auto;min-height:100%;margin: 0 auto;}
+.imgeTitle{position: absolute;z-index: 2;background: rgba(0, 0, 0, .6);border-radius: 6px;padding: 6px 16px;top: 1rem;left: 1rem;color: #fff;}
+
 /* 상세 정보 테이블 */
-.detail-table-wrapper {
-    display: flex;
-    justify-content: flex-start;   /* 왼쪽 정렬 */
-    margin-bottom: 20px;
-}
-.detail-table {
-    border-collapse: collapse;
-    width: auto;
-    font-size: 16px;
-    font-weight: 500;
-    border: none;
-}
-.detail-table th,
-.detail-table td {
-    border: none;
-    padding: 6px 8px;
-}
-.detail-table th {
-    text-align: left;
-    color: #000000;
-    font-weight: 500;
-}
-.detail-table td {
-  font-weight: 400;
-}
+.detail-table-wrapper {border: 1px solid #e1e3e7;padding: 24px;border-radius: 16px;width: 100%;height: 300px;}
+.detail-table-wrapper label {font-size: 18px;font-weight: bold;line-height: 1rem;margin-bottom:1rem;}
+ul.detail-table {width: 100%;height: calc(100% - 26px - 1rem);display: grid;grid-template-columns: 1fr 1fr 1fr;list-style: none;gap: 12px;}
+ul.detail-table li {display: flex;background: #f3f3f5;border-radius: 6px;align-items: center;justify-content: flex-start;padding: 0 1rem;gap: 1rem;}
+ul.detail-table li .icon-area {width: 50px;height: 50px;background: #dadce7;border-radius: 50%;display: flex;align-items: center;justify-content: center;}
+ul.detail-table li .icon-area svg {width: 32px;fill: #27376e;}
+ul.detail-table li .value-area {display: flex;flex-wrap: wrap;}
+ul.detail-table li .value-area label {width: 100%;text-align: left;margin-bottom: 0.5rem;font-size: 16px;font-weight: 500;line-height: 1rem;margin-bottom: 0.5rem;color: #566491;}
+ul.detail-table li .value-area .value {width: 100%;text-align: left;font-size: 18px;font-weight: 600;line-height: 1rem;margin-bottom: 0.5rem;color: #151f3f;}
+
 /* 돌아가기 버튼 */
-.back-btn-wrapper {
-    display: flex;
-    justify-content: flex-start;
-    margin-top:80px;
-}
+.back-btn-wrapper {height: 38px;border: 1px solid #999ea9;border-radius: 8px;padding: 0 12px;display: flex;align-items: center;gap: 5px;font-size: 14px;font-weight: 500;}
 .back-btn {
     display: inline-flex;
     align-items: center;
@@ -234,5 +187,17 @@ body.lb-open{overflow:hidden}
 
 /* 아이콘 버튼 기본 */
 .video-icon-btn{border:0;background:transparent;cursor:pointer;vertical-align:middle}
-
 /* ADR-008: 로딩 UI는 목록 페이지(eventList.css)로 이동 — 상세 페이지에는 오버레이 없음 */
+
+/* 260804 서희원 추가 START */
+.navigation-info {display:flex; align-items:center; justify-content:flex-start; width:100%; height:18px; margin-bottom:1rem; gap:0.2rem;}
+.navigation-info > svg {fill:#66748a; width:14px;}
+.navigation-info span {font-size:12px; font-weight:400; color:#66748a; line-height:1rem;}
+.navigation-info b {font-size:12px; color:#000; line-height:1rem;}
+
+.title-text {display:flex; align-items:center; gap:12px;}
+#btnExcel {height: 38px;border: 1px solid #999ea9;border-radius: 8px;padding: 0 12px;display: flex;align-items: center;gap: 5px;font-size: 14px;font-weight: 500;}
+#btnExcel svg {width:20px;}
+
+.img-box {width: 100%;height: 100%;position: relative;overflow: hidden;display: flex;align-items: center;justify-content: center;border-radius: 14px;}
+/* 260804 서희원 추가 END */
