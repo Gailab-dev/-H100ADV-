@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<!-- 헤더 알림 SQL (작업계획서 15 §4-2 / 신설 테이블 tbl_notification) -->
+<!-- 헤더 알림 SQL (작업계획서 15 §4-2 / 신설 테이블 tbl_notification_log, 2026-08-05 tbl_notification → tbl_notification_log 개명) -->
 <mapper namespace="com.disabled.mapper.NotificationMapper">
 
 	<!-- 안읽은 개수. idx_read_date(noti_is_read, noti_reg_date DESC) 인덱스 활용 -->
 	<select id="countUnread" resultType="int">
 		SELECT COUNT(1)
-		FROM tbl_notification
+		FROM tbl_notification_log
 		WHERE noti_is_read = 0
 	</select>
 
@@ -26,14 +26,14 @@
 			noti_title,
 			noti_is_read,
 			DATE_FORMAT(noti_reg_date, '%Y-%m-%d %H:%i:%s') AS noti_reg_date
-		FROM tbl_notification
+		FROM tbl_notification_log
 		ORDER BY noti_reg_date DESC, noti_id DESC
 		LIMIT #{limit}
 	</select>
 
 	<!-- 단건 읽음 처리 (이미 읽은 건은 read_date 를 덮어쓰지 않는다) -->
 	<update id="updateRead" parameterType="int">
-		UPDATE tbl_notification
+		UPDATE tbl_notification_log
 		   SET noti_is_read = 1,
 		       noti_read_date = NOW()
 		 WHERE noti_id = #{notiId}
@@ -42,7 +42,7 @@
 
 	<!-- 전체 읽음 처리 -->
 	<update id="updateReadAll">
-		UPDATE tbl_notification
+		UPDATE tbl_notification_log
 		   SET noti_is_read = 1,
 		       noti_read_date = NOW()
 		 WHERE noti_is_read = 0

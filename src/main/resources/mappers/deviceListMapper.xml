@@ -34,14 +34,17 @@
 		                REPLACE(#{searchKeyword}, '_', '\\_'),
 		                '%'
 		            ) ESCAPE '\\'
-		            OR 
+		            OR
 		            dv_addr LIKE CONCAT(
 		                '%',
 		                REPLACE(#{searchKeyword}, '_', '\\_'),
 		                '%'
 		            ) ESCAPE '\\'
+		            OR
+		            <!-- (19번 이슈B) 응급콜 알림의 triggerSerial 자동검색용 — 시리얼 정확일치 -->
+		            dv_serial_number = #{searchKeyword}
 		        )
-	        </if>	
+	        </if>
         <if test="recordCountPerPage != null">
         	LIMIT #{recordCountPerPage} 
         </if>
@@ -75,12 +78,15 @@
 		                REPLACE(#{searchKeyword}, '_', '\\_'),
 		                '%'
 		            ) ESCAPE '\\'
-		            OR 
+		            OR
 		            dv_addr LIKE CONCAT(
 		                '%',
 		                REPLACE(#{searchKeyword}, '_', '\\_'),
 		                '%'
 		            ) ESCAPE '\\'
+		            OR
+		            <!-- (19번 이슈B) 응급콜 알림의 triggerSerial 자동검색용 — 시리얼 정확일치 -->
+		            dv_serial_number = #{searchKeyword}
 		        )
 	        </if>
 	</select>

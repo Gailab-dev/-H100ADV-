@@ -79,7 +79,7 @@ type Tbl_Notification struct {
 	NotiRegDate  time.Time `gorm:"column:noti_reg_date"`
 }
 
-func (Tbl_Notification) TableName() string { return "tbl_notification" }
+func (Tbl_Notification) TableName() string { return "tbl_notification_log" }
 
 /**
  * (15번 4-5) 상태 5종 중 '값이 바뀐 항목'만 이상 로그로 남기고,

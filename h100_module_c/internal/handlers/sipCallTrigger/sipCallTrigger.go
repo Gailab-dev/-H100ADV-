@@ -1,7 +1,9 @@
 // (15번 4-3 신설) SIP 응급콜 '실시간' 트리거 수신.
 //
 //	디바이스가 응급콜 버튼으로 전화를 거는 즉시 호출한다(통화 종료 후 남기는 /insertSipCallLog 와 별개).
-//	여기서는 tbl_notification 에만 INSERT 하고, 통화 로그(tbl_sip_call)는 기존 API 가 담당한다.
+//	여기서는 tbl_notification_log 에만 INSERT 하고, 통화 로그(tbl_sip_call)는 기존 API 가 담당한다.
+//	(2026-08-05) 테이블명이 tbl_notification → tbl_notification_log 로 변경됨(기존 tbl_notification 은
+//	 무관한 "알림 규칙/설정" 용도로 이미 선점되어 있던 테이블이라 충돌 회피 목적으로 개명).
 //	인증: /deviceStatus·/insertSipCallLog 와 동일하게 JSON 수신(HMAC 은 파일 업로드 계열만 적용).
 package sipCallTrigger
 
@@ -35,7 +37,7 @@ type Tbl_Notification struct {
 	NotiRegDate  time.Time `gorm:"column:noti_reg_date"`
 }
 
-func (Tbl_Notification) TableName() string { return "tbl_notification" }
+func (Tbl_Notification) TableName() string { return "tbl_notification_log" }
 
 type Tbl_Device struct {
 	DvId           uint   `gorm:"primaryKey"`

@@ -22,7 +22,7 @@ type Tbl_Notification struct {
 	NotiRegDate  time.Time `gorm:"column:noti_reg_date"`
 }
 
-func (Tbl_Notification) TableName() string { return "tbl_notification" }
+func (Tbl_Notification) TableName() string { return "tbl_notification_log" }
 
 type Tbl_Event_Data struct {
 	EvId           uint      `gorm:"primaryKey" json:"id"`

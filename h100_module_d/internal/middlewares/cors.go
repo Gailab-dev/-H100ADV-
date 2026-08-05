@@ -43,8 +43,6 @@ func WithCORS(h http.HandlerFunc) http.HandlerFunc {
 	        w.Header().Set("Pragma", "no-cache")
 	        w.Header().Set("Expires", "0")
 
-	        w.Write([]byte("Hello, no-cache response!"))
-
 		// OPTIONS 사전 요청 처리
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)

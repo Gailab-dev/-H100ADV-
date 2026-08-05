@@ -346,10 +346,18 @@
 			$(document).on('click', function() { $('#notificationPopup').hide(); });
 
 			// 카드 클릭 — 읽음 처리는 비동기로 보내고 이동은 링크 기본 동작에 맡긴다.
+			// (19번 이슈A) 일반 $.ajax(XHR) 은 클릭 직후 <a> 기본 이동이 실행되면 브라우저가
+			// 응답 전에 요청 자체를 취소할 수 있어 읽음 처리가 누락되는 경우가 있었다.
+			// fetch(..., {keepalive:true}) 는 페이지 이동과 무관하게 전송을 보장한다(sendBeacon과 유사한 용도).
 			$(document).on('click', '.noti-card', function() {
 				var notiId = $(this).data('noti-id');
-				if (notiId) {
-					$.ajax({ url: CTX + '/notification/read/' + notiId, method: 'POST' });
+				if (!notiId) return;
+				var readUrl = CTX + '/notification/read/' + notiId;
+				if (window.fetch) {
+					fetch(readUrl, { method: 'POST', keepalive: true, credentials: 'same-origin' });
+				} else {
+					// keepalive 미지원 구형 브라우저 폴백
+					$.ajax({ url: readUrl, method: 'POST' });
 				}
 			});
 

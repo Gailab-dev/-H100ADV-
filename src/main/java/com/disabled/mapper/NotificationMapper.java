@@ -7,7 +7,7 @@ import org.egovframe.rte.psl.dataaccess.mapper.Mapper;
 import org.springframework.stereotype.Repository;
 
 /**
- * 헤더 알림 SQL (작업계획서 15 §4-2 / 신설 테이블 tbl_notification)
+ * 헤더 알림 SQL (작업계획서 15 §4-2 / 신설 테이블 tbl_notification_log, 2026-08-05 tbl_notification → tbl_notification_log 개명)
  *  - INSERT 는 Go module_c(이벤트·SIP·디바이스이상 각 endpoint)가 담당. 웹은 조회·읽음처리만 한다.
  *  - MapperScannerConfigurer(basePackage=com.disabled.mapper)로 자동 등록.
  */

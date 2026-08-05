@@ -17,7 +17,7 @@ import com.disabled.service.NotificationService;
  * 헤더 알림 서비스 구현 (작업계획서 15 §4-2)
  *
  * ※ 예외 흡수 이유
- *   헤더는 전 화면 공통이고 30초마다 폴링한다. tbl_notification DDL 실행 전이거나
+ *   헤더는 전 화면 공통이고 30초마다 폴링한다. tbl_notification_log DDL 실행 전이거나
  *   DB 가 일시적으로 불안정할 때 예외를 그대로 올리면 모든 화면에서 콘솔 오류가 반복된다.
  *   따라서 조회 계열은 안전한 기본값(0 / 빈 목록)으로 떨어뜨리고 로그만 남긴다.
  */
@@ -37,7 +37,7 @@ public class NotificationServiceImpl implements NotificationService {
 		try {
 			return notificationMapper.countUnread();
 		} catch (Exception e) {
-			logger.warn("알림 개수 조회 실패(0 으로 처리). tbl_notification 생성 여부 확인 필요: {}", e.getMessage());
+			logger.warn("알림 개수 조회 실패(0 으로 처리). tbl_notification_log 생성 여부 확인 필요: {}", e.getMessage());
 			return 0;
 		}
 	}

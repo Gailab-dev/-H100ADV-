@@ -57,6 +57,29 @@
 	.err-log-empty { padding: 24px 4px; text-align: center; color: #999; font-size: 13px; }
 	.err-log-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.15); z-index: 1999; display: none; }
 	.err-log-backdrop.open { display: block; }
+
+	/* (19번 이슈B) 응급콜 알림 클릭 → 실시간 영상 자동실행 대신 유도 UX.
+	   자동실행에 의존하지 않고, 해당 행의 "실시간 영상" 버튼을 짧게 강조해 사용자의 클릭을 유도한다. */
+	@keyframes triggerGuideGlow {
+		0%, 100% { box-shadow: 0 0 0 0 rgba(105,85,162,0.55); }
+		50%      { box-shadow: 0 0 0 8px rgba(105,85,162,0); }
+	}
+	#deviceTable td .video-btn.trigger-guide-flash {
+		border-radius: 6px;
+		animation: triggerGuideGlow 1s ease-out 4;
+	}
+	.trigger-guide-tooltip {
+		position: absolute; z-index: 2100; transform: translate(-50%, -100%);
+		margin-top: -8px; padding: 6px 10px; background: #383351; color: #fff;
+		font-size: 12px; border-radius: 4px; white-space: nowrap;
+		box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+		opacity: 0; transition: opacity .25s ease;
+	}
+	.trigger-guide-tooltip::after {
+		content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+		border: 5px solid transparent; border-top-color: #383351;
+	}
+	.trigger-guide-tooltip.show { opacity: 1; }
 	/* patches 2026-07-09(3): 10건 조회 시 오른쪽 스크롤 없이 한 화면에 꽉 차도록 세로 여백 미세 축소 */
 	.content { padding: 16px 24px 12px 24px !important; }        /* 상/하 32·29 → 16·12 */
 	.device-top { margin-bottom: 8px !important; }               /* 12 → 8 */
@@ -1563,21 +1586,57 @@
 	      }
 	    }
 
-	    // (B) 응급콜 알림 → 시리얼로 행 자동 선택 + 실시간 영상 자동 실행
+	    // (B, 19번 이슈B) 응급콜 알림 → 시리얼로 행 자동 선택 + 실시간 영상 버튼 강조(유도 UX).
+	    //   기존에는 "현재 렌더된 페이지"에서만 행을 찾아, 페이지네이션·정렬로 대상 디바이스가
+	    //   1페이지에 없으면 조용히 실패했다. 이제는 못 찾으면 기존 디바이스 검색 기능을
+	    //   시리얼 값으로 자동 실행해 1건으로 좁힌 뒤 다시 확인한다.
 	    var triggerSerial = params.get('triggerSerial');
 	    if(triggerSerial){
-	      var trow = document.querySelector('#deviceTable tr[data-serial="' + (window.CSS && CSS.escape ? CSS.escape(triggerSerial) : triggerSerial) + '"]');
+	      var esc = (window.CSS && CSS.escape) ? CSS.escape(triggerSerial) : triggerSerial;
+	      var trow = document.querySelector('#deviceTable tr[data-serial="' + esc + '"]');
+
+	      if(!trow && params.get('searchKeyword') !== triggerSerial){
+	        // 현재 페이지에 없고, 아직 이 시리얼로 검색해보지 않았다면 → 검색 자동 실행(1건으로 좁혀서 확실히 찾기)
+	        location.href = CONTEXT_PATH + '/deviceList/viewDeviceList.do?page=1&searchKeyword='
+	          + encodeURIComponent(triggerSerial) + '&triggerSerial=' + encodeURIComponent(triggerSerial);
+	        return;
+	      }
+
 	      if(trow){
 	        trow.style.transition = 'background .3s';
 	        trow.style.background = 'rgba(236,231,251,0.95)';
 	        trow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-	        // 렌더 완료 후 실시간 영상 팝업 자동 실행 (viewRealTimeVideoPopup 은 위 메인 스크립트에 정의됨)
+
+	        // 실시간 영상 버튼 시각적 강조 + 안내 툴팁으로 클릭 유도(자동실행 미보장 대비)
+	        var videoBtn = trow.querySelector('.video-btn');
+	        if(videoBtn){
+	          videoBtn.classList.add('trigger-guide-flash');
+	          var tip = document.createElement('div');
+	          tip.className = 'trigger-guide-tooltip';
+	          tip.textContent = '응급콜 발생 — 여기를 눌러 실시간 영상을 확인하세요';
+	          document.body.appendChild(tip);
+	          var positionTip = function(){
+	            var r = videoBtn.getBoundingClientRect();
+	            tip.style.left = (r.left + r.width / 2 + window.scrollX) + 'px';
+	            tip.style.top = (r.top + window.scrollY) + 'px';
+	          };
+	          positionTip();
+	          requestAnimationFrame(function(){ tip.classList.add('show'); });
+	          setTimeout(function(){
+	            tip.classList.remove('show');
+	            setTimeout(function(){ tip.remove(); }, 300);
+	          }, 6000);
+	          videoBtn.addEventListener('click', function(){ tip.remove(); }, { once: true });
+	        }
+
+	        // (참고, 19번 §3-4) 기존 자동실행 시도는 안전망으로 남겨둠 — 성공하면 위 유도 UX가
+	        // 무의미해지고, 브라우저 정책 등으로 실패해도 유도 UX가 있어 문제 없음.
 	        var dvId2 = trow.getAttribute('data-dv-id');
 	        if(dvId2 && typeof viewRealTimeVideoPopup === 'function'){
 	          setTimeout(function(){ viewRealTimeVideoPopup(dvId2); }, 400);
 	        }
 	      } else {
-	        console.warn('triggerSerial 에 해당하는 디바이스가 현재 목록에 없습니다:', triggerSerial);
+	        console.warn('triggerSerial 에 해당하는 디바이스를 찾지 못했습니다(검색 후에도 없음):', triggerSerial);
 	      }
 	    }
 	  });
