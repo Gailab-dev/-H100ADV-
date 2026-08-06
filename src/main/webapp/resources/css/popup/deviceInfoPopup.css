@@ -77,7 +77,7 @@
 }
 
 .modal-content input:focus {
-  border-color: #55a297;
+  border-color: #5375a0;
 }
 .modal-content input::placeholder{
 	color:#767676;
@@ -116,12 +116,12 @@
 
 /* 등록/수정 버튼 */
 .modal-btn.save {
-  background: #1091ab;
+  background: #5375a0;
   color: #fff;
 }
 
 .modal-btn.save:hover {background: #1f7687;}
 
 /* 260721 서희원 추가 START */
-.modal-labelGroup button {background-color:#1091ab !important; border:0 !important;}
+.modal-labelGroup button {background-color:#5375a0 !important; border:0 !important;}
 /* 260721 서희원 추가 END */

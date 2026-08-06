@@ -69,7 +69,7 @@
 		pointer-events: none;
 	}
 	.noti-popup {
-		position: absolute; top: calc(100% + 8px); right: 0; z-index: 1001;
+		position: absolute; z-index: 1001;
 		width: 330px; max-height: 420px; background: #fff;
 		border: 1px solid #e5e1f0; border-radius: 8px;
 		box-shadow: 0 6px 20px rgba(0,0,0,0.18);

@@ -50,14 +50,14 @@
 	<div class="image-container">
 		<div class="img-box">
 			<div class="imgeTitle">진입 시</div>
-			<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">
+			<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
 <%--			<img src="${pageContext.request.contextPath}/resources/images/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">--%>
 		</div>
 	</div>
 	<div class="image-container">
 		<div class="img-box">
 			<div class="imgeTitle">1분 후</div>
-			<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path2, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">
+			<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path2, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
 <%--			<img src="${pageContext.request.contextPath}/resources/images/${fn:replace(eventListDetail.ev_img_path2, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">--%>
 		</div>
 	</div>

@@ -99,11 +99,11 @@
 .header-icon-btn:hover {background:rgba(255,255,255,1) !important; color:#4a6385 !important;}
 .header-icon-btn::after {content:'내정보';}
 
-.page-wrapper svg rect {fill:#1091ab;}
+.page-wrapper svg rect {fill:#5375a0;}
 .search-btn,
-.add-btn {background-color:#1091ab !important;}
-.saveButton {background:#1091ab !important;}
-.form-group input:focus {border-color:#1091ab !important;}
+.add-btn {background:linear-gradient(310deg, #2d4e8d, #6284a7) !important;}
+.saveButton {background:linear-gradient(310deg, #2d4e8d, #6284a7) !important;}
+.form-group input:focus {border-color:#5375a0 !important;}
 
 .right-group > * {width: 100%;}
 .rg-option {width: 100%;display: flex;padding: 0 20px;gap: 10px;height: 36px;}
@@ -116,6 +116,6 @@
 
 /* 모달창 관련 */
 .gi-modal-dialog {height:586px;}
-.noti-popup {top: calc(100% + -106px) !important; right: calc(100% - 574px) !important;}
+.noti-popup {bottom:0; right:calc(100% - 574px);}
 .noti-popup-header button {color:#4a6385 !important;}
 /* 260721~ 서희원 공통 css 추가 END */

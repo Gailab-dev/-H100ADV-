@@ -128,7 +128,7 @@ button {
 }
 
 .form-group input:focus {
-    border-color: #55a290;
+    border-color: #5375a0;
     outline: none;
 }
 /* 1번째 input border 제거 */
@@ -194,7 +194,7 @@ button {
 }
 
 .editEmail.active {
-    background: #1091ab;
+    background: #5375a0;
     cursor: pointer;
 }
 
@@ -229,7 +229,7 @@ button {
 }
 
 .saveButton {
-    background: #1091ab;
+    background: #5375a0;
     color: white;
     border: none;
     border-radius: 4px;

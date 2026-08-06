@@ -195,15 +195,15 @@ html,body {height:100%;}
 .btn-detail:hover { background: #4F4A85; color: #fff; }
 
 /* 260721 서희원 추가 START */
-.overlay-widget .toggle-btn {color:#1091ab !important;}
+.overlay-widget .toggle-btn {color:#5375a0 !important;}
 .overlay-widget .widget-header {background:rgb(85 116 162 / 8%) !important;}
-.right-stack-group .group-toggle-btn {background:rgb(16 145 171) !important;}
-.view-all-btn {color:#1091ab !important; border:1px solid #1091ab !important;}
+.right-stack-group .group-toggle-btn {background:#5375a0 !important;}
+.view-all-btn {color:#5375a0 !important; border:1px solid #5375a0 !important;}
 .view-all-btn:hover {background:#eef9f9 !important;}
 .event-mini-table th, .sip-mini-table th {background: rgb(240 245 250 / 95%) !important;}
 
-.device-search-input:focus {border-color: #1091ab !important;}
+.device-search-input:focus {border-color: #5375a0 !important;}
 
-.btn-mini-audio {border: 1px solid #1091ab !important; color: #1091ab !important;}
+.btn-mini-audio {border: 1px solid #5375a0 !important; color: #5375a0 !important;}
 .btn-mini-audio:hover {background: #e7fbf3 !important;}
 /* 260721 서희원 추가 END */
