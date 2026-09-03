@@ -6,12 +6,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ImageByteLoader {
-	
+
+	private static final Logger logger = LoggerFactory.getLogger(ImageByteLoader.class);
+
 	// 이미지 읽어들이는 경로 = 복호화된 이미지 저장 경로
 	@Value("${image.dec.path}")
     private String externalBaseDir;
@@ -20,14 +24,13 @@ public class ImageByteLoader {
     public byte[] readillegalParkingImage(String fileNameOrRelativePath) throws IOException {
         if (fileNameOrRelativePath == null || fileNameOrRelativePath.trim().isEmpty()) return null;
 
-        System.out.println("externalBaseDir : " + externalBaseDir);
-        
+        // (25번) System.out.println → SLF4J 전환. 타임스탬프·클래스명 없는 출력이 원인 조사를 어렵게 했음.
+        logger.info("[IMG] externalBaseDir={} input={}", externalBaseDir, fileNameOrRelativePath);
+
         Path base = Paths.get(externalBaseDir).toAbsolutePath().normalize();
         Path target = base.resolve(fileNameOrRelativePath).normalize();
-        
-        System.out.println("[IMG] base  =" + base);
-        System.out.println("[IMG] input =" + fileNameOrRelativePath);
-        System.out.println("[IMG] target=" + target);
+
+        logger.info("[IMG] base={} target={}", base, target);
 
         // Path Traversal 방어
         if (!target.startsWith(base)) {
