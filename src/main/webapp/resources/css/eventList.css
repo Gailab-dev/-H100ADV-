@@ -332,6 +332,7 @@ button {
 .checkdown-state li .ico-checkdown {width: 60px;display: flex;align-items: center;}
 .td-category .ico-checkdown {width:20px; display:inline-block;}
 .td-category .ico-checkdown svg {margin-bottom:-4px;}
+.ico-checkdown.normal svg {color:#2e9e4f; fill:#2e9e4f;}
 .ico-checkdown.unregistered svg {color:#4b33a5; fill:#4b33a5;}
 .ico-checkdown.noDisability svg {fill:#1091ab;}
 .ico-checkdown.illegalStickers svg {color:#388321;}

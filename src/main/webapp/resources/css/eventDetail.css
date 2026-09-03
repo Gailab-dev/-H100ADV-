@@ -95,32 +95,13 @@ button {
     text-align: center;
 }
 
-/* 260721~ 서희원 공통 css 추가 START */
-.header-icon-btn {background:rgba(255,255,255,0) !important;color: #fff !important;border: 1px solid #fff !important;font-size: 14px !important;justify-content:center;}
-.header-icon-btn:hover {background:rgba(255,255,255,1) !important; color:#4a6385 !important;}
-.header-icon-btn::after {content:'내정보';}
-
-.page-wrapper svg rect {fill:#1091ab;}
-.search-btn,
-.add-btn {background-color:#1091ab !important;}
-.saveButton {background:#1091ab !important;}
-.form-group input:focus {border-color:#1091ab !important;}
-
-.right-group > * {width: 100%;}
-.rg-option {width: 100%;display: flex;padding: 0 20px;gap: 10px;height: 36px;}
-.rg-option > * {width: 100%;}
-.noti-icon-btn {color:#fff !important; border-radius:6px !important; justify-content: center; border: 1px solid #fff !important; width:100%;}
-.noti-icon-btn:hover {background:#fff !important; color:#4a6385 !important;}
-.noti-icon-btn::after {content: '알림';font-size: 14px;}
-.user-name::after {content: '님 접속을 환영합니다.';}
-.logout {padding: 0 20px;height: 36px;}
-
-/* 모달창 관련 */
-.gi-modal-dialog {height:586px;}
-.noti-popup {top: calc(100% + -106px) !important; right: calc(100% - 574px) !important;}
-.noti-popup-header button {color:#4a6385 !important;}
-/* 260721~ 서희원 공통 css 추가 END */
-
+/* (32번) 260721~ 서희원 공통 css 추가 블록은 여기 있었으나 제거함.
+   이 페이지(eventListDetail)는 defaultLayout(template.jsp)이 이미 layout.css를 로드하므로
+   .header-icon-btn/.noti-icon-btn/.user-name::after/.gi-modal-dialog/.noti-popup 등은
+   layout.css의 정의만으로 충분하다. 이 파일에 있던 사본은 값이 동일하거나(대부분) 아예
+   달라서(.noti-popup: top 기준 !important vs layout.css의 bottom 기준) 상세보기 화면에서만
+   알림 팝업 위치·크기가 달라 보이는 원인이었다. layout.css가 유일한 출처가 되도록 이 사본을
+   삭제해 상세보기에서도 공통 팝업과 동일하게 렌더링되도록 했다. */
 
 
 /* 아래는 이벤트 상세화면 관련 css */

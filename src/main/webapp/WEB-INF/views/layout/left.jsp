@@ -103,6 +103,14 @@
 	.noti-type-tag.sip_call     { background: #6955A2; }
 	.noti-type-tag.device_error { background: #F9A825; }
 	.noti-empty { padding: 24px 12px; text-align: center; font-size: 12px; color: #999; }
+
+	/* (33번) 새 알림 도착 시 알림 벨 깜박임. 색상은 신규 정의 대신 기존 경고색(.noti-type-tag.device_error
+	   의 #F9A825)을 재사용한다. 0.5초 점등/0.5초 소등 × 3회(총 3초) 후 원래 색으로 복귀(계획서 §2-2). */
+	@keyframes notiBlink {
+		0%, 100% { background: none; color: #000; }
+		50%      { background: #F9A825; color: #fff; }
+	}
+	.noti-icon-btn.noti-blink { animation: notiBlink 1s ease-in-out 3; }
 </style>
 
 <aside class="sidebar" style="padding-left:0 !important;padding-right:0 !important;">
@@ -230,7 +238,11 @@
 	/* ===== (15번 4-2) 헤더 알림 ===== */
 	(function() {
 		var CTX = "${pageContext.request.contextPath}";
-		var POLL_MS = 30000;   // 계획서 §3-3 결정: 30초
+		// (33번) 새 알림이 최대 5초 이내에 반영되어야 한다는 요구사항(계획서 §2-1)에 따라
+		// 기존 30초 폴링을 4초로 단축. 04/05번 대시보드 디바이스 상태 갱신도 폴링 방식이라
+		// 이 화면과 동일한 폴링 패턴을 그대로 재사용(신규 통신 방식 도입 안 함).
+		var POLL_MS = 4000;
+		var lastKnownUnread = null; // (33번) 최초 로드 값은 "새로 도착"이 아니므로 깜박임 트리거 기준에서 제외
 
 		// noti_title 은 DB(디바이스명 포함) 에서 온 값이므로 HTML 로 넣기 전에 반드시 이스케이프한다(계획서 §8).
 		function escapeHtml(s) {
@@ -288,6 +300,16 @@
 					'</a>';
 		}
 
+		// (33번) 알림 벨 깜박임 트리거. 연속으로 새 알림이 도착해도 재생 중인 애니메이션을
+		// 강제로 재시작할 수 있도록 클래스 제거 → 리플로우 → 재부여 순서를 따른다.
+		function triggerNotiBlink() {
+			var btn = document.getElementById('notificationIcon');
+			if (!btn) return;
+			btn.classList.remove('noti-blink');
+			void btn.offsetWidth; // 강제 리플로우로 animation 재시작 보장
+			btn.classList.add('noti-blink');
+		}
+
 		function loadUnreadCount() {
 			$.ajax({
 				url: CTX + '/notification/unreadCount',
@@ -300,6 +322,12 @@
 					} else {
 						$('#notificationBadge').hide();
 					}
+					// (33번) 직전 폴링보다 안읽은 개수가 늘었으면 새 알림 도착으로 보고 깜박임.
+					// 최초 로드(lastKnownUnread===null)는 이미 쌓여있던 개수일 뿐이므로 제외.
+					if (lastKnownUnread !== null && count > lastKnownUnread) {
+						triggerNotiBlink();
+					}
+					lastKnownUnread = count;
 				}
 				// 실패 시 배지를 건드리지 않는다 — 일시적 오류로 기존 표시가 사라지지 않도록.
 			});
