@@ -22,6 +22,15 @@ public class NetworkHealthChecker {
     /**
      * 1분마다 특정 IP/URL에 통신이 되는지 확인
      * cron = "초 분 시 일 월 요일"
+     *
+     * ※ 비활성화 사유(2026-08-20 명시 — 최초 주석 처리는 2026-01-28 커밋 77ec1f4, 사유 미기재):
+     *   디바이스 상태 확인 방식이 "서버가 주기적으로 디바이스 IP/URL에 접속해 응답 여부로 판단"하는
+     *   이 폴링(pull) 방식에서, "디바이스가 자신의 상태를 주기적으로 서버에 직접 보고"하는
+     *   푸시(push) 방식으로 고도화되었다(작업계획서 04번 — module_c의 POST /deviceStatus
+     *   Heartbeat 수신, deviceStatus.go/DeviceListMapper.updateDeviceStatus 로 반영).
+     *   따라서 이 클래스가 하던 능동적 접속 확인은 더 이상 필요하지 않다.
+     *   소스코드 자체는 삭제하지 않고 아래 API 접속(HttpURLConnection) 로직만 계속 주석 처리 상태로
+     *   유지한다 — 필요 시 참고·재사용 가능하도록 보존.
      */
 //    @Scheduled(cron = "0 * * * * *")  // 매분 0초에 실행
     public void checkNetworkHealth() {
