@@ -10,20 +10,77 @@ Go 경로        /usr/local/go/bin/go
 
 
 ===================================================
-1. SSL 키 자체 서명 재발급
+★ 요약 — 이 문서에 나오는 파일 4개 (먼저 읽고 시작할 것)
 ===================================================
 
-[Windows 로컬 발급 - PowerShell 한 줄]
+| 파일                | 뭐하는 파일인가                                  | 어디로 가나                                          | .env 에 등록? |
+|---------------------|--------------------------------------------------|-------------------------------------------------------|----------------|
+| h100-ca.key         | CA 개인키 (다른 인증서에 서명해줄 때만 쓰는 도장) | 담당자 개인 PC에만. 서버·디바이스 어디에도 안 둠        | 등록 안 함     |
+| h100-ca.crt         | CA 공개 인증서 (그 도장이 진짜라는 증거)          | 담당자 PC(원본) + module_c 서버의 keytool 등록용(1-1)  | 등록 안 함(.env 아님, keytool로만 등록) |
+| server.key.pem      | module_c 자신의 개인키 (자기 신원 증명용 도장)    | module_c 서버에 배포 (섹션 1)                          | 등록함 (TLS_KEY_FILE) |
+| server.cert.pem     | module_c 자신의 인증서 (CA가 서명해준 신분증)      | module_c 서버에 배포 (섹션 1)                          | 등록함 (TLS_CERT_FILE) |
+
+**핵심**: `.env` 파일에는 딱 두 줄(TLS_CERT_FILE=server.cert.pem, TLS_KEY_FILE=server.key.pem)만 있으면 됩니다.
+`h100-ca.key`/`h100-ca.crt`/`h100-ca.srl`은 `.env`와 아무 관련이 없습니다 — 전부 섹션 1(인증서 발급 작업 자체)과 섹션 1-1(keytool 등록)에서만 쓰입니다.
+
+===================================================
+0. 사전 준비 — 내부 CA 파일 생성·관리 (최초 1회만, 이후 모든 서버·디바이스 인증서 발급에 공통 사용)
+===================================================
+
+[수행 위치]
+담당자 개인 PC(Windows). module_c 서버·module_d 디바이스 어디에도 이 파일들을 두지 않음.
+아래 1)~3)에서 다루는 h100-ca.key / h100-ca.crt / h100-ca.srl 은 전부 이 개인 PC의 한 작업폴더(예: C:\Users\<계정>\workspace\h100-ca\)에만 존재.
+
+[1) CA 개인키·CA 인증서 생성 — 전체 과정에서 딱 한 번만]
+
+mkdir C:\Users\<계정>\workspace\h100-ca
+cd C:\Users\<계정>\workspace\h100-ca
+
+openssl genrsa -out h100-ca.key 4096
+openssl req -x509 -new -nodes -key h100-ca.key -sha256 -days 3650 -subj "/CN=H100 Internal CA" -out h100-ca.crt
+
+[산출물]
+h100-ca.key — CA 개인키. 이후 모든 서버·디바이스 인증서를 서명할 때 계속 재사용. 절대 서버/디바이스로 옮기지 않음. chmod 400 등으로 접근 제한, 가능하면 암호화 백업.
+h100-ca.crt — CA 공개 인증서. 이후 각 서버/디바이스에 배포되거나(module_c의 JVM 등록용) 서명 작업 시 참조용으로 계속 사용.
+
+[2) h100-ca.srl (일련번호 파일) — 자동 생성, 앞으로 계속 재사용]
+
+첫 서버/디바이스 서명 시 -CAcreateserial 옵션을 쓰면 h100-ca.srl 파일이 이 작업폴더에 자동 생성됨(발급 일련번호 추적용).
+두 번째 서명부터는 -CAcreateserial 대신 -CAserial h100-ca.srl 옵션으로 이 파일을 재사용해야 함(매번 -CAcreateserial 을 쓰면 기존 일련번호 추적이 끊기므로 지양).
+즉 h100-ca.key / h100-ca.crt / h100-ca.srl 세 파일이 이 작업폴더에 계속 함께 있어야, 이후 서버·디바이스를 추가할 때마다 아래 1)~3)(본문 1번 섹션) 서명 작업을 반복할 수 있음.
+
+[검증]
+openssl x509 -in h100-ca.crt -noout -subject -dates
+
+
+===================================================
+1. SSL 키 발급 (내부 CA 서명 방식)
+===================================================
+
+* CA 개인키·인증서(h100-ca.key / h100-ca.crt)는 담당자 개인 PC에서 별도 관리한다.
+
+[Windows 로컬 발급 - PowerShell, 한 줄씩 실행]
 
 mkdir C:\Users\<계정>\workspace\ssl-keys\module_c
 cd C:\Users\<계정>\workspace\ssl-keys\module_c
 
-openssl req -x509 -nodes -days 365 -subj "/CN=<웹서버 IP>" -newkey rsa:2048 -keyout server.key.pem -out server.cert.pem
+# (a) module_c 서버 개인키 생성
+openssl genrsa -out server.key.pem 2048
+
+# (b) 서명 요청서(CSR) 생성 — CN에 웹서버 IP 기입
+openssl req -new -key server.key.pem -subj "/CN=<웹서버 IP>" -out server.csr -addext "subjectAltName=IP:<웹서버 IP>"
+
+# (c) 내부 CA(h100-ca.key/h100-ca.crt, 담당자 PC 별도 보관본)로 서명 → 인증서 완성
+#     최초 발급 이후에는 -CAcreateserial 대신 -CAserial h100-ca.srl 사용
+openssl x509 -req -in server.csr -CA h100-ca.crt -CAkey h100-ca.key -CAcreateserial -out server.cert.pem -days 365 -sha256 -copy_extensions copy
 
 
 [발급 확인]
 
-openssl x509 -in server.cert.pem -noout -subject -dates
+openssl x509 -in server.cert.pem -noout -subject -dates -issuer
+openssl x509 -in server.cert.pem -noout -ext subjectAltName
+
+# issuer 가 "CN=H100 Internal CA" 로 나오는지 확인 (자체 서명이면 subject=issuer 로 동일하게 나옴 — CA 서명이면 issuer 가 CA 쪽으로 다르게 나와야 정상)
 
 
 [서버 배포]
@@ -38,8 +95,66 @@ chmod 644 /home/<계정>/h100_module_c/ssl/server.cert.pem
 
 
 [유효 기간]
-1년 (365일), 매년 재발급
+1년 (365일), 매년 재발급 (재발급 시에도 자체 서명이 아니라 위 CA 서명 절차 그대로 반복)
 
+
+===================================================
+1-1. 내부 CA 인증서를 JVM(Tomcat)에 등록 ★ 신규 추가
+===================================================
+
+[대상 — 주의]
+h100_module_c(Go, 8189) 바이너리가 아니라, **같은 서버에서 도는 Tomcat 웹앱(Java)의 JVM**이 대상.
+Java(ApiServiceImpl 등)가 디바이스(module_d)로 나가는 HTTPS 연결을 검증할 때 이 신뢰 저장소를 참조함.
+(미등록시 PKIX 오류가 발생 : com.disabled.service.impl.ApiServiceImpl.createPostConnection)
+
+[등록 대상 파일]
+CA 공개 인증서(h100-ca.crt)만 등록. CA 개인키(h100-ca.key)는 절대 서버로 옮기거나 등록하지 않음.
+
+[JAVA_HOME 확인]
+
+echo $JAVA_HOME
+# 또는 Tomcat 실행 스크립트(catalina.sh 등)에 지정된 JDK 경로 확인
+
+[등록 명령]
+
+sudo keytool -importcert -alias h100-internal-ca \
+  -file /home/<계정>/h100_module_c/ssl/h100-ca.crt \
+  -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit -noprompt
+
+[등록 확인]
+
+keytool -list -alias h100-internal-ca -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit
+
+[반영]
+Tomcat 재시작 필수 (JVM이 cacerts를 프로세스 시작 시점에만 읽음)
+
+===================================================
+1-2. 내부 CA 인증서를 클라이언트 PC(브라우저)에 등록 ★ 신규 추가
+===================================================
+
+[배경]
+관제실 등에서 브라우저가 module_c를 거치지 않고 module_d(디바이스)에 직접 HTTPS로 접속하는 화면(예: 실시간 영상 스트리밍)이 있음.
+이 경우 브라우저는 h100-ca가 서명한 디바이스 인증서를 모르므로 "안전하지 않음" 경고가 뜨고, 매번 수동으로 "안전하지 않음으로 이동"을 눌러야 함.
+CA 인증서 자체를 클라이언트 PC에 한 번 등록해두면, h100-ca로 서명된 모든 디바이스(현재+향후 추가되는 디바이스 전부 포함)를 경고 없이 자동으로 신뢰하게 됨.
+
+[대상]
+실시간 영상 등 module_d에 직접 접속하는 화면을 보는 모든 클라이언트 PC(관제실 PC 등). module_c·module_d 서버 자체가 아님.
+
+[등록 대상 파일]
+CA 공개 인증서(h100-ca.crt)만 등록. CA 개인키(h100-ca.key)는 절대 클라이언트 PC로도 옮기지 않음.
+
+[Windows 등록 방법]
+1. h100-ca.crt 파일을 더블클릭 → "인증서 설치" → "로컬 컴퓨터"(관리자 권한) → "인증서를 다음 저장소에 저장" → "신뢰할 수 있는 루트 인증 기관" → 완료
+2. 또는 관리자 권한 명령 프롬프트에서 한 줄로:
+   certutil -addstore -f "ROOT" h100-ca.crt
+3. 여러 PC 일괄 배포 시: 같은 AD 도메인이면 그룹 정책(GPO)의 "신뢰할 수 있는 루트 인증 기관" 항목으로 일괄 배포 권장(향후 디바이스 추가 시 클라이언트 PC 쪽 재작업 불필요)
+
+[반영]
+크롬 완전히 종료 후 재실행(재부팅 불필요)
+
+[등록 확인]
+새 탭에서 https://<디바이스 IP>:8087/ 접속 시 경고 없이 열리는지 확인
+주소창 자물쇠 아이콘 → 인증서 보기 → 발급자 "H100 Internal CA", 신뢰됨 표시 확인
 
 ===================================================
 2. .env 파일 설정
@@ -54,7 +169,7 @@ chmod 644 /home/<계정>/h100_module_c/ssl/server.cert.pem
 PORT=8189
 TLS_CERT_FILE=/home/<계정>/h100_module_c/ssl/server.cert.pem
 TLS_KEY_FILE=/home/<계정>/h100_module_c/ssl/server.key.pem
-DEVICE_HMAC_KEY=<64byte hex 문자열>
+H100_HMAC_KEYS=<64byte hex 문자열>
 
 
 [편집·권한]
@@ -89,8 +204,8 @@ a3f2e1b8c94d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f
 
 
 [적용]
-1. 위 값을 .env 의 DEVICE_HMAC_KEY 에 반영
-2. module_d 의 .env 에도 동일한 값 반영 (필수)
+1. 위 값을 .env 의 H100_HMAC_KEYS 에 반영
+2. module_d 의 .env 에도 DEVICE_HMAC_KEY 값에 동일한 값 반영 (필수)
 3. 서비스 재시작
 
 
@@ -208,8 +323,8 @@ cp /tmp/database_yml_backup /home/<계정>/h100_module_c/config/database.yml
 
 [재빌드]
 
+# go run 명령어로 빌드하면 포트 충돌 오류 발생함으로 사용하지 않기
 /usr/local/go/bin/go build -o h100_module_c ./cmd/server/
-
 
 [서비스 재시작]
 
@@ -320,6 +435,10 @@ ps -o pid,lstart,cmd -p $(pgrep -f h100_module_c)
 ===================================================
 
 [ ] SSL 인증서 파일 존재 (ls ssl/)
+[ ] SSL 인증서가 내부 CA(h100-ca) 서명본인지 확인 (openssl verify -CAfile h100-ca.crt server.cert.pem)
+[ ] 내부 CA 인증서(h100-ca.crt)가 Tomcat JVM cacerts 에 등록되어 있는지 확인 (keytool -list)
+[ ] (참고) 신규 클라이언트 PC에서 실시간 영상을 처음 보는 경우 h100-ca.crt 등록 여부 확인 — 1-2 참고
+[ ] 인증서에 SAN(subjectAltName) 포함 여부 확인
 [ ] .env 파일 존재·값 정합
 [ ] 로그 폴더 존재 (logs/)
 [ ] Go 바이너리 재빌드 완료

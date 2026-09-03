@@ -4,46 +4,66 @@ h100_module_d (디바이스·Jetson)
 [기본 정보]
 디바이스 IP     <디바이스 IP>
 디바이스 포트    8087
-설치 경로       /home/<계정>/H100/server/h100_module_d
+설치 경로       /home/<계정>/H100/system/h100_module_d
 Go 경로        /usr/local/go/bin/go
 사용자         <계정> / <그룹>
 
 
 ===================================================
-1. SSL 키 자체 서명 재발급
+1. SSL 키 발급 (내부 CA 서명 방식으로 변경 — 자체 서명 아님)
 ===================================================
 
-[Windows 로컬 발급 - PowerShell 한 줄]
+[중요 — 방식 변경 안내]
+기존에는 자체 서명(self-signed) 인증서를 사용했으나,
+디바이스가 계속 추가되는 구조를 고려하여 내부 CA(사설 인증기관) 서명 방식으로 전환함.
+CA 개인키·인증서(h100-ca.key / h100-ca.crt)는 담당자 개인 PC에서 별도 관리한다.
+(관련 문서: Obsidian implementation/21-내부CA구축-디바이스인증서발급체계-작업계획서)
+
+[Windows 로컬 발급 - PowerShell, 한 줄씩 실행]
 
 mkdir C:\Users\<계정>\workspace\ssl-keys\module_d
 cd C:\Users\<계정>\workspace\ssl-keys\module_d
 
-openssl req -x509 -nodes -days 365 -subj "/CN=<디바이스 IP>" -newkey rsa:2048 -keyout server.key.pem -out server.cert.pem
+# (a) 이 디바이스만의 개인키 생성
+openssl genrsa -out device-<시리얼>.key 2048
+
+# (b) 서명 요청서(CSR) 생성 — CN에 디바이스 시리얼(또는 IP) 기입
+openssl req -new -key device-<시리얼>.key -subj "/CN=<시리얼>" -out device-<시리얼>.csr -addext "subjectAltName=IP:<디바이스 IP>"
+
+# (c) 내부 CA(h100-ca.key/h100-ca.crt, 담당자 PC 별도 보관본)로 서명 → 인증서 완성
+#     최초 발급 이후에는 -CAcreateserial 대신 -CAserial h100-ca.srl 사용
+openssl x509 -req -in device-<시리얼>.csr -CA h100-ca.crt -CAkey h100-ca.key -CAcreateserial -out device-<시리얼>.crt -days 365 -sha256 -copy_extensions copy
 
 
 [발급 확인]
 
-openssl x509 -in server.cert.pem -noout -subject -dates
+openssl x509 -in device-<시리얼>.crt -noout -subject -dates -issuer
+openssl x509 -in device-<시리얼>.crt -noout -ext subjectAltName
+
+# issuer 가 "CN=H100 Internal CA" 로 나오는지 확인
 
 
 [디바이스 배포]
 
-scp C:\Users\<계정>\workspace\ssl-keys\module_d\server.key.pem C:\Users\<계정>\workspace\ssl-keys\module_d\server.cert.pem <계정>@<디바이스 IP>:/home/<계정>/H100/server/h100_module_d/ssl/
+scp C:\Users\<계정>\workspace\ssl-keys\module_d\device-<시리얼>.key C:\Users\<계정>\workspace\ssl-keys\module_d\device-<시리얼>.crt C:\Users\<계정>\workspace\ssl-keys\module_d\h100-ca.crt <계정>@<디바이스 IP>:/home/<계정>/H100/system/h100_module_d/ssl/
+
+# 주의: 경로가 /home/<계정>/H100/system/h100_module_d/ssl/ 인지 확인 (2026-08-10 폴더명 server → system 변경 반영, 구 경로 "H100/server/..." 로 쓰지 않도록 주의)
 
 
 [디바이스 권한]
 
-chmod 600 /home/<계정>/H100/server/h100_module_d/ssl/server.key.pem
-chmod 644 /home/<계정>/H100/server/h100_module_d/ssl/server.cert.pem
+chmod 600 /home/<계정>/H100/system/h100_module_d/ssl/device-<시리얼>.key
+chmod 644 /home/<계정>/H100/system/h100_module_d/ssl/device-<시리얼>.crt
 
 
 [파일명 참고]
 module_d 는 server.key.pem·server.cert.pem 또는
-server.fullchain.pem·server.key.pem 사용 (구현에 따라)
+device-<시리얼>.key·device-<시리얼>.crt 사용 (구현·.env 지정에 따라, TLS_CERT_FILE/TLS_KEY_FILE 값과 일치시킬 것)
 
 
 [유효 기간]
-1년 (365일), 매년 재발급
+1년 (365일), 매년 재발급 (재발급 시에도 자체 서명이 아니라 위 CA 서명 절차 그대로 반복)
+
 
 
 ===================================================
@@ -51,29 +71,30 @@ server.fullchain.pem·server.key.pem 사용 (구현에 따라)
 ===================================================
 
 [파일 경로]
-/home/<계정>/H100/server/h100_module_d/.env
+/home/<계정>/H100/system/h100_module_d/.env
 
 
 [파일 내용]
 
 PORT=8087
-TLS_CERT_FILE=/home/<계정>/H100/server/h100_module_d/ssl/server.cert.pem
-TLS_KEY_FILE=/home/<계정>/H100/server/h100_module_d/ssl/server.key.pem
+TLS_CERT_FILE=/home/<계정>/H100/system/h100_module_d/ssl/device-<13자리 시리얼 번호>.crt
+TLS_KEY_FILE=/home/<계정>/H100/system/h100_module_d/ssl/device-<13자리 시리얼 번호>.key
 DEVICE_SERIAL=<13자리 시리얼 번호>
 CLOUD_RECEIVE_IP=https://<웹서버 IP>:8189
 FILE_PATH=/home/<계정>/H100/recorded
 DEVICE_HMAC_KEY=<module_c 와 동일한 64byte hex 문자열>
-
+DEVICE_SERIAL= 해당 디바이스의 고유 번호(cat /proc/device-tree/serial-number) 
+CA_CERT_FILE=/home/<계정>/H100/system/h100_module_d/ssl/h100-ca.crt
 
 [편집·권한]
 
-sudo vi /home/<계정>/H100/server/h100_module_d/.env
-chmod 600 /home/<계정>/H100/server/h100_module_d/.env
+sudo vi /home/<계정>/H100/system/h100_module_d/.env
+chmod 600 /home/<계정>/H100/system/h100_module_d/.env
 
 
 [반영 확인]
 
-cat /home/<계정>/H100/server/h100_module_d/.env
+cat /home/<계정>/H100/system/h100_module_d/.env
 
 
 [파일 저장 폴더 신설]
@@ -96,7 +117,7 @@ module_c 서버:
 grep DEVICE_HMAC_KEY /home/<계정>/h100_module_c/.env
 
 module_d 디바이스:
-grep DEVICE_HMAC_KEY /home/<계정>/H100/server/h100_module_d/.env
+grep DEVICE_HMAC_KEY /home/<계정>/H100/system/h100_module_d/.env
 
 두 결과가 반드시 일치
 
@@ -116,7 +137,7 @@ API 요청 모두 401 Unauthorized 실패
 4. Go 바이너리 빌드
 ===================================================
 
-cd /home/<계정>/H100/server/h100_module_d
+cd /home/<계정>/H100/system/h100_module_d
 /usr/local/go/bin/go build -o h100_module_d ./cmd/server/
 
 
@@ -144,12 +165,12 @@ Wants=network-online.target
 Type=simple
 User=<계정>
 Group=<그룹>
-WorkingDirectory=/home/<계정>/H100/server/h100_module_d
-ExecStart=/home/<계정>/H100/server/h100_module_d/h100_module_d
+WorkingDirectory=/home/<계정>/H100/system/h100_module_d
+ExecStart=/home/<계정>/H100/system/h100_module_d/h100_module_d
 Restart=on-failure
 RestartSec=10
-StandardOutput=append:/home/<계정>/H100/server/h100_module_d/logs/systemd.log
-StandardError=append:/home/<계정>/H100/server/h100_module_d/logs/systemd_error.log
+StandardOutput=append:/home/<계정>/H100/system/h100_module_d/logs/systemd.log
+StandardError=append:/home/<계정>/H100/system/h100_module_d/logs/systemd_error.log
 Environment="PATH=/usr/local/go/bin:/usr/bin:/bin"
 
 [Install]
@@ -157,9 +178,9 @@ WantedBy=multi-user.target
 
 
 [로그 폴더 신설]
-
-mkdir -p /home/<계정>/H100/server/h100_module_d/logs
-chown <계정>:<그룹> /home/<계정>/H100/server/h100_module_d/logs
+ss
+mkdir -p /home/<계정>/H100/system/h100_module_d/logs
+chown <계정>:<그룹> /home/<계정>/H100/system/h100_module_d/logs
 
 
 [등록·시작]
@@ -201,20 +222,20 @@ sudo systemctl restart h100_module_d
 
 [재배포 전 백업]
 
-cp /home/<계정>/H100/server/h100_module_d/.env /tmp/env_backup
-cp -r /home/<계정>/H100/server/h100_module_d/ssl /tmp/ssl_backup
+cp /home/<계정>/H100/system/h100_module_d/.env /tmp/env_backup
+cp -r /home/<계정>/H100/system/h100_module_d/ssl /tmp/ssl_backup
 
 
 [소스 업데이트]
 
-cd /home/<계정>/H100/server/h100_module_d
+cd /home/<계정>/H100/system/h100_module_d
 git pull origin main
 
 
 [백업 복원 (유실 시)]
 
-cp /tmp/env_backup /home/<계정>/H100/server/h100_module_d/.env
-cp -r /tmp/ssl_backup/* /home/<계정>/H100/server/h100_module_d/ssl/
+cp /tmp/env_backup /home/<계정>/H100/system/h100_module_d/.env
+cp -r /tmp/ssl_backup/* /home/<계정>/H100/system/h100_module_d/ssl/
 
 
 [재빌드]
@@ -359,6 +380,7 @@ tegrastats
 ===================================================
 
 [ ] SSL 인증서 파일 존재 (ls ssl/)
+[ ] SSL 인증서가 내부 CA(h100-ca) 서명본인지 확인 (openssl verify -CAfile h100-ca.crt device-<시리얼>.crt)
 [ ] .env 파일 존재·값 정합
 [ ] DEVICE_HMAC_KEY 이 module_c 와 일치
 [ ] 파일 저장 폴더 존재 (image/video/audio)
@@ -375,11 +397,11 @@ tegrastats
 14. 관련 파일 경로
 ===================================================
 
-설치 경로       /home/<계정>/H100/server/h100_module_d
-소스 코드       /home/<계정>/H100/server/h100_module_d/cmd/server/
-SSL 폴더        /home/<계정>/H100/server/h100_module_d/ssl/
-환경 변수       /home/<계정>/H100/server/h100_module_d/.env
-로그 폴더       /home/<계정>/H100/server/h100_module_d/logs/
+설치 경로       /home/<계정>/H100/system/h100_module_d
+소스 코드       /home/<계정>/H100/system/h100_module_d/cmd/server/
+SSL 폴더        /home/<계정>/H100/system/h100_module_d/ssl/
+환경 변수       /home/<계정>/H100/system/h100_module_d/.env
+로그 폴더       /home/<계정>/H100/system/h100_module_d/logs/
 이미지 저장    /home/<계정>/H100/recorded/image/
 영상 저장       /home/<계정>/H100/recorded/video/
 음성 저장       /home/<계정>/H100/recorded/audio/
