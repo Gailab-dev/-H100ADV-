@@ -47,24 +47,61 @@
 			</DefaultRolloverStrategy>
 		</RollingFile>
 		
-		<Loggers>
-			<Logger name="java.sql" level="DEBUG" additivity="false">
-				<AppenderRef ref="console" />
-			</Logger>
-			<Logger name="egovframework" level="DEBUG" additivity="false">
-				<AppenderRef ref="console" />
-			</Logger>
-			<Logger name="org.springframework" level="DEBUG" additivity="false">
-				<AppenderRef ref="console" />
-			</Logger>
-			<Logger name="com.disabled" level="DEBUG" additivity="false">
-				<AppenderRef ref="console" />
-				<AppenderRef ref="file" />
-			</Logger>
-			<Root level="DEBUG">
-				<AppenderRef ref="console" />
-				<AppenderRef ref="file" />
-			</Root>
-		</Loggers>
+		<!-- (24번) 디바이스(module_d) 파일 수신 응답이 실패를 의미하는데도 검증 없이 저장되던 문제 —
+			 실패 상세(발생시각·evId·targetUrl·fileName/type·응답 본문·스레드명)를 일반 애플리케이션 로그와
+			 섞이지 않는 전용 파일에 남긴다. 경로는 기존 "file" appender와 동일한 로그 디렉토리 관례를 따름. -->
+		<!-- 개발서버
+		<RollingFile name="deviceFileFetchError" fileName="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs/device_file_fetch_errors.log"
+					 filePattern="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs/device_file_fetch_errors-%d{yyyy-MM-dd}-%i.log">
+		-->
+		<!-- 운영서버 -->
+		<RollingFile name="deviceFileFetchError" fileName="/var/lib/tomcat9/logs/device_file_fetch_errors.log"
+					 filePattern="/var/lib/tomcat9/logs/device_file_fetch_errors-%d{yyyy-MM-dd}-%i.log">
+
+			<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="10MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			<!-- 원인 분석용 기록이라 일반 앱 로그(7일)보다 길게 30일 보관 -->
+			<DefaultRolloverStrategy max="30">
+				<!-- 개발서버
+				<Delete basePath="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs" maxDepth="1">
+				-->
+				<!-- 운영서버 -->
+				<Delete basePath="/var/lib/tomcat9/logs" maxDepth="1">
+					<IfFileName glob="device_file_fetch_errors-*.log" />
+					<IfLastModified age="30d" />
+				</Delete>
+			</DefaultRolloverStrategy>
+		</RollingFile>
 	</Appenders>
+
+	<!-- (27번) <Loggers> 가 <Appenders> 안에 잘못 중첩되어 있던 구조 수정.
+		 Log4j2 스키마상 Appenders/Loggers 는 Configuration 의 형제(sibling) 요소여야 하며,
+		 이 오류가 배포 로그의 "StatusConsoleListener appenders Appenders has no parameter
+		 that matches element Loggers" 경고의 원인이었다. -->
+	<Loggers>
+		<Logger name="java.sql" level="DEBUG" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>
+		<Logger name="egovframework" level="DEBUG" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>
+		<Logger name="org.springframework" level="DEBUG" additivity="false">
+			<AppenderRef ref="console" />
+		</Logger>
+		<Logger name="com.disabled" level="DEBUG" additivity="false">
+			<AppenderRef ref="console" />
+			<AppenderRef ref="file" />
+		</Logger>
+		<!-- (24번) 전용 실패 로그 — 일반 com.disabled/Root 로거로 전파되지 않도록 additivity=false -->
+		<Logger name="com.disabled.deviceFileFetchError" level="ERROR" additivity="false">
+			<AppenderRef ref="deviceFileFetchError" />
+		</Logger>
+		<Root level="DEBUG">
+			<AppenderRef ref="console" />
+			<AppenderRef ref="file" />
+		</Root>
+	</Loggers>
 </Configuration>
