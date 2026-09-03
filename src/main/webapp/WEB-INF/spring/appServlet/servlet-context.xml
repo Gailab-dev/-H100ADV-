@@ -27,6 +27,10 @@
 	        <mvc:exclude-mapping path="/user/logout.do" />
 	        <mvc:exclude-mapping path="/user/logout" />
 	        <mvc:exclude-mapping path="/user/updateNewPwd" />
+	        <!-- (패치 2026-09-05) 다른 PC 로그인 감지 폴링 — 이미 무효화된(로그인 안 된) 세션에서도
+	             호출되어야 하므로 예외 처리. LoginInterceptor 를 타면 302로 가로채져 JS가 JSON 대신
+	             HTML을 받게 된다. -->
+	        <mvc:exclude-mapping path="/user/sessionStatus" />
 	        <mvc:exclude-mapping path="/crypto/**" />
 	        <mvc:exclude-mapping path="/resources/**" />
 	        <mvc:exclude-mapping path="/resources/css/**" />
