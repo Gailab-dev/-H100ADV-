@@ -53,4 +53,30 @@
     // === 타이머 작동 ===
      startTimers();
 
+    // === (패치 2026-09-05) 다른 PC 로그인으로 인한 세션 무효화 감지 ===
+    // 이 화면과 동일한 PC/브라우저에서 계속 열려 있는 페이지가, 다른 PC의 로그인으로 이 세션이
+    // 무효화된 사실을 사용자가 다음에 뭔가 클릭할 때까지 모르게 두지 않도록 주기적으로 확인한다.
+    // 장기 미사용 로그아웃(위 타이머)과 달리 "언제 발생할지 알 수 없는 이벤트"라 폴링 방식을 쓴다 —
+    // 이 프로젝트의 다른 자동 갱신(알림 배지 등)도 모두 폴링이라 같은 패턴을 재사용한다.
+    const DUPLICATE_LOGIN_POLL_MS = 5000;
+
+    function redirectWithReason(message) {
+        window.location.href = CONTEXT_PATH + "/user/login.do?errorMsg=" + encodeURIComponent(message);
+    }
+
+    function checkDuplicateLoginLogout() {
+        fetch(CONTEXT_PATH + "/user/sessionStatus", { cache: "no-store" })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.loggedOutElsewhere) {
+                    clearInterval(duplicateLoginPollId);
+                    clearTimers();
+                    redirectWithReason(d.message || "다른 PC에서 로그인하여 이 PC에서는 로그아웃합니다.");
+                }
+            })
+            .catch(function () { /* 일시적 네트워크 오류는 무시 — 다음 폴링에서 재시도 */ });
+    }
+
+    const duplicateLoginPollId = setInterval(checkDuplicateLoginLogout, DUPLICATE_LOGIN_POLL_MS);
+
 })();

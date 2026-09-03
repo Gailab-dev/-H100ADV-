@@ -20,6 +20,12 @@ public class SessionManager {
     // 사용자 ID를 키로, 세션을 값으로 저장하는 맵
     private final ConcurrentHashMap<String, HttpSession> userSessionMap = new ConcurrentHashMap<>();
 
+    // (패치 2026-09-05) 다른 PC 로그인으로 무효화된 (구)세션ID → 사용자에게 보여줄 사유.
+    // invalidate() 이후엔 세션 객체 자체에서 값을 꺼낼 수 없으므로, 무효화 직전에 세션ID를 키로
+    // 별도 보관해둔다. 무효화된 PC의 폴링(UserController#sessionStatus)이 세션ID(쿠키값 — 세션이
+    // 죽은 뒤에도 request.getRequestedSessionId()로 읽을 수 있음)로 조회해 1회 소비한다.
+    private final ConcurrentHashMap<String, String> logoutReasonBySessionId = new ConcurrentHashMap<>();
+
     /**
      * 사용자 세션 등록
      * @param userId 사용자 ID
@@ -32,8 +38,12 @@ public class SessionManager {
 
         // 기존 세션이 존재하면 무효화
         if (oldSession != null && !oldSession.getId().equals(session.getId())) {
+            String oldSessionId = oldSession.getId();
             try {
                 logger.info("중복 로그인 감지 - 사용자: {}({}), 기존 세션 무효화", userId, id);
+                // (패치 2026-09-05) 무효화 직전에 사유를 등록 — 이전 PC가 폴링으로 이 사유를 확인하고
+                // "다른 PC에서 로그인하여 이 PC에서는 로그아웃합니다" 안내 후 로그아웃하도록 한다.
+                logoutReasonBySessionId.put(oldSessionId, "다른 PC에서 로그인하여 이 PC에서는 로그아웃합니다.");
                 oldSession.invalidate();
             } catch (IllegalStateException e) {
                 logger.debug("이미 무효화된 세션 - 사용자: " + userId + " (" + id + ") ", e);
@@ -46,6 +56,20 @@ public class SessionManager {
         userSessionMap.put(userId, session);
         logger.info("새 세션 등록 - 사용자: " + userId + "(" + id + "), 세션ID: {}", session.getId());
         return false; // 기존 세션이 없었음
+    }
+
+    /**
+     * (패치 2026-09-05) 이 세션ID가 다른 PC 로그인으로 무효화된 것인지 확인하고, 사유 메시지를
+     * 1회 소비(조회 즉시 제거)한다. 폴링마다 같은 사유가 반복 응답되지 않도록 하기 위함이다.
+     * @param sessionId 브라우저가 보낸 세션ID(request.getRequestedSessionId()) — 세션이 이미
+     *                  무효화된 뒤에도 요청 쿠키값 자체는 읽을 수 있다.
+     * @return 사유 메시지, 해당 없으면 null
+     */
+    public String consumeLogoutReason(String sessionId) {
+        if (sessionId == null) {
+            return null;
+        }
+        return logoutReasonBySessionId.remove(sessionId);
     }
 
     /**

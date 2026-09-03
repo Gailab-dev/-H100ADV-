@@ -290,6 +290,24 @@ public class UserController {
 	}
 	
 	/**
+	 * (패치 2026-09-05) 다른 PC 로그인으로 이 세션이 무효화되었는지 확인.
+	 * 로그인 중인 화면에서 주기적으로 폴링해, 무효화되었다면 사유를 안내한 뒤 로그아웃 처리할 수 있게 한다
+	 * (참고: 장기 미사용 자동 로그아웃, sessionManager.js). LoginInterceptor 예외 경로 — 이미 무효화된
+	 * (세션이 없는) 상태에서도 호출되어야 하므로 로그인 여부를 검사하지 않는다.
+	 * @param request 세션이 이미 무효화되었어도 요청 쿠키의 세션ID는 getRequestedSessionId()로 읽을 수 있다.
+	 * @return {"loggedOutElsewhere": boolean, "message": String|null}
+	 */
+	@GetMapping("/sessionStatus")
+	@ResponseBody
+	public Map<String, Object> sessionStatus(HttpServletRequest request) {
+		Map<String, Object> result = new HashMap<>();
+		String reason = sessionManager.consumeLogoutReason(request.getRequestedSessionId());
+		result.put("loggedOutElsewhere", reason != null);
+		result.put("message", reason);
+		return result;
+	}
+
+	/**
 	 * 로그아웃
 	 * @param session
 	 * @param model
