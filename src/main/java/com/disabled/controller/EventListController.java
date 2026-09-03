@@ -414,6 +414,9 @@ public class EventListController {
 				String evCd = String.valueOf(eventListDetail.get("ev_cd"));
 				String ev_cd_name = "";
 			    switch (evCd) {
+		        // (패치 2026-09-05) ev_cd=0(정상)도 정의된 값인데 case가 없어 default의
+		        // "ev_cd 값이 null 또는 정의되지 않음" 경고 로그가 매번 오탐으로 찍히고 있었다.
+		        case "0": ev_cd_name = "정상"; break;
 		        case "1": ev_cd_name = "미등록차량"; break;
 		        case "4": ev_cd_name = "위험상황"; break;
 		        case "5": ev_cd_name = "물건적재"; break;
@@ -435,12 +438,32 @@ public class EventListController {
 			
 			// ====== ADR-008(2026-06-17) 디바이스 통신 우선순위 변경 ======
 			// 파일 준비(서버파일 우선 → 없으면 디바이스 → 복호화)는 목록에서 상세보기 클릭 시
-			// AJAX(/eventList/detail/check)로 사전 수행된다. 이 페이지는 그 결과로 진입하므로,
-			// 직접 진입 대비 서버 파일 복호화만 멱등·빠르게 보장(디바이스 호출 X)한 뒤 렌더링한다.
+			// AJAX(/eventList/detail/check)로 사전 수행된다. 이 페이지는 그 결과로 진입하는 것이
+			// 정상 흐름이지만, 새로고침·북마크·직접 URL 접근 등으로 detailCheck()를 거치지 않고
+			// 바로 이 컨트롤러로 진입하는 경로가 실제로 존재한다(31번: 사고 재현 로그에서
+			// detail/check 호출 흔적 없이 곧바로 이 메서드가 실행됨을 확인). 그 경우 30번에서
+			// detailCheck()에만 추가했던 영상 PULL 폴백이 전혀 적용되지 않아, 디바이스에는 영상이
+			// 있는데도 서버는 시도조차 하지 않고 복호화 실패로 끝나는 문제가 있었다. 진입 경로와
+			// 무관하게 항상 동작하도록 여기서도 동일한 선제 PULL을 수행한다. fetchFromDevice()는
+			// 이미지가 이미 서버에 있으면 내부적으로 스킵하므로 중복 호출해도 안전하며(30번에서 확인),
+			// 이 호출의 성공/실패는 이후 로직에 영향을 주지 않는다 — 영상은 선택 항목이라 실패해도
+			// 이미지 표시는 그대로 진행한다는 decryptForView()의 기존 철학과 동일하게 유지한다.
+			if (eventListDetail != null && !eventListService.videoReadyOnServer(eventListDetail)) {
+				logger.info("[DIAG] [evId={}] [phase=eventListDetail-video-pull] msg=detailCheck 우회 진입 대비 영상 선제 PULL 시도", evId); // TEMP 진단
+				eventListService.fetchFromDevice(res, dvId, evId, eventListDetail);
+			}
 			eventListService.decryptForView(eventListDetail);
 			
 			// ====== 서비스 [E] ====== //
-			
+
+			// (32번) 공통 레이아웃(left.jsp)의 "${uName}님 접속을 환영합니다" 표시는 각 컨트롤러가
+			// model에 "uName"을 직접 채워줘야 한다(세션이 아닌 요청 스코프 EL로 조회됨).
+			// eventList/deviceList/stats/myInfo/sipCall 등 다른 화면은 모두 이를 채우고 있었으나
+			// 이 메서드(상세보기)만 누락되어, 상세보기 화면에서만 사용자명이 빈 채로 보였다.
+			Object uIdAttr = session.getAttribute("uId");
+			Integer uId = uIdAttr != null ? Integer.parseInt(uIdAttr.toString()) : null;
+			model.addAttribute("uName", userService.getUNameBySession(uId));
+
 			// ====== mdoel add [S] ====== //
 			model.addAttribute("eventListDetail", eventListDetail);
 			model.addAttribute("dvId", dvId); // ADR-008: AJAX 단계 호출에서 디바이스 식별용
@@ -473,12 +496,26 @@ public class EventListController {
 			@RequestParam(value = "dvId", required = false) Integer dvId, HttpServletResponse res) {
 
 		logger.info("[DIAG] [evId={}] [phase=detailCheck-entry] msg=상세보기 진입", evId); // TEMP 진단 — 시연 후 제거
+		long _t0 = System.currentTimeMillis(); // (29번) 서버 처리 소요시간 — 클라이언트 타임아웃과의 관계 진단용
 		Map<String, Object> out = new HashMap<String, Object>();
 		String scenario;
 		boolean available;
 		String message = null;
+		String fetchResult = null; // (29번) fetchFromDevice() 반환값 — 호출 안 된 분기는 null로 남겨 최종 로그에서 구분
 
 		Map<String, Object> detail = eventListService.getEventListDetail(evId);
+
+		// (30번) 이미지 존재 여부와 무관하게, 이 이벤트에 영상이 필요한데 아직 서버에 없으면
+		// 먼저 디바이스에 PULL을 시도한다. 기존에는 아래 분기가 전부 "이미지 존재 여부"만으로
+		// fetchFromDevice() 호출 여부를 결정해, "이미지는 PUSH로 이미 도착했지만 영상만 아직
+		// 없는" 이벤트에서는 fetchFromDevice()(영상 PULL 로직 포함)가 영원히 호출되지 않는
+		// 문제가 있었다(FileNotFoundException 재현 사례). 이 선제 호출의 성공/실패는 아래
+		// available 판단에 영향을 주지 않는다 — 영상은 선택 항목이라 실패해도 이미지 표시는
+		// 그대로 진행한다는 decryptForView()의 기존 철학과 동일하게 유지한다.
+		if (detail != null && !eventListService.videoReadyOnServer(detail)) {
+			logger.info("[DIAG] [evId={}] [phase=video-only-pull] msg=영상 미존재, 이미지 상태와 무관하게 선제 PULL 시도", evId); // TEMP 진단
+			fetchResult = eventListService.fetchFromDevice(res, dvId, evId, detail);
+		}
 
 		if (detail == null) {
 			available = false; scenario = "B"; message = "파일이 존재하지 않습니다";
@@ -489,8 +526,8 @@ public class EventListController {
 				available = true; scenario = "A";
 			} else {
 				// (마) 서버 파일 손상 → 디바이스 재연결 1회
-				String r = eventListService.fetchFromDevice(res, dvId, evId, detail);
-				if ("OK".equals(r) && eventListService.decryptForView(detail)) {
+				fetchResult = eventListService.fetchFromDevice(res, dvId, evId, detail);
+				if ("OK".equals(fetchResult) && eventListService.decryptForView(detail)) {
 					available = true; scenario = "E";
 				} else {
 					available = false; scenario = "E"; message = "파일이 존재하지 않습니다";
@@ -504,18 +541,22 @@ public class EventListController {
 			logger.info("[ADR-008] 평문 원본 fallback evId={} (복호화·디바이스 통신 생략)", evId);
 		} else {
 			logger.info("[DIAG] [evId={}] [phase=plain-fallback-failed] msg=enc·평문 둘 다 없음, fetchFromDevice 진입", evId); // TEMP 진단
-			// (나/다/라) 둘 다 없음 → 디바이스 통신 (timeout 연결5초/응답10초)
-			String r = eventListService.fetchFromDevice(res, dvId, evId, detail);
-			if ("OK".equals(r) && eventListService.decryptForView(detail)) {
+			// (나/다/라) 둘 다 없음 → 디바이스 통신 (timeout 연결5초/응답10초, 이미지·영상 순차 최대 2회)
+			fetchResult = eventListService.fetchFromDevice(res, dvId, evId, detail);
+			if ("OK".equals(fetchResult) && eventListService.decryptForView(detail)) {
 				available = true; scenario = "D";
 			} else {
 				available = false;
-				scenario = "FAIL".equals(r) ? "B" : "C";
+				scenario = "FAIL".equals(fetchResult) ? "B" : "C";
 				message = "파일이 존재하지 않습니다";
 			}
 		}
 
-		logger.info("[ADR-008] detail/check evId={} scenario={} available={}", evId, scenario, available);
+		// (29번) fetchFromDevice 반환값과 최종 available을 같은 라인에 함께 남겨, "서버는 성공했지만
+		// 응답엔 반영 안 됨" 유형과 "서버 자체가 실패/미존재"를 로그만으로 구분할 수 있도록 함.
+		// elapsedMs 는 클라이언트 측 abort 타임아웃(32초)과 실제 서버 처리시간의 관계를 진단하는 데 사용.
+		logger.info("[ADR-008] detail/check evId={} scenario={} available={} fetchResult={} elapsedMs={}",
+				evId, scenario, available, fetchResult, System.currentTimeMillis() - _t0);
 		out.put("available", available);
 		out.put("scenario", scenario);
 		out.put("message", message);

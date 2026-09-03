@@ -78,11 +78,14 @@ public class EventListServiceImpl implements EventListService{
 		try {
 			// 이벤트 ID를 검색조건으로 하여 리스트 상세 내역을 select
 			resultMap = eventListMapper.getEventListDetail(evId);
-			
+
 			if(resultMap == null) {
 				logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
 				throw new IllegalStateException("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
 			}
+			// (패치 2026-09-02) ev_date 는 검색·정렬에 쓰이는 원본(yyyyMMddHHmmss, 구분자 없음)이라
+			// 그대로 두고, 화면 표시 전용 값만 별도 키로 추가한다.
+			resultMap.put("ev_date_display", formatEvDate(resultMap.get("ev_date")));
 			return resultMap;
 			
 		} catch (IllegalStateException e) {
@@ -106,17 +109,40 @@ public class EventListServiceImpl implements EventListService{
 		try {
 			// 이벤트 ID를 검색조건으로 하여 리스트 상세 내역을 select
 			resultMap = eventListMapper.getEventListDetail(evId2);
-			
+
 			if(resultMap == null) {
 				logger.error("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
 				throw new IllegalStateException("SQL문 수행 도중 오류 발생, eventListMapper.getEventListDetail(evId)");
 			}
+			// (패치 2026-09-02) ev_date 는 검색·정렬에 쓰이는 원본(yyyyMMddHHmmss, 구분자 없음)이라
+			// 그대로 두고, 화면 표시 전용 값만 별도 키로 추가한다.
+			resultMap.put("ev_date_display", formatEvDate(resultMap.get("ev_date")));
 			return resultMap;
-			
+
 		} catch (IllegalStateException e) {
 			logger.error("getEventListDetail 함수 수행 도중 오류 발생",e);
 			throw e;
 		}
+	}
+
+	/**
+	 * (패치 2026-09-02) ev_date(DB 저장 형식: yyyyMMddHHmmss, 14자리, 구분자 없음)를
+	 * 상세보기 화면 표시용 "yyyy-MM-dd HH:mm:ss" 형식으로 변환한다.
+	 * 검색조건(LEFT(ev_date,8) BETWEEN ...)·정렬(sortCol=ev_date)이 원본 문자열 형식에
+	 * 의존하고 있어 ev_date 원본 값 자체는 절대 변경하지 않는다 — 표시 전용 파생값만 만든다.
+	 * 길이가 14자리가 아니거나 null인 예외적인 값은 파싱을 시도하지 않고 원본 그대로 반환해,
+	 * 상세보기 화면이 깨지지 않도록 한다.
+	 */
+	private String formatEvDate(Object rawEvDate) {
+		if (rawEvDate == null) {
+			return null;
+		}
+		String s = rawEvDate.toString();
+		if (!s.matches("\\d{14}")) {
+			return s;
+		}
+		return s.substring(0, 4) + "-" + s.substring(4, 6) + "-" + s.substring(6, 8)
+				+ " " + s.substring(8, 10) + ":" + s.substring(10, 12) + ":" + s.substring(12, 14);
 	}
 
 	/**
@@ -546,6 +572,32 @@ public class EventListServiceImpl implements EventListService{
 	}
 
 	/**
+	 * (30번) 이 이벤트에 영상이 필요 없거나(ev_mov_path 공백), 이미 서버(enc 또는 dec)에 존재하면 true.
+	 *
+	 * 배경: {@code detailCheck()}는 기존에 {@link #encImagesExistOnServer}/{@link #plainImagesExistOnServer}
+	 * (이미지만 확인)만으로 "서버에 파일이 이미 있으니 디바이스 통신 불필요"를 판단했다. 이미지는 PUSH로
+	 * 먼저 도착하고 영상은 아직 도착하지 않은 이벤트에서는, 이미지 존재만 보고 fetchFromDevice()를
+	 * 건너뛰어 영상이 영원히 PULL되지 않는 문제가 있었다(30번 evId 재현). 이 메서드로 영상 준비 여부를
+	 * 별도 확인해, 이미지만으로 디바이스 통신을 스킵하지 않도록 한다.
+	 *
+	 * @param eventListDetail 이벤트 상세(파일명 포함)
+	 * @return 영상이 필요 없거나 이미 서버에 있으면 true
+	 */
+	@Override
+	public boolean videoReadyOnServer(Map<String, Object> eventListDetail) {
+		if (eventListDetail == null) {
+			return false;
+		}
+		Object mov = eventListDetail.get("ev_mov_path");
+		if (isBlankName(mov)) {
+			return true; // 이 이벤트는 영상이 필요 없음
+		}
+		boolean ready = encFileExists(videoEncPath, mov) || plainFileExists(videoDecPath, mov);
+		logger.info("[DIAG] [phase=videoReadyOnServer] ev_mov_path={} ready={}", mov, ready); // TEMP 진단
+		return ready;
+	}
+
+	/**
 	 * (ADR-008) 서버에 없는 파일만 디바이스에서 가져온다. (timeout: ApiServiceImpl 연결5초/응답10초)
 	 *
 	 * @return "OK"(수신 완료/필요없음) | "NO_FILE"(디바이스에도 없음) | "FAIL"(통신 실패·timeout)
@@ -560,17 +612,39 @@ public class EventListServiceImpl implements EventListService{
 				return "FAIL";
 			}
 
-			// 이미지: 서버에 없을 때만 요청
+			// 이미지1: 서버에 없을 때만 요청
 			if (!encFileExists(imgEncPath, eventListDetail.get("ev_img_path"))) {
 				HashMap<String, Object> json = new HashMap<String, Object>();
 				json.put("type", "image");
 				json.put("fileName", String.valueOf(eventListDetail.get("ev_img_path")));
-				if (!isBlankName(eventListDetail.get("ev_img_path2"))) {
-					json.put("fileName2", String.valueOf(eventListDetail.get("ev_img_path2")));
-				}
+				// (24번) 로깅 전용 — ApiServiceImpl 이 디바이스 요청 본문 생성 전에 제거하므로 wire에는 안 실림
+				json.put("_evId", evId);
 				String r = apiService.forwardStreamToJSON(res, json, dvIp, "/fileSend");
 				if ("error".equals(r)) {
-					logger.error("[ADR-008] 디바이스 이미지 수신 실패 evId={}", evId);
+					logger.error("[ADR-008] 디바이스 이미지1 수신 실패 evId={}", evId);
+					return "FAIL";
+				}
+			}
+
+			// 이미지2: 이 이벤트에 필요하고(ev_img_path2 존재) 서버에 없을 때만 요청.
+			// (패치 2026-09-03) 기존에는 이미지1 요청에 fileName2로 끼워 보내는 방식이었는데, 두 가지 문제가
+			// 있었다: ① 이 블록 전체가 "이미지1이 서버에 없을 때"만 실행되어, 이미지1은 PUSH로 이미 도착했지만
+			// 이미지2만 없는 이벤트(이번 패치 대상 evId=1249 재현 사례)에서는 아예 요청 자체가 나가지 않았다
+			// (30/31번의 "이미지만 보고 판단해 영상 PULL을 건너뛰던 문제"와 동일한 유형의 버그).
+			// ② module_d(Go) 는 fileName2 키를 전혀 읽지 않고(fileName만 처리), ApiServiceImpl 도 같은
+			// connection의 응답 스트림을 fileResponse() 로 두 번 읽으려 했는데 두 번째 호출은 이미 소비된
+			// 스트림을 읽어 정상적으로 저장될 수 없는 구조였다(28번에서 확인된 문제와 동일 원인).
+			// 레거시 메서드 requestFileFromModule()이 이미 올바른 패턴(파일마다 완전히 분리된 별도 요청)을
+			// 쓰고 있어, 이미지2도 그 패턴을 그대로 재사용해 독립된 요청으로 분리한다.
+			Object img2Name = eventListDetail.get("ev_img_path2");
+			if (!isBlankName(img2Name) && !encFileExists(imgEncPath, img2Name)) {
+				HashMap<String, Object> json2 = new HashMap<String, Object>();
+				json2.put("type", "image");
+				json2.put("fileName", img2Name.toString());
+				json2.put("_evId", evId);
+				String r2 = apiService.forwardStreamToJSON(res, json2, dvIp, "/fileSend");
+				if ("error".equals(r2)) {
+					logger.error("[ADR-008] 디바이스 이미지2 수신 실패 evId={}", evId);
 					return "FAIL";
 				}
 			}
@@ -581,6 +655,8 @@ public class EventListServiceImpl implements EventListService{
 				HashMap<String, Object> vjson = new HashMap<String, Object>();
 				vjson.put("type", "video");
 				vjson.put("fileName", mov.toString());
+				// (24번) 로깅 전용 — ApiServiceImpl 이 디바이스 요청 본문 생성 전에 제거하므로 wire에는 안 실림
+				vjson.put("_evId", evId);
 				String r = apiService.forwardStreamToJSON(res, vjson, dvIp, "/fileSend");
 				if ("error".equals(r)) {
 					logger.error("[ADR-008] 디바이스 영상 수신 실패 evId={}", evId);

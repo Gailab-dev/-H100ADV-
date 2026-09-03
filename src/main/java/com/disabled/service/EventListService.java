@@ -26,6 +26,11 @@ public interface EventListService {
 
 	// ====== ADR-008 (2026-06-25) .enc 없을 때 평문 원본(dec 디렉토리) fallback ======
 	boolean plainImagesExistOnServer(Map<String, Object> eventListDetail);
+
+	// ====== 30번 — 영상 PULL 폴백 누락 수정: 이미지 존재 여부만으로 fetchFromDevice 스킵 여부를
+	// 판단하던 기존 로직이 "이미지는 있는데 영상만 없는" 경우를 놓쳤다. 영상 준비 여부를 별도로
+	// 확인해, 이미지 존재 여부와 함께 fetchFromDevice 호출 필요성을 판단한다.
+	boolean videoReadyOnServer(Map<String, Object> eventListDetail);
 	String getDvIpByEvId(Integer dvId, Integer evId);
 	int getTotalRecordCount(Map<String, Object> paramMap);
 

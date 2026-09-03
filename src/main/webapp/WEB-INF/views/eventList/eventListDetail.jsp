@@ -50,15 +50,29 @@
 	<div class="image-container">
 		<div class="img-box">
 			<div class="imgeTitle">진입 시</div>
-			<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
-<%--			<img src="${pageContext.request.contextPath}/resources/images/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image">--%>
+			<c:choose>
+				<c:when test="${not empty eventListDetail.ev_img_path}">
+					<img src="${pageContext.request.contextPath}/imgFile/${fn:replace(eventListDetail.ev_img_path, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
+				</c:when>
+				<c:otherwise>
+					<img src="${pageContext.request.contextPath}/resources/images/default-image.svg" alt="불법주차 리스트 상세 이미지" class="detail-image">
+				</c:otherwise>
+			</c:choose>
+<%--			(2026-08-18) /imgFile 컨트롤러 신규 구현 전 참고용으로 남겨뒀던 대안 경로 — 이제 사용하지 않음 --%>
 		</div>
 	</div>
 	<div class="image-container">
 		<div class="img-box">
 			<div class="imgeTitle">1분 후</div>
-			<img src="/imgFile/${fn:replace(eventListDetail.ev_img_path2, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
-<%--			<img src="${pageContext.request.contextPath}/resources/images/${fn:replace(eventListDetail.ev_img_path2, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">--%>
+			<c:choose>
+				<c:when test="${not empty eventListDetail.ev_img_path2}">
+					<img src="${pageContext.request.contextPath}/imgFile/${fn:replace(eventListDetail.ev_img_path2, '.enc', '')}" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
+				</c:when>
+				<c:otherwise>
+					<img src="${pageContext.request.contextPath}/resources/images/default-image.svg" alt="불법주차 리스트 상세 이미지" class="detail-image">
+				</c:otherwise>
+			</c:choose>
+<%--			(2026-08-18) /imgFile 컨트롤러 신규 구현 전 참고용으로 남겨뒀던 대안 경로 — 이제 사용하지 않음 --%>
 		</div>
 	</div>
 </div>
@@ -72,7 +86,9 @@
 			</div>
 			<div class="value-area">
 				<label>날짜</label>
-				<div class="value"><c:out value="${eventListDetail.ev_date}" escapeXml="true" /></div>
+				<%-- (패치 2026-09-02) ev_date 원본은 yyyyMMddHHmmss(구분자 없음) 이라 그대로 노출되면
+				     읽기 어려움 → EventListServiceImpl 에서 만든 표시 전용 값(ev_date_display, "yyyy-MM-dd HH:mm:ss")을 사용 --%>
+				<div class="value"><c:out value="${eventListDetail.ev_date_display}" escapeXml="true" /></div>
 			</div>
 		</li>
 		<li>
@@ -83,14 +99,16 @@
 				<label>유형</label>
 				<div class="value">
 					<c:choose>
-						<c:when test="${eventListDetail.ev_cd == 1}">미등록차량 🚫</c:when>
+						<%-- (패치 2026-09-05) ev_cd=0(정상) 편의 표시 — 기존엔 case 없이 "기타"로 잘못 표시됨 --%>
+						<c:when test="${eventListDetail.ev_cd == 0}">정상</c:when>
+						<c:when test="${eventListDetail.ev_cd == 1}">미등록차량 </c:when>
 
-						<%-- <c:when test="${eventListDetail.ev_cd == 2}">장애인미탑승 🚫</c:when> --%>
-						<%-- <c:when test="${eventListDetail.ev_cd == 3}">스티커 불법 사용 🚫</c:when> --%>
+						<%-- <c:when test="${eventListDetail.ev_cd == 2}">장애인미탑승 </c:when> --%>
+						<%-- <c:when test="${eventListDetail.ev_cd == 3}">스티커 불법 사용 </c:when> --%>
 
-						<c:when test="${eventListDetail.ev_cd == 4}">위험상황 🚫</c:when>
-						<c:when test="${eventListDetail.ev_cd == 5}">물건적재 🚫</c:when>
-						<c:when test="${eventListDetail.ev_cd == 6}">이중주차 🚫</c:when>
+						<c:when test="${eventListDetail.ev_cd == 4}">위험상황 </c:when>
+						<c:when test="${eventListDetail.ev_cd == 5}">물건적재 </c:when>
+						<c:when test="${eventListDetail.ev_cd == 6}">이중주차 </c:when>
 						<c:otherwise>기타</c:otherwise>
 					</c:choose>
 					<button type="button" class="video-icon-btn"

@@ -148,7 +148,14 @@
 	    const _h100MinShow = 300; // 깜박임 방지(최소 표시 시간 ms)
 	    showLoadingOverlay('처리 중...');
 	    const _h100Ctrl = new AbortController();
-	    const _h100To = setTimeout(function(){ _h100Ctrl.abort(); }, 10000); // 10초 상한
+	    // (29번) 서버측 디바이스 통신 타임아웃(ApiServiceImpl: 연결 5초+응답 10초=최대 15초)이,
+	    //   fetchFromDevice 안에서 이미지·영상 요청으로 순차 최대 2회까지 이어질 수 있어
+	    //   최악의 경우 서버가 최대 30초까지 정상적으로 처리 중일 수 있다. 기존 10초 상한은 이보다
+	    //   훨씬 짧아, 서버가 실제로는 파일을 정상 저장하고 있는 도중에 클라이언트가 먼저 포기하고
+	    //   "파일이 존재하지 않습니다"로 오판하는 원인이었다 — 최초 클릭 실패 후 재클릭하면 그 사이
+	    //   서버 처리가 끝나 있어 정상 표시되는 현상으로 재현됨. 서버 최대 처리시간(30초)보다
+	    //   확실히 길게 32초로 상향.
+	    const _h100To = setTimeout(function(){ _h100Ctrl.abort(); }, 32000); // 32초 상한(서버 최대 처리시간 30초 + 여유)
 	    fetch(CONTEXT_PATH + '/eventList/detail/check?evId=' + encodeURIComponent(evId) + '&dvId=' + encodeURIComponent(dvId==null?'':dvId),
 	          { headers: { 'X-Requested-With': 'XMLHttpRequest' }, signal: _h100Ctrl.signal })
 	      .then(function(r){ return r.json(); })
@@ -158,7 +165,15 @@
 	        const wait = Math.max(0, _h100MinShow - (Date.now() - _h100Started));
 	        setTimeout(function(){ hideLoadingOverlay(); showMessageOverlay((d && d.message) || '파일이 존재하지 않습니다'); }, wait);
 	      })
-	      .catch(function(){ clearTimeout(_h100To); hideLoadingOverlay(); showMessageOverlay('파일이 존재하지 않습니다'); });
+	      .catch(function(err){
+	        clearTimeout(_h100To);
+	        hideLoadingOverlay();
+	        // (29번) 타임아웃(중단)과 실제 네트워크 오류를 구분 — 중단은 "없다"가 아니라 "지연"이므로 다른 안내
+	        var msg = (err && err.name === 'AbortError')
+	          ? '서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
+	          : '파일이 존재하지 않습니다';
+	        showMessageOverlay(msg);
+	      });
 	}
 
 	// 상세보기 버튼 — 이벤트 위임(인라인 onclick 대신). data 속성에서 값 안전 추출 → SyntaxError 방지
@@ -706,6 +721,16 @@
 													value="${item.ev_reg_date}" />
 										</span></td>
 										<td class="td-category"><c:choose>
+												<%-- (패치 2026-09-05) ev_cd=0(정상) 편의 표시 — 기존엔 case 없이 "기타"로 잘못 표시됨.
+												     다른 유형과 동일하게 아이콘을 붙이되, 위반이 아니라 안전함을 뜻하므로 체크(✓) 아이콘 사용 --%>
+												<c:when test="${item.ev_cd eq 0}">
+													<div class="ico-checkdown normal">
+														<svg viewBox="0 0 24 24" fill="currentColor">
+															<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+														</svg>
+													</div>
+													정상
+												</c:when>
 												<c:when test="${item.ev_cd eq 1}">
 													<div class="ico-checkdown unregistered">
 														<svg viewBox="0 0 24 24" fill="currentColor">
