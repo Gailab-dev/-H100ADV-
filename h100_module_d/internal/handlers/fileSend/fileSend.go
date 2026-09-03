@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -24,6 +26,38 @@ import (
 
 type Response struct {
         Result string `json:"result"`
+}
+
+// (22번: InsecureSkipVerify 제거) 21번에서 구축한 내부 CA(h100-ca.crt) 인증서 풀.
+// FileSender 가 파일 전송마다(스케줄러 루프 포함) 호출되므로 sync.Once 로 1회만 로드해 캐시한다.
+var (
+	caCertPool     *x509.CertPool
+	caCertPoolOnce sync.Once
+	caCertPoolErr  error
+)
+
+// loadCACertPool: CA_CERT_FILE(env) 의 내부 CA 인증서를 읽어 x509.CertPool 을 구성한다.
+// 실패 시(파일 없음·PEM 파싱 실패 등) InsecureSkipVerify 로 되돌아가지 않고 에러를 반환한다(fail-closed).
+func loadCACertPool() (*x509.CertPool, error) {
+	caCertPoolOnce.Do(func() {
+		caCertPath := os.Getenv("CA_CERT_FILE")
+		if caCertPath == "" {
+			caCertPoolErr = fmt.Errorf("CA_CERT_FILE 환경변수가 설정되지 않았습니다")
+			return
+		}
+		caCert, err := os.ReadFile(caCertPath)
+		if err != nil {
+			caCertPoolErr = fmt.Errorf("CA 인증서 파일 읽기 실패(%s): %w", caCertPath, err)
+			return
+		}
+		pool := x509.NewCertPool()
+		if ok := pool.AppendCertsFromPEM(caCert); !ok {
+			caCertPoolErr = fmt.Errorf("CA 인증서 파싱 실패(PEM 형식 확인 필요): %s", caCertPath)
+			return
+		}
+		caCertPool = pool
+	})
+	return caCertPool, caCertPoolErr
 }
 
 /**
@@ -68,19 +102,21 @@ func FileSendHandler(res http.ResponseWriter, req *http.Request) {
 		resVal := false
 	
         if tType == "image" {
-        	filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_images/")
+			// (23번) 디바이스 담당자와 합의된 실제 폴더 구조: FILE_PATH/image (구 output_images 아님)
+        	filePath = filepath.Join(os.Getenv("FILE_PATH"), "image/")
 			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("https://%s/imageFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
         } else if tType == "video" {
-			filePath = filepath.Join(os.Getenv("FILE_PATH"), "output_videos/")
+			// (23번) 디바이스 담당자와 합의된 실제 폴더 구조: FILE_PATH/video (구 output_videos 아님)
+			filePath = filepath.Join(os.Getenv("FILE_PATH"), "video/")
 			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("https://%s/videoFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
 		} else if tType == "audio" {
 			// (2026-07-22 신규) SIP 통화 녹음(wav) 전송.
 			//   녹음 폴더는 module_d 실행 경로(FILE_PATH) 밖에 있으므로 전용 env(AUDIO_PATH)로 지정한다.
 			//   예) AUDIO_PATH=/home/gailab/H100_system/0924_3/sip_test/recordings
-			//   미설정 시에는 FILE_PATH/recordings/ 로 폴백.
+			//   (23번) 미설정 시 폴백 폴더명은 디바이스 담당자와 합의된 FILE_PATH/voice (구 recordings 아님)
 			filePath = os.Getenv("AUDIO_PATH")
 			if filePath == "" {
-				filePath = filepath.Join(os.Getenv("FILE_PATH"), "recordings/")
+				filePath = filepath.Join(os.Getenv("FILE_PATH"), "voice/")
 			}
 			resVal = FileSender(filePath, tFileName.(string), fmt.Sprintf("https://%s/audioFileReceive", os.Getenv("CLOUD_RECEIVE_IP")))
 		} else {
@@ -161,11 +197,21 @@ func FileSender(sFilePath string, sFileName string, sendUrl string) bool {
 	req.Header.Set("X-Device-Serial", serial)
 	req.Header.Set("X-Device-HMAC", macHex)
 
+	// ===== [S] TLS 서버 인증서 검증 (22번: InsecureSkipVerify 제거) ===== //
+	// 21번에서 구축한 내부 CA(h100-ca.crt)를 신뢰 루트로 module_c 서버 인증서를 검증한다.
+	// CA 인증서 로드 실패 시 InsecureSkipVerify 로 되돌아가지 않고 전송을 중단한다(fail-closed).
+	pool, poolErr := loadCACertPool()
+	if poolErr != nil {
+		logger.Log.Error("CA 인증서 로드 실패 — 전송 중단", zap.Error(poolErr))
+		return false
+	}
+
 	client := &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{RootCAs: pool},
 		},
 	}
+	// ===== [E] TLS 서버 인증서 검증 ===== //
 	resp, reErr := client.Do(req)
 	if reErr != nil {
 		logger.Log.Error("클라이언트 요청 생성 실패", zap.Error(reErr))
@@ -226,7 +272,8 @@ func FileSendScheduler() {
 		} else {
 			name := entry.Name()
 
-			if name == "output_images" || name == "output_videos" {
+			// (23번) 디바이스 담당자와 합의된 실제 폴더 구조: image / video (구 output_images/output_videos 아님)
+			if name == "image" || name == "video" {
 				files, err := os.ReadDir(filepath.Join(videoFilePath, name))
 				
 				if err != nil {
@@ -257,10 +304,10 @@ func FileSendScheduler() {
 							continue
 						}
 
-						if name == "output_images" {
-							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_images/"), entry2.Name(), fmt.Sprintf("https://%s/imageFileReceive", cloudReceiveIp))))
-						} else if name == "output_videos" {
-							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "output_videos/"), entry2.Name(), fmt.Sprintf("https://%s/videoFileReceive", cloudReceiveIp))))
+						if name == "image" {
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "image/"), entry2.Name(), fmt.Sprintf("https://%s/imageFileReceive", cloudReceiveIp))))
+						} else if name == "video" {
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "video/"), entry2.Name(), fmt.Sprintf("https://%s/videoFileReceive", cloudReceiveIp))))
 						}
 					}
 				}

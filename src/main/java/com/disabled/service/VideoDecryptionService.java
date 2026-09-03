@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
@@ -22,6 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class VideoDecryptionService {
@@ -210,9 +214,29 @@ public class VideoDecryptionService {
             throw new FileNotFoundException("파일을 찾을 수 없습니다: " + encryptedFilePath);
         }
 
+        // (25번 도입 → 28번 일반화) .enc 여부와 무관하게, 원본이 디바이스 JSON 확인 응답
+        // ({"result":"true"} 또는 {"result":"false"})인지 먼저 확인한다. PUSH로 정상 수신된 파일이
+        // 이후 다른 경로(예: ApiServiceImpl의 검증 없는 저장)에 의해 확인 응답으로 덮어써진 경우,
+        // 이 메서드가 그 내용을 그대로 복사/복호화해 dec 경로까지 오염시키는 것을 막기 위함이다
+        // (2026-08-19~21 사고 — output_images_enc·output_images 양쪽 모두에서 {"result":"false"}
+        // 뿐 아니라 {"result":"true"}(evId=928) 파일도 발견됨 → result 값과 무관하게 거부해야 함).
+        if (isDeviceJsonConfirmation(encryptedFile)) {
+            logger.error("원본 파일이 실제 미디어가 아니라 디바이스 JSON 확인 응답으로 확인됨 - 복사/복호화 거부: {}", encryptedFilePath);
+            return false;
+        }
+
         // .enc 파일이 아니면 복사만 수행
         if (!encryptedFilePath.endsWith(".enc")) {
             logger.info("암호화되지 않은 파일 - 복사만 수행: {}", encryptedFilePath);
+            return copyFile(encryptedFilePath, outputFilePath);
+        }
+
+        // (요청사항) 파일명은 .enc 컨벤션이지만, 디바이스가 실제로는 암호화하지 않고 원문을
+        // 그대로 보낸 경우가 있다 — 이 경우 AES 복호화를 시도하면 실패(IV/블록크기 오류)하거나
+        // 잘못된 바이트가 나올 수 있으므로, 파일 내용의 매직 바이트로 평문 미디어인지 먼저 확인하고
+        // 맞다면 복호화 없이 그대로 복사한다.
+        if (looksLikePlainMedia(encryptedFile)) {
+            logger.info("파일명은 .enc 이나 실제 내용은 암호화되지 않은 원문 미디어로 확인됨 - 복호화 없이 복사만 수행: {}", encryptedFilePath);
             return copyFile(encryptedFilePath, outputFilePath);
         }
 
@@ -220,7 +244,6 @@ public class VideoDecryptionService {
         try (FileInputStream fis = new FileInputStream(encryptedFile)) {
             // 파일 크기 확인
             long fileSize = encryptedFile.length();
-            System.out.println("======암호화된 파일 크기: " + fileSize + " bytes");
             logger.info("암호화된 파일 크기: {} bytes", fileSize);
 
             // 첫 16바이트를 IV로 읽기
@@ -292,6 +315,94 @@ public class VideoDecryptionService {
             logger.error("파일 복호화 및 저장 실패: " + encryptedFilePath + " -> " + outputFilePath, e);
             throw e;
         }
+    }
+
+    /**
+     * (25번 도입 → 28번 일반화) 파일이 실제 미디어가 아니라 디바이스(module_d)의 JSON 확인 응답
+     * ({"result":"true"} 또는 {"result":"false"})인지 판별한다. 이런 확인 응답은 소량(수십 바이트)
+     * 이므로 크기부터 걸러내고, 그 이하 크기만 JSON 파싱을 시도한다. JSON이 아니거나 result 필드가
+     * 없으면 실제 파일로 간주한다(오탐 방지 — 아주 작은 정상 파일도 있을 수 있으므로 크기만으로
+     * 거부하지 않고 반드시 JSON 파싱 + result 필드 존재까지 확인한다).
+     *
+     * (28번, evId=928) result 값의 true/false 는 더 이상 따지지 않는다 — module_d 의 응답 형식상
+     * result:true 도 실제 파일 바이트가 아닌 확인 응답이므로 동일하게 거부해야 한다.
+     *
+     * @param file 확인할 파일
+     * @return true: 디바이스 JSON 확인 응답으로 판단됨(복사·복호화하면 안 됨)
+     */
+    private boolean isDeviceJsonConfirmation(File file) {
+        long size = file.length();
+        if (size <= 0 || size > 4096) {
+            return false;
+        }
+        byte[] bytes;
+        try {
+            bytes = Files.readAllBytes(file.toPath());
+        } catch (IOException e) {
+            return false;
+        }
+        try {
+            JsonNode node = new ObjectMapper().readTree(bytes);
+            return node != null && node.hasNonNull("result");
+        } catch (IOException ignore) {
+            // JSON 파싱 실패 = 실제 파일로 간주(의도된 동작)
+        }
+        return false;
+    }
+
+    /**
+     * 파일의 앞부분(매직 바이트)을 읽어 이미지·영상·음성 파일 시그니처와 일치하는지 확인한다.
+     * 파일명이 .enc 컨벤션이어도, 실제로는 디바이스가 암호화하지 않은 원문을 그대로 보낸 경우를
+     * 걸러내기 위한 용도다(AES 암호문은 이런 시그니처와 우연히 일치할 확률이 사실상 0이다).
+     *
+     * @param file 확인할 파일(디스크상 실제 경로)
+     * @return true: 알려진 평문 미디어 포맷 시그니처와 일치함
+     */
+    private boolean looksLikePlainMedia(File file) {
+        byte[] head = new byte[16];
+        int read;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            read = fis.read(head);
+        } catch (IOException e) {
+            logger.warn("평문 여부 확인을 위한 파일 헤더 읽기 실패: {}", file.getAbsolutePath(), e);
+            return false;
+        }
+        return read > 0 && isPlainMediaSignature(head, read);
+    }
+
+    /**
+     * 파일 헤더 바이트를 알려진 이미지·영상·음성 포맷 매직 시그니처와 비교한다.
+     *
+     * @param head 파일 앞부분 바이트(최대 16바이트)
+     * @param len  실제로 읽힌 바이트 수
+     * @return true: 평문 미디어 포맷으로 판단됨
+     */
+    private static boolean isPlainMediaSignature(byte[] head, int len) {
+        if (len >= 8 && (head[0] & 0xFF) == 0x89 && head[1] == 'P' && head[2] == 'N' && head[3] == 'G') {
+            return true; // PNG
+        }
+        if (len >= 3 && (head[0] & 0xFF) == 0xFF && (head[1] & 0xFF) == 0xD8 && (head[2] & 0xFF) == 0xFF) {
+            return true; // JPEG
+        }
+        if (len >= 4 && head[0] == 'G' && head[1] == 'I' && head[2] == 'F' && head[3] == '8') {
+            return true; // GIF
+        }
+        if (len >= 2 && head[0] == 'B' && head[1] == 'M') {
+            return true; // BMP
+        }
+        if (len >= 12 && head[0] == 'R' && head[1] == 'I' && head[2] == 'F' && head[3] == 'F') {
+            return true; // RIFF 컨테이너 (WEBP/WAV/AVI)
+        }
+        if (len >= 8 && head[4] == 'f' && head[5] == 't' && head[6] == 'y' && head[7] == 'p') {
+            return true; // MP4/MOV (ftyp 박스)
+        }
+        if (len >= 3 && head[0] == 'I' && head[1] == 'D' && head[2] == '3') {
+            return true; // MP3 (ID3 태그)
+        }
+        if (len >= 2 && (head[0] & 0xFF) == 0xFF && (head[1] & 0xE0) == 0xE0) {
+            return true; // MP3 프레임 동기(ID3 태그 없는 경우)
+        }
+        return false;
     }
 
     /**
