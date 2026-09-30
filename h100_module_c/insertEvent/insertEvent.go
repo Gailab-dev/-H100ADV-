@@ -55,6 +55,25 @@ func (Tbl_Device) TableName() string {
 	return "tbl_device"
 }
 
+// (패치 2026-09-30) 알림 문구 개선 — 기존엔 ev_cd 와 무관하게 항상 "불법주차 이벤트 발생"으로
+// 고정 표시되고 있었다. ev_cd 별로 실제 이벤트 종류를 반영한 문구를 매핑한다.
+// 매핑에 없는 코드(2, 3 또는 향후 신규 코드)가 유입될 경우 알림이 비거나 에러가 나지 않도록
+// fallback 문구("이벤트 발생")를 둔다.
+var evCdNotiMessage = map[uint]string{
+	0: "장애인 차량 입차",
+	1: "불법주차 이벤트 발생",
+	4: "위험상황 이벤트 발생",
+	5: "물건적재 이벤트 발생",
+	6: "이중주차 이벤트 발생",
+}
+
+func notiMessageForEvCd(evCd uint) string {
+	if msg, ok := evCdNotiMessage[evCd]; ok {
+		return msg
+	}
+	return "이벤트 발생"
+}
+
 func InsertEventData() http.HandlerFunc {
 
 	fmt.Println("insertEventData in")
@@ -137,7 +156,7 @@ func InsertEventData() http.HandlerFunc {
 				NotiDvId:     device.DvId,
 				NotiSerial:   eventData.EvSerialNumber,
 				NotiTargetId: int(newEventData.EvId),
-				NotiTitle:    fmt.Sprintf("불법주차 이벤트 발생 - %s", device.DvName),
+				NotiTitle:    fmt.Sprintf("%s - %s", notiMessageForEvCd(newEventData.EvCd), device.DvName),
 				NotiIsRead:   0,
 				NotiRegDate:  time.Now(),
 			}

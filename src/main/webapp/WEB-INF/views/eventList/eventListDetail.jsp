@@ -32,6 +32,14 @@
 <div class="topTitle">
 	<div class="title-text">
 		<h3 class="detail-title">불법주차 리스트 상세</h3>
+		<!-- (패치 2026-09-30) 이전/다음 탐색 — 목록과 동일한 검색조건·정렬기준에서 인접 이벤트로 이동 -->
+		<button type="button" id="btnPrevEvent" class="delete-btn" title="이전 항목">◀ 이전</button>
+		<button type="button" id="btnNextEvent" class="delete-btn" title="다음 항목">다음 ▶</button>
+		<!-- (패치 2026-09-30) 삭제(소프트 삭제) — 확인창 표시 후 삭제, 성공 시 다음 항목으로 자동 이동 -->
+		<button type="button" id="btnDeleteEvent" class="delete-btn" title="삭제">
+			<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.75 9.11111V14.4444M8.25 9.11111V14.4444M4.75 5.55556V16.2222C4.75 16.6937 4.93437 17.1459 5.26256 17.4793C5.59075 17.8127 6.03587 18 6.5 18H13.5C13.9641 18 14.4092 17.8127 14.7374 17.4793C15.0656 17.1459 15.25 16.6937 15.25 16.2222V5.55556M3 5.55556H17M5.625 5.55556L7.375 2H12.625L14.375 5.55556" stroke="black" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+			삭제
+		</button>
 		<button id="btnExcel" type="button" class="delete-btn"  title="엑셀 다운로드">
 			<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.85858 2.87732L15.4293 1.0815C15.7027 1.04245 15.9559 1.2324 15.995 1.50577C15.9983 1.52919 16 1.55282 16 1.57648V22.4235C16 22.6996 15.7761 22.9235 15.5 22.9235C15.4763 22.9235 15.4527 22.9218 15.4293 22.9184L2.85858 21.1226C2.36593 21.0522 2 20.6303 2 20.1327V3.86727C2 3.36962 2.36593 2.9477 2.85858 2.87732ZM4 4.73457V19.2654L14 20.694V3.30599L4 4.73457ZM17 19H20V4.99997H17V2.99997H21C21.5523 2.99997 22 3.44769 22 3.99997V20C22 20.5523 21.5523 21 21 21H17V19ZM10.2 12L13 16H10.6L9 13.7143L7.39999 16H5L7.8 12L5 7.99997H7.39999L9 10.2857L10.6 7.99997H13L10.2 12Z"/></svg>
 			엑셀 다운로드
@@ -189,8 +197,72 @@
 
 // 불법 주차 리스트 화면으로 이동
   function goToEventList(){
-    location.href = CONTEXT_PATH + "/eventList/viewEventList.do?page=${page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}";
+    location.href = CONTEXT_PATH + "/eventList/viewEventList.do?page=${page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}"
+        + "&evCd=${evCd}&evAction=${evAction}&sortCol=${sortCol}&sortDir=${sortDir}";
   }
+
+  // (패치 2026-09-30) 이전/다음 탐색·삭제 후 자동 이동 — 목록과 동일한 검색조건·정렬기준을
+  // 그대로 실어 보내야 같은 필터/정렬 결과 안에서 인접 이벤트를 찾을 수 있다.
+  function _h100FilterQuery(){
+    return "&searchKeyword=" + encodeURIComponent("${searchKeyword != null ? searchKeyword : ''}")
+         + "&startDate=" + encodeURIComponent("${startDate != null ? startDate : ''}")
+         + "&endDate=" + encodeURIComponent("${endDate != null ? endDate : ''}")
+         + "&evCd=" + encodeURIComponent("${evCd != null ? evCd : ''}")
+         + "&evAction=" + encodeURIComponent("${evAction != null ? evAction : ''}")
+         + "&sortCol=" + encodeURIComponent("${sortCol != null ? sortCol : 'ev_date'}")
+         + "&sortDir=" + encodeURIComponent("${sortDir != null ? sortDir : 'DESC'}");
+  }
+
+  function _h100GoToAdjacent(step){
+    var currentEvId = ${eventListDetail.ev_id};
+    var qs = "currentEvId=" + currentEvId + "&step=" + step + _h100FilterQuery();
+    fetch(CONTEXT_PATH + "/eventList/adjacentEvent?" + qs, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d && d.evId) {
+          location.href = CONTEXT_PATH + "/eventList/eventListDetail?evId=" + d.evId + "&dvId=${dvId}" + _h100FilterQuery();
+        } else {
+          alert(step > 0 ? '마지막 항목입니다.' : '첫 번째 항목입니다.');
+        }
+      })
+      .catch(function(){ alert('이동 중 오류가 발생했습니다.'); });
+  }
+
+  document.getElementById('btnPrevEvent').addEventListener('click', function(){ _h100GoToAdjacent(-1); });
+  document.getElementById('btnNextEvent').addEventListener('click', function(){ _h100GoToAdjacent(1); });
+
+  // (패치 2026-09-30) 삭제(소프트 삭제) — 확인창 → 삭제 전(현재 행이 아직 살아있어 순번 계산이
+  // 가능할 때) 다음 항목을 먼저 조회 → 삭제 실행 → 다음 항목 있으면 이동, 없으면 목록으로 복귀.
+  document.getElementById('btnDeleteEvent').addEventListener('click', function(){
+    if (!confirm('이 항목을 삭제하시겠습니까?\n삭제된 항목은 목록·상세보기에서 사라집니다.')) return;
+
+    var currentEvId = ${eventListDetail.ev_id};
+    var qs = "currentEvId=" + currentEvId + "&step=1" + _h100FilterQuery();
+
+    fetch(CONTEXT_PATH + "/eventList/adjacentEvent?" + qs, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r){ return r.json(); })
+      .then(function(adj){
+        var nextEvId = adj && adj.evId;
+        return fetch(CONTEXT_PATH + "/eventList/deleteEvents", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({ evIds: [currentEvId] })
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (!d || !d.success) {
+            alert('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            return;
+          }
+          if (nextEvId) {
+            location.href = CONTEXT_PATH + "/eventList/eventListDetail?evId=" + nextEvId + "&dvId=${dvId}" + _h100FilterQuery();
+          } else {
+            goToEventList(); // 마지막 항목이었던 경우 목록으로 복귀
+          }
+        });
+      })
+      .catch(function(){ alert('삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); });
+  });
 
   document.addEventListener('DOMContentLoaded', function() {
     const modal     = document.getElementById('photoModal');

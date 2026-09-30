@@ -340,6 +340,13 @@ public class EventListController {
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="searchKeyword",required=false) String searchKeyword
 			, @RequestParam(value="dvAddr", required = false) String dvAddr
+			// (패치 2026-09-30) 상세보기 이전/다음 탐색이 목록과 동일한 검색조건·정렬기준으로
+			// 인접 이벤트를 찾아야 하므로, 목록에서 넘어온 조건을 그대로 유지해 프론트가 이전/다음·
+			// 삭제 후 자동 이동 요청 시 그대로 되돌려 보낼 수 있게 한다.
+			, @RequestParam(value="evCd", required=false) Integer filterEvCd
+			, @RequestParam(value="evAction", required=false) Integer evAction
+			, @RequestParam(value="sortCol", defaultValue="ev_date") String sortCol
+			, @RequestParam(value="sortDir", defaultValue="DESC") String sortDir
 			, Model model
 			, HttpServletResponse res
 			, HttpSession session) {
@@ -399,7 +406,24 @@ public class EventListController {
 					return "error";
 				}
 			}
-			
+
+			// (패치 2026-09-30) evCd/evAction/sortDir 검증 — viewEventList()와 동일한 기준
+			if (filterEvCd != null && (filterEvCd >= 7 || filterEvCd <= 0)) {
+				logger.warn("유효하지 않은 유형: {}", filterEvCd);
+				model.addAttribute("errorMessage", "유효하지 않은 유형입니다.");
+				return "error";
+			}
+			if (evAction != null && (evAction < 0 || evAction > 2)) {
+				logger.warn("유효하지 않은 처리상태(evAction): {}", evAction);
+				model.addAttribute("errorMessage", "유효하지 않은 처리 상태입니다.");
+				return "error";
+			}
+			if (!"ASC".equals(sortDir) && !"DESC".equals(sortDir)) {
+				logger.warn("유효하지 않은 sortDir 요청: {}", sortDir);
+				model.addAttribute("errorMessage", "유효하지 않은 정렬방법입니다.");
+				return "error";
+			}
+
 			// ====== 유효성 검증 [E] ====== //
 			
 			// ====== 변수 선언 [S] ====== //
@@ -470,6 +494,11 @@ public class EventListController {
 			model.addAttribute("searchKeyword", searchKeyword);
 			model.addAttribute("startDate", startDate);
 			model.addAttribute("endDate", endDate);
+			// (패치 2026-09-30) 이전/다음 탐색·삭제 후 자동 이동 AJAX 호출에 그대로 실어 보낼 검색조건
+			model.addAttribute("evCd", filterEvCd);
+			model.addAttribute("evAction", evAction);
+			model.addAttribute("sortCol", sortCol);
+			model.addAttribute("sortDir", sortDir);
 			// ====== mdoel add [E] ====== //
 			
 		} catch (IllegalArgumentException e) {
@@ -561,6 +590,84 @@ public class EventListController {
 		out.put("scenario", scenario);
 		out.put("message", message);
 		return out;
+	}
+
+	// ====== 패치 2026-09-30 — 상세보기 이전/다음 탐색 ======
+	/**
+	 * 상세보기 화면의 이전/다음 이동. 목록과 동일한 검색조건·정렬기준에서 currentEvId 기준
+	 * step(다음=+1, 이전=-1)만큼 이동한 위치의 ev_id 를 찾는다.
+	 * @return {"evId": Integer|null} — null이면 첫/마지막 항목(더 이동할 곳 없음)
+	 */
+	@GetMapping("/adjacentEvent")
+	@ResponseBody
+	public Map<String, Object> adjacentEvent(
+			@RequestParam("currentEvId") Integer currentEvId
+			, @RequestParam("step") Integer step
+			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
+			, @RequestParam(value="startDate", required=false) String startDate
+			, @RequestParam(value="endDate", required=false) String endDate
+			, @RequestParam(value="evCd", required=false) Integer evCd
+			, @RequestParam(value="evAction", required=false) Integer evAction
+			, @RequestParam(value="sortCol", defaultValue="ev_date") String sortCol
+			, @RequestParam(value="sortDir", defaultValue="DESC") String sortDir) {
+
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("currentEvId", currentEvId);
+		paramMap.put("step", step);
+		paramMap.put("searchKeyword", searchKeyword);
+		// (목록 viewEventList()와 동일 기준) ev_date 는 yyyyMMddHHmmss 라 검색조건은 dash 없는 8자리로 비교
+		paramMap.put("startDate", startDate == null ? "" : startDate.replace("-", ""));
+		paramMap.put("endDate", endDate == null ? "" : endDate.replace("-", ""));
+		paramMap.put("evCd", evCd);
+		paramMap.put("evAction", evAction);
+		paramMap.put("sortCol", sortCol);
+		paramMap.put("sortDir", sortDir);
+
+		Integer adjacentEvId = eventListService.getAdjacentEventId(paramMap);
+		result.put("evId", adjacentEvId);
+		return result;
+	}
+
+	// ====== 패치 2026-09-30 — 주정차 단속 대상 내역 소프트 삭제(논리 삭제) ======
+	/**
+	 * 목록 다중 선택 삭제·상세보기 단건 삭제 공용. 물리 삭제가 아니라 플래그만 세운다
+	 * (파일·row는 그대로 유지 — 과태료 부과·이의제기 대응 근거자료 보존 목적).
+	 * @param body {"evIds": [Integer, ...]}
+	 * @return {"success": boolean, "deletedCount": int}
+	 */
+	@PostMapping(value = "/deleteEvents", produces = "application/json; charset=UTF-8")
+	@ResponseBody
+	public Map<String, Object> deleteEvents(@RequestBody Map<String, Object> body, HttpSession session) {
+
+		Map<String, Object> result = new HashMap<String, Object>();
+
+		Object uIdAttr = session.getAttribute("uId");
+		if (uIdAttr == null) {
+			result.put("success", false);
+			result.put("deletedCount", 0);
+			return result;
+		}
+		Integer deletedBy = Integer.parseInt(uIdAttr.toString());
+
+		Object rawIds = body.get("evIds");
+		List<Integer> evIds = new ArrayList<Integer>();
+		if (rawIds instanceof List) {
+			for (Object o : (List<?>) rawIds) {
+				if (o != null) {
+					evIds.add(Integer.parseInt(o.toString()));
+				}
+			}
+		}
+
+		int deletedCount = eventListService.softDeleteEvents(evIds, deletedBy);
+		logger.info("{} 사용자가 {}에 주정차 단속 대상 내역 {}건 삭제(논리 삭제) - evIds: {}",
+				deletedBy, LocalDateTime.now(), deletedCount, evIds);
+
+		result.put("success", deletedCount > 0);
+		result.put("deletedCount", deletedCount);
+		return result;
 	}
 
 	// ev_cd별 총합

@@ -4,6 +4,10 @@
 <!-- 불법주차 리스트 화면 SQL문 -->
 <mapper namespace="com.disabled.mapper.EventListMapper">
 
+	<!-- (패치 2026-09-30) 소프트 삭제된 이벤트는 목록·상세보기·건수 집계 어디에도 노출하지 않는다.
+	     tbl_event_data 를 조회하는 모든 select 에 공통 적용 -->
+	<sql id="notDeletedFilter">A.ev_is_deleted = 0</sql>
+
 	<!-- 검색조건에 따른 이벤트 리스트 -->
 	<select id="getEventList" parameterType="map" resultType="map">
 		SELECT ROW_NUMBER() OVER (
@@ -41,6 +45,7 @@
 		ON A.ev_dv_id = B.dv_id
 
 		where 1=1
+		AND <include refid="notDeletedFilter"/>
 		<if test="searchKeyword != null and searchKeyword != ''">
 			AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
 			OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
@@ -72,6 +77,7 @@
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
 		<where>
+			AND <include refid="notDeletedFilter"/>
 			<if test="searchKeyword != null and searchKeyword != ''">
 				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
 				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
@@ -99,6 +105,7 @@
 		ON A.ev_dv_id = B.dv_id
 		<where>
 			A.ev_id = #{evId}
+			AND <include refid="notDeletedFilter"/>
 		</where>
 	</select>
 	
@@ -131,6 +138,7 @@
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
 		WHERE 1=1
+		AND <include refid="notDeletedFilter"/>
 
 		<if test="searchKeyword != null and searchKeyword != ''">
 			AND (
@@ -151,5 +159,67 @@
 		GROUP BY A.ev_cd
 		ORDER BY A.ev_cd
 	</select>
+
+	<!-- (패치 2026-09-30) 상세보기 이전/다음 탐색 및 삭제 후 자동 이동용.
+	     getEventList 와 동일한 검색조건·정렬기준으로 매긴 순번(rn)에서, 현재 evId 의 순번을
+	     기준으로 step(다음=+1, 이전=-1)만큼 이동한 위치의 ev_id 를 반환한다. 해당 위치가 없으면
+	     결과 없음(Java 쪽에서 null 로 처리). -->
+	<select id="getAdjacentEventId" parameterType="map" resultType="int">
+		WITH filtered AS (
+			SELECT
+				A.ev_id,
+				ROW_NUMBER() OVER (
+					ORDER BY
+					<choose>
+						<when test="sortCol == 'ev_date'">ev_date</when>
+						<when test="sortCol == 'ev_cd'">ev_cd</when>
+						<when test="sortCol == 'ev_dv_name'">dv_name</when>
+						<when test="sortCol == 'ev_dv_addr'">dv_addr</when>
+						<when test="sortCol == 'ev_car_num'">ev_car_num</when>
+						<otherwise>ev_date</otherwise>
+					</choose>
+					<choose>
+						<when test="sortDir == 'ASC'">ASC</when>
+						<otherwise>DESC</otherwise>
+					</choose>
+					, ev_id DESC
+				) AS rn
+			FROM tbl_event_data A
+			LEFT JOIN tbl_device B ON A.ev_dv_id = B.dv_id
+			WHERE 1=1
+			AND <include refid="notDeletedFilter"/>
+			<if test="searchKeyword != null and searchKeyword != ''">
+				AND ( A.ev_car_num like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_addr like CONCAT('%',#{searchKeyword},'%')
+				OR B.dv_name like CONCAT('%',#{searchKeyword},'%'))
+			</if>
+			<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+				AND LEFT(A.ev_date, 8) BETWEEN #{startDate} AND #{endDate}
+			</if>
+			<if test="evCd != null and evCd != ''">
+				AND A.ev_cd = #{evCd}
+			</if>
+			<if test="evAction != null">
+				AND A.ev_action = #{evAction}
+			</if>
+		)
+		SELECT ev_id
+		FROM filtered
+		WHERE rn = (SELECT rn FROM filtered WHERE ev_id = #{currentEvId}) + #{step}
+	</select>
+
+	<!-- (패치 2026-09-30) 소프트 삭제 — 물리 삭제 대신 플래그만 세운다(파일은 그대로 유지).
+	     evIds 는 리스트 화면 다중 선택 삭제·상세보기 단건 삭제 모두 이 하나로 처리한다. -->
+	<update id="softDeleteEvents" parameterType="map">
+		UPDATE tbl_event_data
+		SET ev_is_deleted = 1,
+			ev_deleted_at = NOW(),
+			ev_deleted_by = #{deletedBy}
+		WHERE ev_id IN
+		<foreach collection="evIds" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+		AND ev_is_deleted = 0
+	</update>
 
 </mapper>

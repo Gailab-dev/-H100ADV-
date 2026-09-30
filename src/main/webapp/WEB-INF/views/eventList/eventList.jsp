@@ -138,10 +138,18 @@
 	    let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
 	    let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
 	    let pageSize = encodeURIComponent('${pageSize != null ? pageSize : ""}');
-	    
-	    
+
+	    // (패치 2026-09-30) 상세보기 이전/다음 탐색이 목록과 동일한 검색조건·정렬기준을 알아야 하므로
+	    // 현재 목록 URL의 쿼리스트링에서 그대로 읽어 상세보기 URL에 실어 보낸다.
+	    const _h100CurUrl = new URL(window.location.href);
+	    const evCdParam = encodeURIComponent(_h100CurUrl.searchParams.get('evCd') || '');
+	    const evActionParam = encodeURIComponent(_h100CurUrl.searchParams.get('evAction') || '');
+	    const sortColParam = encodeURIComponent(_h100CurUrl.searchParams.get('sortCol') || 'ev_date');
+	    const sortDirParam = encodeURIComponent(_h100CurUrl.searchParams.get('sortDir') || 'DESC');
+
 	    // 결과가 '가능'일 때 이동할 상세 URL (파라미터는 목록이 보유)
-	    const detailUrl = 'eventListDetail?dvId='+dvId+'&evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&dvAddr="+dvAddr+"&pageSize="+pageSize;
+	    const detailUrl = 'eventListDetail?dvId='+dvId+'&evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&dvAddr="+dvAddr+"&pageSize="+pageSize
+	        + "&evCd=" + evCdParam + "&evAction=" + evActionParam + "&sortCol=" + sortColParam + "&sortDir=" + sortDirParam;
 
 	    // (ADR-008) 즉시 로딩 오버레이 → 비동기 사전검증 → 가능 시 동기 이동, 아니면 "파일 없음" 표시
 	    const _h100Started = Date.now();
@@ -408,6 +416,37 @@
 	        updateSelectedCount();
   	};
 		// ---------------------------- 체크박스 관련 자바스크립트 -------------------------------
+
+		// (패치 2026-09-30) 선택 삭제(소프트 삭제) — 확인창 표시 후 삭제, 성공 시 현재 검색조건을
+		// 유지한 채 목록을 새로고침한다. 물리 삭제가 아니라 서버에서 플래그만 세우므로, 삭제된
+		// 항목은 이후 조회에서 자동으로 빠진다(공통 SQL 조각 notDeletedFilter).
+		function deleteSelectedEvents() {
+			const checked = document.querySelectorAll('.row-check:checked');
+			if (checked.length === 0) {
+				alert('삭제할 항목을 선택해주세요.');
+				return;
+			}
+			if (!confirm('선택한 ' + checked.length + '건을 삭제하시겠습니까?\n삭제된 항목은 목록에서 사라집니다.')) {
+				return;
+			}
+			const evIds = Array.from(checked).map(function(chk){ return Number(chk.getAttribute('data-ev-id')); });
+			fetch(CONTEXT_PATH + '/eventList/deleteEvents', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+				body: JSON.stringify({ evIds: evIds })
+			})
+			.then(function(r){ return r.json(); })
+			.then(function(d){
+				if (d && d.success) {
+					location.reload(); // 현재 검색조건·페이지 유지한 채 새로고침
+				} else {
+					alert('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+				}
+			})
+			.catch(function(){
+				alert('삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+			});
+		}
 		// --------------------------- 엑셀 다운로드 -----------------------------
 		
 		/**
@@ -642,7 +681,7 @@
 						<span class="selected-text">0개 선택됨</span>
 
 						<button type="button" class="delete-btn"
-							onclick="viewDeleteDevicePopup()" title="삭제">
+							onclick="deleteSelectedEvents()" title="삭제">
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 								xmlns="http://www.w3.org/2000/svg">
                     <path
@@ -713,7 +752,7 @@
 							<tbody>
 								<c:forEach var="item" items="${eventList}">
 									<tr>
-										<td><input type="checkbox" class="row-check" /></td>
+										<td><input type="checkbox" class="row-check" data-ev-id="${item.ev_id}" /></td>
 										<td><c:out value="${totalRecordCount - item.rn + 1}"
 												escapeXml="true" /></td>
 										<td><span class="cell-ellipsis ev-date"

@@ -22,4 +22,8 @@ public interface EventListMapper {
 	int getTotalRecordCount(Map<String, Object> paramMap) throws RuntimeException;
 	List<Map<String, Object>> getEventCountByEvCd(Map<String, Object> paramMap) throws RuntimeException; // ev_cd별 이벤트 건수
 
+	// ====== 패치 2026-09-30 — 상세보기 이전/다음 탐색, 소프트 삭제 ======
+	Integer getAdjacentEventId(Map<String, Object> paramMap) throws RuntimeException;
+	int softDeleteEvents(Map<String, Object> paramMap) throws RuntimeException;
+
 }

@@ -35,4 +35,20 @@ public interface EventListService {
 	int getTotalRecordCount(Map<String, Object> paramMap);
 
     List<Map<String, Object>> getEventCountByEvCd(Map<String, Object> paramMap);
+
+	// ====== 패치 2026-09-30 — 상세보기 이전/다음 탐색, 소프트 삭제 ======
+	/**
+	 * @param paramMap getEventList 와 동일한 검색조건·정렬기준(searchKeyword/startDate/endDate/evCd/evAction/sortCol/sortDir)
+	 *                 + currentEvId(기준 이벤트) + step(다음=+1, 이전=-1)
+	 * @return 인접한 이벤트의 ev_id, 없으면 null(첫/마지막 항목)
+	 */
+	Integer getAdjacentEventId(Map<String, Object> paramMap);
+
+	/**
+	 * 소프트 삭제(플래그만 세움, 파일·row는 유지) — 목록 다중 선택 삭제·상세보기 단건 삭제 공용
+	 * @param evIds 삭제할 이벤트 ID 목록
+	 * @param deletedBy 삭제 처리한 사용자 u_id
+	 * @return 실제로 삭제 처리된 건수
+	 */
+	int softDeleteEvents(List<Integer> evIds, Integer deletedBy);
 }

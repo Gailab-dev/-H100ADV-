@@ -776,5 +776,33 @@ public class EventListServiceImpl implements EventListService{
 			throw e;
 		}
 	}
-	
+
+	// ====== 패치 2026-09-30 — 상세보기 이전/다음 탐색, 소프트 삭제 ======
+
+	@Override
+	public Integer getAdjacentEventId(Map<String, Object> paramMap) {
+		try {
+			return eventListMapper.getAdjacentEventId(paramMap);
+		} catch (RuntimeException e) {
+			logger.error("getAdjacentEventId에서 오류 발생 : ", e);
+			throw e;
+		}
+	}
+
+	@Override
+	public int softDeleteEvents(List<Integer> evIds, Integer deletedBy) {
+		if (evIds == null || evIds.isEmpty()) {
+			return 0;
+		}
+		try {
+			Map<String, Object> paramMap = new HashMap<String, Object>();
+			paramMap.put("evIds", evIds);
+			paramMap.put("deletedBy", deletedBy);
+			return eventListMapper.softDeleteEvents(paramMap);
+		} catch (RuntimeException e) {
+			logger.error("softDeleteEvents에서 오류 발생 : ", e);
+			throw e;
+		}
+	}
+
 }
