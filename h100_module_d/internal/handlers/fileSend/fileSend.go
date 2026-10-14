@@ -123,7 +123,7 @@ func FileSendHandler(res http.ResponseWriter, req *http.Request) {
 			http.Error(res, "Invalid body content", http.StatusBadRequest)
 		}
 
-		logger.Log.Info(fmt.Sprintf("resVal : ", strconv.FormatBool(resVal)))
+		logger.Log.Info(fmt.Sprintf("resVal :  %v", strconv.FormatBool(resVal)))
 		response := Response{Result: strconv.FormatBool(resVal)}
 		res.Header().Set("Content-Type", "application/json")
 
@@ -305,9 +305,9 @@ func FileSendScheduler() {
 						}
 
 						if name == "image" {
-							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "image/"), entry2.Name(), fmt.Sprintf("https://%s/imageFileReceive", cloudReceiveIp))))
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 :  %v", FileSender(filepath.Join(videoFilePath, "image/"), entry2.Name(), fmt.Sprintf("https://%s/imageFileReceive", cloudReceiveIp))))
 						} else if name == "video" {
-							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 : ", FileSender(filepath.Join(videoFilePath, "video/"), entry2.Name(), fmt.Sprintf("https://%s/videoFileReceive", cloudReceiveIp))))
+							logger.Log.Info(fmt.Sprintf("파일 전송 스케줄러 결과 :  %v", FileSender(filepath.Join(videoFilePath, "video/"), entry2.Name(), fmt.Sprintf("https://%s/videoFileReceive", cloudReceiveIp))))
 						}
 					}
 				}

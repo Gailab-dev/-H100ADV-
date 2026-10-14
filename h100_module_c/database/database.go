@@ -14,11 +14,11 @@ import (
 // database 설정 파일을 읽어오기 위한 data type을 정의하는 구조체
 type Config struct {
 	Database struct {
-  		User 	string `yaml:"User"`
-  		Password string `yaml:"Password"`
-  		Host 	string `yaml:"Host"`
-  		Port 	string `yaml:"Port"`
-		Name 	string `yaml:"Name"`  
+		User     string `yaml:"User"`
+		Password string `yaml:"Password"`
+		Host     string `yaml:"Host"`
+		Port     string `yaml:"Port"`
+		Name     string `yaml:"Name"`
 	} `yaml:"database"`
 }
 
@@ -27,37 +27,31 @@ var (
 )
 
 // DB 접속 정보를 불러와서 mariadb와 연결
-func Init(){
+func Init() {
 
 	fmt.Println("database Init in")
 
-	// YAML 파일 읽기
-	data, err := os.ReadFile("./config/database.yml")
-	if err != nil {
-		fmt.Println("YAML 파일 읽기 실패")
-		log.Fatalf("error: %v", err)
-	}
-
-	fmt.Println("YAML 파일 읽기 성공")
-	
-	// YAML 파싱
 	var config Config
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		fmt.Println("파싱 실패")
-		log.Fatalf("error: %v", err)
+	if os.Getenv("H100_DB_HOST") != "" {
+		config.Database.Host = os.Getenv("H100_DB_HOST")
+		config.Database.Port = os.Getenv("H100_DB_PORT")
+		config.Database.User = os.Getenv("H100_DB_USER")
+		config.Database.Password = os.Getenv("H100_DB_PASSWORD")
+		config.Database.Name = os.Getenv("H100_DB_NAME")
+	} else {
+		data, err := os.ReadFile("./config/database.yml")
+		if err != nil {
+			log.Fatal("Database configuration is unavailable")
+		}
+		if err := yaml.Unmarshal(data, &config); err != nil {
+			log.Fatal("Invalid database configuration")
+		}
 	}
-	fmt.Println("파싱 성공")
-
-	// DB Connect
-	// dsn: [user]:[password]@tcp([host]:[port])/[dbname]?charset=utf8mb4&parseTime=True&loc=Local
-	dsn := config.Database.User +":"+ 
-		config.Database.Password +"@tcp(" + 
-		config.Database.Host + ":" + 
-		config.Database.Port + ")/" + 
-		config.Database.Name + "?charset=utf8mb4&parseTime=True&loc=Local"
-	fmt.Println(dsn)
-	
+	if config.Database.Port == "" {
+		config.Database.Port = "3306"
+	}
+	dsn := config.Database.User + ":" + config.Database.Password + "@tcp(" + config.Database.Host + ":" + config.Database.Port + ")/" + config.Database.Name + "?charset=utf8mb4&parseTime=True&loc=Local"
+	var err error
 	// DB와 connection pool 생성
 	DBConn, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -68,9 +62,9 @@ func Init(){
 
 // 오류 발생시 DB connect 종료
 func Close() {
-    sqlDB, err := DBConn.DB()
-    if err != nil {
-        log.Fatal("sql.DB 추출 실패:", err)
-    }
-    sqlDB.Close()
+	sqlDB, err := DBConn.DB()
+	if err != nil {
+		log.Fatal("sql.DB 추출 실패:", err)
+	}
+	sqlDB.Close()
 }

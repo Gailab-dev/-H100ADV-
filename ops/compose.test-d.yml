@@ -1,0 +1,31 @@
+# PC integration only. Real edge deployment uses compose.edge.yml.
+services:
+  module-d:
+    image: h100-module-d:local
+    build:
+      context: ..
+      dockerfile: ops/docker/d.Dockerfile
+    init: true
+    environment:
+      TLS_CERT_FILE: /certs/server.crt
+      TLS_KEY_FILE: /certs/server.key
+      CA_CERT_FILE: /certs/ca.crt
+      CLOUD_RECEIVE_IP: module-c:8443
+      DEVICE_SERIAL: "2026101400001"
+      DEVICE_HMAC_KEY: ${H100_DEVICE_HMAC_KEY}
+      H100_AES_KEY: ${H100_AES_KEY}
+      H100_TRIGGER_TOKEN: ${H100_TRIGGER_TOKEN}
+      FILE_SEND_SCH_TIME: "0 0 2 * * *"
+      RTSP_URL: ${H100_RTSP_URL:-rtsp://127.0.0.1:8554/unconfigured}
+    ports: ["127.0.0.1:${H100_D_PORT:-7812}:8443"]
+    volumes:
+      - certificates:/certs:ro
+      - edge-files:/data
+      - edge-hls:/hls
+    depends_on:
+      certs: {condition: service_completed_successfully}
+      module-c: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  edge-files:
+  edge-hls:

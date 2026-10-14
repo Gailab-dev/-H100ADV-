@@ -1,0 +1,26 @@
+name: h100-edge
+services:
+  module-d:
+    image: h100-module-d:edge
+    platform: linux/arm64
+    build:
+      context: ..
+      dockerfile: ops/docker/d.Dockerfile
+    init: true
+    env_file: ${H100_EDGE_ENV_FILE:-./local/edge.env}
+    ports: ["${H100_EDGE_BIND_IP:?Set the edge LAN address}:8443:8443"]
+    volumes:
+      - type: bind
+        source: ${H100_EDGE_DATA:?Set the existing image/video/voice parent directory}
+        target: /data
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${H100_EDGE_CERTS:?Set the existing certificate directory}
+        target: /certs
+        read_only: true
+        bind: {create_host_path: false}
+      - hls:/hls
+    restart: unless-stopped
+volumes:
+  hls:

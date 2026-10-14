@@ -1,0 +1,293 @@
+{
+  "date": "2026-10-14",
+  "environment": "Windows Docker Desktop, separate local MariaDB, synthetic RTSP test stream",
+  "scope": "PC web/db/C, standalone ARM64 D, manual RTSP snapshot and persistent storage",
+  "capture": {
+    "csrfRejected": 403,
+    "edgeUnauthorized": 401,
+    "cloudUnsignedRejected": 401,
+    "receipt": {
+      "ok": true,
+      "request_id": "2d433199-5511-4b82-88cd-a41fd65afdd1",
+      "event_id": 6,
+      "file": "20261014161310_2d433199-5511-4b82-88cd-a41fd65afdd1.png.enc",
+      "bytes": 46480,
+      "sha256": "b835c0aa87bb4f6a121a359e6bc74fdf3eed759bff63524bb55c4a34b06c9ad4"
+    },
+    "retrySingleEvent": true,
+    "databaseAndNotification": true,
+    "image": {
+      "width": 640,
+      "height": 360,
+      "encryptedBytes": 46480,
+      "sha256Verified": true
+    },
+    "concurrentRetrySingleEvent": true,
+    "tamperedBodyRejected": 401,
+    "detailCheck": {
+      "status": 200,
+      "body": "{\"scenario\":\"A\",\"available\":true,\"message\":null}"
+    },
+    "detailImages": [
+      {
+        "loaded": true,
+        "width": 640
+      }
+    ],
+    "databaseFailure": {
+      "status": 502,
+      "rolledBack": true
+    },
+    "cameraFailure": {
+      "status": 502,
+      "noSavedEvent": true
+    }
+  },
+  "browser": {
+    "base": "http://localhost:7810",
+    "pages": [
+      {
+        "name": "dashboard",
+        "route": "/dashboard",
+        "status": 200,
+        "title": "",
+        "url": "http://localhost:7810/dashboard",
+        "overflow": false
+      },
+      {
+        "name": "events",
+        "route": "/eventList/viewEventList.do",
+        "status": 200,
+        "title": "주차 단속 대상 내역",
+        "url": "http://localhost:7810/eventList/viewEventList.do",
+        "overflow": true
+      },
+      {
+        "name": "statistics",
+        "route": "/stats/viewStat.do",
+        "status": 200,
+        "title": "home",
+        "url": "http://localhost:7810/stats/viewStat.do",
+        "overflow": false
+      },
+      {
+        "name": "devices",
+        "route": "/deviceList/viewDeviceList.do",
+        "status": 200,
+        "title": "단속 장비 현황",
+        "url": "http://localhost:7810/deviceList/viewDeviceList.do",
+        "overflow": false
+      },
+      {
+        "name": "sip",
+        "route": "/sipcall/sipCallLog",
+        "status": 200,
+        "title": "",
+        "url": "http://localhost:7810/sipcall/sipCallLog",
+        "overflow": false
+      }
+    ],
+    "api": [
+      {
+        "route": "/dashboard/deviceMapList",
+        "status": 200,
+        "data": [
+          {
+            "dv_name": "검증 장비 01",
+            "dv_lat": 35.1595,
+            "dv_status_updated": 1791960142000,
+            "dv_status_speaker": 1,
+            "dv_status_sip": 1,
+            "dv_lng": 126.8526,
+            "dv_serial_number": "2026101400001",
+            "dv_addr": "광주광역시 서구 내방로 111",
+            "dv_status_cctv": 1,
+            "dv_id": 1,
+            "dv_lens": 1,
+            "dv_addr_detail": "검증 데이터",
+            "dv_status_pc": 1
+          },
+          {
+            "dv_name": "검증 장비 02",
+            "dv_lat": 35.174,
+            "dv_status_updated": 1791960142000,
+            "dv_status_speaker": 1,
+            "dv_status_sip": 1,
+            "dv_lng": 126.912,
+            "dv_serial_number": "2026101400002",
+            "dv_addr": "광주광역시 북구",
+            "dv_status_cctv": 0,
+            "dv_id": 2,
+            "dv_lens": 1,
+            "dv_addr_detail": "검증 데이터",
+            "dv_status_pc": 1
+          },
+          {
+            "dv_name": "검증 장비 03",
+            "dv_lat": 35.146,
+            "dv_status_updated": 1791956542000,
+            "dv_status_speaker": 1,
+            "dv_status_sip": 1,
+            "dv_lng": 126.923,
+            "dv_serial_number": "2026101400003",
+            "dv_addr": "광주광역시 동구",
+            "dv_status_cctv": 1,
+            "dv_id": 3,
+            "dv_lens": 1,
+            "dv_addr_detail": "검증 데이터",
+            "dv_status_pc": 1
+          }
+        ]
+      },
+      {
+        "route": "/dashboard/todaySummary",
+        "status": 200,
+        "data": {
+          "guide_cnt": 5,
+          "enforce_cnt": 1
+        }
+      },
+      {
+        "route": "/dashboard/deviceStatusSummary",
+        "status": 200,
+        "data": {
+          "total_cnt": 3,
+          "error_cnt": 3,
+          "normal_cnt": 0
+        }
+      },
+      {
+        "route": "/dashboard/recentEvents",
+        "status": 200,
+        "data": [
+          {
+            "ev_dv_id": 1,
+            "ev_img_path": "20261014071315_293ff483-8282-4ac6-aa5f-d0bc3a3c302e.png.enc",
+            "ev_reg_date": 1791961995000,
+            "ev_date": "20261014161315",
+            "ev_dv_name": "검증 장비 01",
+            "ev_cd": 4,
+            "ev_car_num": "",
+            "ev_action": 0,
+            "ev_id": 7
+          },
+          {
+            "ev_dv_id": 1,
+            "ev_img_path": "20261014161310_2d433199-5511-4b82-88cd-a41fd65afdd1.png.enc",
+            "ev_reg_date": 1791961990000,
+            "ev_date": "20261014161310",
+            "ev_dv_name": "검증 장비 01",
+            "ev_cd": 4,
+            "ev_car_num": "",
+            "ev_action": 0,
+            "ev_id": 6
+          },
+          {
+            "ev_dv_id": 1,
+            "ev_img_path": "20261014155713_941f2362-a2f0-4684-b893-edf826374d3f.png.enc",
+            "ev_reg_date": 1791961033000,
+            "ev_date": "20261014155713",
+            "ev_dv_name": "검증 장비 01",
+            "ev_cd": 4,
+            "ev_car_num": "",
+            "ev_action": 0,
+            "ev_id": 4
+          },
+          {
+            "ev_dv_id": 1,
+            "ev_img_path": "20261014155525_a70f7e98-11ba-4c6f-8bdf-9c8f4bd29e89.png.enc",
+            "ev_reg_date": 1791960925000,
+            "ev_date": "20261014155525",
+            "ev_dv_name": "검증 장비 01",
+            "ev_cd": 4,
+            "ev_car_num": "",
+            "ev_action": 0,
+            "ev_id": 3
+          },
+          {
+            "ev_dv_id": 2,
+            "ev_reg_date": 1791960142000,
+            "ev_date": "20261014154222",
+            "ev_dv_name": "검증 장비 02",
+            "ev_cd": 5,
+            "ev_car_num": "검증차량02",
+            "ev_action": 1,
+            "ev_id": 2
+          }
+        ]
+      },
+      {
+        "route": "/dashboard/recentSipCalls",
+        "status": 200,
+        "data": [
+          {
+            "dv_name": "검증 장비 01",
+            "sc_has_audio": 0,
+            "sc_serial_number": "2026101400001",
+            "sc_id": 1,
+            "sc_start_date": 1791960022000,
+            "sc_dv_id": 1,
+            "sc_duration": 120
+          }
+        ]
+      }
+    ],
+    "errors": [],
+    "failures": [
+      {
+        "url": "https://dapi.kakao.com/v2/maps/sdk.js",
+        "error": "net::ERR_BLOCKED_BY_ORB"
+      },
+      {
+        "url": "http://localhost:7810/api/external/weather/test",
+        "status": 502
+      },
+      {
+        "url": "https://dapi.kakao.com/v2/maps/sdk.js",
+        "error": "net::ERR_BLOCKED_BY_ORB"
+      },
+      {
+        "url": "https://dapi.kakao.com/v2/maps/sdk.js",
+        "error": "net::ERR_BLOCKED_BY_ORB"
+      },
+      {
+        "url": "http://localhost:7810/api/external/weather/test",
+        "status": 502
+      }
+    ],
+    "map": {
+      "sdk": false,
+      "tiles": 0,
+      "width": 698
+    },
+    "login": {
+      "status": 200,
+      "ok": true
+    },
+    "unauthenticatedStatus": 401,
+    "mobileOverflow": {
+      "viewport": 390,
+      "document": 592
+    }
+  },
+  "go_checks": {
+    "c": "go test ./... passed; no C unit test files; covered by capture integration",
+    "d": "go test ./... passed; encryption, authorization and buffer tests"
+  },
+  "launchers": {
+    "powershell_5_1": "5.1.26100.9444; full build, default start, test start, batch stop, restart, bad option, Docker failure exit 1, paths with spaces passed",
+    "powershell_7": "7.6.6; no-build restart, Docker failure exit 1, paths with spaces passed",
+    "persistence": "capture 2 / event 4 unchanged across stop/start"
+  },
+  "arm64": {
+    "image": "h100-module-d:edge",
+    "build": "passed",
+    "emulated_runtime": "aarch64, FFmpeg 5.1.9, HTTPS healthz 200",
+    "physical_jetson": "not tested"
+  },
+  "deferred": [
+    "Kakao domain registration deferred by user",
+    "Physical Jetson, camera and PTZ validation",
+    "Production schema reconciliation"
+  ]
+}

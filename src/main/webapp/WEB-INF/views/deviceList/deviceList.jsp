@@ -29,6 +29,8 @@
 	#deviceTable th:nth-child(9),  #deviceTable td:nth-child(9)  { width: 6%  !important; } /* 상태 5종 */
 	#deviceTable th:nth-child(10), #deviceTable td:nth-child(10) { width: 8%  !important; } /* 실시간 영상 */
 	#deviceTable th:nth-child(11), #deviceTable td:nth-child(11) { width: 12% !important; } /* 관리(수정·로그) */
+	#deviceTable td:nth-child(11) { white-space: normal; overflow: visible; }
+	#deviceTable td .detection-btn { display: block; width: calc(100% - 4px); margin: 4px 2px; }
 	#deviceTable td .video-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; line-height: 0; }
 	#deviceTable td .video-btn:hover { background: #f1edff; border-radius: 4px; }
 	/* (15번 4-5) 이상 로그 버튼 — 수정 버튼과 나란히, 크기 통일 */
@@ -88,7 +90,7 @@
 </style>
 <%-- patches 2026-07-07: Daum(Kakao) 우편번호 서비스(주소 검색) + Kakao 지도 SDK(services=주소→좌표 지오코딩) --%>
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services"></script>
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/pagination.css">
 <link rel="stylesheet"
@@ -1409,7 +1411,8 @@
 												</button>
 											</td>
 											<td>
-												<button class="edit-btn" type="button"
+												<button class="edit-btn detection-btn" type="button" data-device-id="${item.dv_id}" data-context="${pageContext.request.contextPath}">이상탐지</button>
+<button class="edit-btn" type="button"
 													onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>
 												<%-- (15번 4-5) 이상 로그 slide-in 패널 열기. dv_name 은 패널 제목용 --%>
 												<button class="err-log-btn" type="button"
@@ -1643,3 +1646,5 @@
 	})();
 	</script>
 
+
+<script src="${pageContext.request.contextPath}/resources/js/detection.js"></script>

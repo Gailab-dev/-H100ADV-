@@ -46,7 +46,7 @@ func cmdStart(cmd *exec.Cmd, oCmdManager *CmdManager) string {
                 ids = append(ids, id)
         }
 
-        logger.Log.Info(fmt.Sprintf("--1111111---ids :", ids))
+        logger.Log.Info(fmt.Sprintf("--1111111---ids : %v", ids))
 
 	oCmdManager.mu.Unlock()  // cmdManager 동시 접근 금지 해제
 
@@ -55,7 +55,7 @@ func cmdStart(cmd *exec.Cmd, oCmdManager *CmdManager) string {
                 ids2 = append(ids2, id)
         }
 
-        logger.Log.Info(fmt.Sprintf("--222222---ids2 :", ids2))
+        logger.Log.Info(fmt.Sprintf("--222222---ids2 : %v", ids2))
 
 	// 비동기 처리(고루틴)
 	go func() {
@@ -83,7 +83,7 @@ func cmdStart(cmd *exec.Cmd, oCmdManager *CmdManager) string {
                         ids3 = append(ids3, id)
                 }
 
-                logger.Log.Info(fmt.Sprintf("--333333---ids3 :", ids3))
+                logger.Log.Info(fmt.Sprintf("--333333---ids3 : %v", ids3))
 
 		/*
 		cmdManager.mu.Lock()
@@ -95,12 +95,12 @@ func cmdStart(cmd *exec.Cmd, oCmdManager *CmdManager) string {
                         ids3 = append(ids4, id)
                 }
 
-                logger.Log.Info(fmt.Sprintf("--444444---ids4 :", ids4))
+                logger.Log.Info(fmt.Sprintf("--444444---ids4 : %v", ids4))
 		*/
 	}()
 
 	logger.Log.Info(fmt.Sprintf("--=-------id : %s", id))
-	logger.Log.Info(fmt.Sprintf("====start PID:", os.Getpid()))
+	logger.Log.Info(fmt.Sprintf("====start PID: %v", os.Getpid()))
 
 	return id
 }
@@ -113,7 +113,7 @@ func cmdStart(cmd *exec.Cmd, oCmdManager *CmdManager) string {
  */
 func cmdStop(id string, oCmdManager *CmdManager) string {
 /*func (manager *CmdManager) cmdStop(id string, cmdManager *CmdManager) string {*/
-	logger.Log.Info(fmt.Sprintf("====end PID:", os.Getpid()))
+	logger.Log.Info(fmt.Sprintf("====end PID: %v", os.Getpid()))
 	logger.Log.Info(fmt.Sprintf("=====end id : %s", id))
 	oCmdManager.mu.Lock()
 	
@@ -122,13 +122,13 @@ func cmdStop(id string, oCmdManager *CmdManager) string {
                  ids4 = append(ids4, id)
         }
 
-        logger.Log.Info(fmt.Sprintf("--444444---ids4 :", ids4))
+        logger.Log.Info(fmt.Sprintf("--444444---ids4 : %v", ids4))
 
 	cmd, ok := oCmdManager.store[id]
 	oCmdManager.mu.Unlock()
 
-	logger.Log.Info(fmt.Sprintf("=====end ok : %s", ok))
-	logger.Log.Info(fmt.Sprintf("=====end !ok : %s", !ok))
+	logger.Log.Info(fmt.Sprintf("=====end ok : %t", ok))
+	logger.Log.Info(fmt.Sprintf("=====end !ok : %t", !ok))
 	if !ok {
 		return fmt.Sprintf("프로세스 ID 미존재: %s", id)
 	}

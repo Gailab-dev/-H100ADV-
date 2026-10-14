@@ -1,0 +1,91 @@
+name: h100-local
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: able_park
+      MARIADB_USER: h100
+      MARIADB_PASSWORD: ${H100_DB_PASSWORD:?Run ops/start.ps1 first}
+      MARIADB_ROOT_PASSWORD: ${H100_DB_ROOT_PASSWORD:?Run ops/start.ps1 first}
+      H100_DEMO_PASSWORD_HASH: ${H100_DEMO_PASSWORD_HASH:?Run ops/start.ps1 first}
+      TZ: Asia/Seoul
+    volumes:
+      - database:/var/lib/mysql
+      - ./db/local-schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      - ./db/local-seed.sh:/docker-entrypoint-initdb.d/20-seed.sh:ro
+      - ./db/001-detection-capture.sql:/docker-entrypoint-initdb.d/30-detection.sql:ro
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  web:
+    image: h100-web:local
+    build:
+      context: ..
+      dockerfile: ops/docker/web.Dockerfile
+    environment:
+      H100_DB_URL: jdbc:mariadb://db:3306/able_park?useUnicode=true&characterEncoding=utf8&connectTimeout=5000
+      H100_DB_USER: h100
+      H100_DB_PASSWORD: ${H100_DB_PASSWORD}
+      H100_CRYPTO_HASH: ${H100_CRYPTO_HASH}
+      H100_VIDEO_KEY: ${H100_VIDEO_KEY}
+      H100_AES_KEY: ${H100_AES_KEY}
+      H100_TRIGGER_TOKEN: ${H100_TRIGGER_TOKEN:?Run ops/start.ps1 first}
+      KAKAO_MAP_JS_KEY: ${KAKAO_MAP_JS_KEY:-}
+      H100_WEATHER_KEY: ${H100_WEATHER_KEY:-}
+      H100_PUBLICDATA_KEY: ${H100_PUBLICDATA_KEY:-}
+    ports: ["127.0.0.1:${H100_WEB_PORT:-7810}:8080"]
+    volumes:
+      - received:/app/H100_system
+      - ${H100_CERT_SOURCE:-certificates}:/certs:ro
+    depends_on:
+      db: {condition: service_healthy}
+      certs: {condition: service_completed_successfully}
+    restart: unless-stopped
+  migrate:
+    image: mariadb:11.4
+    environment:
+      MYSQL_PWD: ${H100_DB_PASSWORD}
+    volumes:
+      - ./db/001-detection-capture.sql:/migration.sql:ro
+    command: [sh, -c, "mariadb -h db -u h100 able_park < /migration.sql"]
+    depends_on:
+      db: {condition: service_healthy}
+    restart: "no"
+  certs:
+    build:
+      context: ..
+      dockerfile: ops/docker/certs.Dockerfile
+    volumes: ["certificates:/certs"]
+    restart: "no"
+  module-c:
+    image: h100-module-c:local
+    build:
+      context: ..
+      dockerfile: ops/docker/c.Dockerfile
+    environment:
+      PORT: "8443"
+      TLS_CERT_FILE: /certs/server.crt
+      TLS_KEY_FILE: /certs/server.key
+      HEALTH_TLS_NAME: ${H100_C_TLS_NAME:-localhost}
+      H100_DB_HOST: db
+      H100_DB_USER: h100
+      H100_DB_PASSWORD: ${H100_DB_PASSWORD}
+      H100_DB_NAME: able_park
+      FILE_UPLOAD_PATH: /app/H100_system
+      H100_HMAC_KEYS: ${H100_HMAC_KEYS:?Run ops/start.ps1 first}
+    ports: ["${H100_C_BIND_IP:-127.0.0.1}:${H100_C_PORT:-7811}:8443"]
+    volumes:
+      - received:/app/H100_system
+      - ${H100_CERT_SOURCE:-certificates}:/certs:ro
+    depends_on:
+      db: {condition: service_healthy}
+      certs: {condition: service_completed_successfully}
+      migrate: {condition: service_completed_successfully}
+    restart: unless-stopped
+volumes:
+  database:
+  received:
+  certificates:

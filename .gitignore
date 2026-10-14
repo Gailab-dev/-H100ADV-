@@ -60,3 +60,7 @@ h100_module_d/ssl/
 .env.*.local
 h100_module_c/.env
 h100_module_d/.env
+
+# Local runtime configuration and temporary verification artifacts
+/tmp/
+/ops/local/

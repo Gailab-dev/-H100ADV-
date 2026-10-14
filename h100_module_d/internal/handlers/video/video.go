@@ -27,7 +27,7 @@ func VideoHandler(oCmdManager *CmdManager) http.HandlerFunc {
                         ids5 = append(ids5, id)
                 }
 
-                logger.Log.Info(fmt.Sprintf("--555555---ids5 :", ids5))
+                logger.Log.Info(fmt.Sprintf("--555555---ids5 : %v", ids5))
 
 
 
