@@ -289,5 +289,11 @@
     "Kakao domain registration deferred by user",
     "Physical Jetson, camera and PTZ validation",
     "Production schema reconciliation"
-  ]
+  ],
+  "local_account": {
+    "username": "admin",
+    "password": "1234",
+    "real_login": "passed",
+    "scope": "local verification only"
+  }
 }

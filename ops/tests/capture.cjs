@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '../..');
 const output = path.join(root, 'tmp/docker-setup');
 const base = 'http://localhost:7810';
 const credentials = fs.readFileSync(path.join(root, 'ops/local/first-login.txt'), 'utf8');
+const username = credentials.match(/^User: (.+)$/m)[1].trim();
 const password = credentials.match(/^Password: (.+)$/m)[1].trim();
 const env = Object.fromEntries(fs.readFileSync(path.join(root,'ops/local/pc.env'),'utf8').trim().split(/\r?\n/).map(line => {const i=line.indexOf('='); return [line.slice(0,i), line.slice(i+1)];}));
 function sql(query) {
@@ -18,7 +19,7 @@ const result = {};
   const browser = await chromium.launch({headless:true});
   try {
     const context = await browser.newContext({viewport:{width:1600,height:1000},ignoreHTTPSErrors:true});
-    const login = await context.request.post(base+'/user/login',{data:{id:'local_admin',pwd:password}});
+    const login = await context.request.post(base+'/user/login',{data:{id:username,pwd:password}});
     assert.equal((await login.json()).ok,true);
     const forbidden = await context.request.post(base+'/deviceList/detection/1',{data:{request_id:crypto.randomUUID()}});
     assert.equal(forbidden.status(),403);

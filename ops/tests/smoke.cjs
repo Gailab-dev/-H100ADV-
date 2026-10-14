@@ -7,7 +7,9 @@ const root = path.resolve(__dirname, '../..');
 const output = path.join(root, 'tmp/docker-setup/screenshots');
 fs.mkdirSync(output, { recursive: true });
 const base = process.env.H100_TEST_URL || 'http://localhost:7810';
-const password = fs.readFileSync(path.join(root, 'ops/local/first-login.txt'), 'utf8').match(/^Password: (.+)$/m)[1].trim();
+const credentials = fs.readFileSync(path.join(root, 'ops/local/first-login.txt'), 'utf8');
+const username = credentials.match(/^User: (.+)$/m)[1].trim();
+const password = credentials.match(/^Password: (.+)$/m)[1].trim();
 const result = { base, pages: [], api: [], errors: [], failures: [], map: null };
 const routes = [
   ['dashboard', '/dashboard'],
@@ -27,7 +29,7 @@ function safeUrl(url) { return url.split('?')[0]; }
     page.on('response', r => { if (r.status() >= 400) result.failures.push({url: safeUrl(r.url()), status: r.status()}); });
     await page.goto(base + '/user/login.do');
     await page.screenshot({ path: path.join(output, 'login.png'), fullPage: true });
-    const login = await context.request.post(base + '/user/login', { data: { id: 'local_admin', pwd: password } });
+    const login = await context.request.post(base + '/user/login', { data: { id: username, pwd: password } });
     const loginBody = await login.json();
     assert.equal(loginBody.ok, true, 'Local login must succeed');
     result.login = { status: login.status(), ok: loginBody.ok };

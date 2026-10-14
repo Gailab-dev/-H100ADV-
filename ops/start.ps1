@@ -29,7 +29,7 @@ Get-Command docker -ErrorAction Stop | Out-Null
 Invoke-Docker @('info','--format','{{.ServerVersion}}')
 New-Item -ItemType Directory -Force -Path $localDir | Out-Null
 if (-not (Test-Path -LiteralPath $envFile)) {
-    $password = New-HexSecret 16
+    $password = '1234'
     $sha = [Security.Cryptography.SHA256]::Create()
     try { $passwordHash = [Convert]::ToBase64String($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($password))) } finally { $sha.Dispose() }
     $key = ''
@@ -63,7 +63,7 @@ if (-not (Test-Path -LiteralPath $envFile)) {
         'KAKAO_MAP_JS_KEY=' + $key
     )
     [IO.File]::WriteAllLines($envFile, $lines, (New-Object Text.UTF8Encoding $false))
-    [IO.File]::WriteAllLines((Join-Path $localDir 'first-login.txt'), @('Local verification account only','URL: http://localhost:7810','User: local_admin',('Password: ' + $password)), (New-Object Text.UTF8Encoding $false))
+    [IO.File]::WriteAllLines((Join-Path $localDir 'first-login.txt'), @('Local verification account only','URL: http://localhost:7810','User: admin',('Password: ' + $password)), (New-Object Text.UTF8Encoding $false))
     Write-Host 'Local configuration created. Existing database volumes are never reset.'
 }
 if (-not ([IO.File]::ReadAllText($envFile) -match '(?m)^H100_TRIGGER_TOKEN=')) {
