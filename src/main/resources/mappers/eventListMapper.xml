@@ -100,6 +100,9 @@
 	<select id="getEventListDetail"  parameterType="int" resultType="map">
 		SELECT A.*
 			, CONCAT(B.dv_addr,B.dv_name) AS dv_addr
+			, B.dv_lat AS device_lat
+			, B.dv_lng AS device_lng
+			, B.dv_addr_detail AS device_addr_detail
 		FROM tbl_event_data A
 		LEFT JOIN tbl_device B
 		ON A.ev_dv_id = B.dv_id
@@ -109,6 +112,26 @@
 		</where>
 	</select>
 	
+	<!-- 차량번호가 확인된 상세 이벤트를 기준으로 조회한다. 삭제된 이력은 제외한다. -->
+	<sql id="sameVehicleFilter">
+		A.ev_is_deleted = 0
+		AND REPLACE(REPLACE(TRIM(A.ev_car_num), ' ', ''), '-', '') = #{plate}
+	</sql>
+	<select id="getVehicleSummary" parameterType="map" resultType="map">
+		SELECT COUNT(*) AS total_count, COUNT(DISTINCT A.ev_dv_id) AS location_count,
+			MAX(A.ev_date) AS last_seen
+		FROM tbl_event_data A
+		WHERE <include refid="sameVehicleFilter"/>
+	</select>
+	<select id="getVehicleHistory" parameterType="map" resultType="map">
+		SELECT A.ev_id, A.ev_dv_id, A.ev_date, A.ev_cd,
+			A.ev_dv_name, A.ev_dv_addr
+		FROM tbl_event_data A
+		WHERE <include refid="sameVehicleFilter"/>
+		ORDER BY A.ev_date DESC, A.ev_id DESC
+		LIMIT 10
+	</select>
+
 	<select id="getDvIpByEvId" parameterType="int" resultType="java.lang.String">
 		SELECT B.dv_ip AS dvIp
 		FROM tbl_event_data A

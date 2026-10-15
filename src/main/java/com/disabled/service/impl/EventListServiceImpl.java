@@ -145,6 +145,42 @@ public class EventListServiceImpl implements EventListService{
 				+ " " + s.substring(8, 10) + ":" + s.substring(10, 12) + ":" + s.substring(12, 14);
 	}
 
+	@Override
+	public Map<String, Object> getVehicleContext(Map<String, Object> detail) {
+		Map<String, Object> context = new HashMap<>();
+		Object rawPlate = detail.get("ev_car_num");
+		String plate = rawPlate == null ? "" : rawPlate.toString().replace(" ", "").replace("-", "").trim();
+		// 미인식·수동 캡처의 빈 번호를 같은 차량으로 묶지 않는다.
+		boolean identified = plate.matches("[가-힣]{0,4}[0-9]{2,3}[가-힣][0-9]{4}");
+		context.put("identified", identified);
+		if (identified) {
+			Map<String, Object> params = new HashMap<>();
+			params.put("plate", plate);
+			Map<String, Object> summary = eventListMapper.getVehicleSummary(params);
+			summary.put("last_seen_display", formatEvDate(summary.get("last_seen")));
+			List<Map<String, Object>> history = eventListMapper.getVehicleHistory(params);
+			for (Map<String, Object> event : history) {
+				event.put("ev_date_display", formatEvDate(event.get("ev_date")));
+			}
+			context.put("summary", summary);
+			context.put("history", history);
+		}
+		// 설치 좌표만 제공한다. 이벤트 차량의 위치 또는 지오펜스로 해석하지 않는다.
+		try {
+			double lat = Double.parseDouble(String.valueOf(detail.get("device_lat")));
+			double lng = Double.parseDouble(String.valueOf(detail.get("device_lng")));
+			if (Double.isFinite(lat) && Double.isFinite(lng) && lat >= -90 && lat <= 90
+					&& lng >= -180 && lng <= 180 && (lat != 0 || lng != 0)) {
+				context.put("lat", lat);
+				context.put("lng", lng);
+				context.put("hasLocation", true);
+			}
+		} catch (NumberFormatException ignored) {
+			// 좌표가 없는 이벤트도 사진과 이력을 조회할 수 있다.
+		}
+		return context;
+	}
+
 	/**
 	 * 불법 주차 리스트를 가져옴
 	 * @param

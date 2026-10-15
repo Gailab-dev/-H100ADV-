@@ -18,6 +18,7 @@ import org.egovframe.rte.ptl.mvc.tags.ui.pagination.PaginationInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,6 +43,8 @@ import com.disabled.service.UserService;
 @Controller
 @RequestMapping("/eventList")
 public class EventListController {
+	@Value("${kakao.map.js-key:}")
+	private String kakaoMapJsKey;
 	
 	@Autowired
 	EventListService eventListService;
@@ -490,6 +493,8 @@ public class EventListController {
 
 			// ====== mdoel add [S] ====== //
 			model.addAttribute("eventListDetail", eventListDetail);
+			model.addAttribute("vehicleContext", eventListService.getVehicleContext(eventListDetail));
+			model.addAttribute("kakaoMapJsKey", kakaoMapJsKey);
 			model.addAttribute("dvId", dvId); // ADR-008: AJAX 단계 호출에서 디바이스 식별용
 			model.addAttribute("searchKeyword", searchKeyword);
 			model.addAttribute("startDate", startDate);

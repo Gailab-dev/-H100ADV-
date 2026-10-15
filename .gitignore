@@ -64,3 +64,10 @@ h100_module_d/.env
 # Local runtime configuration and temporary verification artifacts
 /tmp/
 /ops/local/
+
+# Local-only working material
+잡일/
+
+# Playwright MCP local artifacts
+.playwright-mcp/
+playwright-mcp/

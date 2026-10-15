@@ -14,6 +14,8 @@ public interface EventListMapper {
 	List<Map<String, Object>> getEventListJoinSerial(Map<String,Object> paramMap) throws RuntimeException;
 
 	Map<String,Object> getEventListDetail(@Param("evId") Integer evId) throws RuntimeException;
+	Map<String,Object> getVehicleSummary(Map<String,Object> params);
+	List<Map<String,Object>> getVehicleHistory(Map<String,Object> params);
 	Map<String,Object> getEventListDetail(@Param("evId") Integer evId, @Param("evId2") Integer evId2) throws RuntimeException;
 	String getDvIpByEvId(@Param("evId") Integer evId) throws RuntimeException;
 	void updateEvHasImgOne(@Param("evId") Integer evId) throws RuntimeException;

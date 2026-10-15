@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.disabled.mapper.SpatialContextMapper">
+    <select id="getContext" resultType="map">
+        SELECT A.ev_id, B.dv_id, B.dv_lat, B.dv_lng, G.boundary_json,
+            P.vehicle_lat, P.vehicle_lng, P.heading
+        FROM tbl_event_data A
+        LEFT JOIN tbl_device B ON A.ev_dv_id = B.dv_id
+        LEFT JOIN tbl_device_geofence G ON G.dv_id = B.dv_id
+        LEFT JOIN tbl_event_vehicle_pose P ON P.ev_id = A.ev_id
+        WHERE A.ev_id = #{evId} AND A.ev_is_deleted = 0
+    </select>
+    <insert id="saveBoundary">
+        INSERT INTO tbl_device_geofence (dv_id,boundary_json,updated_by)
+        VALUES (#{deviceId},#{boundary},#{userId})
+        ON DUPLICATE KEY UPDATE boundary_json=VALUES(boundary_json),updated_by=VALUES(updated_by),updated_at=CURRENT_TIMESTAMP
+    </insert>
+    <delete id="deleteBoundary">DELETE FROM tbl_device_geofence WHERE dv_id=#{deviceId}</delete>
+    <insert id="savePose">
+        INSERT INTO tbl_event_vehicle_pose (ev_id,vehicle_lat,vehicle_lng,heading,updated_by)
+        VALUES (#{evId},#{lat},#{lng},#{heading},#{userId})
+        ON DUPLICATE KEY UPDATE vehicle_lat=VALUES(vehicle_lat),vehicle_lng=VALUES(vehicle_lng),heading=VALUES(heading),updated_by=VALUES(updated_by),updated_at=CURRENT_TIMESTAMP
+    </insert>
+    <delete id="deletePose">DELETE FROM tbl_event_vehicle_pose WHERE ev_id=#{evId}</delete>
+</mapper>
