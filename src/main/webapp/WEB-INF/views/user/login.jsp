@@ -13,6 +13,8 @@
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/login.css">
 <!-- CSS 불러오기 -->
+<%-- (34번 ROI 설정) 로그아웃·세션 만료·다른 PC 로그인으로 이 화면에 오면 브라우저에 남은 ROI 편집 임시본(localStorage)을 지운다 --%>
+<script src="${pageContext.request.contextPath}/resources/js/roi/roiDraftCleanup.js"></script>
 </head>
 <%-- 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 <c:if test="${not empty errorMsg}">
