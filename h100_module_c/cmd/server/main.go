@@ -13,6 +13,7 @@ import (
 	"local.dev/h100_module_c/internal/handlers/deviceStatus"
 	"local.dev/h100_module_c/internal/handlers/fileReceive"
 	"local.dev/h100_module_c/internal/handlers/insertSipCall"
+	"local.dev/h100_module_c/internal/handlers/roi"
 	"local.dev/h100_module_c/internal/handlers/sipCallTrigger"
 	"local.dev/h100_module_c/internal/middlewares"
 	"local.dev/h100_module_c/logger"
@@ -38,6 +39,10 @@ func main() {
 	// ===== [S] SSL 적용 ====== //
 	mux := http.NewServeMux()
 	mux.HandleFunc("/detectionCapture", detection.Handler)
+	// 34번: 웹 ROI 설정 — Java 가 Bearer 토큰으로 호출하고, module_c 가 디바이스에 HMAC 서명해 중계한다
+	mux.HandleFunc("/ROI_get", roi.Get)
+	mux.HandleFunc("/ROI_snapshot", roi.Snapshot)
+	mux.HandleFunc("/ROI_send", roi.Send)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		db, err := database.DBConn.DB()
 		if err != nil || db.PingContext(r.Context()) != nil {
