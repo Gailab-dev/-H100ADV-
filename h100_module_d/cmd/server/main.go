@@ -10,6 +10,7 @@ import (
 
 	"local.dev/h100_module_d/internal/handlers/detection"
 	"local.dev/h100_module_d/internal/handlers/fileSend"
+	"local.dev/h100_module_d/internal/handlers/roi"
 	"local.dev/h100_module_d/internal/handlers/tilting"
 	"local.dev/h100_module_d/internal/handlers/video"
 	"local.dev/h100_module_d/internal/middlewares"
@@ -76,6 +77,10 @@ func main() {
 	*/
 	mux := http.NewServeMux()
 	mux.HandleFunc("/detection/trigger", detection.Handler)
+	// 34번: 웹 ROI 설정 — 서버(module_c)가 HMAC 서명해 중계한 요청만 처리한다
+	mux.HandleFunc("/ROI_get", roi.GetHandler)
+	mux.HandleFunc("/ROI_snapshot", roi.SnapshotHandler)
+	mux.HandleFunc("/ROI_receive", roi.ReceiveHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))

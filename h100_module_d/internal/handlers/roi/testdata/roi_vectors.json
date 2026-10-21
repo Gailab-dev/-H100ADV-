@@ -1,0 +1,891 @@
+{
+ "description": "Shared vectors: JS roiGeometry.js, Go module_d roi/validate.go and Java RoiValidator must agree. overlap tolerance = 2px thickness.",
+ "polygon_problems": [
+  {
+   "name": "valid triangle",
+   "points": [
+    [
+     10,
+     10
+    ],
+    [
+     100,
+     10
+    ],
+    [
+     50,
+     100
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "name": "valid concave L",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     50
+    ],
+    [
+     50,
+     50
+    ],
+    [
+     50,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "name": "valid at frame edge",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     1919,
+     0
+    ],
+    [
+     1919,
+     1079
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "name": "straight vertex in an edge is allowed",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     50,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "expect": null
+  },
+  {
+   "name": "two points",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "expect": "POINTS_MIN"
+  },
+  {
+   "name": "not an array",
+   "points": null,
+   "expect": "POINTS_MIN"
+  },
+  {
+   "name": "non integer",
+   "points": [
+    [
+     10.5,
+     10
+    ],
+    [
+     100,
+     10
+    ],
+    [
+     50,
+     100
+    ]
+   ],
+   "expect": "POINT_NOT_INTEGER"
+  },
+  {
+   "name": "x out of range",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     1920,
+     0
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "expect": "OUT_OF_RANGE"
+  },
+  {
+   "name": "y out of range",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     0,
+     1080
+    ]
+   ],
+   "expect": "OUT_OF_RANGE"
+  },
+  {
+   "name": "negative",
+   "points": [
+    [
+     -1,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "expect": "OUT_OF_RANGE"
+  },
+  {
+   "name": "duplicate consecutive point",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "expect": "DUPLICATE_POINT"
+  },
+  {
+   "name": "collinear points (degenerate) reported as self intersection",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     50,
+     50
+    ],
+    [
+     100,
+     100
+    ]
+   ],
+   "expect": "SELF_INTERSECTION"
+  },
+  {
+   "name": "bowtie self intersection",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "expect": "SELF_INTERSECTION"
+  },
+  {
+   "name": "fold back on adjacent edge",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     50,
+     0
+    ],
+    [
+     50,
+     50
+    ]
+   ],
+   "expect": "SELF_INTERSECTION"
+  },
+  {
+   "name": "point shape wrong",
+   "points": [
+    [
+     0,
+     0
+    ],
+    [
+     1
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "expect": "POINT_FORMAT"
+  }
+ ],
+ "overlap": [
+  {
+   "name": "disjoint squares",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     200,
+     0
+    ],
+    [
+     300,
+     0
+    ],
+    [
+     300,
+     100
+    ],
+    [
+     200,
+     100
+    ]
+   ],
+   "expect": false
+  },
+  {
+   "name": "sharing a full edge",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     100,
+     0
+    ],
+    [
+     200,
+     0
+    ],
+    [
+     200,
+     100
+    ],
+    [
+     100,
+     100
+    ]
+   ],
+   "expect": false
+  },
+  {
+   "name": "touching at one corner",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     100,
+     100
+    ],
+    [
+     200,
+     100
+    ],
+    [
+     200,
+     200
+    ],
+    [
+     100,
+     200
+    ]
+   ],
+   "expect": false
+  },
+  {
+   "name": "1px strip overlap is tolerated",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     99,
+     0
+    ],
+    [
+     200,
+     0
+    ],
+    [
+     200,
+     100
+    ],
+    [
+     99,
+     100
+    ]
+   ],
+   "expect": false
+  },
+  {
+   "name": "2px strip overlap is tolerated",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     98,
+     0
+    ],
+    [
+     200,
+     0
+    ],
+    [
+     200,
+     100
+    ],
+    [
+     98,
+     100
+    ]
+   ],
+   "expect": false
+  },
+  {
+   "name": "3px strip overlap is rejected",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     97,
+     0
+    ],
+    [
+     200,
+     0
+    ],
+    [
+     200,
+     100
+    ],
+    [
+     97,
+     100
+    ]
+   ],
+   "expect": true
+  },
+  {
+   "name": "plus shaped crossing",
+   "a": [
+    [
+     0,
+     40
+    ],
+    [
+     100,
+     40
+    ],
+    [
+     100,
+     60
+    ],
+    [
+     0,
+     60
+    ]
+   ],
+   "b": [
+    [
+     40,
+     0
+    ],
+    [
+     60,
+     0
+    ],
+    [
+     60,
+     100
+    ],
+    [
+     40,
+     100
+    ]
+   ],
+   "expect": true
+  },
+  {
+   "name": "containment",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     200,
+     0
+    ],
+    [
+     200,
+     200
+    ],
+    [
+     0,
+     200
+    ]
+   ],
+   "b": [
+    [
+     50,
+     50
+    ],
+    [
+     100,
+     50
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     50,
+     100
+    ]
+   ],
+   "expect": true
+  },
+  {
+   "name": "identical polygons",
+   "a": [
+    [
+     10,
+     10
+    ],
+    [
+     90,
+     10
+    ],
+    [
+     90,
+     90
+    ],
+    [
+     10,
+     90
+    ]
+   ],
+   "b": [
+    [
+     10,
+     10
+    ],
+    [
+     90,
+     10
+    ],
+    [
+     90,
+     90
+    ],
+    [
+     10,
+     90
+    ]
+   ],
+   "expect": true
+  },
+  {
+   "name": "half of the other sharing three sides",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     0,
+     0
+    ],
+    [
+     50,
+     0
+    ],
+    [
+     50,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "expect": true
+  },
+  {
+   "name": "slightly rotated neighbour (<=1px sliver)",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     99,
+     0
+    ],
+    [
+     200,
+     0
+    ],
+    [
+     200,
+     100
+    ],
+    [
+     101,
+     100
+    ]
+   ],
+   "expect": false
+  },
+  {
+   "name": "square inside the notch of an L",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     50
+    ],
+    [
+     50,
+     50
+    ],
+    [
+     50,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     60,
+     60
+    ],
+    [
+     90,
+     60
+    ],
+    [
+     90,
+     90
+    ],
+    [
+     60,
+     90
+    ]
+   ],
+   "expect": false
+  },
+  {
+   "name": "big square covering an L",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     100,
+     50
+    ],
+    [
+     50,
+     50
+    ],
+    [
+     50,
+     100
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     40,
+     40
+    ],
+    [
+     120,
+     40
+    ],
+    [
+     120,
+     120
+    ],
+    [
+     40,
+     120
+    ]
+   ],
+   "expect": true
+  },
+  {
+   "name": "triangles overlapping a lot",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     100,
+     0
+    ],
+    [
+     0,
+     100
+    ]
+   ],
+   "b": [
+    [
+     0,
+     0
+    ],
+    [
+     0,
+     100
+    ],
+    [
+     100,
+     100
+    ]
+   ],
+   "expect": true
+  },
+  {
+   "name": "far apart triangles",
+   "a": [
+    [
+     0,
+     0
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     0,
+     10
+    ]
+   ],
+   "b": [
+    [
+     500,
+     500
+    ],
+    [
+     510,
+     500
+    ],
+    [
+     500,
+     510
+    ]
+   ],
+   "expect": false
+  }
+ ]
+}
