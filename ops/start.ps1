@@ -69,6 +69,9 @@ if (-not (Test-Path -LiteralPath $envFile)) {
 if (-not ([IO.File]::ReadAllText($envFile) -match '(?m)^H100_TRIGGER_TOKEN=')) {
     [IO.File]::AppendAllText($envFile, ('H100_TRIGGER_TOKEN=' + (New-HexSecret) + "`n"), (New-Object Text.UTF8Encoding $false))
 }
+if (-not ([IO.File]::ReadAllText($envFile) -match '(?m)^H100_ROI_TOKEN=')) {
+    [IO.File]::AppendAllText($envFile, ('H100_ROI_TOKEN=' + (New-HexSecret) + "`n"), (New-Object Text.UTF8Encoding $false))
+}
 if (-not ([IO.File]::ReadAllText($envFile) -match '(?m)^H100_HMAC_KEYS=')) {
     $deviceKey = [regex]::Match([IO.File]::ReadAllText($envFile), '(?m)^H100_DEVICE_HMAC_KEY=([a-f0-9]{64})').Groups[1].Value
     if (-not $deviceKey) { throw 'The local device HMAC key is missing or invalid.' }

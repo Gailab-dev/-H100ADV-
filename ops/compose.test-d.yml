@@ -15,6 +15,9 @@ services:
       DEVICE_HMAC_KEY: ${H100_DEVICE_HMAC_KEY}
       H100_AES_KEY: ${H100_AES_KEY}
       H100_TRIGGER_TOKEN: ${H100_TRIGGER_TOKEN}
+      # ROI setting (plan 34): writable file location. ROI_SNAPSHOT_URL / ROI_SNAPSHOT_DIR are left unset here,
+      # so ROI_snapshot answers NOT_CONFIGURED until a snapshot source is provided.
+      ROI_FILE_PATH: /roi/roi.json
       FILE_SEND_SCH_TIME: "0 0 2 * * *"
       RTSP_URL: ${H100_RTSP_URL:-rtsp://127.0.0.1:8554/unconfigured}
     ports: ["127.0.0.1:${H100_D_PORT:-7812}:8443"]
@@ -22,6 +25,7 @@ services:
       - certificates:/certs:ro
       - edge-files:/data
       - edge-hls:/hls
+      - edge-roi:/roi
     depends_on:
       certs: {condition: service_completed_successfully}
       module-c: {condition: service_healthy}
@@ -29,3 +33,4 @@ services:
 volumes:
   edge-files:
   edge-hls:
+  edge-roi:

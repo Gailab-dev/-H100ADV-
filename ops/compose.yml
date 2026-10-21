@@ -15,6 +15,7 @@ services:
       - ./db/local-seed.sh:/docker-entrypoint-initdb.d/20-seed.sh:ro
       - ./db/001-detection-capture.sql:/docker-entrypoint-initdb.d/30-detection.sql:ro
       - ./db/002-spatial-context.sql:/docker-entrypoint-initdb.d/40-spatial.sql:ro
+      - ./db/003-roi.sql:/docker-entrypoint-initdb.d/50-roi.sql:ro
     healthcheck:
       test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
       interval: 5s
@@ -34,6 +35,8 @@ services:
       H100_VIDEO_KEY: ${H100_VIDEO_KEY}
       H100_AES_KEY: ${H100_AES_KEY}
       H100_TRIGGER_TOKEN: ${H100_TRIGGER_TOKEN:?Run ops/start.ps1 first}
+      H100_ROI_TOKEN: ${H100_ROI_TOKEN:?Run ops/start.ps1 first}
+      H100_MODULE_C_URL: https://module-c:8443
       KAKAO_MAP_JS_KEY: ${KAKAO_MAP_JS_KEY:-}
       H100_WEATHER_KEY: ${H100_WEATHER_KEY:-}
       H100_PUBLICDATA_KEY: ${H100_PUBLICDATA_KEY:-}
@@ -52,7 +55,8 @@ services:
     volumes:
       - ./db/001-detection-capture.sql:/migration.sql:ro
       - ./db/002-spatial-context.sql:/spatial-migration.sql:ro
-    command: [sh, -c, "mariadb -h db -u h100 able_park < /migration.sql && mariadb -h db -u h100 able_park < /spatial-migration.sql"]
+      - ./db/003-roi.sql:/roi-migration.sql:ro
+    command: [sh, -c, "mariadb -h db -u h100 able_park < /migration.sql && mariadb -h db -u h100 able_park < /spatial-migration.sql && mariadb -h db -u h100 able_park < /roi-migration.sql"]
     depends_on:
       db: {condition: service_healthy}
     restart: "no"
@@ -78,6 +82,8 @@ services:
       H100_DB_NAME: able_park
       FILE_UPLOAD_PATH: /app/H100_system
       H100_HMAC_KEYS: ${H100_HMAC_KEYS:?Run ops/start.ps1 first}
+      H100_ROI_TOKEN: ${H100_ROI_TOKEN:?Run ops/start.ps1 first}
+      CA_CERT_FILE: /certs/ca.crt
     ports: ["${H100_C_BIND_IP:-127.0.0.1}:${H100_C_PORT:-7811}:8443"]
     volumes:
       - received:/app/H100_system
