@@ -39,6 +39,11 @@
 			<mvc:exclude-mapping path="/resources/font/**" />
 	        <beans:bean class="com.disabled.interceptor.LoginInterceptor" />
 	    </mvc:interceptor>
+	    <!-- (34번 작업계획서) ROI 설정 화면·API 는 장비관리자(u_grade 25)·최고관리자(30)만. LoginInterceptor 다음에 실행된다 -->
+	    <mvc:interceptor>
+	        <mvc:mapping path="/deviceList/roi*" />
+	        <beans:bean class="com.disabled.interceptor.RoiAccessInterceptor" />
+	    </mvc:interceptor>
 	</mvc:interceptors>
 	
 	
