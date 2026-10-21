@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 웹 ROI 설정 (34번 작업계획서). 파일명이 *Mapper.xml 이어야 root-context 의 mapperLocations 에 잡힌다. -->
+<mapper namespace="com.disabled.mapper.RoiMapper">
+
+	<!-- 이력 INSERT (PENDING). rh_req_date 는 DB now() 기본값 -->
+	<insert id="insertHistory" parameterType="map" useGeneratedKeys="true" keyProperty="rhId" keyColumn="rh_id">
+		INSERT INTO tbl_roi_history
+			(rh_dv_id, rh_action, rh_roi_json, rh_meta_json, rh_roi_hash, rh_base_hash, rh_status, rh_u_name)
+		VALUES
+			(#{dvId}, #{action}, #{roiJson}, #{metaJson,jdbcType=VARCHAR}, #{roiHash}, #{baseHash,jdbcType=VARCHAR}, 'PENDING', #{uName})
+	</insert>
+
+	<!-- 장비 값이 DB 와 달라 그대로 기록 (SYNC). 이미 장비에 반영된 값이므로 바로 SUCCESS, 응답 시각 = 지금 -->
+	<insert id="insertSyncHistory" parameterType="map" useGeneratedKeys="true" keyProperty="rhId" keyColumn="rh_id">
+		INSERT INTO tbl_roi_history
+			(rh_dv_id, rh_action, rh_roi_json, rh_meta_json, rh_roi_hash, rh_base_hash, rh_status, rh_u_name, rh_resp_date)
+		VALUES
+			(#{dvId}, 'SYNC', #{roiJson}, #{metaJson,jdbcType=VARCHAR}, #{roiHash}, NULL, 'SUCCESS', 'SYSTEM', now())
+	</insert>
+
+	<!-- 아직 결과가 확정되지 않은(PENDING) 이력. 시간 초과 뒤 사용자가 확인하지 않고 떠난 건을 다음 로드에서 정리하는 데 쓴다 -->
+	<select id="selectPending" resultType="map">
+		SELECT rh_id, rh_roi_hash, TIMESTAMPDIFF(MINUTE, rh_req_date, now()) AS age_min
+		FROM tbl_roi_history
+		WHERE rh_dv_id = #{dvId}
+		  AND rh_status = 'PENDING'
+		ORDER BY rh_id
+	</select>
+
+	<!-- PENDING 인 행만 결과로 확정. 이미 SUCCESS/FAIL 이면 0행 -->
+	<update id="updateHistoryResult" parameterType="map">
+		UPDATE tbl_roi_history
+		SET rh_status = #{status},
+			rh_fail_code = #{failCode,jdbcType=INTEGER},
+			rh_fail_msg = #{failMsg,jdbcType=VARCHAR},
+			rh_resp_date = now()
+		WHERE rh_id = #{rhId}
+		  AND rh_status = 'PENDING'
+	</update>
+
+	<select id="countSuccess" resultType="int">
+		SELECT COUNT(1)
+		FROM tbl_roi_history
+		WHERE rh_dv_id = #{dvId}
+		  AND rh_status = 'SUCCESS'
+	</select>
+
+	<!-- 현재 적용본 = 장치별 rh_status='SUCCESS' 인 가장 최근 행 (계획서 4.9) -->
+	<select id="selectLatestSuccess" resultType="map">
+		SELECT rh_id, rh_action, rh_roi_json, rh_meta_json, rh_roi_hash
+		FROM tbl_roi_history
+		WHERE rh_dv_id = #{dvId}
+		  AND rh_status = 'SUCCESS'
+		ORDER BY rh_id DESC
+		LIMIT 1
+	</select>
+
+	<select id="selectHistory" resultType="map">
+		SELECT rh_id, rh_dv_id, rh_action, rh_roi_json, rh_meta_json, rh_roi_hash, rh_base_hash,
+			   rh_status, rh_fail_code, rh_fail_msg, rh_u_name,
+			   DATE_FORMAT(rh_req_date, '%Y-%m-%d %H:%i:%s') AS req_date,
+			   DATE_FORMAT(rh_resp_date, '%Y-%m-%d %H:%i:%s') AS resp_date
+		FROM tbl_roi_history
+		WHERE rh_id = #{rhId}
+	</select>
+
+	<!-- 목록은 원문(JSON)을 싣지 않는다. 스냅샷 개수로 미리보기 가능 여부를 알려 준다 -->
+	<select id="selectHistoryList" parameterType="map" resultType="map">
+		SELECT h.rh_id, h.rh_action, h.rh_status, h.rh_fail_code, h.rh_fail_msg, h.rh_u_name,
+			   LEFT(h.rh_roi_hash, 12) AS hash_short,
+			   DATE_FORMAT(h.rh_req_date, '%Y-%m-%d %H:%i:%s') AS req_date,
+			   DATE_FORMAT(h.rh_resp_date, '%Y-%m-%d %H:%i:%s') AS resp_date,
+			   (SELECT COUNT(1) FROM tbl_roi_snapshot s WHERE s.rs_rh_id = h.rh_id) AS snapshot_count
+		FROM tbl_roi_history h
+		WHERE h.rh_dv_id = #{dvId}
+		ORDER BY h.rh_id DESC
+		LIMIT #{limit}
+	</select>
+
+	<insert id="insertSnapshot" parameterType="map">
+		INSERT INTO tbl_roi_snapshot
+			(rs_rh_id, rs_camera, rs_file_path, rs_width, rs_height)
+		VALUES
+			(#{rhId}, #{camera}, #{filePath}, #{width}, #{height})
+	</insert>
+
+	<select id="selectSnapshots" resultType="map">
+		SELECT rs_id, rs_camera, rs_width, rs_height
+		FROM tbl_roi_snapshot
+		WHERE rs_rh_id = #{rhId}
+		ORDER BY rs_camera
+	</select>
+
+	<select id="selectSnapshotById" resultType="map">
+		SELECT rs_id, rs_rh_id, rs_camera, rs_file_path, rs_width, rs_height
+		FROM tbl_roi_snapshot
+		WHERE rs_id = #{rsId}
+	</select>
+
+</mapper>
