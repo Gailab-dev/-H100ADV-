@@ -1,0 +1,6 @@
+Konva 10.3.3 (MIT) - https://github.com/konvajs/konva
+Source: npm registry tarball konva-10.3.3.tgz (published 2026-09-04)
+Tarball sha1: db19b108b204a286ea2beba622dc20bc923f7acb (verified against registry dist.shasum)
+Files: konva.min.js (UMD build, unmodified), LICENSE
+Why vendored: the product may run on a closed network, so the editor must not depend on a CDN.
+Version policy: pin a release that has been public for a while; re-verify the checksum when upgrading.

@@ -1,0 +1,106 @@
+/* ROI 설정 편집 화면 (34번 작업계획서). 공용 레이아웃 색(#6955A2 계열)에 맞춤. */
+.roi-page { padding: 16px 20px 24px; box-sizing: border-box; color: #222; font-size: 14px; }
+.roi-page * { box-sizing: border-box; }
+.roi-topbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.roi-topbar h2 { margin: 0; font-size: 20px; flex: 1 1 auto; }
+.roi-device { font-size: 14px; font-weight: 400; color: #666; margin-left: 8px; }
+.roi-back { color: #6955A2; text-decoration: none; font-weight: 600; }
+.roi-back:hover { text-decoration: underline; }
+.roi-top-actions { display: flex; align-items: center; gap: 10px; }
+.roi-draft-state { font-size: 12px; color: #6a6a7a; }
+
+.roi-banner { margin: 6px 0 10px; padding: 9px 12px; border-radius: 6px; font-size: 13px; line-height: 1.5; }
+.roi-banner.info { background: #eef4ff; color: #1d3f77; border: 1px solid #c9dafb; }
+.roi-banner.warn { background: #fff7e6; color: #7a4b00; border: 1px solid #f3d8a4; }
+.roi-banner.error { background: #fdecea; color: #8a1f17; border: 1px solid #f3b9b4; }
+.roi-fatal { padding: 20px; color: #8a1f17; }
+
+.roi-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin: 8px 0 12px; }
+.roi-label { font-size: 12px; color: #666; margin-right: 6px; }
+.roi-tabs { display: inline-flex; border: 1px solid #cfc6ea; border-radius: 6px; overflow: hidden; }
+.roi-tabs button { padding: 7px 16px; border: 0; background: #fff; cursor: pointer; font-size: 14px; color: #6955A2; }
+.roi-tabs button + button { border-left: 1px solid #cfc6ea; }
+.roi-tabs button.active { background: #6955A2; color: #fff; }
+.roi-tabs.small button { padding: 4px 12px; font-size: 13px; }
+
+.roi-btn { padding: 6px 12px; border: 1px solid #cfc6ea; background: #fff; color: #4a3d82; border-radius: 5px; cursor: pointer; font-size: 13px; }
+.roi-btn:hover:not(:disabled) { background: #f1edff; }
+.roi-btn:disabled { opacity: .45; cursor: not-allowed; }
+.roi-btn.primary { background: #6955A2; border-color: #6955A2; color: #fff; }
+.roi-btn.primary:hover:not(:disabled) { background: #5a4891; }
+.roi-btn.danger { color: #b3261e; border-color: #efc2be; }
+.roi-btn.small { padding: 3px 8px; font-size: 12px; }
+.roi-btn.kind-parking { border-left: 4px solid #2a7de1; }
+.roi-btn.kind-driveway { border-left: 4px solid #1fa971; }
+.roi-btn.kind-ignore { border-left: 4px solid #8b8b99; }
+
+.roi-main { display: flex; gap: 16px; align-items: flex-start; }
+.roi-stage-wrap { flex: 1 1 auto; min-width: 0; }
+.roi-stage { background: #1e1e24; border-radius: 6px; overflow: hidden; line-height: 0; touch-action: none; }
+.roi-guide { margin: 6px 2px 0; font-size: 12px; color: #6a6a7a; line-height: 1.5; }
+.roi-side { flex: 0 0 340px; max-width: 38%; }
+
+.roi-group { border: 1px solid #e3def5; border-radius: 6px; margin-bottom: 10px; background: #fff; }
+.roi-group-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: #f7f5fd; border-bottom: 1px solid #e3def5; }
+.roi-group-head strong { flex: 1 1 auto; }
+.roi-count { font-size: 12px; color: #666; }
+.roi-swatch { width: 12px; height: 12px; border-radius: 3px; background: #888; display: inline-block; }
+.kind-parking .roi-swatch { background: #2a7de1; }
+.kind-driveway .roi-swatch { background: #1fa971; }
+.kind-ignore .roi-swatch { background: #8b8b99; }
+.roi-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 6px 10px; border-bottom: 1px solid #f0edf9; cursor: pointer; }
+.roi-row:last-child { border-bottom: 0; }
+.roi-row.selected { background: #f1edff; }
+.roi-row.bad { background: #fdf0ef; }
+.roi-row.bad .roi-name { border-color: #e5322d; color: #b3261e; }
+.roi-name { flex: 1 1 110px; min-width: 80px; padding: 4px 6px; border: 1px solid #d6d1ea; border-radius: 4px; font-size: 13px; }
+.roi-pts { font-size: 12px; color: #666; }
+.roi-kind { font-size: 12px; padding: 3px 2px; border: 1px solid #d6d1ea; border-radius: 4px; background: #fff; }
+.roi-row-warn { flex-basis: 100%; font-size: 12px; color: #b3261e; }
+
+.roi-problems { border: 1px solid #f3b9b4; background: #fdecea; color: #8a1f17; border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+.roi-problems ul { margin: 6px 0 0; padding-left: 18px; }
+
+.roi-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+.roi-hint { flex: 1 1 auto; font-size: 12px; color: #6a6a7a; }
+
+.roi-toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+	max-width: min(560px, 92vw); padding: 10px 16px; border-radius: 6px; background: #2b2b33; color: #fff; font-size: 13px; z-index: 3000; transition: opacity .2s, transform .2s; }
+.roi-toast.show { opacity: 1; transform: translate(-50%, 0); }
+.roi-toast.warn { background: #8a5a00; }
+.roi-toast.error { background: #a32a22; }
+.roi-toast.ok { background: #1c7a4f; }
+
+.roi-overlay { position: fixed; inset: 0; background: rgba(20, 16, 40, .45); display: flex; align-items: center; justify-content: center; z-index: 2500; }
+.roi-overlay[hidden] { display: none; }
+.roi-overlay.wait { z-index: 2800; background: rgba(20, 16, 40, .55); }
+.roi-dialog { background: #fff; border-radius: 8px; padding: 18px 20px; width: min(480px, 92vw); max-height: 88vh; overflow: auto; box-shadow: 0 8px 28px rgba(0, 0, 0, .3); }
+.roi-dialog.small { width: min(340px, 90vw); text-align: center; }
+.roi-dialog.wide { width: min(980px, 96vw); }
+.roi-dialog h3 { margin: 0 0 10px; font-size: 16px; }
+.roi-dialog-body p { margin: 6px 0; line-height: 1.55; }
+.roi-dialog-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.roi-dialog-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.roi-dialog-head h3 { margin: 0; }
+.roi-wait-left { color: #666; font-size: 12px; }
+.roi-spinner { width: 34px; height: 34px; margin: 4px auto 10px; border: 4px solid #e3def5; border-top-color: #6955A2; border-radius: 50%; animation: roi-spin 1s linear infinite; }
+@keyframes roi-spin { to { transform: rotate(360deg); } }
+
+.roi-history-body { display: flex; gap: 14px; align-items: flex-start; }
+.roi-history-list { flex: 1 1 52%; max-height: 66vh; overflow: auto; font-size: 13px; }
+.roi-history-detail { flex: 1 1 48%; min-width: 0; }
+.roi-history-table { width: 100%; border-collapse: collapse; }
+.roi-history-table th, .roi-history-table td { padding: 5px 7px; border-bottom: 1px solid #eee; text-align: left; }
+.roi-history-table tr[tabindex] { cursor: pointer; }
+.roi-history-table tr[tabindex]:hover, .roi-history-table tr.active { background: #f1edff; }
+.roi-history-table tr.status-FAIL td { color: #8a1f17; }
+.roi-history-table tr.status-PENDING td { color: #7a4b00; }
+.roi-history-note { font-size: 12px; color: #666; margin: 6px 0; }
+.roi-history-meta { font-size: 13px; margin: 0 0 6px; }
+.roi-preview { width: 100%; height: auto; border-radius: 4px; background: #2b2b33; margin-top: 6px; }
+
+@media (max-width: 1100px) {
+	.roi-main { flex-direction: column; }
+	.roi-side { flex-basis: auto; max-width: none; width: 100%; }
+	.roi-history-body { flex-direction: column; }
+}
