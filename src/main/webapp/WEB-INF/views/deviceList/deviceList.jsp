@@ -1412,6 +1412,12 @@
 											</td>
 											<td>
 												<button class="edit-btn detection-btn" type="button" data-device-id="${item.dv_id}" data-context="${pageContext.request.contextPath}">이상탐지</button>
+												<%-- (34번) ROI 설정 — 장비관리자(25)·최고관리자(30)에게만 보인다. 서버 인터셉터(RoiAccessInterceptor)도 같은 조건으로 막는다.
+												     장비 PC 상태가 정상(1)이 아니면(통신 불가) 상태 폴링 스크립트가 비활성화한다. --%>
+												<c:if test="${sessionScope.uGrade == 25 || sessionScope.uGrade == 30}">
+													<button class="edit-btn roi-btn" type="button" disabled
+														title="장비 상태 확인 중" onclick="openRoiEditor(${item.dv_id})">ROI</button>
+												</c:if>
 <button class="edit-btn" type="button"
 													onclick="viewDeviceInfoPopup(${item.dv_id})">수정</button>
 												<%-- (15번 4-5) 이상 로그 slide-in 패널 열기. dv_name 은 패널 제목용 --%>
@@ -1462,9 +1468,23 @@
 	    { cls: 'status-sip',     field: 'dv_status_sip' }
 	  ];
 
+	  // (34번) ROI 편집 화면으로 이동 — 장비 PC 상태(dv_status_pc)가 1(정상)일 때만 버튼이 활성화된다.
+	  window.openRoiEditor = function(dvId){
+	    location.href = CONTEXT_PATH + '/deviceList/roiView.do?deviceId=' + encodeURIComponent(dvId);
+	  };
+
+	  function updateRoiButton(row, device){
+	    var btn = row.querySelector('.roi-btn');
+	    if(!btn) return;
+	    var online = Number(device.dv_status_pc) === 1;
+	    btn.disabled = !online;
+	    btn.title = online ? 'ROI 설정' : '장비와 통신할 수 없어 사용할 수 없습니다';
+	  }
+
 	  function updateDeviceRow(device){
 	    var row = document.getElementById('device-' + device.dv_id);
 	    if(!row) return;
+	    updateRoiButton(row, device);
 	    STATUS_KEYS.forEach(function(k){
 	      var cell = row.querySelector('.' + k.cls);
 	      if(!cell) return;
