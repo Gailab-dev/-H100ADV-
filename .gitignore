@@ -24,6 +24,11 @@ h100_module_d/vendor/
 # 개발 PC 전용 설정(비밀 포함) — 템플릿(.example)만 git 으로 관리한다
 /config/local/*.properties
 
+# 로컬 실행용 설정(비밀·서버 정보 포함) — 템플릿(.example)만 git 으로 관리한다
+/h100_module_c/.env
+/h100_module_d/.env
+/h100_module_c/config/database.yml
+
 # 로그 및 임시파일
 .log
 logs/
