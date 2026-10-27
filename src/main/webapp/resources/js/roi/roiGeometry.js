@@ -1,9 +1,8 @@
 /*
  * ROI 기하 검증 (브라우저 + Node 공용).
  *
- * 같은 알고리즘이 Java(RoiValidator)·Go(module_d roi/validate.go)에도 있다. 세 구현은
- * module_d/internal/handlers/roi/testdata/roi_vectors.json 의 같은 테스트 벡터로 검증한다.
- * 알고리즘을 바꾸면 세 곳과 벡터를 함께 바꿀 것.
+ * 같은 알고리즘이 Java(RoiValidator)·Go(module_d roi/validate.go)에도 있다.
+ * 알고리즘을 바꾸면 세 곳을 함께 바꿀 것.
  *
  * 좌표: 1920x1080 원본 기준 정수 픽셀, 원점은 왼쪽 위.
  */

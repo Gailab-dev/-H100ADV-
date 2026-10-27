@@ -7,8 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * ROI 기하 검증(34번 작업계획서 §7). 같은 알고리즘이 웹 JS(roiGeometry.js)·Go(module_d roi/validate.go)에도 있다.
- * 세 구현은 module_d/internal/handlers/roi/testdata/roi_vectors.json 의 같은 벡터로 검증한다.
- * 알고리즘을 바꾸면 세 곳과 벡터를 함께 바꿀 것. 좌표는 1920x1080 원본 기준 정수 픽셀, 원점은 왼쪽 위.
+ * 알고리즘을 바꾸면 세 곳을 함께 바꿀 것. 좌표는 1920x1080 원본 기준 정수 픽셀, 원점은 왼쪽 위.
  */
 public final class RoiValidator {
     public static final int WIDTH = 1920;
