@@ -19,7 +19,9 @@ import org.springframework.web.client.RestTemplate;
  * 향후 Apache HttpComponents 기반 팩토리로 교체 가능.)</p>
  */
 @Configuration
-@PropertySource(value = "classpath:globals.properties", encoding = "UTF-8")
+// 개발 PC 전용 외부 파일(H100_LOCAL_PROPERTIES, 없으면 무시)이 뒤에 오므로 같은 키는 외부 파일 값이 우선한다.
+@PropertySource(value = { "classpath:globals.properties", "${H100_LOCAL_PROPERTIES:file:/dev/null}" },
+		encoding = "UTF-8", ignoreResourceNotFound = true)
 public class ExternalApiConfig {
 
 	/** 연결 타임아웃(ms) */

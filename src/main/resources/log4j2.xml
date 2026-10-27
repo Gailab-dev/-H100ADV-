@@ -10,16 +10,9 @@
 			<PatternLayout pattern="%d %5p [%c] %m%n" />
 		</Console>
 		
-		<!-- 파일 로그 저장 (INFO 이상만) -->
-		<!-- 개발서버
-		 
-		<RollingFile name="file" fileName="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs/application.log"
-					 filePattern="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs/application-%d{yyyy-MM-dd}-%i.log">
-		-->
-		<!-- 운영서버 -->
-		<RollingFile name="file" fileName="/var/lib/tomcat9/logs/application.log"
-					 filePattern="/var/lib/tomcat9/logs/application-%d{yyyy-MM-dd}-%i.log">
-		
+		<!-- 파일 로그 저장 (INFO 이상만). 로그 폴더는 Tomcat 의 catalina.base/logs (서버별 경로를 적지 않는다) -->
+		<RollingFile name="file" fileName="${sys:catalina.base}/logs/application.log"
+					 filePattern="${sys:catalina.base}/logs/application-%d{yyyy-MM-dd}-%i.log">
 			<Filters>
 				<!-- INFO 레벨 이상만 파일에 기록 -->
 				<ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
@@ -33,31 +26,19 @@
 			</Policies>
 			<!-- 로그 파일 삭제 정책 -->
 			<DefaultRolloverStrategy max="30">
-				<!-- 개발서버
-				
-				<Delete basePath="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs" maxDepth="1">
-				-->
-				<!-- 운영서버 -->
-				<Delete basePath="/var/lib/tomcat9/logs" maxDepth="1">
-				
+				<Delete basePath="${sys:catalina.base}/logs" maxDepth="1">
 					<!-- 7일 이상 된 로그 파일 삭제 -->
 					<IfFileName glob="application-*.log" />
 					<IfLastModified age="7d" />
 				</Delete>
 			</DefaultRolloverStrategy>
 		</RollingFile>
-		
+
 		<!-- (24번) 디바이스(module_d) 파일 수신 응답이 실패를 의미하는데도 검증 없이 저장되던 문제 —
 			 실패 상세(발생시각·evId·targetUrl·fileName/type·응답 본문·스레드명)를 일반 애플리케이션 로그와
-			 섞이지 않는 전용 파일에 남긴다. 경로는 기존 "file" appender와 동일한 로그 디렉토리 관례를 따름. -->
-		<!-- 개발서버
-		<RollingFile name="deviceFileFetchError" fileName="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs/device_file_fetch_errors.log"
-					 filePattern="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs/device_file_fetch_errors-%d{yyyy-MM-dd}-%i.log">
-		-->
-		<!-- 운영서버 -->
-		<RollingFile name="deviceFileFetchError" fileName="/var/lib/tomcat9/logs/device_file_fetch_errors.log"
-					 filePattern="/var/lib/tomcat9/logs/device_file_fetch_errors-%d{yyyy-MM-dd}-%i.log">
-
+			 섞이지 않는 전용 파일에 남긴다. 경로는 기존 "file" appender와 동일한 로그 디렉토리를 따름. -->
+		<RollingFile name="deviceFileFetchError" fileName="${sys:catalina.base}/logs/device_file_fetch_errors.log"
+					 filePattern="${sys:catalina.base}/logs/device_file_fetch_errors-%d{yyyy-MM-dd}-%i.log">
 			<PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %m%n" />
 			<Policies>
 				<SizeBasedTriggeringPolicy size="10MB" />
@@ -65,11 +46,7 @@
 			</Policies>
 			<!-- 원인 분석용 기록이라 일반 앱 로그(7일)보다 길게 30일 보관 -->
 			<DefaultRolloverStrategy max="30">
-				<!-- 개발서버
-				<Delete basePath="/usr/share/tomcat9_jdk17/apache-tomcat-9.0.106/logs" maxDepth="1">
-				-->
-				<!-- 운영서버 -->
-				<Delete basePath="/var/lib/tomcat9/logs" maxDepth="1">
+				<Delete basePath="${sys:catalina.base}/logs" maxDepth="1">
 					<IfFileName glob="device_file_fetch_errors-*.log" />
 					<IfLastModified age="30d" />
 				</Delete>

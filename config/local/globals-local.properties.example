@@ -1,0 +1,26 @@
+# 개발 PC 전용 설정 템플릿 (이 파일은 값이 없는 예시이며 git 으로 관리한다).
+#
+# 사용법
+#   1) 이 파일을 같은 폴더에 globals-local.properties 로 복사하고 <...> 부분을 실제 값으로 채운다.
+#      (globals-local.properties 는 .gitignore 대상이므로 커밋되지 않는다. 비밀 값을 이 .example 에 쓰지 말 것.)
+#   2) Tomcat/IDE 실행 옵션에 다음을 추가한다(절대경로, file: 로 시작).
+#        -DH100_LOCAL_PROPERTIES=file:/절대경로/config/local/globals-local.properties
+#      파일이 없거나 옵션을 주지 않으면 이 파일은 무시되고 globals.properties 의 값과 환경변수만 쓴다.
+#   3) 같은 키는 이 파일이 globals.properties 보다 우선한다. 환경변수로도 같은 이름을 줄 수 있다.
+#
+# 이 파일은 WAR 에 포함되지 않는다(소스 폴더 밖). 서버(Docker)는 compose 의 environment 와 /etc/h100/web.env 를 쓴다.
+
+# --- DB (필수: 값이 없으면 기동 실패) ---
+# properties 파일에서는 & 를 그대로 쓴다.
+H100_DB_URL=jdbc:mariadb://<DB 호스트>:<포트>/able_park?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul&tcpKeepAlive=true&connectTimeout=10000&socketTimeout=60000
+H100_DB_USER=<DB 계정>
+H100_DB_PASSWORD=<DB 비밀번호>
+
+# --- 미디어 기준 폴더 (이 PC 에서 이미지·영상·음성이 저장된 폴더의 절대경로) ---
+# 하위에 output_images, output_images_enc, output_videos, output_videos_enc, output_audios, output_audios_enc 가 있어야 한다.
+# module_c 의 FILE_UPLOAD_PATH 와 같은 폴더여야 한다. 지정하지 않으면 /media 를 쓴다.
+#H100_MEDIA_BASE=<절대경로>
+
+# --- ROI 설정 연동 (비워 두면 ROI 기능만 503 NOT_CONFIGURED 로 응답하고 나머지 기능은 정상) ---
+#roi.modulec.base-url=https://<module_c 호스트>:8189
+#roi.modulec.token=<module_c 의 H100_ROI_TOKEN 과 같은 값>

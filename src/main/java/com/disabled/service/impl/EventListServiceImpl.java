@@ -457,10 +457,6 @@ public class EventListServiceImpl implements EventListService{
 				}
 			}
 			
-			File encryptedFile = new File("/home/dsic/Desktop/H100_system/output_images_enc/20260202175054_1_Cam1_1.png.enc");
-    		long fileSize = encryptedFile.length();
-            System.out.println("======666666암호화된 파일 크기: " + fileSize + " bytes");
-			
 		} catch (IllegalStateException e2) {
 			logger.error("requestFileFromModule에서 evHasMovChange 또는 evHasImgChange 오류 발생 : ",e2);
 			throw e2;

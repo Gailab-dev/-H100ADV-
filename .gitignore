@@ -21,6 +21,9 @@ h100_module_d/vendor/
 *.iml           # IntelliJ
 .vscode/        # VS Code
 
+# 개발 PC 전용 설정(비밀 포함) — 템플릿(.example)만 git 으로 관리한다
+/config/local/*.properties
+
 # 로그 및 임시파일
 .log
 logs/
