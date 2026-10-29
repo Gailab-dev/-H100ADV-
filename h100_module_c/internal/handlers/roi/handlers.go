@@ -8,7 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
 	"image/jpeg"
+	"image/png"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -119,7 +123,8 @@ func Send(w http.ResponseWriter, r *http.Request) {
 }
 
 // Snapshot 은 ROI_snapshot — Cam1/Cam2 스냅샷을 받아 서버 임시 폴더(roi/snapshot/{계정}/{serial}/)에 저장한다.
-// 같은 계정·장비의 이전 파일은 덮어쓴다. 두 장 모두 JPEG·1920x1080 으로 확인된 뒤에만 저장한다.
+// 같은 계정·장비의 이전 파일은 덮어쓴다. 두 장 모두 PNG 또는 JPEG·1920x1080 으로 확인된 뒤에만 저장한다.
+// 저장 형식은 항상 JPEG(.jpg)다 — PNG 로 받으면 JPEG 로 변환한다(Java·정리 스케줄러가 .jpg/JPEG 를 전제로 하므로).
 func Snapshot(w http.ResponseWriter, r *http.Request) {
 	var req snapshotRequest
 	if !decodeRequest(w, r, &req) {
@@ -165,16 +170,17 @@ func Snapshot(w http.ResponseWriter, r *http.Request) {
 			fail(w, http.StatusBadGateway, "DEVICE_ERROR", "장비 응답을 해석할 수 없습니다")
 			return
 		}
-		cfg, decErr := jpeg.DecodeConfig(bytes.NewReader(raw))
+		jpg, sizeErr, decErr := normalizeSnapshot(raw)
 		if decErr != nil {
-			fail(w, http.StatusBadGateway, "SNAPSHOT_INVALID", cam+" 스냅샷이 올바른 JPEG 가 아닙니다")
+			logger.Log.Warn("[ROI_snapshot] "+cam+" 스냅샷 해석 실패", zap.Error(decErr))
+			fail(w, http.StatusBadGateway, "SNAPSHOT_INVALID", cam+" 스냅샷이 올바른 PNG/JPEG 가 아닙니다")
 			return
 		}
-		if cfg.Width != snapshotWidth || cfg.Height != snapshotHeight {
+		if sizeErr {
 			fail(w, http.StatusBadGateway, "SNAPSHOT_SIZE", fmt.Sprintf("%s 스냅샷 크기가 %dx%d 가 아닙니다", cam, snapshotWidth, snapshotHeight))
 			return
 		}
-		images[cam] = raw
+		images[cam] = jpg
 	}
 	dir := filepath.Join(base, "roi", "snapshot", account, req.Serial)
 	if err := os.MkdirAll(dir, 0o750); err != nil {
@@ -192,6 +198,54 @@ func Snapshot(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"ok": true, "width": snapshotWidth, "height": snapshotHeight, "takenAt": time.Now().Format(time.RFC3339),
 	})
+}
+
+var (
+	jpegMagic = []byte{0xFF, 0xD8, 0xFF}
+	pngMagic  = []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+)
+
+// snapshotJPEGQuality 는 PNG → JPEG 변환 품질. ROI 를 그릴 때 배경으로만 쓰이므로 육안 차이가 없는 수준이면 충분하다.
+const snapshotJPEGQuality = 92
+
+// normalizeSnapshot 은 디바이스가 보낸 이미지(PNG 또는 JPEG)를 저장용 JPEG 로 정리한다.
+// 헤더로 형식·크기를 먼저 확인하고(크기가 다르면 sizeMismatch=true, 전체 디코딩은 하지 않는다),
+// JPEG 는 원본을 그대로, PNG 는 JPEG 로 변환해 돌려준다. 형식이 PNG/JPEG 가 아니면 err.
+func normalizeSnapshot(raw []byte) (out []byte, sizeMismatch bool, err error) {
+	switch {
+	case bytes.HasPrefix(raw, jpegMagic):
+		cfg, e := jpeg.DecodeConfig(bytes.NewReader(raw))
+		if e != nil {
+			return nil, false, e
+		}
+		if cfg.Width != snapshotWidth || cfg.Height != snapshotHeight {
+			return nil, true, nil
+		}
+		return raw, false, nil
+	case bytes.HasPrefix(raw, pngMagic):
+		cfg, e := png.DecodeConfig(bytes.NewReader(raw))
+		if e != nil {
+			return nil, false, e
+		}
+		if cfg.Width != snapshotWidth || cfg.Height != snapshotHeight {
+			return nil, true, nil
+		}
+		img, e := png.Decode(bytes.NewReader(raw))
+		if e != nil {
+			return nil, false, e
+		}
+		// JPEG 는 투명도가 없으므로 흰 바탕 위에 합성한다.
+		rgba := image.NewRGBA(img.Bounds())
+		draw.Draw(rgba, rgba.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
+		draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Over)
+		var buf bytes.Buffer
+		if e := jpeg.Encode(&buf, rgba, &jpeg.Options{Quality: snapshotJPEGQuality}); e != nil {
+			return nil, false, e
+		}
+		return buf.Bytes(), false, nil
+	default:
+		return nil, false, errors.New("PNG/JPEG 형식이 아닙니다")
+	}
 }
 
 // writeAtomic 은 임시 파일에 쓰고 fsync 후 rename 한다(읽는 쪽이 반쯤 쓰인 파일을 보지 않도록).

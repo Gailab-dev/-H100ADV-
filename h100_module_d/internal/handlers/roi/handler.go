@@ -1,7 +1,7 @@
 // Package roi 는 서버(module_c)가 중계한 ROI 조회·스냅샷·적용 요청을 처리한다(34번 작업계획서).
 //
 //	ROI_get      현재 ROI 파일 내용 + SHA-256 해시
-//	ROI_snapshot Cam1/Cam2 스냅샷 각 1장(JPEG)
+//	ROI_snapshot Cam1/Cam2 스냅샷 각 1장(PNG 또는 JPEG)
 //	ROI_receive  baseHash 가 현재 파일 해시와 같을 때만 검증 후 파일 교체(아니면 409)
 //
 // 인증: X-Device-Serial + X-Device-HMAC(auth.go). 파일 경로·스냅샷 소스는 모두 환경설정으로 받는다.
@@ -12,8 +12,10 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -171,7 +173,7 @@ func ReceiveHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]interface{}{"ok": true, "hash": newHash})
 }
 
-// SnapshotHandler 는 ROI_snapshot. 스냅샷 소스는 ROI_SNAPSHOT_URL(로컬 Python 등) 또는 ROI_SNAPSHOT_DIR(Cam1.jpg/Cam2.jpg).
+// SnapshotHandler 는 ROI_snapshot. 스냅샷 소스는 ROI_SNAPSHOT_URL(로컬 Python 등) 또는 ROI_SNAPSHOT_DIR(Cam1.png/Cam2.png, 없으면 .jpg).
 func SnapshotHandler(w http.ResponseWriter, r *http.Request) {
 	var req envelope
 	if !preamble(w, r, &req) {
@@ -210,7 +212,13 @@ func (e snapshotError) Error() string { return string(e) }
 
 const errSnapshotNotConfigured = snapshotError("snapshot source not configured")
 
-var jpegMagic = []byte{0xFF, 0xD8, 0xFF}
+var (
+	jpegMagic = []byte{0xFF, 0xD8, 0xFF}
+	pngMagic  = []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+)
+
+// snapshotExts 는 ROI_SNAPSHOT_DIR 에서 카메라별 파일을 찾는 확장자 순서(PNG 우선, 없을 때만 JPG).
+var snapshotExts = []string{".png", ".jpg"}
 
 func fetchSnapshot(ctx context.Context, camera string) ([]byte, error) {
 	if base := os.Getenv("ROI_SNAPSHOT_URL"); base != "" {
@@ -234,20 +242,36 @@ func fetchSnapshot(ctx context.Context, camera string) ([]byte, error) {
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("스냅샷 소스 응답 코드 %d", resp.StatusCode)
 		}
-		return readJPEG(resp.Body)
+		return readImage(resp.Body)
 	}
 	if dir := os.Getenv("ROI_SNAPSHOT_DIR"); dir != "" {
-		f, err := os.Open(filepath.Join(dir, camera+".jpg"))
+		f, err := openSnapshotFile(dir, camera)
 		if err != nil {
 			return nil, err
 		}
 		defer f.Close()
-		return readJPEG(f)
+		return readImage(f)
 	}
 	return nil, errSnapshotNotConfigured
 }
 
-func readJPEG(r io.Reader) ([]byte, error) {
+// openSnapshotFile 은 <camera>.png 를 먼저 열고, 파일이 없을 때만 <camera>.jpg 를 연다.
+// 권한 오류 등 "없음"이 아닌 오류는 다음 확장자로 넘어가지 않고 그대로 반환한다.
+func openSnapshotFile(dir, camera string) (*os.File, error) {
+	for _, ext := range snapshotExts {
+		f, err := os.Open(filepath.Join(dir, camera+ext))
+		if err == nil {
+			return f, nil
+		}
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+	}
+	return nil, fmt.Errorf("스냅샷 파일이 없습니다 (%s.png, %s.jpg)", camera, camera)
+}
+
+// readImage 는 크기 상한 안에서 읽고 PNG 또는 JPEG 매직 바이트인지 확인한다(그 외 형식은 거부).
+func readImage(r io.Reader) ([]byte, error) {
 	data, err := io.ReadAll(io.LimitReader(r, maxSnapshot+1))
 	if err != nil {
 		return nil, err
@@ -255,8 +279,8 @@ func readJPEG(r io.Reader) ([]byte, error) {
 	if len(data) > maxSnapshot {
 		return nil, fmt.Errorf("스냅샷이 너무 큽니다")
 	}
-	if !bytes.HasPrefix(data, jpegMagic) {
-		return nil, fmt.Errorf("JPEG 가 아닙니다")
+	if !bytes.HasPrefix(data, pngMagic) && !bytes.HasPrefix(data, jpegMagic) {
+		return nil, fmt.Errorf("PNG/JPEG 가 아닙니다")
 	}
 	return data, nil
 }

@@ -85,6 +85,9 @@ FILE_PATH=/home/<계정>/H100/recorded
 DEVICE_HMAC_KEY=<module_c 와 동일한 64byte hex 문자열>
 DEVICE_SERIAL= 해당 디바이스의 고유 번호(cat /proc/device-tree/serial-number) 
 CA_CERT_FILE=/home/<계정>/H100/system/h100_module_d/ssl/h100-ca.crt
+ROI_FILE_PATH=/home/<계정>/H100/system/rois.json
+ROI_SNAPSHOT_DIR=/home/<계정>/H100/output/roi_snapshot
+# ROI_SNAPSHOT_URL 은 로컬 Python 이 스냅샷을 공급할 때만 추가(없으면 생략). 있으면 URL 이 DIR 보다 우선.
 
 [편집·권한]
 
@@ -102,6 +105,17 @@ cat /home/<계정>/H100/system/h100_module_d/.env
 mkdir -p /home/<계정>/H100/recorded/image
 mkdir -p /home/<계정>/H100/recorded/video
 mkdir -p /home/<계정>/H100/recorded/audio
+mkdir -p /home/<계정>/H100/output/roi_snapshot
+
+
+[ROI 스냅샷 파일 규칙]
+
+폴더: ROI_SNAPSHOT_DIR (/home/<계정>/H100/output/roi_snapshot)
+파일: Cam1.png, Cam2.png  (ROI JSON 의 카메라 키와 같은 이름. 두 카메라 모두 필요)
+      카메라별로 .png 를 먼저 찾고, 그 카메라의 .png 가 없을 때만 .jpg 를 읽는다 (Cam1.png + Cam2.jpg 조합도 가능)
+형식: PNG 또는 JPEG 만 허용(파일 내용으로 판별, 확장자는 보지 않음). 그 외(GIF 등)는 거부. 크기 8MB 이하
+크기: 서버(module_c)가 1920x1080 인 이미지만 받아들인다(다르면 ROI 화면에서 스냅샷 오류)
+권한: 서비스 계정이 읽을 수 있어야 한다. rois.json 은 서비스 계정이 읽고 쓸 수 있어야 한다(저장 시 임시파일→교체)
 
 ===================================================
 3. HMAC 64byte 값 (module_c 와 동기화)
@@ -384,6 +398,8 @@ tegrastats
 [ ] .env 파일 존재·값 정합
 [ ] DEVICE_HMAC_KEY 이 module_c 와 일치
 [ ] 파일 저장 폴더 존재 (image/video/audio)
+[ ] ROI 사용 시: .env 에 ROI_FILE_PATH, ROI_SNAPSHOT_DIR 존재, rois.json 존재·서비스 계정 읽기/쓰기 가능
+[ ] ROI 사용 시: roi_snapshot 폴더에 Cam1.png, Cam2.png(또는 .jpg) 존재, PNG/JPEG 형식·1920x1080
 [ ] 로그 폴더 존재 (logs/)
 [ ] Go 바이너리 재빌드 완료
 [ ] 서비스 재시작 완료
