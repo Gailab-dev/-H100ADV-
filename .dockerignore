@@ -8,6 +8,8 @@ src/main/resources/globals.properties
 !ops/config/**
 !ops/docker/
 !ops/docker/**
+!ops/device-kit/
+!ops/device-kit/**
 !h100_module_c/
 !h100_module_c/**
 !h100_module_d/
