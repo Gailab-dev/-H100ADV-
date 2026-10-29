@@ -45,7 +45,7 @@
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.8/c3.min.js"></script>
 <script
-	src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
+	src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js?v=20261029"></script>
 <%--  뒤로가기 등 BFCache 복원시 강제 새로고침(뒤로가기 시 로그인 페이지로 이동) --%>
 <%--
 <script>

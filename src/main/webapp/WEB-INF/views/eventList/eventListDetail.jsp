@@ -13,7 +13,7 @@
    	const CONTEXT_PATH = "${pageContext.request.contextPath}";
 </script>
 <script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
-<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js?v=20261029"></script>
 
 <input type="hidden" name="evId" value="${eventListDetail.ev_id}" />
 

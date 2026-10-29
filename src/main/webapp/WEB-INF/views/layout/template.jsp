@@ -7,6 +7,8 @@
 	<!-- ---------------------- 공통 meta 설정----------------------------- -->
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<%-- 컨텍스트 경로를 JS 에 알려 준다(ROOT 배포면 빈 문자열). JS 에 '/앱이름' 을 고정하지 않기 위한 값 --%>
+	<script>window.APP_CTX = '${pageContext.request.contextPath}';</script>
 	<!-- ---------------------- 공통 라이브러리 ---------------------------- -->
 	<script src="${pageContext.request.contextPath}/resources/js/jquery-3.3.1.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resources/js/c3.min.js"></script>

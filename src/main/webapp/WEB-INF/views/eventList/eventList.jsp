@@ -58,7 +58,7 @@
    	const CONTEXT_PATH = "${pageContext.request.contextPath}";
 </script>
 <script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
-<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js"></script>
+<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js?v=20261029"></script>
 
 <%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
 <script>

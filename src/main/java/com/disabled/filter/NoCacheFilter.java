@@ -55,7 +55,7 @@ public class NoCacheFilter implements Filter{
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
-        // 컨텍스트 루트를 제거한 경로로 매칭 (예: /gov-disabled-web-gs/css/.. → /css/..)
+        // 컨텍스트 루트를 제거한 경로로 매칭 (예: /앱이름/css/.. → /css/..)
         String ctx = req.getContextPath();
         String uri = req.getRequestURI();
         String path = uri.startsWith(ctx) ? uri.substring(ctx.length()) : uri;

@@ -1,6 +1,27 @@
 // /resources/js/common/excelDownloader.js
 (function (global) {
 
+  // 컨텍스트 경로(ROOT 배포면 빈 문자열, 예: "" 또는 "/앱이름").
+  // 우선순위: ① 호출부가 opts.contextPath 로 넘긴 값 ② 공통 헤더(template.jsp)가 서버에서 심어 준 window.APP_CTX
+  // ③ 이 스크립트 자신의 URL(…/resources/js/common/excelDownload.js)에서 역산. 어떤 배포 경로도 코드에 고정하지 않는다.
+  const SCRIPT_CTX = (function () {
+    try {
+      const src = document.currentScript && document.currentScript.src;
+      if (!src) return "";
+      const path = new URL(src, window.location.href).pathname;
+      const idx = path.indexOf("/resources/js/common/");
+      return idx >= 0 ? path.slice(0, idx) : "";
+    } catch (e) {
+      return "";
+    }
+  })();
+
+  function resolveContextPath(explicit) {
+    if (typeof explicit === "string") return explicit;
+    if (typeof global.APP_CTX === "string") return global.APP_CTX;
+    return SCRIPT_CTX;
+  }
+
   async function postJson(url, body) {
     const res = await fetch(url, {
       method: "POST",
@@ -56,7 +77,7 @@
       mapping,
       responseType = "blob",
       downloadFilename = "download.xlsx",
-      contextPath = "/gov-disabled-web-adv", // ✅ 외부에서 바꿀 수 있게 옵션화
+      contextPath,            // (선택) 지정하지 않으면 resolveContextPath() 가 결정
     } = opts || {};
 
     if (!endpoint) throw new Error("endpoint is required");
@@ -81,7 +102,7 @@
       throw new Error("Request body is empty. Provide params or formSelector+mapping.");
     }
 
-    const url = contextPath + endpoint;
+    const url = resolveContextPath(contextPath) + endpoint;
     const res = await postJson(url, body);
 
     if (!res.ok) {
