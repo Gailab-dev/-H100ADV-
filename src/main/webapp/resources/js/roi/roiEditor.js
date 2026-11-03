@@ -238,13 +238,29 @@
         stage.on('mousemove', function () { if (S.mode === 'draw') drawPreview(); });
         stage.on('contextmenu', function (e) { e.evt.preventDefault(); });
         window.addEventListener('resize', fit);
+        // 배너 표시·숨김 등으로 무대 영역 크기가 바뀌는 경우에도 다시 맞춘다(37번 WP-R). fit 은 무대 크기만 바꾸고 영역 크기는 바꾸지 않아 반복되지 않는다.
+        if (window.ResizeObserver) { new ResizeObserver(fit).observe($('.roi-stage-wrap')); }
         fit();
     }
 
     function fit() {
         var wrap = $('.roi-stage-wrap');
         var avail = Math.max(320, wrap.clientWidth - 2);
-        scale = clamp(avail / W, 0.2, 1.6);
+        var s = avail / W;
+        // (37번 WP-R) 한 화면에 맞춤: 가로폭뿐 아니라 남은 세로 높이도 넘지 않게 배율을 제한한다.
+        //  좌표는 항상 scale 로 환산(pointerLogical 등)하고 가로·세로 같은 배율을 쓰므로 1920×1080 기준 좌표계는 그대로다.
+        //  1100px 이하(세로 배치, CSS 미디어 쿼리와 동일 기준)에서는 페이지 스크롤을 허용하므로 높이 제한을 두지 않는다.
+        if (window.matchMedia && window.matchMedia('(min-width: 1101px)').matches) {
+            var guide = $('.roi-guide', wrap);
+            var guideH = 0;
+            if (guide) {
+                var gs = window.getComputedStyle(guide);
+                guideH = guide.offsetHeight + (parseFloat(gs.marginTop) || 0) + (parseFloat(gs.marginBottom) || 0);
+            }
+            var availH = wrap.clientHeight - guideH - 2;
+            if (availH > 120) s = Math.min(s, availH / H);
+        }
+        scale = clamp(s, 0.2, 1.6);
         stage.size({ width: Math.round(W * scale), height: Math.round(H * scale) });
         stage.scale({ x: scale, y: scale });
         drawImage();

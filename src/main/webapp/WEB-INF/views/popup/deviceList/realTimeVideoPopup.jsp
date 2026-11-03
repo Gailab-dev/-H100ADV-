@@ -22,9 +22,13 @@
   <div class="video-container">
     <video id="video" controls autoplay playsinline>
       <source src="" type="application/x-mpegURL">
-      이 브라우저에서는 실시간 영상을 재생할 수 없습니다.  
+      이 브라우저에서는 실시간 영상을 재생할 수 없습니다.
 	  Chrome, Edge, 또는 Safari를 사용해주세요.
     </video>
+    <%-- (38번 WP-2) 탭 숨김 일시 정지 안내. deviceList.jsp 의 setVideoOverlay() 가 문구와 표시를 제어한다.
+         data-hidden-grace-ms: 탭 숨김 유예(ms, 서버 설정 video.hidden-grace-ms). 이 팝업은 innerHTML 로 삽입돼 <script> 가 실행되지 않으므로 data 속성으로 전달 --%>
+    <div id="videoPausedOverlay" class="video-paused-overlay" role="status" aria-live="polite" style="display:none;"
+         data-hidden-grace-ms="<c:out value='${hiddenGraceMs}' default='0'/>"></div>
   </div>
 
   <%-- (15번 4-4) 카메라 조종 조이스틱. 기존 tiltingBtnClick 경로 재사용(신규 API 없음).
@@ -41,6 +45,15 @@
 </div>
 
 <style>
+	/* (38번 WP-2) 일시 정지 안내 오버레이 — 영상 위에 겹쳐 표시(클릭은 영상 컨트롤로 통과) */
+	.video-container { position: relative; }
+	.video-paused-overlay {
+		position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 2;
+		display: none; align-items: center; justify-content: center;
+		padding: 16px; text-align: center; line-height: 1.5;
+		background: rgba(0,0,0,0.65); color: #fff; font-size: 15px;
+		pointer-events: none;
+	}
 	.joystick-container { display: flex; justify-content: center; margin-top: 14px; }
 	.joystick-pad {
 		width: 150px; height: 150px; padding: 10px;

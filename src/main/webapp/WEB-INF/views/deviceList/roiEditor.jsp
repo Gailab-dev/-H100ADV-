@@ -8,7 +8,7 @@
 <meta charset="UTF-8">
 <title>ROI 설정</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/roiEditor.css?v=20261020">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/roiEditor.css?v=20261103">
 
 <div id="roiPage" class="roi-page"
 	data-ctx="<c:out value='${pageContext.request.contextPath}' escapeXml='true'/>"
@@ -106,4 +106,4 @@
 <script src="${pageContext.request.contextPath}/resources/js/vendor/konva/konva.min.js"></script>
 <script src="${pageContext.request.contextPath}/resources/js/roi/roiGeometry.js?v=20261020"></script>
 <script src="${pageContext.request.contextPath}/resources/js/roi/roiEditorCore.js?v=20261020"></script>
-<script src="${pageContext.request.contextPath}/resources/js/roi/roiEditor.js?v=20261020"></script>
+<script src="${pageContext.request.contextPath}/resources/js/roi/roiEditor.js?v=20261103"></script>
