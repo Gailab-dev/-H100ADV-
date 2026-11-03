@@ -99,7 +99,8 @@
 	href="${pageContext.request.contextPath}/resources/css/popup/deviceInfoPopup.css">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/popup/realTimeVideoPopup.css">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<%-- (38번 WP-2) hls.js 버전 고정: @latest 는 배포 시점마다 동작이 바뀔 수 있어 1.5.13 으로 고정 --%>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13"></script>
 <script>
 	  src="https://code.jquery.com/jquery-3.7.1.js"
 	  integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
@@ -644,6 +645,10 @@
 				rtDiv.innerHTML = r.data;
 				
 				rtDiv.style.display = 'block';
+
+				// (38번 WP-2) 팝업이 열린 상태 표시 + 탭 숨김 상태 초기화
+				popupOpen = true;
+				resetHiddenState();
 				
 				// 팝업창 실행시 자동 시작
 			    setTimeout(() => {
@@ -662,8 +667,29 @@
 		// 현재 스트리밍중인지 아닌지 여부
 		let isStreamingActive = false;
 		
-		// ?
+		// end 요청을 이미 보냈는지(중복 전송 방지). start 가 성공할 때마다 false 로 되돌린다(38번 WP-2).
 		let teardownSent = false;
+
+		// 영상 팝업이 열려 있는지 (start 응답을 기다리는 사이 팝업이 닫힌 경우를 구분하기 위함)
+		let popupOpen = false;
+
+		// 탭 숨김 처리 (38번 WP-2)
+		//  - 숨김: hls 로드 정지 + 유예 타이머 + "일시 정지" 표시 / 유예 안에 복귀: 로드 재개 후 라이브 위치로
+		//  - 유예 만료: end 전송(ffmpeg 종료 유도) / 복귀 시 start 재요청
+		//  - 유예 시간은 서버 설정(video.hidden-grace-ms, 기본 30000)을 팝업 JSP 가 #videoPausedOverlay 의 data-hidden-grace-ms 로 전달
+		const DEFAULT_HIDDEN_GRACE_MS = 30000;
+		let hiddenTimer = null;       // 유예 타이머
+		let pausedByHidden = false;   // 탭 숨김으로 일시 정지 중
+		let endedByHidden = false;    // 유예 만료로 end 를 이미 보낸 상태(복귀 시 start 재요청 필요)
+
+		// 직전 end 요청(fetch) — 닫기 직후 다시 열 때 start 가 end 보다 먼저 도착하지 않도록 기다린다
+		let pendingEnd = null;
+
+		// 마지막 sendCommand 실패 사유 {code, message}. sendCommand 는 실패 시 "error" 만 돌려주므로 별도로 보관
+		let lastCommandError = null;
+
+		// hls.js 오류 종류별 횟수(측정·장애 분석용 요약 로그)
+		let hlsErrorCount = {};
 		
 		// 전역 토큰 ID
 		let tokenId  = null;
@@ -737,6 +763,9 @@
 					return;
 				}
 
+				// (38번 WP-2) 플레이리스트를 기다리는 사이 팝업이 닫혔거나 end 가 이미 전송된 경우 재생을 시작하지 않는다
+				if (!popupOpen || !isStreamingActive || !document.getElementById('video')) return;
+
 				hls = new Hls({
 					autoStartLoad:false
 					, maxBufferLength:10
@@ -751,25 +780,27 @@
 			  hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
 			    hls.loadSource(playUrl);        // 소스만 로드
 			    // (2026-07-22) 위에서 플레이리스트 준비를 이미 확인했으므로 추가 대기 불필요
-			    hls.startLoad(-1);               // ★ 실제 로드 시작(라이브 엣지)
+			    // (38번 WP-2) 탭이 숨겨진 상태라면 로드는 보류 — 복귀 시 onVideoTabVisible 이 startLoad 한다
+			    if (!pausedByHidden) hls.startLoad(-1);               // ★ 실제 로드 시작(라이브 엣지)
 			  });
 
 				
 				hls.on(Hls.Events.ERROR,function(event,data){
-					  /*
-					  * Hls.Events.ERROR 발생시 자세한 에러 로그 확인하는 코드, 오류 발생시에만 주석 풀어서 디버깅
-						console.log('HLS ERROR', {
-						    type: data.type,
-						    details: data.details,
-						    code: data.response?.code,
-						    url: data.response?.url
-						  });
-					  */
+					  // (38번 WP-2) 비치명(버퍼 스톨·프래그먼트 로드 실패 등) 포함 모든 hls.js 오류를 콘솔에 남기고 종류별로 센다.
+					  //  측정(WP-M M-7)·장애 분석용 — 시청이 끝나면 요약(logHlsErrorSummary)도 출력한다.
+					  hlsErrorCount[data.details] = (hlsErrorCount[data.details] || 0) + 1;
+					  console.warn('[HLS] ' + (data.fatal ? 'FATAL' : 'non-fatal'), {
+					      type: data.type,
+					      details: data.details,
+					      code: data.response ? data.response.code : undefined,
+					      url: data.response ? data.response.url : undefined,
+					      count: hlsErrorCount[data.details]
+					  });
 				      if (data.fatal) {
 				        switch (data.type) {
 				          // 네트워크 오류인 경우
 				          case Hls.ErrorTypes.NETWORK_ERROR:
-				            hls.startLoad();
+				            if (!pausedByHidden) hls.startLoad();   // 탭 숨김 중에는 로드를 다시 시작하지 않는다
 				            alert("⚠️ 네트워크 오류");
 				            break;
 				          // 미디어 오류인 경우
@@ -808,10 +839,19 @@
 				hls.destroy();
 				hls = null;
 			}
-			
+			logHlsErrorSummary();
+
+			if(!video) return;   // 팝업이 이미 닫혀 video 요소가 없는 경우
 			video.pause();
 			video.load();
 			video.removeAttribute('src');
+		}
+
+		// (38번 WP-2) 시청이 끝날 때 hls.js 오류 종류별 횟수 요약을 콘솔에 남긴다(오류가 없었으면 출력하지 않는다)
+		function logHlsErrorSummary(){
+			if(Object.keys(hlsErrorCount).length === 0) return;
+			console.info('[HLS] 오류 요약', hlsErrorCount);
+			hlsErrorCount = {};
 		}
 		
 		/*
@@ -840,8 +880,16 @@
 			const body = {
 				'type': command,
 				'id': tokenId,
-				'deviceId':deviceId
+				'deviceId':deviceId,
+				'requestId': newRequestId()   // 요청 식별자(38번 WP-2) — 서버가 module_d 로 전달·로그에 사용
 			};
+
+			lastCommandError = null;
+
+			// (38번 WP-2) 방금 보낸 end(닫기·유예 만료)가 아직 처리 중이면 잠시 기다렸다가 start 를 보낸다
+			if(command === 'start' && pendingEnd){
+				await Promise.race([pendingEnd, sleep(3000)]);
+			}
 			
 			try{
 		    	const response = await fetch('${pageContext.request.contextPath}/deviceList/sendCommandToJSON', {
@@ -854,7 +902,14 @@
 		    		});
 		    	
 		    	// fetch는 항상 response 객체로 리턴
-		    	if (!response.ok) return "error";
+		    	if (!response.ok) {
+		    		// (38번 WP-2) 거부·실패 사유(code)가 오면 보관한다(409 VIEWER_BUSY, 502 FFMPEG_FAILED 등). 구형 응답은 null 유지
+		    		try {
+		    			const err = await response.json();
+		    			if (err && err.code) lastCommandError = { code: err.code, message: err.message || '' };
+		    		} catch (_) {}
+		    		return "error";
+		    	}
 				
 		    	// response에서 json값 가져오기
 		    	let data = await response.json();
@@ -892,7 +947,8 @@
 	  	}
 	    
 	    // 페이지 종료되었을 때 종료 처리 함수
-	    function sendEndBeaconOnce(){
+	    // (38번 WP-2) 팝업 닫기·탭 숨김 유예 만료 시에도 이 함수로 end 를 보낸다(teardownSent 로 중복 전송 방지)
+	    function sendEndBeaconOnce(viaFetch){
 	    	
 		 	if(teardownSent) return;
 		 	if(!isStreamingActive || !deviceId) return;
@@ -900,24 +956,28 @@
 		 	teardownSent = true;
 		    	
     		// 보낼 데이터
-    	    const body = JSON.stringify({ type: 'end', id: tokenId, deviceId: deviceId });
+    	    const body = JSON.stringify({ type: 'end', id: tokenId, deviceId: deviceId, requestId: newRequestId() });
 	    	
 	    	// 실시간 스트리밍 종료 요청
     	    try {
     	    	// 1) sendBeacon 방식으로 브라우저 중도 요청 취소 방지
-    	        const ok = navigator.sendBeacon(
+    	    	//    (38번 WP-2) viaFetch=true(팝업 닫기·탭 숨김 유예 만료처럼 페이지가 남는 경우)면 beacon 대신 fetch 로 보내
+    	    	//    응답을 기다릴 수 있게 한다 — 곧바로 다시 열 때 start 가 end 보다 먼저 도착하는 것을 막기 위함(sendCommand 참고)
+    	        const ok = viaFetch ? false : navigator.sendBeacon(
     	          '${pageContext.request.contextPath}/deviceList/sendCommandToJSON',
     	          new Blob([body], { type: 'application/json' })
     	        );
-    	    	
+
     	        if (!ok) {
     	          // 2) sendBeacon 실패시 fetch에 keepalive true 속성 사용하여 실시간 스트리밍 종료 요청
-    	          fetch('${pageContext.request.contextPath}/deviceList/sendCommandToJSON', {
+    	          const endReq = fetch('${pageContext.request.contextPath}/deviceList/sendCommandToJSON', {
     	            method: 'POST',
     	            headers: { 'Content-Type': 'application/json' },
     	            body,
-    	            keepalive: true
-    	          });
+    	            keepalive: true,
+    	            credentials: 'same-origin'
+    	          }).catch(function(_){}).then(function(){ if (pendingEnd === endReq) pendingEnd = null; });
+    	          pendingEnd = endReq;
     	        }
     	      
     	      // 페이지 밖으로 벗어남으로 에러 처리 없음
@@ -930,6 +990,8 @@
     	        if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
     	      } catch(_){}
     	      isStreamingActive = false;
+    	      tokenId = null;          // 이 시청의 토큰은 end 로 끝났다(다시 시작하면 새로 받는다)
+    	      logHlsErrorSummary();
 
 	    }
 
@@ -966,17 +1028,36 @@
 	  		
 	  		// 새로운 디바이스와 통신 중 오류 처리
 	  		if(result === "error"){
-	  			alert("새 디바이스와 통신 오류");
 	  			isStreamingActive = false;
 	  			deviceId = null;
+
+	  			// (38번 WP-2) start 가 사유(code)와 함께 거부된 경우(다른 사용자 시청 중 등): 안내 후 팝업을 닫는다
+	  			if(command === 'start' && lastCommandError && lastCommandError.code){
+	  				handleStartRejected(lastCommandError);
+	  				return;
+	  			}
+
+	  			alert("새 디바이스와 통신 오류");
 	  			return;
 	  			
   			// 새로운 디바이스와 연결 시 요청에 따른 videoPlayer 처리
 	  		}else{
 	  			if(command === 'start'){
+	  				// (38번 WP-2) start 응답을 기다리는 사이 팝업이 닫혔다면 방금 시작된 스트림은 바로 end 로 정리한다
+	  				if(!popupOpen){
+	  					isStreamingActive = true;
+	  					teardownSent = false;
+	  					sendEndBeaconOnce(true);
+	  					return;
+	  				}
+
 	  				if (hls) { try{ hls.destroy(); }catch(_){} hls = null; } // 기존에 hls가 남아 있다면 제거
+	  				teardownSent = false;   // 새 시청 시작 — 이전 end 전송 기록 해제(38번 WP-2)
 	  				playVideo(result); //playUrl
 	  				isStreamingActive = true;
+
+	  				// (38번 WP-2) start 응답을 기다리는 사이 탭이 숨겨졌다면 지금부터 일시 정지·유예 시작
+	  				if(document.visibilityState === 'hidden') onVideoTabHidden();
 	  			}else if(command === 'end'){
 	  				stopVideo();
 	  				isStreamingActive = false;
@@ -1003,7 +1084,8 @@
 		 window.addEventListener('pagehide', () => { sendEndBeaconOnce(); }, { capture: true });
 		 document.addEventListener('visibilitychange', () => {
 			 
-		     if (document.visibilityState === 'hidden') sendEndBeaconOnce();
+		     // (38번 WP-2) 탭 숨김은 곧바로 end 하지 않고 일시 정지 + 유예 후 end, 복귀 시 재개/재시작
+			     if (document.visibilityState === 'hidden') onVideoTabHidden(); else onVideoTabVisible();
 		 });
 		 window.addEventListener('unload', () => { 
 			 sendEndBeaconOnce(); 
@@ -1032,9 +1114,123 @@
 		  		
 		 }
 		 
-		 // 팝업창 닫기
+		 // 영상 팝업 DOM 만 닫는다(end 전송 없음)
+			 function hideRealTimeVideoPopupDom(){
+				 let realTimeVideoPopup = document.getElementById("realTimeVideoPopup");
+				 if(!realTimeVideoPopup) return;
+				 realTimeVideoPopup.innerHTML = "";
+				 realTimeVideoPopup.style.display = 'none';
+			 }
+
+			 // (38번 WP-2) start 거부·실패 안내 문구. 서버가 code 를 내려 주며, 문구는 화면에서 고정 매핑한다
+			 const START_ERROR_MESSAGES = {
+				 VIEWER_BUSY: '다른 사용자가 시청 중입니다.',
+				 FFMPEG_FAILED: '영상 송출을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+				 DEVICE_UNREACHABLE: '디바이스와 통신할 수 없습니다.'
+			 };
+
+			 // start 가 사유와 함께 거부된 경우: 이 사용자는 시청자가 아니므로 end 는 보내지 않고, 팝업을 닫은 뒤 안내한다
+			 function handleStartRejected(err){
+				 const msg = START_ERROR_MESSAGES[err.code] || err.message || '영상을 시작할 수 없습니다.';
+				 popupOpen = false;
+				 resetHiddenState();
+				 hideRealTimeVideoPopupDom();
+				 alert(msg);
+			 }
+
+			 // 요청 식별자(추적·로그용). 서버가 형식([A-Za-z0-9_-]{1,64})을 검증하고 맞지 않으면 새로 만든다
+			 function newRequestId(){
+				 try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch(_){}
+				 return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+			 }
+
+			 // ---- 탭 숨김 처리 (38번 WP-2) ----
+
+			 // 팝업 안의 "일시 정지" 안내 표시. text 가 없으면 숨김. 팝업이 없으면 아무 것도 하지 않는다
+			 function setVideoOverlay(text){
+				 const el = document.getElementById('videoPausedOverlay');
+				 if(!el) return;
+				 if(text){ el.textContent = text; el.style.display = 'flex'; }
+				 else { el.style.display = 'none'; }
+			 }
+
+			 function resetHiddenState(){
+				 if(hiddenTimer){ clearTimeout(hiddenTimer); hiddenTimer = null; }
+				 pausedByHidden = false;
+				 endedByHidden = false;
+			 }
+
+			 // 탭이 숨겨짐: 로드 정지 + 일시 정지 표시 + 유예 타이머
+			 function onVideoTabHidden(){
+				 if(!popupOpen || !isStreamingActive || !deviceId) return;
+				 if(pausedByHidden) return;
+
+				 pausedByHidden = true;
+				 try { if(hls) hls.stopLoad(); } catch(_){}
+				 try { const v = document.getElementById('video'); if(v) v.pause(); } catch(_){}
+				 setVideoOverlay('일시 정지 — 다른 탭으로 이동하여 영상 수신을 멈췄습니다. 돌아오면 이어서 재생합니다.');
+
+				 const overlayEl = document.getElementById('videoPausedOverlay');
+				 const cfgMs = overlayEl ? parseInt(overlayEl.getAttribute('data-hidden-grace-ms'), 10) : 0;
+				 const graceMs = (cfgMs > 0) ? cfgMs : DEFAULT_HIDDEN_GRACE_MS;
+				 if(hiddenTimer) clearTimeout(hiddenTimer);
+				 hiddenTimer = setTimeout(onHiddenGraceExpired, graceMs);
+			 }
+
+			 // 유예 만료: end 를 보내 서버가 ffmpeg 를 정리하게 한다(복귀하면 start 재요청)
+			 function onHiddenGraceExpired(){
+				 hiddenTimer = null;
+				 if(!pausedByHidden || !isStreamingActive) return;
+
+				 endedByHidden = true;
+				 sendEndBeaconOnce(true);
+				 setVideoOverlay('장시간 다른 탭에 있어 영상 송출을 종료했습니다. 이 탭으로 돌아오면 다시 시작합니다.');
+			 }
+
+			 // 탭이 다시 보임: 유예 안이면 로드 재개 후 라이브 위치로, 유예 만료 후면 start 재요청
+			 function onVideoTabVisible(){
+				 if(!pausedByHidden) return;
+
+				 pausedByHidden = false;
+				 if(hiddenTimer){ clearTimeout(hiddenTimer); hiddenTimer = null; }
+				 if(!popupOpen) return;
+
+				 // 유예 만료로 end 를 이미 보낸 경우 — 다시 시작한다. 그 사이 다른 사용자가 점유했다면 거부 안내(handleStartRejected)
+				 if(endedByHidden){
+					 endedByHidden = false;
+					 setVideoOverlay('영상을 다시 연결하는 중입니다...');
+					 const dv = deviceId;
+					 if(dv){
+						 deviceBtnClick('start', dv).then(function(){ setVideoOverlay(null); });
+					 }
+					 return;
+				 }
+
+				 // 유예 안에 복귀 — 로드 재개 후 다음 플레이리스트 갱신 때 라이브 위치로 이동
+				 const v = document.getElementById('video');
+				 if(hls){
+					 try {
+						 hls.once(Hls.Events.LEVEL_UPDATED, function(){
+							 try {
+								 if(v && hls && hls.liveSyncPosition) v.currentTime = hls.liveSyncPosition;
+								 if(v) v.play().catch(function(){});
+							 } catch(_){}
+						 });
+						 hls.startLoad(-1);
+					 } catch(_){}
+				 }
+				 if(v) { try { v.play().catch(function(){}); } catch(_){} }
+				 setVideoOverlay(null);
+			 }
+
+			 // 팝업창 닫기
 		 function closeRealTimeVideoPopup(){
-			 if(isStreamingActive == true) stopVideo();
+			 // (38번 WP-2) 닫기 = 시청 종료. 서버(module_d)에 end 를 보내 ffmpeg 가 남지 않게 한다.
+				 //  유예 만료 등으로 이미 end 를 보냈다면 sendEndBeaconOnce 가 중복 전송하지 않는다(teardownSent / isStreamingActive).
+				 //  sendEndBeaconOnce 가 로컬 플레이어(hls·video) 정리도 함께 한다.
+				 popupOpen = false;
+				 resetHiddenState();
+				 sendEndBeaconOnce(true);
 			 
 			 let realTimeVideoPopup = document.getElementById("realTimeVideoPopup");
 			 realTimeVideoPopup.innerHTML = "";

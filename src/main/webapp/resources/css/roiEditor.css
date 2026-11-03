@@ -1,5 +1,11 @@
 /* ROI 설정 편집 화면 (34번 작업계획서). 공용 레이아웃 색(#6955A2 계열)에 맞춤. */
-.roi-page { padding: 16px 20px 24px; box-sizing: border-box; color: #222; font-size: 14px; }
+/* (37번 WP-R) 한 화면에 맞춤: 공용 레이아웃의 .content 는 상하 패딩 24px 씩(layout.css)이므로 뷰포트 높이 - 48px 로 고정하고,
+   위·아래 줄(topbar/banner/toolbar/footer)은 자기 높이, 남는 높이를 .roi-main(무대+우측 목록)이 채운다.
+   무대 배율은 roiEditor.js fit() 이 가로·세로 둘 다 고려해 정한다. 우측 목록은 넘칠 때만 자체 스크롤.
+   창이 너무 작으면(min-height) 페이지 스크롤로 넘어간다. */
+.roi-page { padding: 12px 20px; box-sizing: border-box; color: #222; font-size: 14px;
+	display: flex; flex-direction: column; height: calc(100vh - 48px); min-height: 560px; }
+.roi-page > .roi-topbar, .roi-page > .roi-banner, .roi-page > .roi-toolbar, .roi-page > .roi-footer { flex: 0 0 auto; }
 .roi-page * { box-sizing: border-box; }
 .roi-topbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
 .roi-topbar h2 { margin: 0; font-size: 20px; flex: 1 1 auto; }
@@ -34,11 +40,11 @@
 .roi-btn.kind-driveway { border-left: 4px solid #1fa971; }
 .roi-btn.kind-ignore { border-left: 4px solid #8b8b99; }
 
-.roi-main { display: flex; gap: 16px; align-items: flex-start; }
-.roi-stage-wrap { flex: 1 1 auto; min-width: 0; }
-.roi-stage { background: #1e1e24; border-radius: 6px; overflow: hidden; line-height: 0; touch-action: none; }
-.roi-guide { margin: 6px 2px 0; font-size: 12px; color: #6a6a7a; line-height: 1.5; }
-.roi-side { flex: 0 0 340px; max-width: 38%; }
+.roi-main { flex: 1 1 0; min-height: 0; display: flex; gap: 16px; align-items: stretch; }
+.roi-stage-wrap { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.roi-stage { flex: 0 0 auto; display: flex; justify-content: center; background: #1e1e24; border-radius: 6px; overflow: hidden; line-height: 0; touch-action: none; }
+.roi-guide { flex: 0 0 auto; margin: 6px 2px 0; font-size: 12px; color: #6a6a7a; line-height: 1.5; }
+.roi-side { flex: 0 0 340px; max-width: 38%; min-height: 0; overflow-x: hidden; overflow-y: auto; }
 
 .roi-group { border: 1px solid #e3def5; border-radius: 6px; margin-bottom: 10px; background: #fff; }
 .roi-group-head { display: flex; align-items: center; gap: 8px; padding: 7px 10px; background: #f7f5fd; border-bottom: 1px solid #e3def5; }
@@ -100,7 +106,10 @@
 .roi-preview { width: 100%; height: auto; border-radius: 4px; background: #2b2b33; margin-top: 6px; }
 
 @media (max-width: 1100px) {
-	.roi-main { flex-direction: column; }
-	.roi-side { flex-basis: auto; max-width: none; width: 100%; }
+	/* 세로 배치: 한 화면 고정을 풀고 페이지 스크롤 허용(roiEditor.js fit() 도 이 폭에서는 높이 제한을 두지 않음) */
+	.roi-page { height: auto; min-height: 0; }
+	.roi-main { flex: 0 0 auto; flex-direction: column; }
+	.roi-stage-wrap { flex: 0 0 auto; }
+	.roi-side { flex-basis: auto; max-width: none; width: 100%; overflow: visible; }
 	.roi-history-body { flex-direction: column; }
 }

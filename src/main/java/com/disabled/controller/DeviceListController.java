@@ -5,8 +5,10 @@ import java.net.HttpURLConnection;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,6 +38,8 @@ import com.disabled.service.ApiService;
 import com.disabled.service.DeviceListService;
 import com.disabled.service.ExcelService;
 import com.disabled.service.UserService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 @RequestMapping("/deviceList")
@@ -68,6 +72,10 @@ public class DeviceListController {
 	/** 카카오 지도 JavaScript SDK 키(주소→좌표 지오코딩용). globals.properties kakao.map.js-key */
 	@Value("${kakao.map.js-key:}")
 	private String kakaoMapJsKey;
+
+	/** (38번 WP-2) 실시간 영상 탭 숨김 유예(ms). 이 시간 동안 탭이 숨겨져 있으면 end 를 보낸다. 미설정 시 30초 */
+	@Value("${video.hidden-grace-ms:30000}")
+	private int videoHiddenGraceMs;
 
 	
 	// 디바이스 리스트 화면으로 redirect
@@ -321,7 +329,7 @@ public class DeviceListController {
 	  consumes = MediaType.APPLICATION_JSON_VALUE,
 	  produces = MediaType.APPLICATION_JSON_VALUE
 	)
-	private String sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res) {
+	private String sendCommandToJSON(@RequestBody HashMap<String, Object> json, HttpServletResponse res, HttpSession session) {
 		
 		try {
 			String id = json.get("deviceId").toString();
@@ -344,6 +352,12 @@ public class DeviceListController {
 			//   - 카메라 화각·줌(U·D·L·R·H·zoom) : module_d /tilting  ← 기존 엔드포인트 재사용
 			//   기존에는 전부 /video 로 보내 틸팅 명령이 module_d 에서 무시되고 있었다.
 			String cmdType = String.valueOf(json.get("type"));
+
+			// (38번 WP-2) 스트리밍 start/end 는 시청자 식별(viewerId)과 module_d 거부 사유(409 등) 전달이 필요해 전용 경로로 처리
+			if("start".equals(cmdType) || "end".equals(cmdType)) {
+				return handleVideoCommand(json, dvIp, cmdType, session, res);
+			}
+
 			String devicePath = isTiltingCommand(cmdType) ? "/tilting" : "/video";
 
 			String streamCheck;
@@ -379,6 +393,109 @@ public class DeviceListController {
 
 	}
 	
+	/**
+	 * (38번 WP-2) 실시간 영상 start/end 처리.
+	 *  - viewerId : 브라우저가 보낸 값은 버리고 로그인 세션의 uId 로 채운다(위조 방지). module_d 가 단일 시청자 판정에 쓴다.
+	 *  - requestId: 브라우저가 보낸 값이 형식에 맞으면 그대로, 아니면 서버가 생성(추적·로그용).
+	 *  - module_d 의 거부(409 VIEWER_BUSY)·ffmpeg 실패(500 FFMPEG_FAILED)는 code 로 구분해 브라우저에 돌려준다.
+	 *    code 가 없는 구형 module_d 응답도 처리한다(성공 시 기존 형식 그대로, 409 만 VIEWER_BUSY 로 해석).
+	 */
+	private String handleVideoCommand(HashMap<String, Object> json, String dvIp, String cmdType,
+			HttpSession session, HttpServletResponse res) {
+
+		Object uId = session == null ? null : session.getAttribute("uId");
+		json.remove("viewerId");
+		if(uId != null) {
+			json.put("viewerId", uId.toString());
+		} else {
+			logger.warn("[영상] 세션에 uId 가 없어 viewerId 없이 {} 요청을 전달합니다.", cmdType);
+		}
+
+		String requestId = json.get("requestId") == null ? "" : json.get("requestId").toString();
+		if(!requestId.matches("[A-Za-z0-9_-]{1,64}")) {
+			requestId = UUID.randomUUID().toString();
+		}
+		json.put("requestId", requestId);
+
+		HashMap<String, Object> reply = apiService.forwardVideoCommand(json, dvIp);
+		int status = (Integer) reply.get("status");
+		String body = String.valueOf(reply.get("body"));
+
+		// 응답 본문(JSON) 해석 — 실패해도 무시(구형 응답 호환)
+		JsonNode node = null;
+		try {
+			node = new ObjectMapper().readTree(body);
+		} catch (IOException ignore) {
+			// JSON 이 아닌 본문 — node 는 null 로 둔다
+		}
+		String code = node == null ? "" : node.path("code").asText("");
+		String deviceResult = node == null ? "" : node.path("result").asText("");
+
+		boolean isStart = "start".equals(cmdType);
+
+		// 성공: HTTP 200 이고, start 인 경우 module_d 가 result:"false" 로 거절한 응답이 아닌 것
+		if(status == 200 && !(isStart && "false".equalsIgnoreCase(deviceResult))) {
+			if(isStart) {
+				String playUrl = "https://" + withDevicePort(dvIp) + "/index.m3u8";
+				String resultString = extractJsonObject(body, playUrl);
+				if(resultString != null) {
+					logger.info("[영상] start 성공 / viewerId : {} / requestId : {}", uId, requestId);
+					return resultString;
+				}
+				logger.error("[영상] start 응답 형식 오류 / requestId : {}", requestId);
+				code = "DEVICE_ERROR";
+			} else {
+				// end: 현재 시청자가 아닌 요청은 module_d 가 무시(NOT_VIEWER)하므로 code 만 덧붙여 알린다
+				LinkedHashMap<String, Object> ok = new LinkedHashMap<>();
+				ok.put("result", null);
+				ok.put("playUrl", null);
+				if("NOT_VIEWER".equals(code)) {
+					ok.put("code", code);
+				}
+				return toJson(ok);
+			}
+		}
+
+		// 실패: 알려진 code 만 브라우저로 전달(그 외는 DEVICE_ERROR), HTTP 상태는 VIEWER_BUSY 만 409
+		if(code.isEmpty() && status == 409) code = "VIEWER_BUSY";
+		if(status == 0) code = "DEVICE_UNREACHABLE";
+		if(!"VIEWER_BUSY".equals(code) && !"FFMPEG_FAILED".equals(code) && !"DEVICE_UNREACHABLE".equals(code)) {
+			code = "DEVICE_ERROR";
+		}
+
+		String message;
+		switch (code) {
+			case "VIEWER_BUSY":
+				message = "다른 사용자가 시청 중입니다.";
+				break;
+			case "FFMPEG_FAILED":
+				message = "영상 송출을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+				break;
+			case "DEVICE_UNREACHABLE":
+				message = "디바이스와 통신할 수 없습니다.";
+				break;
+			default:
+				message = "디바이스가 요청을 처리하지 못했습니다.";
+		}
+
+		logger.warn("[영상] {} 실패 / viewerId : {} / requestId : {} / deviceStatus : {} / code : {}", cmdType, uId, requestId, status, code);
+
+		res.setStatus("VIEWER_BUSY".equals(code) ? HttpServletResponse.SC_CONFLICT : HttpServletResponse.SC_BAD_GATEWAY);
+		LinkedHashMap<String, Object> fail = new LinkedHashMap<>();
+		fail.put("result", "false");
+		fail.put("code", code);
+		fail.put("message", message);
+		return toJson(fail);
+	}
+
+	private static String toJson(Map<String, Object> map) {
+		try {
+			return new ObjectMapper().writeValueAsString(map);
+		} catch (IOException e) {
+			return "{\"result\":\"false\",\"code\":\"DEVICE_ERROR\"}";
+		}
+	}
+
 	/**
 	 * (긴급복구 2026-07-16) 디바이스 실시간 스트리밍 포트 임시 하드코딩.
 	 *  module_d 는 .env PORT=8087 로 TLS listen 하는데 기존 코드는 포트 없이 https://{ip}(=443) 를 사용해 연결 실패했음.
@@ -450,6 +567,8 @@ public class DeviceListController {
 		// ====== 유효성 검증 [E] ====== //
 		
 		model.addAttribute("deviceId", dvId);
+		// 탭 숨김 유예(ms) — 잘못된 값(0 이하)이면 화면 쪽 기본값(30초)을 쓰도록 0 으로 내린다
+		model.addAttribute("hiddenGraceMs", videoHiddenGraceMs > 0 ? videoHiddenGraceMs : 0);
 		return "/popup/deviceList/realTimeVideoPopup";
 	}
 	

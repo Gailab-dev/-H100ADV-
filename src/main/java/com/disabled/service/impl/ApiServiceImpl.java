@@ -503,6 +503,66 @@ public class ApiServiceImpl implements ApiService{
 		
 	}
 	
+	/**
+	 * 실시간 영상 start/end 전용 전달 (38번 WP-2).
+	 *  - forwardStreamToJSON 은 비-200 응답을 모두 "error" 로 뭉개 module_d 의 거부 사유(409 VIEWER_BUSY,
+	 *    500 FFMPEG_FAILED)가 브라우저에 닿지 못했다. 이 메서드는 상태코드와 응답 본문을 그대로 돌려준다.
+	 *  - 본문(json)에는 호출측(DeviceListController)이 viewerId·requestId 를 이미 넣어 둔다.
+	 * @return status(Integer): module_d HTTP 상태코드, 통신 실패는 0 / body(String): 응답 본문(없으면 "")
+	 */
+	@Override
+	public HashMap<String, Object> forwardVideoCommand(HashMap<String, Object> json, String dvIp) {
+
+		HashMap<String, Object> result = new HashMap<>();
+		result.put("status", 0);
+		result.put("body", "");
+
+		if(json == null || dvIp == null || dvIp.isBlank()) {
+			logger.error("영상 명령 입력 값 검증시 오류!");
+			return result;
+		}
+
+		HttpURLConnection conn = null;
+
+		try {
+			String body = new ObjectMapper().writeValueAsString(json);
+			String targetUrl = "https://" + withDevicePort(dvIp) + "/video";
+
+			conn = createPostConnection(targetUrl, body, "application/json");
+			if(conn == null) {
+				logger.error("영상 명령 connection 이 생성되지 않았습니다. / targetUrl : " + targetUrl);
+				return result;
+			}
+
+			int code = conn.getResponseCode();
+			// 4xx/5xx 는 getInputStream() 이 예외를 던지므로 에러 스트림에서 사유(JSON)를 읽는다
+			InputStream in = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
+			String text = "";
+			if(in != null) {
+				try (InputStream is = in) {
+					text = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+				}
+			}
+			result.put("status", code);
+			result.put("body", text);
+
+		} catch (JsonProcessingException e) {
+			logger.error("영상 명령 JSON 변환 에러 : ", e);
+		} catch (IOException e) {
+			logger.error("영상 명령 device 통신 에러 : ", e);
+		} finally {
+			try {
+				if(conn != null) {
+					conn.disconnect();
+				}
+			} catch (RuntimeException e2) {
+				logger.error("connection 객체 disconnect 실패 : ", e2);
+			}
+		}
+
+		return result;
+	}
+
 	// url 검증
 	private boolean isValidUrl(String Url) {
 		
