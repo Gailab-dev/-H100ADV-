@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 공통 함수. 각 스크립트가 source 한다. 단독 실행 금지.
+# 공통 함수. 각 h100-*.sh 가 source 한다. 단독 실행 금지. (이름 유지: 서버에 남은 이관용 스크립트도 이 파일을 사용)
 # 원칙: 구 서버(운영)는 읽기 전용 / 비밀값은 출력·로그에 남기지 않음 / PASS·FAIL 결과 파일 / 위험 단계는 --yes 필요
 
 MIG_DIR=${MIG_DIR:-/opt/h100/migration}
@@ -32,6 +32,7 @@ warn() { printf '[WARN] %s\n' "$*" | tee -a "$LOG" "$RESULT"; N_WARN=$((N_WARN+1
 info() { printf '[INFO] %s\n' "$*" | tee -a "$LOG"; }
 
 need_root() { [ "$(id -u)" -eq 0 ] || { echo "root 로 실행하세요 (sudo)"; exit 2; }; }
+need_val() { [ "$1" -ge 2 ] || { echo "옵션 값이 없습니다"; exit 2; }; }   # 값이 필요한 옵션: need_val $# 후 shift 2 (값 누락 시 무한 루프 방지)
 
 confirm() {  # confirm "설명"  → --yes 이거나 대화형 yes 입력일 때만 진행
   [ "$ASSUME_YES" -eq 1 ] && return 0

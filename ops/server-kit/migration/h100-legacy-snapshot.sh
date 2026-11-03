@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # [구 개발서버(192.168.0.15)에서 root 로 실행] 구 서버 운영 설정 사본(스냅샷) 만들기
+# (구 이름: legacy-snapshot.sh — 2026-11-03 이름 변경, 내용 동일. 신 서버 키트와 별개: lib.sh 를 쓰지 않고 구 서버에서 단독 실행)
 # 원칙: 원본은 읽기만 한다(복사·조회). 쓰기는 $BASE(/root/h100-snapshots) 아래에만. 서비스 정지/재시작 없음.
 # 비밀값은 화면에 출력하지 않는다. 사본 안에는 비밀 파일(server.xml 키스토어 비번, .env, ssl 키 등)이 들어가므로 권한 700/600.
-# 사용: sudo ./legacy-snapshot.sh --dry-run     # 무엇을 복사할지 점검만
-#       sudo ./legacy-snapshot.sh               # 실제 생성
+# 사용: sudo ./h100-legacy-snapshot.sh --dry-run     # 무엇을 복사할지 점검만
+#       sudo ./h100-legacy-snapshot.sh               # 실제 생성
 set -uo pipefail
 DRY=0; [ "${1:-}" = "--dry-run" ] && DRY=1
 [ "$(id -u)" -eq 0 ] || { echo "root 로 실행하세요 (sudo)"; exit 2; }
