@@ -59,6 +59,7 @@
 </script>
 <script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
 <script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js?v=20261029"></script>
+<script src="${pageContext.request.contextPath}/resources/js/eventList/eventDeleteFlow.js?v=20261103"></script>
 
 <%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
 <script>
@@ -426,26 +427,10 @@
 				alert('삭제할 항목을 선택해주세요.');
 				return;
 			}
-			if (!confirm('선택한 ' + checked.length + '건을 삭제하시겠습니까?\n삭제된 항목은 목록에서 사라집니다.')) {
-				return;
-			}
 			const evIds = Array.from(checked).map(function(chk){ return Number(chk.getAttribute('data-ev-id')); });
-			fetch(CONTEXT_PATH + '/eventList/deleteEvents', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-				body: JSON.stringify({ evIds: evIds })
-			})
-			.then(function(r){ return r.json(); })
-			.then(function(d){
-				if (d && d.success) {
-					location.reload(); // 현재 검색조건·페이지 유지한 채 새로고침
-				} else {
-					alert('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
-				}
-			})
-			.catch(function(){
-				alert('삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-			});
+			// (작업계획서 39 WP-6) 확인 대화상자 → 서버 파일 확인(없으면 장비에서 내려받기, 진행 팝업) → 삭제 확정은
+			// eventDeleteFlow.js(H100EventDelete)가 처리한다. 성공 시 현재 검색조건·페이지를 유지한 채 새로고침한다.
+			H100EventDelete.run(evIds, { onDone: function(){ location.reload(); } });
 		}
 		// --------------------------- 엑셀 다운로드 -----------------------------
 		

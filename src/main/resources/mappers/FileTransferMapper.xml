@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 일일 파일 백업 전송 이력(tbl_file_transfer_log) SQL — 작업계획서 39 WP-1·WP-2·WP-6.
+     테이블은 운영 DDL 로 별도 생성한다(저장소에 DDL 파일을 두지 않는다). 컬럼 접두어 ft_. -->
+<mapper namespace="com.disabled.mapper.FileTransferMapper">
+
+	<!-- 이벤트 파일명 컬럼 선택(kind 별). 파일명이 비었거나 'null' 문자열이면 기대 파일이 없는 것으로 본다. -->
+	<sql id="eventNameCol">
+		<choose>
+			<when test="kind == 'EVENT_IMAGE1'">A.ev_img_path</when>
+			<when test="kind == 'EVENT_IMAGE2'">A.ev_img_path2</when>
+			<otherwise>A.ev_mov_path</otherwise>
+		</choose>
+	</sql>
+
+	<!-- ===== 대상 등록 (이미 있으면 유지: uq_ft_ref 로 INSERT IGNORE) ===== -->
+
+	<!-- 이벤트 파일(이미지1/이미지2/영상) 대상 등록. ymd/ymdNext(yyyyMMdd) 로 하루치, evId 로 한 건.
+	     ev_date 는 yyyyMMddHHmmss 문자열이라 범위 비교(>= ymd AND < ymdNext)로 event_date 인덱스를 탄다. -->
+	<insert id="registerEventFiles" parameterType="map">
+		INSERT IGNORE INTO tbl_file_transfer_log
+			(ft_dv_id, ft_serial_number, ft_file_kind, ft_ref_type, ft_ref_id, ft_file_name, ft_target_date, ft_status)
+		SELECT A.ev_dv_id, A.ev_serial_number, #{kind}, 'event', A.ev_id,
+			<include refid="eventNameCol"/>,
+			COALESCE(STR_TO_DATE(LEFT(A.ev_date, 8), '%Y%m%d'), CURDATE()),
+			'PENDING'
+		FROM tbl_event_data A
+		WHERE A.ev_is_deleted = 0
+		AND <include refid="eventNameCol"/> IS NOT NULL
+		AND TRIM(<include refid="eventNameCol"/>) &lt;&gt; ''
+		AND <include refid="eventNameCol"/> &lt;&gt; 'null'
+		<if test="ymd != null and ymdNext != null">
+			AND A.ev_date &gt;= #{ymd} AND A.ev_date &lt; #{ymdNext}
+		</if>
+		<if test="evId != null">
+			AND A.ev_id = #{evId}
+		</if>
+	</insert>
+
+	<!-- 통화 음성 대상 등록(tbl_sip_call.sc_start_date 기준 하루치). -->
+	<insert id="registerCallAudio" parameterType="map">
+		INSERT IGNORE INTO tbl_file_transfer_log
+			(ft_dv_id, ft_serial_number, ft_file_kind, ft_ref_type, ft_ref_id, ft_file_name, ft_target_date, ft_status)
+		SELECT S.sc_dv_id, S.sc_serial_number, 'CALL_AUDIO', 'sip_call', S.sc_id, S.sc_audio_path,
+			DATE(S.sc_start_date), 'PENDING'
+		FROM tbl_sip_call S
+		WHERE S.sc_audio_path IS NOT NULL
+		AND TRIM(S.sc_audio_path) &lt;&gt; ''
+		AND S.sc_audio_path &lt;&gt; 'null'
+		AND S.sc_start_date IS NOT NULL
+		AND S.sc_start_date &gt;= STR_TO_DATE(#{ymd}, '%Y%m%d')
+		AND S.sc_start_date &lt; DATE_ADD(STR_TO_DATE(#{ymd}, '%Y%m%d'), INTERVAL 1 DAY)
+	</insert>
+
+	<!-- ===== 처리 대상 조회 ===== -->
+
+	<!-- 처리 대상 = PENDING/FAILED. fromDate 이상(재시도 기한 내), toDate 가 있으면 그 날짜까지(날짜 지정 재처리).
+	     장비 IP 는 처리 시점의 tbl_device 값을 쓴다(장비 IP 변경 반영). -->
+	<select id="selectProcessable" parameterType="map" resultType="map">
+		SELECT F.ft_id, F.ft_dv_id, F.ft_file_kind, F.ft_ref_type, F.ft_ref_id, F.ft_file_name,
+			DATE_FORMAT(F.ft_target_date, '%Y-%m-%d') AS ft_target_date,
+			F.ft_status, F.ft_attempt_count, F.ft_device_bytes, F.ft_last_error_code,
+			D.dv_ip
+		FROM tbl_file_transfer_log F
+		LEFT JOIN tbl_device D ON D.dv_id = F.ft_dv_id
+		WHERE F.ft_status IN ('PENDING', 'FAILED')
+		AND F.ft_target_date &gt;= #{fromDate}
+		<if test="toDate != null and toDate != ''">
+			AND F.ft_target_date &lt;= #{toDate}
+		</if>
+		<if test="dvId != null">
+			AND F.ft_dv_id = #{dvId}
+		</if>
+		ORDER BY F.ft_dv_id, F.ft_target_date, F.ft_id
+	</select>
+
+	<!-- 날짜(·장비) 지정 재처리: 그 날짜의 FAILED/LOST 를 PENDING 으로 되돌린다(관리자 수동 실행 전용). -->
+	<update id="requeueForDate" parameterType="map">
+		UPDATE tbl_file_transfer_log
+		SET ft_status = 'PENDING'
+		WHERE ft_target_date = #{targetDate}
+		AND ft_status IN ('FAILED', 'LOST')
+		<if test="dvId != null">
+			AND ft_dv_id = #{dvId}
+		</if>
+	</update>
+
+	<!-- 재시도 기한(cutoff) 이전 대상일의 미완료분을 LOST 로 확정 -->
+	<update id="markLostBefore" parameterType="map">
+		UPDATE tbl_file_transfer_log
+		SET ft_status = 'LOST',
+			ft_last_error_code = COALESCE(ft_last_error_code, 'RETRY_DEADLINE')
+		WHERE ft_status IN ('PENDING', 'FAILED')
+		AND ft_target_date &lt; #{cutoff}
+	</update>
+
+	<!-- ===== 결과 기록 (DELETED_EVENT 는 덮어쓰지 않는다) ===== -->
+
+	<!-- attempts: 이번에 실제로 장비에 시도한 횟수(서버에 이미 있어 시도 없이 확인한 경우 0) -->
+	<update id="markVerified" parameterType="map">
+		UPDATE tbl_file_transfer_log
+		SET ft_status = 'VERIFIED',
+			ft_attempt_count = ft_attempt_count + #{attempts},
+			ft_last_error_code = NULL,
+			ft_device_bytes = COALESCE(#{deviceBytes,jdbcType=BIGINT}, ft_device_bytes),
+			ft_server_bytes = #{serverBytes,jdbcType=BIGINT},
+			ft_first_attempt_at = CASE WHEN #{attempts} &gt; 0 THEN COALESCE(ft_first_attempt_at, NOW()) ELSE ft_first_attempt_at END,
+			ft_last_attempt_at = CASE WHEN #{attempts} &gt; 0 THEN NOW() ELSE ft_last_attempt_at END,
+			ft_verified_at = NOW()
+		WHERE ft_id = #{ftId}
+		AND ft_status &lt;&gt; 'DELETED_EVENT'
+	</update>
+
+	<update id="markFailed" parameterType="map">
+		UPDATE tbl_file_transfer_log
+		SET ft_status = 'FAILED',
+			ft_attempt_count = ft_attempt_count + #{attempts},
+			ft_last_error_code = #{errorCode},
+			ft_device_bytes = COALESCE(#{deviceBytes,jdbcType=BIGINT}, ft_device_bytes),
+			ft_first_attempt_at = COALESCE(ft_first_attempt_at, NOW()),
+			ft_last_attempt_at = NOW()
+		WHERE ft_id = #{ftId}
+		AND ft_status &lt;&gt; 'DELETED_EVENT'
+	</update>
+
+	<update id="markMissing" parameterType="map">
+		UPDATE tbl_file_transfer_log
+		SET ft_status = 'MISSING',
+			ft_attempt_count = ft_attempt_count + #{attempts},
+			ft_last_error_code = 'NO_FILE',
+			ft_first_attempt_at = COALESCE(ft_first_attempt_at, NOW()),
+			ft_last_attempt_at = NOW()
+		WHERE ft_id = #{ftId}
+		AND ft_status &lt;&gt; 'DELETED_EVENT'
+	</update>
+
+	<!-- ===== 조회 ===== -->
+
+	<select id="selectByEvent" parameterType="int" resultType="map">
+		SELECT ft_id, ft_file_kind, ft_file_name, ft_status, ft_attempt_count, ft_device_bytes, ft_last_error_code
+		FROM tbl_file_transfer_log
+		WHERE ft_ref_type = 'event' AND ft_ref_id = #{evId}
+		ORDER BY ft_id
+	</select>
+
+	<!-- 이벤트 삭제 흐름·백업용: 이벤트 행 + 장비 IP. 삭제된 이벤트도 ev_is_deleted 로 구분해 돌려준다. -->
+	<select id="selectEventForBackup" parameterType="int" resultType="map">
+		SELECT A.ev_id, A.ev_dv_id, A.ev_serial_number, A.ev_date, A.ev_is_deleted,
+			A.ev_img_path, A.ev_img_path2, A.ev_mov_path,
+			D.dv_ip
+		FROM tbl_event_data A
+		LEFT JOIN tbl_device D ON D.dv_id = A.ev_dv_id
+		WHERE A.ev_id = #{evId}
+	</select>
+
+	<select id="selectStatusCounts" resultType="map">
+		SELECT ft_status, COUNT(*) AS cnt
+		FROM tbl_file_transfer_log
+		GROUP BY ft_status
+	</select>
+
+	<!-- ===== ev_has_* / sc_has_audio: 검증 완료 시에만 1 로 올린다(내리지 않는다) ===== -->
+
+	<!-- 이미지는 이미지1·이미지2(있는 것) 모두 VERIFIED 일 때 -->
+	<update id="updateEvHasImgIfVerified" parameterType="int">
+		UPDATE tbl_event_data E
+		SET E.ev_has_img = 1
+		WHERE E.ev_id = #{evId}
+		AND E.ev_has_img = 0
+		AND EXISTS (SELECT 1 FROM tbl_file_transfer_log F
+			WHERE F.ft_ref_type = 'event' AND F.ft_ref_id = E.ev_id
+			AND F.ft_file_kind = 'EVENT_IMAGE1' AND F.ft_status = 'VERIFIED')
+		AND NOT EXISTS (SELECT 1 FROM tbl_file_transfer_log F2
+			WHERE F2.ft_ref_type = 'event' AND F2.ft_ref_id = E.ev_id
+			AND F2.ft_file_kind IN ('EVENT_IMAGE1', 'EVENT_IMAGE2') AND F2.ft_status &lt;&gt; 'VERIFIED')
+	</update>
+
+	<update id="updateEvHasMovIfVerified" parameterType="int">
+		UPDATE tbl_event_data E
+		SET E.ev_has_mov = 1
+		WHERE E.ev_id = #{evId}
+		AND E.ev_has_mov = 0
+		AND EXISTS (SELECT 1 FROM tbl_file_transfer_log F
+			WHERE F.ft_ref_type = 'event' AND F.ft_ref_id = E.ev_id
+			AND F.ft_file_kind = 'EVENT_VIDEO' AND F.ft_status = 'VERIFIED')
+	</update>
+
+	<update id="updateScHasAudioIfVerified" parameterType="int">
+		UPDATE tbl_sip_call
+		SET sc_has_audio = 1
+		WHERE sc_id = #{scId}
+		AND sc_has_audio = 0
+	</update>
+
+	<!-- ===== 이벤트 삭제 기록 ===== -->
+
+	<!-- 이벤트 삭제 확정: DELETED_EVENT 로 폐기 표시하고 원 ev_id·삭제자·삭제 시각·원래 경로를 남긴다.
+	     삭제 직전 상태(VERIFIED/MISSING 등)는 ft_status_before_delete 로 보존한다(SET 은 왼쪽부터 평가된다). -->
+	<update id="markDeletedEventRow" parameterType="map">
+		UPDATE tbl_file_transfer_log
+		SET ft_status_before_delete = ft_status,
+			ft_status = 'DELETED_EVENT',
+			ft_deleted_ev_id = ft_ref_id,
+			ft_deleted_by = #{deletedBy},
+			ft_deleted_at = NOW(),
+			ft_deleted_orig_path = #{origPath}
+		WHERE ft_id = #{ftId}
+		AND ft_status &lt;&gt; 'DELETED_EVENT'
+	</update>
+
+</mapper>

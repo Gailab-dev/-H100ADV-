@@ -14,6 +14,7 @@
 </script>
 <script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
 <script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js?v=20261029"></script>
+<script src="${pageContext.request.contextPath}/resources/js/eventList/eventDeleteFlow.js?v=20261103"></script>
 
 <input type="hidden" name="evId" value="${eventListDetail.ev_id}" />
 
@@ -91,8 +92,6 @@
   // (패치 2026-09-30) 삭제(소프트 삭제) — 확인창 → 삭제 전(현재 행이 아직 살아있어 순번 계산이
   // 가능할 때) 다음 항목을 먼저 조회 → 삭제 실행 → 다음 항목 있으면 이동, 없으면 목록으로 복귀.
   document.getElementById('btnDeleteEvent').addEventListener('click', function(){
-    if (!confirm('이 항목을 삭제하시겠습니까?\n삭제된 항목은 목록·상세보기에서 사라집니다.')) return;
-
     var currentEvId = ${eventListDetail.ev_id};
     var qs = "currentEvId=" + currentEvId + "&step=1" + _h100FilterQuery();
 
@@ -100,23 +99,15 @@
       .then(function(r){ return r.json(); })
       .then(function(adj){
         var nextEvId = adj && adj.evId;
-        return fetch(CONTEXT_PATH + "/eventList/deleteEvents", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-          body: JSON.stringify({ evIds: [currentEvId] })
-        })
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          if (!d || !d.success) {
-            alert('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
-            return;
-          }
+        // (작업계획서 39 WP-6) 확인 대화상자 → 서버 파일 확인(없으면 장비에서 내려받기, 진행 팝업) → 삭제 확정은
+        // eventDeleteFlow.js(H100EventDelete)가 처리한다. 삭제가 확정되면 다음 항목으로 이동, 없으면 목록으로 복귀.
+        H100EventDelete.run([currentEvId], { onDone: function(){
           if (nextEvId) {
             location.href = CONTEXT_PATH + "/eventList/eventListDetail?evId=" + nextEvId + "&dvId=${dvId}" + _h100FilterQuery();
           } else {
             goToEventList(); // 마지막 항목이었던 경우 목록으로 복귀
           }
-        });
+        } });
       })
       .catch(function(){ alert('삭제 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'); });
   });

@@ -26,4 +26,7 @@ public interface NotificationMapper {
 
 	// 전체 읽음 처리
 	int updateReadAll() throws IllegalStateException;
+
+	// 이벤트 삭제 시 해당 이벤트(noti_type='event')의 알림 삭제. paramMap: evIds(List<Integer>)
+	int deleteByEventIds(Map<String, Object> paramMap) throws IllegalStateException;
 }

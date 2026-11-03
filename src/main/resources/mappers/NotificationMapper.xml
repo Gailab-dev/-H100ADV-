@@ -69,4 +69,15 @@
 		 WHERE noti_is_read = 0
 	</update>
 
+	<!-- (작업계획서 39 WP-6 / 37 WP-N 9) 이벤트 삭제 확정 시 해당 이벤트의 알림을 함께 삭제한다.
+	     event 유형만 대상(noti_target_id = ev_id). sip_call·device_error 알림은 건드리지 않는다. -->
+	<delete id="deleteByEventIds" parameterType="map">
+		DELETE FROM tbl_notification_log
+		 WHERE noti_type = 'event'
+		   AND noti_target_id IN
+		<foreach collection="evIds" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</delete>
+
 </mapper>
