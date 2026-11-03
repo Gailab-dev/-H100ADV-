@@ -89,6 +89,41 @@ ROI_FILE_PATH=/home/<계정>/H100/system/rois.json
 ROI_SNAPSHOT_DIR=/home/<계정>/H100/output/roi_snapshot
 # ROI_SNAPSHOT_URL 은 로컬 Python 이 스냅샷을 공급할 때만 추가(없으면 생략). 있으면 URL 이 DIR 보다 우선.
 
+
+[선택 키 — 실시간 영상 시청 정책 (38번). 모두 코드에 기본값이 있어 없어도 동작한다]
+
+VIEWER_IDLE_TIMEOUT_SEC=20       시청 중 .m3u8/.ts 요청(또는 heartbeat)이 없을 때 점유를 풀기까지(초)
+STREAM_END_GRACE_SEC=15          end 후 ffmpeg 종료 유예(초, 0=즉시). 유예 안에 start 가 오면 종료 취소
+FFMPEG_START_CHECK_MS=1500       start 직후 이 시간 안에 ffmpeg 가 죽으면 start 실패(500 FFMPEG_FAILED), 0=검사 안 함
+FFMPEG_STOP_WAIT_SEC=5           Kill 후 종료(회수) 확인 대기(초)
+FFMPEG_STATS_LOG_SEC=10          ffmpeg 진행 상태(fps/speed/dup/drop) 로그 간격(초), 0=끔
+
+· 동작: ffmpeg 는 1개, 시청자는 1명. 같은 사용자(viewerId)의 재시청은 인계, 다른 사용자는 409(VIEWER_BUSY).
+· 탭 숨김 유예(기본 30초)는 웹(브라우저) 쪽 값이다. 웹이 heartbeat 를 보내지 않으면 VIEWER_IDLE_TIMEOUT_SEC 를
+  탭 숨김 유예보다 길게 두어야 탭을 숨긴 동안 점유가 풀리지 않는다.
+· 로그: "시청자 등록/해제/거부", "ffmpeg 시작/종료(사유·지속시간·활성 수)", "ffmpeg 진행 상태" 가 logs/ 와 module_d.log 에 남는다.
+  RTSP 주소의 계정·비밀번호는 ffmpeg 출력에서 자동으로 *** 로 가려진다.
+  측정 시 확인(RTSP 주소 노출 없이): grep "ffmpeg 진행 상태" logs/log-*.log | tail -n 20
+· 이 키들은 키트 2_patch_binary.sh 가 동기화하는 경로 키 4개(FILE_PATH, AUDIO_PATH, ROI_FILE_PATH, ROI_SNAPSHOT_DIR)에
+  포함되지 않는다. 기존 장비는 .env 를 고치지 않아도 기본값으로 동작하며, 값을 바꾸려면 .env 에 직접 추가 후 서비스 재시작.
+
+
+[선택 키 — 파일 전송 (39번). 모두 코드에 기본값이 있어 없어도 기존처럼 동작한다]
+
+FILE_SEND_SCHEDULER_ENABLED=true     장비 주도 전송 스케줄러 사용 여부(기본 true=기존 동작).
+                                     서버 주도 백업으로 전환해 이중 전송을 막을 때 false. false 이면 FILE_SEND_SCH_TIME 은
+                                     사용하지 않으며 비워도 기동한다. 서버가 요청하는 /fileSend(PULL)는 그대로 동작한다.
+FILE_SEND_TIMEOUT_SEC=120            /fileSend 전송 1건 전체 제한(초)
+FILE_SEND_SCHEDULER_TIMEOUT_SEC=600  스케줄러 전송 1건 전체 제한(초)
+
+· 전송 성공은 서버(module_c)가 보낸 영수증으로만 판정한다: HTTP 200, ok=true, 서버 저장 바이트 = 보낸 바이트.
+  따라서 module_c 를 먼저(또는 같은 점검창에) 새 버전으로 배포해야 한다. 구 module_c 는 평문 "OK" 만 보내
+  새 module_d 가 SERVER_REJECTED 로 판정한다.
+· /fileSend 응답: 기존 {"result":"true|false"} 에 code(OK / NO_FILE / SERVER_REJECTED / SEND_FAILED)와 성공 시 bytes 가 붙는다.
+· fileName 은 폴더 구분자·".." 가 없는 파일 이름만 허용한다(위반 시 400).
+· 스케줄러의 "어제" 범위와 FILE_SEND_SCH_TIME 해석은 KST(Asia/Seoul) 기준이다(장비 시간대가 UTC 여도 동일).
+
+
 [편집·권한]
 
 sudo vi /home/<계정>/H100/system/h100_module_d/.env
@@ -400,6 +435,11 @@ tegrastats
 [ ] 파일 저장 폴더 존재 (image/video/audio)
 [ ] ROI 사용 시: .env 에 ROI_FILE_PATH, ROI_SNAPSHOT_DIR 존재, rois.json 존재·서비스 계정 읽기/쓰기 가능
 [ ] ROI 사용 시: roi_snapshot 폴더에 Cam1.png, Cam2.png(또는 .jpg) 존재, PNG/JPEG 형식·1920x1080
+[ ] 영상 시청 정책: 새 키(VIEWER_IDLE_TIMEOUT_SEC 등)는 선택. 탭 숨김 유예(웹)보다 IDLE 이 짧지 않은지 확인
+[ ] 영상: 시청 후 팝업을 닫고 약 STREAM_END_GRACE_SEC 뒤 ffmpeg 가 0개인지 확인 (pgrep -c ffmpeg)
+[ ] 파일 전송: module_c 가 영수증(JSON) 버전으로 먼저 배포되었는지 확인
+[ ] 파일 전송: 서버 주도 백업 전환 시 FILE_SEND_SCHEDULER_ENABLED=false 로 이중 전송 방지
+[ ] 시간대: timedatectl 로 장비 시간대·NTP 확인 (변경은 인터넷 연결 환경에서 확인 후 적용 — 사용 매뉴얼 §14)
 [ ] 로그 폴더 존재 (logs/)
 [ ] Go 바이너리 재빌드 완료
 [ ] 서비스 재시작 완료

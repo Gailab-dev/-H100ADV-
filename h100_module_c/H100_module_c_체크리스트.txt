@@ -171,6 +171,15 @@ TLS_CERT_FILE=/home/<계정>/h100_module_c/ssl/server.cert.pem
 TLS_KEY_FILE=/home/<계정>/h100_module_c/ssl/server.key.pem
 H100_HMAC_KEYS=<64byte hex 문자열>
 
+[선택 키 — 파일 수신 (39번). 없으면 코드 기본값]
+FILE_RECEIVE_MAX_MB=512    파일 수신 요청 본문 상한(MB). 초과 시 413 {"ok":false,"code":"TOO_LARGE"}
+
+[파일 수신 응답 — 39번]
+/imageFileReceive, /videoFileReceive, /audioFileReceive 는 평문 "OK" 대신 영수증 JSON 으로 응답한다.
+  성공: 200 {"ok":true,"file":"<저장된 파일명>","bytes":<저장 바이트>,"kind":"image|video|audio"}
+  실패: 비-200 {"ok":false,"code":"...","msg":"..."}  (401 인증, 400 폼 오류, 413 크기 초과, 500 저장/DB 갱신 실패)
+저장은 임시 파일에 쓴 뒤 rename 한다. module_d 는 이 영수증으로만 전송 성공을 판정하므로 module_c 를 먼저(또는 같은 점검창에) 배포한다.
+
 
 [편집·권한]
 
