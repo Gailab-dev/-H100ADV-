@@ -395,3 +395,21 @@ html,body{height:100%;font-family: Pretendard;letter-spacing: -0.325px;}
   .login-card{margin-top:-38px}
 }
 @media (max-width:420px){.login-card{padding:24px 18px 22px;width:94%}}
+
+/* (37 WP-L2) 새 로그인 확인 팝업 */
+.login-confirm-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center}
+.login-confirm-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.login-confirm-dialog{
+  position:relative;width:360px;max-width:90vw;background:#fff;border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);padding:28px 28px 22px;text-align:center;
+}
+.login-confirm-title{font-size:17px;font-weight:600;color:#383351;margin-bottom:12px}
+.login-confirm-desc{font-size:14px;line-height:1.6;color:#505050;margin-bottom:22px}
+.login-confirm-btns{display:flex;gap:10px;justify-content:center}
+.login-confirm-btn{
+  flex:1;height:44px;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;
+  border:1px solid #6584c1;
+}
+.login-confirm-btn.primary{background:linear-gradient(302deg,#6584c1,#9abbdc);color:#fff}
+.login-confirm-btn.secondary{background:#fff;color:#6584c1}
+.login-confirm-btn:disabled{opacity:.6;cursor:default}

@@ -72,16 +72,25 @@ public class UserController {
 	private String viewLogin(
 			HttpServletRequest request
 			, HttpServletResponse response
+			, @RequestParam(value = "reason", required = false) String reason
 			, @RequestParam(value = "errorMsg", required = false) String errorMsg
 			, Model model) {
-		
+
 		// ====== 유효성 검증 [S] ====== //
-		// 오류 메시지
-		if(errorMsg == "") {
-			errorMsg = null;
+		// (37 WP-L1) 로그인 화면에 표시하는 안내는 "사유 코드"(reason)만 받아 서버 고정 문구로 바꿔 표시한다.
+		// 임의 문자열(errorMsg)은 표시하지 않는다 — 이전 화면/캐시된 JS 가 보내는 고정 문구 2종만 코드로 환산(호환).
+		String reasonCode = (SessionManager.reasonMessage(reason) != null) ? reason : null;
+		if(reasonCode == null) {
+			reasonCode = SessionManager.reasonCodeFromLegacyMessage(errorMsg);
 		}
-		// ====== 유효성 검증 [S] ====== //
-		
+		// 다른 PC 로그인으로 쫓겨난 세션이면 어떤 경로로 이 화면에 왔든 서버가 기록한 사유(DUP)를 우선한다.
+		// (요청 쿠키의 세션ID 는 세션이 무효화된 뒤에도 읽을 수 있다. 폴링이 이미 소비했다면 위 파라미터를 따른다.)
+		String kickedReason = sessionManager.consumeLogoutReason(request.getRequestedSessionId());
+		if(kickedReason != null) {
+			reasonCode = kickedReason;
+		}
+		// ====== 유효성 검증 [E] ====== //
+
 		// ====== 서비스 [S] ====== //
 
 	    // 캐시 방지 (뒤로가기 시 로그인 화면이 캐시로 보이는 현상 방지)
@@ -93,8 +102,11 @@ public class UserController {
 	    HttpSession s = request.getSession(false);
 	    if (s != null) {
 	    	s.invalidate();
-	    }	
+	    }
 		// ====== 서비스 [E] ====== //
+
+		// 화면 표시용 안내 문구(코드 → 서버 고정 문구, 허용 코드가 아니면 null)
+		model.addAttribute("loginNotice", SessionManager.reasonMessage(reasonCode));
 
 		return "user/login";
 	}
@@ -111,7 +123,7 @@ public class UserController {
 	 */
 	@ResponseBody
 	@PostMapping( value = "/login", produces = "application/json; charset=UTF-8")
-	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session) {
+	private Map<String,Object> loginCheck( @RequestBody Map<String,String> body, HttpSession session, HttpServletRequest request) {
 		
 		// ====== 변수 선언부 [S] ====== //
 		// resultMap
@@ -195,39 +207,26 @@ public class UserController {
 		        Integer passedDays = 0;
 		        if(obj != null) passedDays = ((Number) obj).intValue(); 
 				
-				if( Integer.parseInt(checkErr.get("u_pwd_changed").toString()) == 0 ) {
-					
-					// 최초 로그인한 경우(비밀번호 변경 화면으로 이동)
-					// session에 uId와 비밀번호 변경 하지 않음(false)로 저장
-					session.setAttribute("uId", checkErr.get("u_id"));
-					session.setAttribute("pwdChanged", false);
-					session.setAttribute("uGrade", checkErr.get("u_grade"));
-					
-					// resultMap에 uId와 비밀번호 변경 하지 않음(false)로 저장
-					resultMap.put("pwdChanged", false);
-					resultMap.put("uId", checkErr.get("u_id"));
-				}else {
-					
-					// 최초로 로그인하지 않은 경우(비밀번호를 이미 변경한 경우, 통계 화면으로 이동)
-					// session에 uId와 비밀번호 변경함(true)로 저장
-					session.setAttribute("uId", checkErr.get("u_id"));
-					session.setAttribute("pwdChanged", true);
-					session.setAttribute("uGrade", checkErr.get("u_grade"));
-					
-					// resultMap에 uId와 비밀번호 변경함(true)로 저장
-					resultMap.put("pwdChanged", true);
-					resultMap.put("uId", checkErr.get("u_id"));
+				boolean pwdChanged = Integer.parseInt(checkErr.get("u_pwd_changed").toString()) != 0;
+				String loginUId = checkErr.get("u_id").toString();
+				String clientIp = request.getRemoteAddr();
+
+				// (37 WP-L2) 비밀번호 검증을 통과한 뒤에만 "다른 곳에서 접속 중" 여부를 알려 준다(인증 전 노출 금지).
+				// 접속 중이면 로그인을 완료하지 않고(세션 속성도 세우지 않고) 확인 단계 응답 + 1회용 토큰을 돌려준다.
+				// 같은 브라우저(쿠키)의 다른 탭은 같은 세션이라 여기에 해당하지 않는다.
+				if (sessionManager.hasActiveSession(loginUId, session)) {
+					String confirmToken = sessionManager.issueLoginConfirm(loginUId, id, session.getId(), clientIp,
+							checkErr.get("u_id"), checkErr.get("u_grade"), pwdChanged);
+					logger.info("{} 사용자가 {}에 로그인 인증에 성공했으나 다른 곳에서 접속 중이어서 확인을 요청합니다. IP: {}",id,LocalDateTime.now(),clientIp);
+					resultMap.put("ok", false);
+					resultMap.put("needConfirm", true);
+					resultMap.put("confirmToken", confirmToken);
+					resultMap.put("confirmTtlSec", SessionManager.LOGIN_CONFIRM_TTL_MS / 1000);
+					resultMap.put("msg", "다른 곳에서 접속 중인 계정입니다. 로그인하시겠습니까?");
+					return resultMap;
 				}
 
-				// 중복 로그인 체크 및 기존 세션 무효화
-				boolean hadDuplicateSession = sessionManager.addSession(checkErr.get("u_id").toString(),id, session);
-				if (hadDuplicateSession) {
-					logger.warn("{} 사용자의 중복 로그인 감지. 기존 세션이 무효화되었습니다.", id);
-				}
-
-				// 세션에 계정 정보 추가
-				logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
-				resultMap.put("ok", true); // 로그인 성공하면 true 반환
+				completeLogin(session, id, loginUId, checkErr.get("u_id"), checkErr.get("u_grade"), pwdChanged, clientIp, resultMap);
 				return resultMap;
 			}
 			// ====== 서비스 [E] ====== //
@@ -253,6 +252,123 @@ public class UserController {
 		} 
 	}
 	
+	/**
+	 * 로그인 완료 처리 — 세션 속성 저장 + 세션 매니저 등록(다른 곳의 살아 있는 기존 세션이 있으면 무효화).
+	 * 일반 로그인(loginCheck)과 확인 후 강제 로그인(loginForce)이 같은 코드를 쓰도록 분리했다.
+	 * @param uIdValue    DB 의 u_id 원본(세션 속성·응답에 그대로 저장하는 값)
+	 * @param uGradeValue DB 의 u_grade 원본
+	 * @return 기존 세션을 종료시켰으면 true
+	 */
+	private boolean completeLogin(HttpSession session, String id, String loginUId, Object uIdValue,
+			Object uGradeValue, boolean pwdChanged, String clientIp, Map<String, Object> resultMap) {
+
+		// 최초 로그인(비밀번호 미변경)이면 비밀번호 변경 화면으로, 아니면 대시보드로 이동하도록 session·resultMap 에 저장
+		session.setAttribute("uId", uIdValue);
+		session.setAttribute("pwdChanged", pwdChanged);
+		session.setAttribute("uGrade", uGradeValue);
+		// (37 WP-L2) 강제 종료 로그(누가·누구를·IP·시각)용 — 비밀번호 등 비밀 값은 저장하지 않는다.
+		session.setAttribute("loginIp", clientIp);
+		session.setAttribute("loginAt", LocalDateTime.now().toString());
+		resultMap.put("pwdChanged", pwdChanged);
+		resultMap.put("uId", uIdValue);
+
+		// 중복 로그인 체크 및 기존 세션 무효화(상세 로그는 SessionManager#addSession)
+		boolean hadDuplicateSession = sessionManager.addSession(loginUId, id, session);
+		if (hadDuplicateSession) {
+			logger.warn("{} 사용자의 중복 로그인 감지. 기존 세션이 무효화되었습니다.", id);
+		}
+
+		// 세션에 계정 정보 추가
+		logger.info("{} 사용자가 {}에 로그인하였습니다.",id,LocalDateTime.now());
+		resultMap.put("ok", true); // 로그인 성공하면 true 반환
+		return hadDuplicateSession;
+	}
+
+	/**
+	 * (37 WP-L2) 접속 중 확인 후 강제 로그인.
+	 * 비밀번호는 다시 받지 않는다 — loginCheck 가 비밀번호 검증 직후 발급한 1회용 토큰(60초·이 브라우저 세션에 묶임)이 증빙이다.
+	 * @param body token(String)
+	 * @return ok(true: 로그인 완료) / kicked(기존 접속을 종료했는지) / pwdChanged / uId, 실패 시 code=CONFIRM_EXPIRED + msg
+	 */
+	@ResponseBody
+	@PostMapping( value = "/loginForce", produces = "application/json; charset=UTF-8")
+	private Map<String,Object> loginForce( @RequestBody Map<String,String> body, HttpSession session, HttpServletRequest request) {
+
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		String token = (body.get("token") == null) ? "" : body.get("token").trim();
+
+		try {
+			SessionManager.LoginConfirm confirm = sessionManager.consumeLoginConfirm(token, session.getId());
+			if (confirm == null) {
+				// 더블클릭 등으로 앞선 요청이 이미 로그인을 끝냈다면(같은 세션) 성공으로 돌려준다 — 토큰은 이미 소비되었다.
+				Object doneUId = session.getAttribute("uId");
+				if (doneUId != null && session.getAttribute("pwdChanged") != null) {
+					resultMap.put("ok", true);
+					resultMap.put("kicked", false);
+					resultMap.put("pwdChanged", Boolean.TRUE.equals(session.getAttribute("pwdChanged")));
+					resultMap.put("uId", doneUId);
+					return resultMap;
+				}
+				resultMap.put("ok", false);
+				resultMap.put("code", "CONFIRM_EXPIRED");
+				resultMap.put("msg", "확인 시간이 지났거나 유효하지 않은 요청입니다. 다시 로그인해 주세요.");
+				return resultMap;
+			}
+
+			logger.info("{} 사용자가 {}에 접속 중 확인 후 로그인을 진행합니다. IP: {}", confirm.loginId, LocalDateTime.now(), request.getRemoteAddr());
+			boolean kicked = completeLogin(session, confirm.loginId, confirm.userId, confirm.uIdValue,
+					confirm.uGradeValue, confirm.pwdChanged, request.getRemoteAddr(), resultMap);
+			// 확인 대기 중 기존 세션이 먼저 사라졌다면 kicked=false 로 그냥 로그인된다.
+			resultMap.put("kicked", kicked);
+			return resultMap;
+		} catch (RuntimeException e) {
+			logger.error("loginForce RuntimeException => ", e);
+			resultMap.clear();
+			resultMap.put("ok", false);
+			resultMap.put("msg", "로그인 처리 중 오류 발생.");
+			return resultMap;
+		}
+	}
+
+	/**
+	 * (37 WP-L2) 확인 대기 중 상태 확인. 확인 팝업을 띄워 둔 동안 기존 접속이 먼저 사라졌는지(로그아웃·만료) 폴링한다.
+	 * 토큰을 소비하지 않는다.
+	 * @param body token(String)
+	 * @return state: WAIT(여전히 다른 곳에서 접속 중) / FREE(기존 접속이 사라짐 — 확인 없이 바로 로그인해도 됨) / INVALID(토큰 만료·무효)
+	 */
+	@ResponseBody
+	@PostMapping( value = "/loginConfirmStatus", produces = "application/json; charset=UTF-8")
+	private Map<String,Object> loginConfirmStatus( @RequestBody Map<String,String> body, HttpSession session) {
+
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		String token = (body.get("token") == null) ? "" : body.get("token").trim();
+
+		SessionManager.LoginConfirm confirm = sessionManager.peekLoginConfirm(token, session.getId());
+		if (confirm == null) {
+			resultMap.put("state", "INVALID");
+		} else if (sessionManager.hasActiveSession(confirm.userId, session)) {
+			resultMap.put("state", "WAIT");
+		} else {
+			resultMap.put("state", "FREE");
+		}
+		return resultMap;
+	}
+
+	/**
+	 * (37 WP-L2) 확인 팝업에서 취소 — 토큰만 폐기한다. 기존 세션·계정 상태에는 아무 변화가 없다.
+	 * @param body token(String)
+	 */
+	@ResponseBody
+	@PostMapping( value = "/loginCancel", produces = "application/json; charset=UTF-8")
+	private Map<String,Object> loginCancel( @RequestBody Map<String,String> body, HttpSession session) {
+
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		String token = (body.get("token") == null) ? "" : body.get("token").trim();
+		sessionManager.discardLoginConfirm(token, session.getId());
+		resultMap.put("ok", true);
+		return resultMap;
+	}
+
 	/**
 	 * 최초로 로그인한 경우, 초기 비밀번호 변경 화면으로 이동
 	 * @param uId		아이디(String)
@@ -295,7 +411,8 @@ public class UserController {
 	 * (참고: 장기 미사용 자동 로그아웃, sessionManager.js). LoginInterceptor 예외 경로 — 이미 무효화된
 	 * (세션이 없는) 상태에서도 호출되어야 하므로 로그인 여부를 검사하지 않는다.
 	 * @param request 세션이 이미 무효화되었어도 요청 쿠키의 세션ID는 getRequestedSessionId()로 읽을 수 있다.
-	 * @return {"loggedOutElsewhere": boolean, "message": String|null}
+	 * @return {"loggedOutElsewhere": boolean, "reason": 사유 코드|null, "message": 서버 고정 문구|null}
+	 *         (37 WP-L1) 클라이언트는 문구가 아니라 reason 코드를 로그인 URL 에 붙여 이동한다.
 	 */
 	@GetMapping("/sessionStatus")
 	@ResponseBody
@@ -303,7 +420,8 @@ public class UserController {
 		Map<String, Object> result = new HashMap<>();
 		String reason = sessionManager.consumeLogoutReason(request.getRequestedSessionId());
 		result.put("loggedOutElsewhere", reason != null);
-		result.put("message", reason);
+		result.put("reason", reason);
+		result.put("message", SessionManager.reasonMessage(reason));
 		return result;
 	}
 
@@ -315,18 +433,24 @@ public class UserController {
 	 */
 	@RequestMapping("/logout")
 	public String logout(HttpSession session, Model model) {
-		String uId = session.getAttribute("uId").toString();
-		
-		String loginId = userService.getLoginId(Integer.parseInt(uId));
-		if(loginId == null) {
-			model.addAttribute("errorMsg", "로그아웃 중 오류가 발생했습니다.");
-		}
-		
-		logger.info("{} 가 {}에 로그아웃하였습니다.", loginId, LocalDateTime.now());
+		// (37 WP-L1) uId 가 없는 세션(이미 무효화·만료·다른 PC 로그인으로 쫓겨난 뒤의 로그아웃 요청)에서도
+		// NPE 로 500 이 되지 않도록 null 안전하게 처리한다 — 그냥 로그인 화면으로 보낸다.
+		Object uIdAttr = session.getAttribute("uId");
+		String uId = (uIdAttr == null) ? null : uIdAttr.toString();
 
-		// 세션 매니저에서 사용자 세션 제거
 		if (uId != null) {
-			sessionManager.removeSession(uId, loginId);
+			String loginId = userService.getLoginId(Integer.parseInt(uId));
+			if(loginId == null) {
+				model.addAttribute("errorMsg", "로그아웃 중 오류가 발생했습니다.");
+			}
+
+			logger.info("{} 가 {}에 로그아웃하였습니다.", loginId, LocalDateTime.now());
+
+			// 세션 매니저에서 사용자 세션 제거 — 이 세션이 등록된 세션일 때만(다른 PC 의 새 세션 등록을 지우지 않는다)
+			HttpSession registered = sessionManager.getSession(uId);
+			if (registered != null && registered.getId().equals(session.getId())) {
+				sessionManager.removeSession(uId, loginId);
+			}
 		}
 
 		session.invalidate(); // 세션 만료

@@ -133,7 +133,8 @@
 
     // ------------------------------------------------------------------ 서버 통신
     function sessionExpired() {
-        location.href = CFG.ctx + '/user/login.do?errorMsg=' + encodeURIComponent('장기간 미사용으로 로그아웃되었습니다.');
+        // (37 WP-L1) 문구 대신 사유 코드(IDLE)를 전달 — 서버가 고정 문구로 매핑해 표시한다
+        location.href = CFG.ctx + '/user/login.do?reason=IDLE';
     }
 
     // 항상 {status, data} 로 resolve. 시간 초과/네트워크 오류는 {status:0, aborted:true|false}.

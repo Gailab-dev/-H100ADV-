@@ -436,7 +436,14 @@ public class EventListController {
 			
 			// ====== 서비스 [S] ====== //
 			// 불법주차 리스트 상세 정보 가져오기
-			eventListDetail = eventListService.getEventListDetail(evId);
+			try {
+				eventListDetail = eventListService.getEventListDetail(evId);
+			} catch (IllegalStateException e) {
+				// (37 WP-N) 존재하지 않거나 삭제된(ev_is_deleted=1) evId — 서비스가 IllegalStateException 을 던져
+				// 500 error 로 이어지던 경로. 북마크·알림 등 직접 진입 시 오류 화면 대신 조용히 목록으로 복귀한다(ADR-008 방침과 동일).
+				logger.warn("존재하지 않거나 삭제된 이벤트 상세 요청 - evId: {}", evId);
+				return "redirect:/eventList/viewEventList.do";
+			}
 			if(eventListDetail != null) {
 				String evCd = String.valueOf(eventListDetail.get("ev_cd"));
 				String ev_cd_name = "";
@@ -537,7 +544,18 @@ public class EventListController {
 		String message = null;
 		String fetchResult = null; // (29번) fetchFromDevice() 반환값 — 호출 안 된 분기는 null로 남겨 최종 로그에서 구분
 
-		Map<String, Object> detail = eventListService.getEventListDetail(evId);
+		Map<String, Object> detail;
+		try {
+			detail = eventListService.getEventListDetail(evId);
+		} catch (IllegalStateException e) {
+			// (37 WP-N) 존재하지 않거나 삭제된 이벤트 — 500 대신 "이동 불가 + 안내 문구"로 응답한다
+			// (알림 클릭·목록 상세보기 모두 available=false 면 이동하지 않고 message 를 보여준다).
+			logger.warn("[ADR-008] detail/check 대상 이벤트가 없거나 삭제됨 evId={}", evId);
+			out.put("available", false);
+			out.put("scenario", "N");
+			out.put("message", "삭제되었거나 존재하지 않는 이벤트입니다.");
+			return out;
+		}
 
 		// (30번) 이미지 존재 여부와 무관하게, 이 이벤트에 영상이 필요한데 아직 서버에 없으면
 		// 먼저 디바이스에 PULL을 시도한다. 기존에는 아래 분기가 전부 "이미지 존재 여부"만으로

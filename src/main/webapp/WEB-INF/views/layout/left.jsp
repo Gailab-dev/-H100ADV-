@@ -93,6 +93,8 @@
 	.noti-card:hover { background: #f9f7ff; }
 	.noti-card.unread { background: #f6f2ff; }
 	.noti-card.unread .noti-card-title { font-weight: 700; }
+	/* (37 WP-N) 읽은 알림은 목록에 남되 흐리게 표시한다(물리 삭제 없음) */
+	.noti-card:not(.unread) .noti-card-title { color: #8d8aa0; }
 	.noti-card-title { font-size: 13px; color: #383351; line-height: 1.4; word-break: break-all; }
 	.noti-card-meta { margin-top: 3px; font-size: 11px; color: #999; }
 	.noti-type-tag {
@@ -111,6 +113,26 @@
 		50%      { background: #F9A825; color: #fff; }
 	}
 	.noti-icon-btn.noti-blink { animation: notiBlink 1s ease-in-out 3; }
+
+	/* (37 WP-N) event 알림 클릭 → 상세 이동 전 detail/check(파일 준비) 대기·안내 오버레이.
+	   목록 화면의 h100Overlay 는 그 JSP 에만 있어, 어느 화면에서든 알림을 누를 수 있도록 이 레이아웃에 별도로 둔다. */
+	.noti-nav-overlay {
+		position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000;
+		display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.35);
+	}
+	.noti-nav-box {
+		min-width: 240px; max-width: 80vw; padding: 24px 28px; background: #fff; border-radius: 10px;
+		box-shadow: 0 10px 30px rgba(0,0,0,0.25); text-align: center; font-size: 14px; color: #383351;
+	}
+	.noti-nav-spinner {
+		width: 28px; height: 28px; margin: 0 auto 12px; border: 3px solid #e5e1f0; border-top-color: #6955A2;
+		border-radius: 50%; animation: notiNavSpin .8s linear infinite;
+	}
+	@keyframes notiNavSpin { to { transform: rotate(360deg); } }
+	.noti-nav-close {
+		display: none; margin-top: 14px; padding: 6px 18px; border: 1px solid #6955A2; border-radius: 6px;
+		background: #fff; color: #6955A2; font-size: 13px; cursor: pointer;
+	}
 </style>
 
 <aside class="sidebar" style="padding-left:0 !important;padding-right:0 !important;">
@@ -244,6 +266,13 @@
 		var POLL_MS = 4000;
 		var lastKnownUnread = null; // (33번) 최초 로드 값은 "새로 도착"이 아니므로 깜박임 트리거 기준에서 제외
 
+		// (37 WP-N) 배지 = 안 읽은 건수. 카드를 누르면 폴링(4초)을 기다리지 않고 클라이언트에서 바로 1 줄이고 서버에도 반영한다.
+		var currentUnread = 0;   // 마지막으로 반영한 안읽은 개수(99+ 표시와 무관하게 실제 값)
+		var pendingReads = 0;    // 진행 중인 읽음 요청 수 — 서버 반영 전의 폴링 값으로 배지가 되돌아가지 않게 하는 용도
+		var badgeSeq = 0;        // 로컬에서 배지를 바꿀 때마다 증가 — 그 전에 시작한 폴링 응답은 버린다
+		var notiItems = {};      // 목록에 그린 알림(noti_id → 항목). 클릭 시 유형별 이동 판단에 사용
+		var navigating = false;  // event 알림 상세 이동 처리 중(중복 클릭 방지)
+
 		// noti_title 은 DB(디바이스명 포함) 에서 온 값이므로 HTML 로 넣기 전에 반드시 이스케이프한다(계획서 §8).
 		function escapeHtml(s) {
 			return String(s == null ? '' : s)
@@ -274,7 +303,8 @@
 		// 알림 종류별 이동 대상 (계획서 §4-2)
 		function buildTargetUrl(item) {
 			if (item.noti_type === 'event') {
-				return CTX + '/eventList/viewEventList.do?evId=' + encodeURIComponent(item.noti_target_id);
+				// (37 WP-N) 목록이 아니라 상세로 직접 이동. 이동 전 detail/check 는 아래 카드 클릭 핸들러(openEventDetail)가 선행한다.
+				return CTX + '/eventList/eventListDetail?dvId=' + encodeURIComponent(item.noti_dv_id) + '&evId=' + encodeURIComponent(item.noti_target_id);
 			}
 			if (item.noti_type === 'sip_call') {
 				return CTX + '/deviceList/viewDeviceList.do?triggerSerial=' + encodeURIComponent(item.noti_serial);
@@ -310,26 +340,42 @@
 			btn.classList.add('noti-blink');
 		}
 
+		function renderBadge(count) {
+			if (count > 0) {
+				$('#notificationBadge').text(count > 99 ? '99+' : count).show();
+			} else {
+				$('#notificationBadge').hide();
+			}
+		}
+
 		function loadUnreadCount() {
+			if (pendingReads > 0) return; // 읽음 요청이 서버에 반영되기 전의 값으로 배지를 덮어쓰지 않는다
+			var seq = badgeSeq;
 			$.ajax({
 				url: CTX + '/notification/unreadCount',
 				method: 'GET',
 				cache: false,
 				success: function(data) {
+					if (seq !== badgeSeq || pendingReads > 0) return; // 요청 중에 로컬 변경(클릭)이 있었으면 이 응답은 낡은 값
 					var count = (data && data.unread_cnt) || 0;
-					if (count > 0) {
-						$('#notificationBadge').text(count > 99 ? '99+' : count).show();
-					} else {
-						$('#notificationBadge').hide();
-					}
+					currentUnread = count;
+					renderBadge(count);
 					// (33번) 직전 폴링보다 안읽은 개수가 늘었으면 새 알림 도착으로 보고 깜박임.
 					// 최초 로드(lastKnownUnread===null)는 이미 쌓여있던 개수일 뿐이므로 제외.
 					if (lastKnownUnread !== null && count > lastKnownUnread) {
 						triggerNotiBlink();
 					}
 					lastKnownUnread = count;
+				},
+				error: function(xhr) {
+					// (37 WP-L1) 세션이 사라졌으면(다른 PC 로그인으로 종료·만료) 이 폴링이 401(SESSION_TIMEOUT)을 받는다.
+					// sessionManager.js(5초 중복 로그인 폴링)는 목록·상세·장비·통계 화면에만 로드되어, 대시보드·응급연락망 등에서는
+					// 다음 클릭 전까지 모르고 있었다 — 여기서 로그인 화면으로 보낸다. 사유(DUP)는 서버가 요청 쿠키의 세션ID 로 찾아 표시한다.
+					if (xhr && xhr.status === 401) {
+						location.href = CTX + '/user/login.do?reason=EXPIRED';
+					}
+					// 그 밖의 실패는 배지를 건드리지 않는다 — 일시적 오류로 기존 표시가 사라지지 않도록.
 				}
-				// 실패 시 배지를 건드리지 않는다 — 일시적 오류로 기존 표시가 사라지지 않도록.
 			});
 		}
 
@@ -344,7 +390,8 @@
 					if (!list || list.length === 0) {
 						html = '<div class="noti-empty">새 알림이 없습니다.</div>';
 					} else {
-						$.each(list, function(i, item) { html += buildNotificationCard(item); });
+						notiItems = {};
+						$.each(list, function(i, item) { notiItems[item.noti_id] = item; html += buildNotificationCard(item); });
 					}
 					$('#notificationList').html(html);
 					$('#notificationPopup').show();
@@ -355,6 +402,124 @@
 				}
 			});
 		}
+
+		// (37 WP-N) 클릭한 안읽은 알림 1건을 화면에서 바로 읽음 처리: 카드 강조 해제 + 배지 -1(폴링 대기 없음)
+		function markReadLocally($card) {
+			if (!$card.hasClass('unread')) return; // 이미 읽은 알림은 숫자를 줄이지 않는다
+			$card.removeClass('unread');
+			badgeSeq++;
+			currentUnread = Math.max(0, currentUnread - 1);
+			lastKnownUnread = currentUnread; // 감소를 "새 알림 도착(깜박임)" 판단에서 제외
+			renderBadge(currentUnread);
+		}
+
+		// 서버에 읽음 반영. keepalive 로 보내 페이지 이동(링크 기본 동작)과 무관하게 전송을 보장한다(19번 이슈A).
+		// 진행 중에는 폴링이 서버의 (아직 줄지 않은) 값으로 배지를 되돌리지 않도록 pendingReads 로 막고,
+		// 끝나면 한 번 재조회해 서버 값과 맞춘다.
+		function sendRead(notiId) {
+			var readUrl = CTX + '/notification/read/' + notiId;
+			pendingReads++;
+			var done = function() {
+				pendingReads = Math.max(0, pendingReads - 1);
+				if (pendingReads === 0) loadUnreadCount();
+			};
+			if (window.fetch && window.Promise) {
+				return fetch(readUrl, { method: 'POST', keepalive: true, credentials: 'same-origin' }).then(done, done);
+			}
+			// keepalive 미지원 구형 브라우저 폴백
+			$.ajax({ url: readUrl, method: 'POST' }).always(done);
+			return null;
+		}
+
+		// ---- event 알림 → 상세 이동: 읽음 요청 + detail/check(서버 파일 준비) 후 이동, 없거나 삭제된 이벤트는 안내 ----
+		function ensureNavOverlay() {
+			var ov = document.getElementById('notiNavOverlay');
+			if (ov) return ov;
+			ov = document.createElement('div');
+			ov.id = 'notiNavOverlay';
+			ov.className = 'noti-nav-overlay';
+			ov.setAttribute('role', 'status');
+			ov.setAttribute('aria-live', 'polite');
+			ov.innerHTML = '<div class="noti-nav-box">' +
+					'<div class="noti-nav-spinner" id="notiNavSpinner" aria-hidden="true"></div>' +
+					'<div id="notiNavMsg">처리 중...</div>' +
+					'<button type="button" class="noti-nav-close" id="notiNavClose">닫기</button>' +
+					'</div>';
+			document.body.appendChild(ov);
+			document.getElementById('notiNavClose').addEventListener('click', hideNavOverlay);
+			return ov;
+		}
+
+		function showNavLoading(msg) {
+			var ov = ensureNavOverlay();
+			document.getElementById('notiNavSpinner').style.display = 'block';
+			document.getElementById('notiNavClose').style.display = 'none';
+			document.getElementById('notiNavMsg').textContent = msg || '처리 중...';
+			ov.style.display = 'flex';
+		}
+
+		function showNavMessage(msg) {
+			var ov = ensureNavOverlay();
+			document.getElementById('notiNavSpinner').style.display = 'none';
+			document.getElementById('notiNavClose').style.display = 'inline-block';
+			document.getElementById('notiNavMsg').textContent = msg;
+			ov.style.display = 'flex';
+		}
+
+		function hideNavOverlay() {
+			var ov = document.getElementById('notiNavOverlay');
+			if (ov) ov.style.display = 'none';
+		}
+
+		function openEventDetail(item, readReq) {
+			if (navigating) return; // 더블클릭 등 중복 처리 방지
+			navigating = true;
+			$('#notificationPopup').hide();
+			showNavLoading('처리 중...');
+
+			var detailUrl = buildTargetUrl(item);
+			var ctrl = (window.AbortController) ? new AbortController() : null;
+			// 서버의 장비 통신 대기가 최대 30초라 목록의 상세보기와 같은 32초 상한을 둔다(eventList.jsp 참고).
+			var timer = setTimeout(function() { if (ctrl) ctrl.abort(); }, 32000);
+			var checkUrl = CTX + '/eventList/detail/check?evId=' + encodeURIComponent(item.noti_target_id) +
+					'&dvId=' + encodeURIComponent(item.noti_dv_id == null ? '' : item.noti_dv_id);
+
+			// 읽음 요청(readReq)과 detail/check 가 모두 끝난 뒤 이동한다 — 이동하면서 읽음 요청이 끊기지 않게.
+			// X-Requested-With 헤더를 붙여 세션 만료 시 로그인 HTML(302)이 아니라 401 JSON 을 받는다.
+			var check = fetch(checkUrl, {
+				headers: { 'X-Requested-With': 'XMLHttpRequest' },
+				credentials: 'same-origin',
+				signal: ctrl ? ctrl.signal : undefined
+			}).then(function(r) {
+				if (r.status === 401) { return { sessionExpired: true }; }
+				return r.json();
+			});
+
+			Promise.all([check, readReq || null]).then(function(res) {
+				clearTimeout(timer);
+				var d = res[0];
+				if (d && d.sessionExpired) {
+					location.href = CTX + '/user/login.do?reason=EXPIRED';
+					return;
+				}
+				if (d && d.available) {
+					location.href = detailUrl; // 이동 중에는 navigating 을 유지(중복 이동 방지)
+					return;
+				}
+				navigating = false;
+				showNavMessage((d && d.message) || '삭제되었거나 존재하지 않는 이벤트입니다.');
+			}).catch(function(err) {
+				clearTimeout(timer);
+				navigating = false;
+				showNavMessage((err && err.name === 'AbortError')
+						? '서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요.'
+						: '이벤트 정보를 불러오지 못했습니다.');
+			});
+		}
+
+		$(document).on('keydown', function(e) {
+			if (e.key === 'Escape') hideNavOverlay();
+		});
 
 		$(function() {
 			loadUnreadCount();
@@ -377,16 +542,26 @@
 			// (19번 이슈A) 일반 $.ajax(XHR) 은 클릭 직후 <a> 기본 이동이 실행되면 브라우저가
 			// 응답 전에 요청 자체를 취소할 수 있어 읽음 처리가 누락되는 경우가 있었다.
 			// fetch(..., {keepalive:true}) 는 페이지 이동과 무관하게 전송을 보장한다(sendBeacon과 유사한 용도).
-			$(document).on('click', '.noti-card', function() {
-				var notiId = $(this).data('noti-id');
+			// (37 WP-N) 위임 대상을 document 가 아니라 #notificationList 로 옮겼다. 바로 위에서 #notificationPopup 이
+			// click 전파를 막기(stopPropagation) 때문에 document 에 건 위임 핸들러는 카드 클릭에서 호출되지 못했다
+			// (읽음 처리가 서버에 가지 않아 배지가 줄지 않던 원인으로 보인다 — 소스 분석, 화면 실측 전).
+			// 클릭한 알림만 읽음 처리(배지 즉시 -1 + 서버 반영). 목록을 여는 것만으로는 읽음 처리하지 않는다.
+			$('#notificationList').on('click', '.noti-card', function(e) {
+				var $card = $(this);
+				var notiId = $card.data('noti-id');
 				if (!notiId) return;
-				var readUrl = CTX + '/notification/read/' + notiId;
-				if (window.fetch) {
-					fetch(readUrl, { method: 'POST', keepalive: true, credentials: 'same-origin' });
-				} else {
-					// keepalive 미지원 구형 브라우저 폴백
-					$.ajax({ url: readUrl, method: 'POST' });
-				}
+				var item = notiItems[notiId];
+
+				markReadLocally($card);
+				var readReq = sendRead(notiId);
+
+				// event 유형만 상세로 직접 이동(detail/check 선행). sip_call·device_error 는 링크 기본 이동에 맡긴다.
+				if (!item || item.noti_type !== 'event') return;
+				// 새 탭·새 창으로 여는 클릭은 기본 동작 유지(읽음 처리만 위에서 보냄)
+				if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.which === 2) return;
+				if (!window.fetch || !window.Promise) return; // 구형 브라우저는 기본 링크 이동(직접 진입)
+				e.preventDefault();
+				openEventDetail(item, readReq);
 			});
 
 			$('#markAllReadBtn').on('click', function(e) {
@@ -395,6 +570,9 @@
 					url: CTX + '/notification/readAll',
 					method: 'POST',
 					success: function() {
+						badgeSeq++;
+						currentUnread = 0;
+						lastKnownUnread = 0;
 						$('#notificationBadge').hide();
 						$('.noti-card').removeClass('unread');
 					}
