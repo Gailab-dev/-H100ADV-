@@ -92,7 +92,7 @@ ROI_SNAPSHOT_DIR=/home/<계정>/H100/output/roi_snapshot
 
 [선택 키 — 실시간 영상 시청 정책 (38번). 모두 코드에 기본값이 있어 없어도 동작한다]
 
-VIEWER_IDLE_TIMEOUT_SEC=20       시청 중 .m3u8/.ts 요청(또는 heartbeat)이 없을 때 점유를 풀기까지(초)
+VIEWER_IDLE_TIMEOUT_SEC=45       시청 중 .m3u8/.ts 요청(또는 heartbeat)이 없을 때 점유를 풀기까지(초)
 STREAM_END_GRACE_SEC=15          end 후 ffmpeg 종료 유예(초, 0=즉시). 유예 안에 start 가 오면 종료 취소
 FFMPEG_START_CHECK_MS=1500       start 직후 이 시간 안에 ffmpeg 가 죽으면 start 실패(500 FFMPEG_FAILED), 0=검사 안 함
 FFMPEG_STOP_WAIT_SEC=5           Kill 후 종료(회수) 확인 대기(초)

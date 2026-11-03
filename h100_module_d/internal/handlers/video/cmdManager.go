@@ -30,7 +30,7 @@ import (
 
 // 코드 기본값. 아래 환경변수가 없거나 잘못되면 이 값을 쓴다(기존 장비의 .env 에 새 키가 없어도 동작해야 한다).
 const (
-	defaultIdleTimeoutSec = 20   // VIEWER_IDLE_TIMEOUT_SEC : 요청·하트비트 없을 때 점유 해제까지(초)
+	defaultIdleTimeoutSec = 45   // VIEWER_IDLE_TIMEOUT_SEC : 요청·하트비트 없을 때 점유 해제까지(초). 웹 탭 숨김 유예(30초) 동안 요청이 멈추므로 그보다 길어야 한다
 	defaultEndGraceSec    = 15   // STREAM_END_GRACE_SEC    : end 후 ffmpeg 종료까지 유예(초, 0=즉시)
 	defaultStartCheckMs   = 1500 // FFMPEG_START_CHECK_MS : 시작 직후 이 시간 안에 죽으면 start 실패(밀리초, 0=검사 안 함)
 	defaultStopWaitSec    = 5    // FFMPEG_STOP_WAIT_SEC    : Kill 후 종료 확인 대기(초)
