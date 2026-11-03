@@ -41,3 +41,6 @@ go.sum          text eol=lf
 *.ts            binary
 *.enc           binary
 *.pem           text eol=lf
+
+# 서버 배포 키트 — 리눅스 서버에서 읽는 파일은 LF 고정(Dockerfile·dockerignore·예시·문서 포함)
+ops/server-kit/** text eol=lf

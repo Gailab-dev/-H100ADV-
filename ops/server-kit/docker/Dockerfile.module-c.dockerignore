@@ -1,0 +1,13 @@
+# Dockerfile.module-c 전용 빌드 컨텍스트 제한 (BuildKit 이 Dockerfile 옆의 <이름>.dockerignore 를 우선 사용)
+# module-c 빌드에는 h100_module_c/ 만 필요하다. 저장소 루트(.dockerignore)는 web·module_d 로컬 빌드도 함께 쓰므로
+# 서버 module-c 빌드는 이 파일로 컨텍스트를 module_c 소스로 한정한다. 서버 배포 키트(ops/server-kit)·장비 키트 등은 들어가지 않는다.
+**
+!h100_module_c/
+!h100_module_c/**
+**/.env*
+**/ssl/
+**/logs/
+**/vendor/
+h100_module_c/config/database.yml
+h100_module_c/h100_module_c
+h100_module_c/**/*.txt

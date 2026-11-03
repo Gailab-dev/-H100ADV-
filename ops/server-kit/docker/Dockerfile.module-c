@@ -1,0 +1,13 @@
+# build context = 저장소 루트 (h100_module_c/ 포함). 빌드는 10-build-images.sh 가 호출한다.
+# go.mod 1.24.3 → Go 1.24 로 고정 (구 서버 1.24.3 / 신 서버 시험본 1.26.0 불일치 해소)
+FROM golang:1.24 AS build
+WORKDIR /src
+COPY h100_module_c/ ./
+RUN CGO_ENABLED=0 go build -trimpath -o /out/h100_module_c ./cmd/server/
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /app
+COPY --from=build /out/h100_module_c /app/h100_module_c
+# 실행 UID/GID 는 compose 의 user: 로 지정. config/ 와 logs/ 는 마운트로 제공한다.
+ENTRYPOINT ["/app/h100_module_c"]

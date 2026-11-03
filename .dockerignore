@@ -8,8 +8,6 @@ src/main/resources/globals.properties
 !ops/config/**
 !ops/docker/
 !ops/docker/**
-!ops/device-kit/
-!ops/device-kit/**
 !h100_module_c/
 !h100_module_c/**
 !h100_module_d/
@@ -23,3 +21,7 @@ h100_module_c/h100_module_c
 h100_module_d/h100_module_d
 h100_module_c/**/*.txt
 h100_module_d/**/*.txt
+# 서버 배포 키트·장비 키트는 git 으로만 관리하고 빌드 컨텍스트/이미지에 넣지 않는다.
+# ※ "!ops/" 는 ops 하위 전체를 다시 포함시키므로, 반드시 위 허용 목록 뒤에서 제외한다(마지막 일치 규칙 우선).
+ops/server-kit
+ops/device-kit

@@ -79,3 +79,14 @@ h100_module_d/.env
 # Playwright MCP local artifacts
 .playwright-mcp/
 playwright-mcp/
+
+# 서버 배포 키트(ops/server-kit)의 서버 고유 파일 — 키트 스크립트/예시만 git 으로 관리한다
+ops/server-kit/**/migration.conf
+ops/server-kit/**/.env
+ops/server-kit/**/.env.bak-*
+ops/server-kit/**/*.bak-*
+ops/server-kit/**/*.tar.gz
+ops/server-kit/**/*.war
+ops/server-kit/**/deploy-history.log
+ops/server-kit/**/*.sql
+ops/server-kit/**/*.sql.gz
