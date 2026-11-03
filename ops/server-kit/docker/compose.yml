@@ -1,0 +1,103 @@
+# H100 개발서버 이전 — Docker 일괄 구성 (설치 위치: /opt/h100/docker/compose.yml)
+# 비밀값은 이 파일에 없다: /etc/h100/{db,module-c,web}.env (600) 에서만 주입한다.
+# 포트 정책
+#   - module-c 8189 : LAN 디바이스가 직접 접속 → 0.0.0.0 게시, 접근제어는 DOCKER-USER 체인(45-fw-docker-user.sh)
+#   - web 8300      : 호스트 nginx(upstream was_9 = 127.0.0.1:8300)만 접근 → 127.0.0.1 바인딩
+#   - db 3310       : 관리용, 127.0.0.1 바인딩 (컨테이너 간 통신은 h100 네트워크의 db:3306)
+name: h100
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: h100-db
+    restart: unless-stopped
+    env_file: /etc/h100/db.env
+    environment:
+      TZ: Asia/Seoul        # 구 서버(KST)와 동일: NOW()/CURDATE()/event_scheduler 시각 기준
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --event-scheduler=${H100_EVENT_SCHEDULER:-OFF}
+      - --max-connections=200
+    volumes:
+      - /var/lib/h100/db:/var/lib/mysql
+    ports:
+      - "127.0.0.1:3310:3306"
+    networks: [h100]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  module-c:
+    image: h100/module-c:${H100_TAG}
+    container_name: h100-module-c
+    restart: unless-stopped
+    user: "${H100_UID:-3100}:${H100_GID:-3100}"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: /etc/h100/module-c.env
+    environment:
+      FILE_UPLOAD_PATH: /media/
+      TLS_CERT_FILE: /run/h100/tls/server.cert.pem
+      TLS_KEY_FILE: /run/h100/tls/server.key.pem
+      CA_CERT_FILE: /run/h100/tls/h100-ca.crt
+      TZ: Asia/Seoul
+    volumes:
+      - /var/lib/h100/media:/media
+      - /etc/h100/database.yml:/app/config/database.yml:ro   # B-03: cwd 상대 ./config/database.yml 고정 읽기
+      - /etc/h100/tls:/run/h100/tls:ro
+      - /var/log/h100/module_c:/app/logs
+    ports:
+      - "8189:8189"
+    networks: [h100]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8189"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+  web:
+    image: h100/web:${H100_TAG}
+    container_name: h100-web
+    restart: unless-stopped
+    user: "${H100_UID:-3100}:${H100_GID:-3100}"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: /etc/h100/web.env
+    environment:
+      H100_MEDIA_BASE: /media     # globals.properties 외부화(T2) 후 사용
+      JAVA_OPTS: "-Xms512m -Xmx1g -Duser.timezone=Asia/Seoul -Djava.awt.headless=true"
+      TZ: Asia/Seoul
+    volumes:
+      - /var/lib/h100/media:/media
+      - /var/log/h100/web:/usr/local/tomcat/logs
+    ports:
+      - "127.0.0.1:8300:8080"
+    networks: [h100]
+    tmpfs:
+      - /usr/local/tomcat/work
+      - /usr/local/tomcat/temp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      # /bin/sh(dash)는 /dev/tcp 미지원(exit 2) → bash 로 실행 (VM→개발서버 검증 2026-10-27)
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 15s
+      timeout: 3s
+      retries: 8
+      start_period: 60s
+
+networks:
+  h100:
+    name: h100
+    ipam:
+      config:
+        - subnet: 172.31.100.0/24
