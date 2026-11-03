@@ -55,7 +55,7 @@
 
 // 불법 주차 리스트 화면으로 이동
   function goToEventList(){
-    location.href = CONTEXT_PATH + "/eventList/viewEventList.do?page=${page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}"
+    location.href = CONTEXT_PATH + "/eventList/viewEventList.do?page=${param.page}&startDate=${startDate}&endDate=${endDate}&searchKeyword=${searchKeyword}"
         + "&evCd=${evCd}&evAction=${evAction}&sortCol=${sortCol}&sortDir=${sortDir}";
   }
 

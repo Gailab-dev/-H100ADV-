@@ -21,8 +21,22 @@
 	.ia-controls button { border: 1px solid #cfc6ea; background: #fff; color: #4F4A85; border-radius: 4px; padding: 4px 9px; cursor: pointer; line-height: 1; }
 	.ia-controls button:hover { background: #ece7fb; }
 	.ia-controls .ia-close { margin-left: 4px; color: #888; border-color: #ddd; }
+	/* ===== 36번 WP-C / 37 WP-N: 고정 행 수 · 알림 도착 안내 ===== */
+	/* 마지막 페이지 등 행이 모자랄 때 채우는 빈 행 — 실제 행(패딩 10*2 + 버튼 약 28 + 선 1 = 49px)과 같은 높이 */
+	.sip-call-table .filler-row td { height: 49px; padding: 0; border: 0; }
+	.sip-call-table .filler-row:hover { background: transparent !important; }
+	/* 알림으로 들어왔는데 해당 통화 로그를 찾지 못했을 때의 안내 */
+	.sip-focus-msg { margin: 0 0 12px; padding: 10px 14px; border: 1px solid #f0d78c; background: #fff9e5; color: #7a5b00; border-radius: 6px; font-size: 13px; }
+	/* 낮은 화면(HD 노트북 등, 브라우저 높이 800px 이하)에서는 행 여백을 줄여 10행이 스크롤 없이 들어가게 한다(소스 검토 기준, 미실측) */
+	@media (max-height: 800px) {
+		.sip-call-table th, .sip-call-table td { padding: 6px 8px; }
+		.sip-call-table .filler-row td { height: 41px; padding: 0; }
+		.sip-title { margin-bottom: 10px; }
+		.filter-area { margin-bottom: 10px; padding: 8px 16px; }
+	}
 </style>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/pagination.css?v=20261103">
+<script src="${pageContext.request.contextPath}/resources/js/common/pagination.js?v=20261103"></script>
 <%-- 오디오 파형 UI: Wavesurfer.js v7 (작업계획서 §10-6 확정). UMD 빌드로 전역 WaveSurfer 노출 --%>
 <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
 <script>
@@ -36,18 +50,14 @@
 	<!-- 최상단 필터 -->
 	<div class="filter-area">
 		<input type="text" id="searchKeyword" placeholder="디바이스ID 또는 시리얼 검색" />
-		<select id="listSize">
-			<option value="10">10개</option>
-			<option value="30">30개</option>
-			<option value="50">50개</option>
-			<option value="100">100개</option>
-		</select>
 		<input type="date" id="startDate" />
 		<span>~</span>
 		<input type="date" id="endDate" />
 		<button type="button" id="btnSearch">검색</button>
-		<span class="total-count">총 <b id="totalCount">0</b> 건</span>
 	</div>
+
+	<%-- 알림(응급콜)으로 들어왔는데 해당 통화 로그가 없을 때만 보이는 안내 --%>
+	<div id="sipFocusMsg" class="sip-focus-msg" style="display:none;"></div>
 
 	<!-- 리스트 -->
 	<table class="sip-call-table" id="sipCallTable">
@@ -68,8 +78,8 @@
 		</tbody>
 	</table>
 
-	<!-- 페이지네이션 -->
-	<div id="pagination" class="pagination-area"></div>
+	<!-- 공통 페이지네이션(총 건수 · 현재/전체 페이지 · 처음/이전/번호/다음/마지막) — common/pagination.js -->
+	<div id="pagination" class="h100-pg"></div>
 
 	<%-- patches 2026-07-09: 하단 고정 오디오 패널 제거. 오디오는 각 로그 행 바로 아래 인라인 행으로 열림(아래 JS) --%>
 
@@ -108,24 +118,45 @@ function formatTime(seconds) {
 	return m + ':' + (sec < 10 ? '0' + sec : sec);
 }
 
-function loadSipCallList(page) {
+// 한 페이지 크기는 서버 고정값(SipCallController.SIP_LIST_PAGE_SIZE) — 조회 응답의 listSize 로 갱신된다
+var PAGE_SIZE = 10;
+
+// 알림(sip_call)에서 넘어온 쿼리 파라미터 읽기(첫 조회 1회만 사용)
+//  - notiSerial : 알림의 noti_serial(장비 시리얼)
+//  - notiTime   : 알림 시각 noti_reg_date('yyyy-MM-dd HH:mm:ss')
+//  - scId       : 통화 로그 sc_id 를 직접 아는 경우
+//  서버가 시리얼 + 알림 직후에 등록된 통화 로그를 찾아 그 행이 있는 페이지로 보정해 내려 준다.
+function readFocusParams() {
+	var q = new URLSearchParams(window.location.search);
+	var p = {};
+	if (q.get('scId')) p.scId = q.get('scId');
+	if (q.get('notiSerial')) p.notiSerial = q.get('notiSerial');
+	if (q.get('notiTime')) p.notiTime = q.get('notiTime');
+	return Object.keys(p).length ? p : null;
+}
+
+function loadSipCallList(page, focus) {
 	currentPage = page;
 	closeInlineAudio();   // 재조회 전 열려있던 인라인 오디오 파형 정리(메모리 누수 방지)
+	var data = {
+		keyword: $('#searchKeyword').val(),
+		startDate: $('#startDate').val(),
+		endDate: $('#endDate').val(),
+		page: page
+	};
+	if (focus) $.extend(data, focus);
 	$.ajax({
 		url: CONTEXT_PATH + '/sipcall/list',
 		method: 'GET',
 		dataType: 'json',
-		data: {
-			keyword: $('#searchKeyword').val(),
-			listSize: $('#listSize').val(),
-			startDate: $('#startDate').val(),
-			endDate: $('#endDate').val(),
-			page: page
-		},
+		data: data,
 		success: function(res) {
-			$('#totalCount').text(res.total || 0);
-			renderList(res.list || [], page);
-			renderPagination(res.total || 0, page);
+			var pg = res.page || page;     // 서버가 마지막 페이지·알림 대상 행 기준으로 보정한 페이지
+			currentPage = pg;
+			if (res.listSize) PAGE_SIZE = res.listSize;
+			renderList(res.list || [], pg);
+			renderPagination(res.total || 0, pg);
+			if (focus) applyFocus(res);
 		},
 		error: function() {
 			$('#sipCallList').html('<tr><td colspan="8" class="empty-row">조회 중 오류가 발생했습니다.</td></tr>');
@@ -133,20 +164,48 @@ function loadSipCallList(page) {
 	});
 }
 
+// 알림 도착 강조 — 이벤트 목록의 강조(#fff6d6, 2.6초)와 같은 스타일. 못 찾으면 안내 문구만 표시
+function applyFocus(res) {
+	var $msg = $('#sipFocusMsg');
+	if (res.focusFound && res.focusScId) {
+		var $tr = $('#sipCallList tr[data-id="' + res.focusScId + '"]').not('.sip-audio-row');
+		if ($tr.length) {
+			$tr.css({ transition: 'background .4s', background: '#fff6d6' });
+			$tr[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+			setTimeout(function() { $tr.css('background', ''); }, 2600);
+		}
+		$msg.hide();
+	} else if (res.focusRequested) {
+		$msg.text('알림에 해당하는 통화 로그를 찾지 못했습니다. 통화가 아직 끝나지 않았거나 로그가 등록되지 않았을 수 있습니다.').show();
+	}
+	// 새로고침·재조회 때 다시 강조되지 않도록 일회성 파라미터 제거
+	try {
+		var u = new URL(window.location.href);
+		['scId', 'notiSerial', 'notiTime'].forEach(function(k) { u.searchParams.delete(k); });
+		history.replaceState(null, '', u.pathname + u.search);
+	} catch (e) { /* 무시 */ }
+}
+
+// 행이 모자랄 때 빈 행으로 높이를 채워 페이지네이션 위치가 흔들리지 않게 한다
+function fillerRows(n) {
+	var h = '';
+	for (var i = 0; i < n; i++) h += '<tr class="filler-row" aria-hidden="true"><td colspan="8">&nbsp;</td></tr>';
+	return h;
+}
+
 function renderList(list, page) {
-	var listSize = parseInt($('#listSize').val(), 10);
 	if (!list.length) {
-		$('#sipCallList').html('<tr><td colspan="8" class="empty-row">조회된 통화 로그가 없습니다.</td></tr>');
+		$('#sipCallList').html('<tr><td colspan="8" class="empty-row">조회된 통화 로그가 없습니다.</td></tr>' + fillerRows(PAGE_SIZE - 1));
 		return;
 	}
 	var html = '';
 	list.forEach(function(item, idx) {
-		var seq = (page - 1) * listSize + idx + 1;
+		var seq = (page - 1) * PAGE_SIZE + idx + 1;
 		var hasAudio = String(item.sc_has_audio) === '1' && item.sc_audio_path;
 		var audioBtn = hasAudio
 			? '<button type="button" class="btn-audio" data-id="' + item.sc_id + '">🎵 재생</button>'
 			: '<span class="no-audio">-</span>';
-		html += '<tr>'
+		html += '<tr data-id="' + item.sc_id + '">'
 			+ '<td>' + seq + '</td>'
 			+ '<td>' + (item.sc_dv_id != null ? item.sc_dv_id : '-') + '</td>'
 			+ '<td>' + (item.sc_serial_number || '-') + '</td>'
@@ -157,25 +216,17 @@ function renderList(list, page) {
 			+ '<td>' + audioBtn + '</td>'
 			+ '</tr>';
 	});
-	$('#sipCallList').html(html);
+	$('#sipCallList').html(html + fillerRows(PAGE_SIZE - list.length));
 }
 
+// 공통 페이지네이션(common/pagination.js)
 function renderPagination(total, page) {
-	var listSize = parseInt($('#listSize').val(), 10);
-	var lastPage = Math.max(1, Math.ceil(total / listSize));
-	var blockSize = 10;
-	var blockStart = Math.floor((page - 1) / blockSize) * blockSize + 1;
-	var blockEnd = Math.min(blockStart + blockSize - 1, lastPage);
-
-	var html = '';
-	html += '<button type="button" class="pg-btn" data-page="1" ' + (page === 1 ? 'disabled' : '') + '>&laquo;</button>';
-	html += '<button type="button" class="pg-btn" data-page="' + (page - 1) + '" ' + (page === 1 ? 'disabled' : '') + '>&lsaquo;</button>';
-	for (var p = blockStart; p <= blockEnd; p++) {
-		html += '<button type="button" class="pg-btn ' + (p === page ? 'active' : '') + '" data-page="' + p + '">' + p + '</button>';
-	}
-	html += '<button type="button" class="pg-btn" data-page="' + (page + 1) + '" ' + (page === lastPage ? 'disabled' : '') + '>&rsaquo;</button>';
-	html += '<button type="button" class="pg-btn" data-page="' + lastPage + '" ' + (page === lastPage ? 'disabled' : '') + '>&raquo;</button>';
-	$('#pagination').html(html);
+	H100Pagination.render(document.getElementById('pagination'), {
+		total: total,
+		page: page,
+		pageSize: PAGE_SIZE,
+		onPage: function(p) { loadSipCallList(p); }
+	});
 }
 
 // 열려있는 인라인 오디오 행 정리(파형 파괴 + 행 제거)
@@ -243,11 +294,10 @@ function toggleAudio(scId, $tr) {
 }
 
 $(document).ready(function() {
-	loadSipCallList(1);
+	loadSipCallList(1, readFocusParams());
 
 	$('#btnSearch').on('click', function() { loadSipCallList(1); });
 	$('#searchKeyword').on('keypress', function(e) { if (e.which === 13) loadSipCallList(1); });
-	$('#listSize').on('change', function() { loadSipCallList(1); });
 
 	// 이벤트 위임 (동적 렌더링 대상)
 	$('#sipCallList').on('click', '.btn-audio', function() {
@@ -258,10 +308,5 @@ $(document).ready(function() {
 	$('#sipCallList').on('click', '.ia-pause', function() { if (wavesurfer) wavesurfer.pause(); });
 	$('#sipCallList').on('click', '.ia-close', function() { closeInlineAudio(); });
 
-	$('#pagination').on('click', '.pg-btn', function() {
-		if ($(this).is(':disabled')) return;
-		var p = parseInt($(this).data('page'), 10);
-		if (!isNaN(p) && p >= 1) loadSipCallList(p);
-	});
 });
 </script>

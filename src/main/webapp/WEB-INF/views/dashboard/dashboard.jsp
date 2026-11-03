@@ -10,7 +10,7 @@
 <style>
 	/* ===== 레이아웃: 지도가 콘텐츠 영역을 가득 채움 ===== */
 	.content { padding: 16px !important;}
-	.dashboard-wrap { padding: 0 !important; display: flex; flex-direction: column; flex: 1 1 auto; height:100%; gap:16px;}
+	.dashboard-wrap { --list-h: clamp(163px, 24vh, 260px); padding: 0 !important; display: flex; flex-direction: column; flex: 1 1 auto; height:100%; gap:16px;}
 	#map-container { position: relative; flex: 1 1 auto; width:calc(100% - 316px); height:100%; border: 1px solid #e3e6ea; border-radius: 8px; overflow: hidden; }
 	#map { width: 100%; height: 100%; border: none !important; border-radius: 0 !important; }
 
@@ -92,10 +92,11 @@
 	.weather-summary-widget .weather-sub { margin-left: auto; font-size: 11px; color: #888; }
 
 	/* ===== ⑤ 좌하 최근 이벤트 / ⑥ 우하 응급 연락(SIP) ===== */
-	.list-area {display:flex; gap:16px; height:163px;}
+	.list-area {display:flex; gap:16px; height:var(--list-h);}
 	#eventListOverlay {position:relative; width:100%; height:100%;}
 	#sipCallOverlay {position:relative; width:100%; height:100%;}
-	#eventListOverlay .widget-body, #sipCallOverlay .widget-body { height:calc(100% - 38px); overflow-y:scroll; }
+	/* (36번 WP-D) overflow-y: scroll → auto — 내용이 넘칠 때만 스크롤바를 보인다(항상 보이던 자잘한 스크롤 제거) */
+	#eventListOverlay .widget-body, #sipCallOverlay .widget-body { height:calc(100% - 38px); overflow-y:auto; }
 	.view-all-btn { font-size: 11px; color: #6955A2; text-decoration: none; padding: 3px 8px; border: 1px solid #6955A2; border-radius: 4px; white-space: nowrap; }
 	.view-all-btn:hover { background: #6955A2; color: #fff; }
 	.event-mini-table, .sip-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -111,7 +112,7 @@
 	.no-audio { color: #bbb; }
 
 	/* 260724 서희원 추가 */
-	.main-content-wrap {width:100%; height:calc(100% - 179px); display:flex; gap:16px;}
+	.main-content-wrap {width:100%; height:calc(100% - var(--list-h) - 16px); display:flex; gap:16px;}
 	.checkdown-state {width: 200px;height: 100%;margin: 0;list-style: none;padding: 0;display: grid;grid-template-rows: repeat(4, 1fr);gap: 8px;}
 	.checkdown-state li {width: 100%;background: #fff;border: 1px solid rgba(105, 85, 162, 0.15);border-radius: 8px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);display: flex;padding: 16px;gap: 10px;}
 	.checkdown-state li > div {height:100%;}
@@ -702,6 +703,12 @@ function loadDeviceStatus() {
 	});
 }
 
+// (36번 WP-D) 하단 표 영역 높이에 맞춰 스크롤 없이 들어가는 행 수(3~8행). 표 머리 약 26px, 행 약 32px
+function miniListLimit() {
+	var h = $('#eventListOverlay .widget-body').innerHeight() || 0;
+	return Math.max(3, Math.min(8, Math.floor((h - 26) / 32)));
+}
+
 // ===== patches 14(4-7): 최근 응급 연락(SIP) 위젯 =====
 // 통화 시각: sc_start_date(yyyyMMddHHmmss) → MM-DD HH:mm, 통화시간(초) 병기
 function formatSipTime(v, duration) {
@@ -717,7 +724,7 @@ function formatSipTime(v, duration) {
 
 function loadRecentSipCalls() {
 	$.ajax({
-		url: CONTEXT_PATH + "/dashboard/recentSipCalls?limit=3",
+		url: CONTEXT_PATH + "/dashboard/recentSipCalls?limit=" + miniListLimit(),
 		method: "GET", dataType: "json",
 		success: function(list) {
 			if (!list || !list.length) {
@@ -787,10 +794,10 @@ function loadTodaySummary() {
 	});
 }
 
-// 좌하단 최근 이벤트 오버레이 (patches 14(4-6): 미니 테이블 — 디바이스·차량번호·처리·시각, 3건)
+// 좌하단 최근 이벤트 오버레이 (patches 14(4-6): 미니 테이블 — 디바이스·차량번호·처리·시각, 표 영역 높이만큼 3~8건)
 function loadRecentEvents() {
 	$.ajax({
-		url: CONTEXT_PATH + "/dashboard/recentEvents?limit=3",
+		url: CONTEXT_PATH + "/dashboard/recentEvents?limit=" + miniListLimit(),
 		method: "GET", dataType: "json",
 		success: function(events) {
 			if (!events || !events.length) {

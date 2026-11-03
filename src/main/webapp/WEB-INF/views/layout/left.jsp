@@ -307,9 +307,13 @@
 				return CTX + '/eventList/eventListDetail?dvId=' + encodeURIComponent(item.noti_dv_id) + '&evId=' + encodeURIComponent(item.noti_target_id);
 			}
 			if (item.noti_type === 'sip_call') {
-				return CTX + '/deviceList/viewDeviceList.do?triggerSerial=' + encodeURIComponent(item.noti_serial);
+				// (36번 WP-C / 37 WP-N) 응급 연락망(통화 로그) 화면으로 이동해 해당 통화 행을 강조한다.
+				//   sip_call 알림에는 target id 가 없으므로 시리얼(noti_serial) + 알림 시각(noti_reg_date)으로 서버가 로그 행을 찾는다.
+				return CTX + '/sipcall/sipCallLog?notiSerial=' + encodeURIComponent(item.noti_serial)
+					+ '&notiTime=' + encodeURIComponent(item.noti_reg_date);
 			}
 			if (item.noti_type === 'device_error') {
+				// dvId: 서버(viewDeviceList)가 해당 장비가 있는 페이지로 보내 주고, openErrorLog=true: 이상 로그 패널 자동 열기 + 행 강조
 				return CTX + '/deviceList/viewDeviceList.do?dvId=' + encodeURIComponent(item.noti_dv_id) + '&openErrorLog=true';
 			}
 			return CTX + '/dashboard/viewDashboard.do';

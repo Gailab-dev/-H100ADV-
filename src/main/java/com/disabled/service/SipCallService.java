@@ -11,9 +11,16 @@ public interface SipCallService {
 
 	/**
 	 * SIP 통화 로그 조회 (필터 + 페이지네이션)
-	 * @return {"total": int, "list": List<Map>}
+	 * 알림에서 넘어온 경우(focusScId 또는 notiSerial+notiTime)에는 해당 통화 로그가 있는 페이지로 보정해 내려준다.
+	 * @param listSize   한 페이지 크기(서버 고정값, 컨트롤러가 전달)
+	 * @param focusScId  강조할 통화 로그 sc_id(없으면 null)
+	 * @param notiSerial 응급콜 알림의 noti_serial(없으면 null) — focusScId 가 없을 때 알림 시각과 함께 로그 행을 찾는 데 사용
+	 * @param notiTime   응급콜 알림 시각 'yyyy-MM-dd HH:mm:ss'(noti_reg_date)
+	 * @return {"total": int, "list": List<Map>, "page": int, "listSize": int,
+	 *          "focusScId": 강조할 sc_id(찾은 경우만), "focusRequested": 강조 요청 여부, "focusFound": 찾았는지}
 	 */
-	Map<String, Object> getList(String keyword, int listSize, String startDate, String endDate, int page);
+	Map<String, Object> getList(String keyword, int listSize, String startDate, String endDate, int page,
+			Integer focusScId, String notiSerial, String notiTime);
 
 	/**
 	 * 오디오 재생용 파일 스트리밍.

@@ -61,6 +61,7 @@
 		<if test="evAction != null">
 			AND A.ev_action = #{evAction}
 		</if>
+		ORDER BY rn
         <if test="recordCountPerPage != null">
         	LIMIT #{recordCountPerPage}
         </if>

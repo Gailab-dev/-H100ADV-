@@ -17,7 +17,8 @@
 			<choose>
   				<when test="sortDir == 'ASC'">ASC</when>
   				<otherwise>DESC</otherwise>
-			</choose>	
+			</choose>
+			, dv_id	
 			) AS rn 
 			, dv_id, dv_name, dv_addr, dv_addr_detail, dv_serial_number, dv_status, dv_reg_date
 		FROM tbl_device
@@ -45,6 +46,7 @@
 		            dv_serial_number = #{searchKeyword}
 		        )
 	        </if>
+	        ORDER BY rn
         <if test="recordCountPerPage != null">
         	LIMIT #{recordCountPerPage} 
         </if>
@@ -89,6 +91,54 @@
 		            dv_serial_number = #{searchKeyword}
 		        )
 	        </if>
+	</select>
+	
+	<!-- (36번 WP-C / 37 WP-N) 알림(장비 이상)으로 들어왔을 때 해당 장비가 목록의 몇 번째 행인지.
+	     getDeviceInfo 와 같은 검색조건·정렬기준(동률은 dv_id)으로 순번을 매긴다 → 컨트롤러가 (순번-1)/페이지크기+1 로 페이지를 계산.
+	     검색 조건은 getTotalRecordCount 와 동일하게 유지할 것. 조건에 안 걸리면 결과 없음(null). -->
+	<select id="getDeviceRank" parameterType="map" resultType="int">
+		SELECT rn FROM (
+			SELECT dv_id, ROW_NUMBER() OVER (
+				ORDER BY
+				<choose>
+					<when test="sortCol == 'dv_name'">dv_name</when>
+					<when test="sortCol == 'dv_addr'">dv_addr</when>
+					<when test="sortCol == 'dv_reg_date'">dv_reg_date</when>
+					<otherwise>dv_name</otherwise>
+				</choose>
+				<choose>
+					<when test="sortDir == 'ASC'">ASC</when>
+					<otherwise>DESC</otherwise>
+				</choose>
+				, dv_id
+			) AS rn
+			FROM tbl_device
+			WHERE
+			1=1
+				<if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+					AND dv_reg_date <![CDATA[>=]]> STR_TO_DATE(#{startDate},'%Y-%m-%d') 
+					AND dv_reg_date <![CDATA[<]]> DATE_ADD(STR_TO_DATE(#{endDate},'%Y-%m-%d'), INTERVAL 1 DAY)
+				</if>
+		        <if test="searchKeyword != null and searchKeyword !=''">
+			        AND (
+			            dv_name LIKE CONCAT(
+			                '%',
+			                REPLACE(#{searchKeyword}, '_', '\\_'),
+			                '%'
+			            ) ESCAPE '\\'
+			            OR
+			            dv_addr LIKE CONCAT(
+			                '%',
+			                REPLACE(#{searchKeyword}, '_', '\\_'),
+			                '%'
+			            ) ESCAPE '\\'
+			            OR
+			            <!-- (19번 이슈B) 응급콜 알림의 triggerSerial 자동검색용 — 시리얼 정확일치 -->
+			            dv_serial_number = #{searchKeyword}
+			        )
+		        </if>
+		) ranked
+		WHERE dv_id = #{dvId}
 	</select>
 	
 	<!-- 디바이스 등록 -->

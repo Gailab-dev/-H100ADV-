@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <div class="topTitle">
-    <h3 class="detail-title">불법주차 리스트 상세</h3>
+    <h3 class="detail-title">주차단속 리스트 상세</h3>
     <div class="title-text">
         <div class="event-navigation"><button type="button" id="btnPrevEvent" title="이전 항목">이전</button><button type="button" id="btnNextEvent" title="다음 항목">다음</button></div>
         <button type="button" id="btnDeleteEvent" class="case-delete" title="삭제">삭제</button>
@@ -42,9 +42,9 @@
                         <div class="imgeTitle">${slot == 0 ? '진입 시' : '1분 후'}</div>
                         <button type="button" class="evidence-expand" data-expand-evidence="${slot}" aria-label="${slot == 0 ? '진입 시' : '1분 후'} 사진 확대" disabled>확대</button>
                         <c:choose><c:when test="${not empty imagePath}">
-                            <img src="${pageContext.request.contextPath}/imgFile/<c:out value='${fn:replace(imagePath, ".enc", "")}' />" alt="불법주차 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
+                            <img src="${pageContext.request.contextPath}/imgFile/<c:out value='${fn:replace(imagePath, ".enc", "")}' />" alt="주차단속 리스트 상세 이미지" class="detail-image" onerror="this.onerror=null;this.src='${pageContext.request.contextPath}/resources/images/default-image.svg';">
                         </c:when><c:otherwise>
-                            <img src="${pageContext.request.contextPath}/resources/images/default-image.svg" alt="불법주차 리스트 상세 이미지" class="detail-image">
+                            <img src="${pageContext.request.contextPath}/resources/images/default-image.svg" alt="주차단속 리스트 상세 이미지" class="detail-image">
                         </c:otherwise></c:choose>
                     </div></div>
                 </c:forEach>

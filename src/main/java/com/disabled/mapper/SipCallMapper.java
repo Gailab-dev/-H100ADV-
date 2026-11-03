@@ -20,6 +20,12 @@ public interface SipCallMapper {
 	// 조회 총 갯수(동일 필터)
 	int countList(Map<String, Object> paramMap) throws IllegalStateException;
 
+	// 기본 정렬·동일 필터에서 해당 통화 로그의 순번(1부터). 필터에 안 걸리면 null. paramMap: focusScId + 필터(keyword, startDate, endDate ...)
+	Integer selectRankById(Map<String, Object> paramMap) throws IllegalStateException;
+
+	// 응급콜 알림(시리얼 + 알림 시각)에 해당하는 통화 로그 sc_id. 없으면 null. paramMap: notiSerial, notiTime('yyyy-MM-dd HH:mm:ss')
+	Integer selectScIdByNotification(Map<String, Object> paramMap) throws IllegalStateException;
+
 	// 단건 조회(오디오 재생용)
 	Map<String, Object> selectById(Integer scId) throws IllegalStateException;
 }
