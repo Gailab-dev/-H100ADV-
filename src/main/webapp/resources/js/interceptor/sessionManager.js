@@ -8,7 +8,8 @@
    const SESSION_TIMEOUT_SECONDS = window.SESSION_TIMEOUT_SECONDS;
     if (!SESSION_TIMEOUT_SECONDS) return; // 로그인 안된 페이지는 실행 안함
 
-    const loginUrl = CONTEXT_PATH + "/user/login.do?errorMsg=장기간 미사용으로 로그아웃되었습니다."; // 세션 만료 후 이동할 URL
+    // (37 WP-L1) 문구가 아니라 사유 코드(IDLE: 장기간 미사용)를 전달 — 서버가 허용 코드만 고정 문구로 바꿔 표시한다
+    const loginUrl = CONTEXT_PATH + "/user/login.do?reason=IDLE"; // 세션 만료 후 이동할 URL
 	
     // === 내부 계산 ===
     const sessionTimeoutMs = SESSION_TIMEOUT_SECONDS * 1000;
@@ -60,8 +61,8 @@
     // 이 프로젝트의 다른 자동 갱신(알림 배지 등)도 모두 폴링이라 같은 패턴을 재사용한다.
     const DUPLICATE_LOGIN_POLL_MS = 5000;
 
-    function redirectWithReason(message) {
-        window.location.href = CONTEXT_PATH + "/user/login.do?errorMsg=" + encodeURIComponent(message);
+    function redirectWithReason(reasonCode) {
+        window.location.href = CONTEXT_PATH + "/user/login.do?reason=" + encodeURIComponent(reasonCode);
     }
 
     function checkDuplicateLoginLogout() {
@@ -71,7 +72,7 @@
                 if (d && d.loggedOutElsewhere) {
                     clearInterval(duplicateLoginPollId);
                     clearTimers();
-                    redirectWithReason(d.message || "다른 PC에서 로그인하여 이 PC에서는 로그아웃합니다.");
+                    redirectWithReason(d.reason || "DUP");
                 }
             })
             .catch(function () { /* 일시적 네트워크 오류는 무시 — 다음 폴링에서 재시도 */ });

@@ -8,15 +8,22 @@ import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.disabled.component.SessionManager;
+
 @Component
 public class LoginInterceptor implements HandlerInterceptor{
-    
+
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
-	
+
+	// (37 WP-L1) 다른 PC 로그인으로 쫓겨난 세션인지 확인해 로그인 화면 사유 코드(DUP)를 붙이기 위함
+	@Autowired(required = false)
+	private SessionManager sessionManager;
+
 	/*
 	 * 페이지 이동 전 세션을 체크하여, 세션이 없다면 로그인 페이지로 이동
 	 */
@@ -78,7 +85,16 @@ public class LoginInterceptor implements HandlerInterceptor{
                     response.getWriter().write("{\"error\":\"SESSION_TIMEOUT\"}");
                 } else {
                     // 일반 요청이면 로그인 페이지로 이동
-                    response.sendRedirect(ctx + "/user/login.do"); // 실제 로그인 엔드포인트로
+                    // (37 WP-L1) 브라우저가 보낸 세션ID 가 있는데 이미 무효(만료·다른 PC 로그인으로 종료)인 경우에만
+                    // 사유 코드를 붙인다. 처음부터 로그인하지 않은 일반 접근에는 붙이지 않는다.
+                    String reasonQs = "";
+                    if (request.getRequestedSessionId() != null && !request.isRequestedSessionIdValid()) {
+                        // 다른 PC 로그인으로 쫓겨난 세션이면 서버가 기록한 사유(DUP), 아니면 세션 만료
+                        String kicked = (sessionManager != null)
+                                ? sessionManager.consumeLogoutReason(request.getRequestedSessionId()) : null;
+                        reasonQs = "?reason=" + (kicked != null ? kicked : SessionManager.REASON_EXPIRED);
+                    }
+                    response.sendRedirect(ctx + "/user/login.do" + reasonQs); // 실제 로그인 엔드포인트로
                 }
             } catch (IOException e) {
                 logger.error("LoginInterceptor에서 session에 id값이 없어 login 화면으로 이동하는 중 오류: ", e);
