@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.disabled.backup.EventDeleteFlowService;
 import com.disabled.common.CodeConversionService;
 import com.disabled.common.CommonValidation;
 import com.disabled.common.ExcelColumn;
@@ -72,6 +73,10 @@ public class EventListController {
 	
 	@Autowired
 	UserService userService;
+
+	// 이벤트 삭제 흐름(파일 확인·장비 내려받기·이력·알림 삭제, 작업계획서 39 WP-6)
+	@Autowired
+	EventDeleteFlowService eventDeleteFlowService;
 	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(EventListController.class);
@@ -666,13 +671,112 @@ public class EventListController {
 			}
 		}
 
-		int deletedCount = eventListService.softDeleteEvents(evIds, deletedBy);
+		// (작업계획서 39 WP-6) 소프트 삭제 + 전송 이력 DELETED_EVENT 기록 + 해당 이벤트 알림 삭제를 한 곳에서 처리한다.
+		// ※ 화면은 삭제 전 파일 확인(/delete/check → /delete/confirm)을 거치며, 이 엔드포인트는 확인 없이 바로 삭제하는
+		//   기존 호출 호환용이다.
+		int deletedCount = eventDeleteFlowService.finalizeDelete(evIds, deletedBy);
 		logger.info("{} 사용자가 {}에 주정차 단속 대상 내역 {}건 삭제(논리 삭제) - evIds: {}",
 				deletedBy, LocalDateTime.now(), deletedCount, evIds);
 
 		result.put("success", deletedCount > 0);
 		result.put("deletedCount", deletedCount);
 		return result;
+	}
+
+	// ====== 작업계획서 39 WP-6 — 이벤트 삭제 전 파일 확인·장비 내려받기·삭제 확정 ======
+	/**
+	 * 삭제 전 파일 확인 시작. 선택한 이벤트의 이미지·영상이 서버에 모두 있으면 바로 state=DONE,
+	 * 없는 파일이 있으면 장비에서 내려받는 비동기 작업을 시작하고 state=RUNNING 을 돌려준다(진행은 /delete/status).
+	 * @param body {"evIds": [Integer, ...]}
+	 * @return {"success","jobId","state","pullTotal","pullDone", DONE 이면 "readyCount","missingCount","blockedCount","blocked":[{evId,reason}]}
+	 */
+	@PostMapping(value = "/delete/check", produces = "application/json; charset=UTF-8")
+	@ResponseBody
+	public Map<String, Object> deleteCheck(@RequestBody Map<String, Object> body, HttpSession session) {
+
+		Integer uId = sessionUId(session);
+		if (uId == null) {
+			return deleteFlowError("SESSION_TIMEOUT", "로그인이 필요합니다.");
+		}
+		List<Integer> evIds = parseEvIds(body.get("evIds"));
+		if (evIds == null) {
+			return deleteFlowError("BAD_REQUEST", "삭제할 항목이 올바르지 않습니다.");
+		}
+		return eventDeleteFlowService.startCheck(evIds, uId);
+	}
+
+	/** 삭제 전 파일 확인 진행 조회(진행 팝업 폴링용). 요청자 본인의 작업만 조회된다. */
+	@GetMapping(value = "/delete/status", produces = "application/json; charset=UTF-8")
+	@ResponseBody
+	public Map<String, Object> deleteStatus(@RequestParam("jobId") String jobId, HttpSession session) {
+
+		Integer uId = sessionUId(session);
+		if (uId == null) {
+			return deleteFlowError("SESSION_TIMEOUT", "로그인이 필요합니다.");
+		}
+		return eventDeleteFlowService.status(jobId, uId);
+	}
+
+	/**
+	 * 삭제 확정. 장비 오프라인 등으로 내려받지 못한 이벤트가 있으면(BLOCKED) 아무것도 삭제하지 않는다.
+	 * 장비에도 파일이 없는 이벤트가 있으면(MISSING) allowMissing=true 일 때만 삭제한다.
+	 * @param body {"jobId": String, "allowMissing": boolean}
+	 * @return {"success": boolean, "deletedCount": int} 또는 {"success":false,"code","message"}
+	 */
+	@PostMapping(value = "/delete/confirm", produces = "application/json; charset=UTF-8")
+	@ResponseBody
+	public Map<String, Object> deleteConfirm(@RequestBody Map<String, Object> body, HttpSession session) {
+
+		Integer uId = sessionUId(session);
+		if (uId == null) {
+			return deleteFlowError("SESSION_TIMEOUT", "로그인이 필요합니다.");
+		}
+		Object jobId = body.get("jobId");
+		boolean allowMissing = Boolean.parseBoolean(String.valueOf(body.get("allowMissing")));
+		Map<String, Object> result = eventDeleteFlowService.confirm(jobId == null ? null : jobId.toString(), uId, allowMissing);
+		if (Boolean.TRUE.equals(result.get("success"))) {
+			logger.info("{} 사용자가 {}에 주정차 단속 대상 내역 {}건 삭제(논리 삭제, 파일 확인 후)", uId, LocalDateTime.now(),
+					result.get("deletedCount"));
+		}
+		return result;
+	}
+
+	private static Integer sessionUId(HttpSession session) {
+		Object uIdAttr = session == null ? null : session.getAttribute("uId");
+		if (uIdAttr == null) {
+			return null;
+		}
+		try {
+			return Integer.parseInt(uIdAttr.toString());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	/** evIds 파싱(숫자 리스트가 아니거나 비었으면 null) */
+	private static List<Integer> parseEvIds(Object rawIds) {
+		if (!(rawIds instanceof List)) {
+			return null;
+		}
+		List<Integer> evIds = new ArrayList<Integer>();
+		try {
+			for (Object o : (List<?>) rawIds) {
+				if (o != null) {
+					evIds.add(Integer.parseInt(o.toString()));
+				}
+			}
+		} catch (NumberFormatException e) {
+			return null;
+		}
+		return evIds.isEmpty() ? null : evIds;
+	}
+
+	private static Map<String, Object> deleteFlowError(String code, String message) {
+		Map<String, Object> m = new HashMap<String, Object>();
+		m.put("success", false);
+		m.put("code", code);
+		m.put("message", message);
+		return m;
 	}
 
 	// ev_cd별 총합
