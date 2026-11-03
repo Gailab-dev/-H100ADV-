@@ -6,11 +6,18 @@
 #   - db 3310       : 관리용, 127.0.0.1 바인딩 (컨테이너 간 통신은 h100 네트워크의 db:3306)
 name: h100
 
+x-logging: &h100-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: mariadb:10.11
     container_name: h100-db
     restart: unless-stopped
+    logging: *h100-logging
     env_file: /etc/h100/db.env
     environment:
       TZ: Asia/Seoul        # 구 서버(KST)와 동일: NOW()/CURDATE()/event_scheduler 시각 기준
@@ -34,6 +41,7 @@ services:
     image: h100/module-c:${H100_TAG}
     container_name: h100-module-c
     restart: unless-stopped
+    logging: *h100-logging
     user: "${H100_UID:-3100}:${H100_GID:-3100}"
     depends_on:
       db:
@@ -67,6 +75,7 @@ services:
     image: h100/web:${H100_TAG}
     container_name: h100-web
     restart: unless-stopped
+    logging: *h100-logging
     user: "${H100_UID:-3100}:${H100_GID:-3100}"
     depends_on:
       db:

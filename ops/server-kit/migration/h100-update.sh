@@ -89,19 +89,23 @@ build_images() {   # 사용: build_images TAG   (전역: SRC WAR KIT)
   return $rc
 }
 
-# compose.yml 배치 + .env 작성(빌드 성공 후에만 호출)
+# compose.yml 확인(없을 때만 설치) + .env 작성(빌드 성공 후에만 호출)
 write_env() {   # 사용: write_env TAG
   mkdir -p "$COMPOSE_DIR"
-  if [ -f "$KIT/docker/compose.yml" ]; then
-    [ "$(readlink -f "$KIT/docker/compose.yml")" = "$(readlink -f "$COMPOSE_DIR/compose.yml")" ] || install -m 644 "$KIT/docker/compose.yml" "$COMPOSE_DIR/compose.yml"
-  elif [ ! -f "$COMPOSE_DIR/compose.yml" ]; then bad "compose.yml 없음 ($KIT/docker, $COMPOSE_DIR)"; return 1; fi
+  # compose.yml: 서버에 이미 있으면 절대 덮어쓰지 않는다(서버에서 고친 설정 보호). 최초 설치(서버에 없음)일 때만 키트본을 설치.
+  if [ ! -f "$COMPOSE_DIR/compose.yml" ]; then
+    [ -f "$KIT/docker/compose.yml" ] || { bad "compose.yml 없음 ($KIT/docker, $COMPOSE_DIR)"; return 1; }
+    install -m 644 "$KIT/docker/compose.yml" "$COMPOSE_DIR/compose.yml" && ok "compose.yml 최초 설치(키트본)" || { bad "compose.yml 설치 실패"; return 1; }
+  elif [ -f "$KIT/docker/compose.yml" ] && ! cmp -s "$KIT/docker/compose.yml" "$COMPOSE_DIR/compose.yml"; then
+    warn "키트 compose.yml 과 서버 compose.yml 이 다름 → 서버 파일을 그대로 사용(덮어쓰지 않음). 차이 확인: diff -u $COMPOSE_DIR/compose.yml $KIT/docker/compose.yml"
+  fi
   cat > "$ENVF" <<EOF
 H100_TAG=$1
 H100_UID=$H100_UID
 H100_GID=$H100_GID
 H100_EVENT_SCHEDULER=$PREV_SCHED
 EOF
-  chmod 644 "$ENVF"; ok "compose.yml/.env 배치 (H100_TAG=$1, EVENT_SCHEDULER=$PREV_SCHED)"
+  chmod 644 "$ENVF"; ok ".env 작성 (H100_TAG=$1, EVENT_SCHEDULER=$PREV_SCHED)"
 }
 
 # ---- 상태 보기 ----

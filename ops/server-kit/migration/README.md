@@ -52,9 +52,9 @@ sudo ./h100-web-env.sh --list                     # 키 이름만 확인
 ```
 cd /opt/h100/repo/ops/server-kit        # gailab-si 로 git pull 한 뒤
 sudo install -m 755 -o root -g root migration/h100-*.sh migration/lib.sh /opt/h100/migration/
-sudo install -m 644 -o root -g root docker/* /opt/h100/docker/    # Dockerfile·compose.yml (덮어쓰기 전 diff 로 확인)
+sudo install -m 644 -o root -g root docker/Dockerfile.* /opt/h100/docker/    # Dockerfile 만. compose.yml 은 서버 파일이 기준(아래 참고)
 ```
-root 로 실행되는 스크립트를 일반 사용자가 쓸 수 있는 저장소 경로에서 직접 돌리지 말고, 위처럼 root 가 복사해 쓰는 것을 원칙으로 합니다. 서버에 남아 있는 이관용 스크립트(`00-preflight`, `20-db-restore`, `25-db-migrate`, `30-media-sync`, `45-fw-docker-user`, `55-event-scheduler`, `60-hmac-test`, `70-cleanup-list` 등)는 git 에는 없지만 같은 폴더에서 그대로 동작합니다.
+root 로 실행되는 스크립트를 일반 사용자가 쓸 수 있는 저장소 경로에서 직접 돌리지 말고, 위처럼 root 가 복사해 쓰는 것을 원칙으로 합니다. `compose.yml` 은 서버(`/opt/h100/docker/compose.yml`)에 이미 있으면 `h100-update.sh` 가 **덮어쓰지 않고** 키트본과 다를 때 경고만 합니다(서버에서 고친 설정 보호). 서버 파일을 바꿨다면 개발 PC 의 `ops/server-kit/docker/compose.yml` 에도 같은 내용을 커밋해 두세요(`diff -u /opt/h100/docker/compose.yml docker/compose.yml` 로 일치 확인). 서버에 남아 있는 이관용 스크립트(`00-preflight`, `20-db-restore`, `25-db-migrate`, `30-media-sync`, `45-fw-docker-user`, `55-event-scheduler`, `60-hmac-test`, `70-cleanup-list` 등)는 git 에는 없지만 같은 폴더에서 그대로 동작합니다.
 
 ## 4. 공통 원칙과 기록 위치
 - 비밀값(비밀번호·키)은 `/etc/h100/*.env` 에만 둡니다. 스크립트는 값을 출력·로그에 남기지 않으며, git/문서에도 기록하지 않습니다.
