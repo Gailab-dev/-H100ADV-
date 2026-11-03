@@ -28,8 +28,8 @@
             <ul class="menu">
                 <li><a href="${pageContext.request.contextPath}/stats/viewStat.do"><img src="${pageContext.request.contextPath}/resources/images/icon_home.png" alt="홈" class="menu-icon">홈</a></li>
                 <li><a href="${pageContext.request.contextPath}/deviceList/viewDeviceList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_device.png" alt="디바이스" class="menu-icon">디바이스 리스트</a></li>
-                <li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">불법주차 리스트</a></li>
-                <li><a href="${pageContext.request.contextPath}/local/viewlocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="불법주차" class="menu-icon">지역 관리</a></li>
+                <li><a href="${pageContext.request.contextPath}/eventList/viewEventList.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="주차단속" class="menu-icon">주차 단속 대상 내역</a></li>
+                <li><a href="${pageContext.request.contextPath}/local/viewlocalManage.do"><img src="${pageContext.request.contextPath}/resources/images/icon_parking.png" alt="주차단속" class="menu-icon">지역 관리</a></li>
             </ul>
         </aside>
 		<div class="content">

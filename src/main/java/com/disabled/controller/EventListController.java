@@ -75,6 +75,14 @@ public class EventListController {
 	
 	// 로그 기록
 	private static final Logger logger = LoggerFactory.getLogger(EventListController.class);
+
+	/**
+	 * 주차단속 대상 내역 목록의 한 페이지 크기(서버 고정값, 36번 WP-C).
+	 * 개수 선택(10/20/30개 보기)을 없애고 이 상수만 사용한다. 기존 URL 의 pageSize 파라미터는 받지 않고 무시한다.
+	 * 근거(소스 검토, 미실측): FHD 에서 카드 영역(112+32) + 검색줄(44+12) + 선택줄(32+12) + 표 머리(약 37) + 페이지네이션(약 56) 을 빼면
+	 * 행(약 49px) 10개가 세로 스크롤 없이 들어간다. 해상도에 따라 바꾸려면 이 값만 조정한다.
+	 */
+	public static final int EVENT_LIST_PAGE_SIZE = 10;
 	
 	// 초기화면으로 redirect
 	@RequestMapping("")
@@ -89,7 +97,7 @@ public class EventListController {
 	 * @param endDate 		검색 종료 날짜(String)
 	 * @param searchKeyword	검색어(String)
 	 * @param page			페이지 수(Integer)
-	 * @param pageSize		한 화면에 보여줄 컬럼의 크기(Integer)
+	 * (한 화면에 보여줄 행 수는 EVENT_LIST_PAGE_SIZE 로 고정. 요청의 pageSize 파라미터는 무시한다)
 	 * @param sortCol		정렬 대상이 되는 열(String)
 	 * @param sortDir		정렬방법(ASE, DESC 외 오류!) (String) 
 	 * @param model
@@ -105,7 +113,6 @@ public class EventListController {
 			, @RequestParam(value="evAction", required=false) Integer evAction  // patches 13: 처리상태(0계도/1단속/2과태료) 필터
 			, @RequestParam(value="searchKeyword", required=false) String searchKeyword
 			, @RequestParam(value="page", required=false) Integer page
-			, @RequestParam(value="pageSize", defaultValue = "10" ) Integer pageSize
 	        , @RequestParam(value="sortCol", defaultValue="ev_date") String sortCol
 	        , @RequestParam(value="sortDir", defaultValue="DESC") String sortDir
 			, Model model
@@ -166,14 +173,8 @@ public class EventListController {
 			}
 		}
 
-		// pageSize 검증 (정수 범위 검증)
-		if (pageSize != null) {
-			if (pageSize < 1 || pageSize > 100) {
-				logger.warn("유효하지 않은 pageSize 요청: {}", pageSize);
-				model.addAttribute("errorMessage", "유효하지 않은 페이지 크기입니다.");
-				return "error";
-			}
-		}
+		// 한 페이지 크기는 서버 고정값(요청의 pageSize 는 받지 않는다 — 북마크 호환)
+		final int pageSize = EVENT_LIST_PAGE_SIZE;
 		
 		// 유형 검증
 		if(evCd != null && (evCd >= 7 || evCd <= 0)) {

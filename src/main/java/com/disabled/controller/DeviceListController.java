@@ -70,6 +70,14 @@ public class DeviceListController {
 	private String kakaoMapJsKey;
 
 	
+	/**
+	 * 단속 장비 현황 목록의 한 페이지 크기(서버 고정값, 36번 WP-C).
+	 * 개수 선택(10/20/30개씩 보기)을 없애고 이 상수만 쓴다. 기존 URL 의 pageSize 파라미터는 받지 않고 무시한다(북마크 호환).
+	 * 근거(소스 검토, 미실측): 관리 열 버튼을 2개씩 최대 2줄로 정리해 행 높이를 약 73px 로 고정했고,
+	 * FHD 에서 위쪽 영역(검색줄·선택줄·표 머리·페이지네이션 약 216px)을 빼면 8행(약 584px)이 세로 스크롤 없이 들어간다.
+	 */
+	public static final int DEVICE_LIST_PAGE_SIZE = 8;
+
 	// 디바이스 리스트 화면으로 redirect
 	@RequestMapping("")
 	public String rootRedirect() {
@@ -84,7 +92,8 @@ public class DeviceListController {
 			, @RequestParam(value="startDate", required=false) String startDate
 			, @RequestParam(value="endDate", required=false) String endDate
 			, @RequestParam(value="page", required=false) Integer page
-			, @RequestParam(value="pageSize", defaultValue="10") Integer pageSize
+			// 알림(장비 이상) 도착용: dvId 가 오면 그 장비가 들어 있는 페이지로 보낸다(고정 page size 라 다른 페이지에 있을 수 있음)
+			, @RequestParam(value="dvId", required=false) Integer dvId
 	        , @RequestParam(value="sortCol", defaultValue="dv_name") String sortCol
 	        , @RequestParam(value="sortDir", defaultValue="DESC") String sortDir
 			, Model model
@@ -139,14 +148,7 @@ public class DeviceListController {
 					}
 				}
 
-				// pageSize 검증 (정수 범위 검증)
-				if (pageSize != null) {
-					if (pageSize < 1 || pageSize > 100) {
-						logger.warn("유효하지 않은 pageSize 요청: {}", pageSize);
-						model.addAttribute("errorMessage", "유효하지 않은 페이지 크기입니다.");
-						return "error";
-					}
-				}
+				// pageSize 는 받지 않는다(서버 고정값 DEVICE_LIST_PAGE_SIZE) — 북마크 호환을 위해 파라미터가 와도 무시
 				// ====== 유효성 검증 [E] ====== //
 		
 		
@@ -157,6 +159,7 @@ public class DeviceListController {
 		PaginationInfo paginationInfo = new PaginationInfo();
 		
 		// 페이징 설정
+		final int pageSize = DEVICE_LIST_PAGE_SIZE;
 		paginationInfo.setCurrentPageNo(page); // 현제 페이지 번호
 		paginationInfo.setRecordCountPerPage(pageSize);  // 한 페이지에 출력할 게시글 수
 		paginationInfo.setPageSize(10); // 페이지 블록 수
@@ -168,6 +171,15 @@ public class DeviceListController {
 	    // 마지막 페이지 계산 후 page 보정
 	    int lastPage = (int) Math.ceil(totalRecordCount / (double) recordCountPerPage);
 	    if (lastPage < 1) lastPage = 1;
+
+	    // 알림(장비 이상)으로 dvId 가 넘어오면, 같은 검색·정렬 조건에서 그 장비의 순번을 구해 해당 페이지로 보낸다.
+	    //  (조건에 안 걸리거나 조회 실패면 요청한 page 그대로 — 행이 없으면 화면에서 강조만 생략된다)
+	    if (dvId != null && dvId > 0) {
+	    	Integer rank = deviceListService.getDeviceRank(startDate, endDate, searchKeyword, sortCol, sortDir, dvId);
+	    	if (rank != null && rank > 0) {
+	    		page = (rank - 1) / recordCountPerPage + 1;
+	    	}
+	    }
 
 	    int currentPage = Math.min(Math.max(page, 1), lastPage);
 	    paginationInfo.setCurrentPageNo(currentPage);
@@ -217,7 +229,7 @@ public class DeviceListController {
 		model.addAttribute("startDate", startDate);
 		model.addAttribute("endDate", endDate);
 		model.addAttribute("useTblLog", useTblLog);
-		model.addAttribute("pageSize", pageSize);
+		model.addAttribute("pageSize", pageSize); // 고정값(빈 행 채우기·페이지네이션 표시용)
 		model.addAttribute("kakaoMapJsKey", kakaoMapJsKey); // 주소검색 지오코딩용 Kakao SDK 키
 		// model.addAttribute("deviceId", firstDeviceId);
 		

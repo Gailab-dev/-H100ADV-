@@ -55,14 +55,14 @@ public class SipCallServiceImpl implements SipCallService {
 	private String audioDecPath;
 
 	@Override
-	public Map<String, Object> getList(String keyword, int listSize, String startDate, String endDate, int page) {
+	public Map<String, Object> getList(String keyword, int listSize, String startDate, String endDate, int page,
+			Integer focusScId, String notiSerial, String notiTime) {
 
 		Map<String, Object> out = new HashMap<String, Object>();
 
 		try {
 			if (listSize <= 0) listSize = 10;
 			if (page <= 0) page = 1;
-			int offset = (page - 1) * listSize;
 
 			Map<String, Object> params = new HashMap<String, Object>();
 			params.put("keyword", (keyword == null) ? "" : keyword.trim());
@@ -70,16 +70,52 @@ public class SipCallServiceImpl implements SipCallService {
 			params.put("keywordIsNumeric", keyword != null && keyword.trim().matches("^[0-9]+$"));
 			params.put("startDate", startDate);
 			params.put("endDate", endDate);
+
+			// ===== 알림 도착 강조(36번 WP-C / 37 WP-N 6) =====
+			// ① sc_id 를 직접 받았으면 그대로, ② 아니면 알림의 시리얼+시각으로 통화 로그를 찾는다.
+			boolean focusRequested = (focusScId != null)
+					|| (notiSerial != null && !notiSerial.isEmpty() && notiTime != null && !notiTime.isEmpty());
+			Integer focusId = focusScId;
+			if (focusId == null && focusRequested) {
+				Map<String, Object> f = new HashMap<String, Object>();
+				f.put("notiSerial", notiSerial);
+				f.put("notiTime", notiTime);
+				focusId = sipCallMapper.selectScIdByNotification(f);
+			}
+			boolean focusFound = false;
+			if (focusId != null) {
+				// 같은 필터·정렬에서의 순번으로 그 행이 있는 페이지를 계산(요청 page 는 무시)
+				Map<String, Object> rp = new HashMap<String, Object>(params);
+				rp.put("focusScId", focusId);
+				Integer rank = sipCallMapper.selectRankById(rp);
+				if (rank != null && rank > 0) {
+					page = (rank - 1) / listSize + 1;
+					focusFound = true;
+				}
+			}
+			int offset = (page - 1) * listSize;
+
 			params.put("listSize", listSize);
 			params.put("offset", offset);
 
 			int total = sipCallMapper.countList(params);
+			// 마지막 페이지 보정(필터 변경·삭제 등으로 요청 페이지가 범위를 넘은 경우)
+			int lastPage = Math.max(1, (int) Math.ceil(total / (double) listSize));
+			if (page > lastPage) {
+				page = lastPage;
+				params.put("offset", (page - 1) * listSize);
+			}
 			List<Map<String, Object>> list = sipCallMapper.selectList(params);
 
 			out.put("total", total);
 			out.put("list", list);
 			out.put("page", page);
 			out.put("listSize", listSize);
+			if (focusRequested) {
+				out.put("focusRequested", true);
+				out.put("focusFound", focusFound);
+				if (focusFound) out.put("focusScId", focusId);
+			}
 			return out;
 
 		} catch (DataAccessException e) {

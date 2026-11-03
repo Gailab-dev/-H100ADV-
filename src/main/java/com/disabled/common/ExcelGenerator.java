@@ -489,10 +489,10 @@ public class ExcelGenerator {
 		            Map<String, CellStyle> st = createStatsStyles(wb);
 
 		            // ===== 1) 상단 타이틀 =====
-		            setCellStats(sheet, 1, 1, "불법주차 유형별 통계 (그래프)", st.get("title"));
+		            setCellStats(sheet, 1, 1, "주차단속 유형별 통계 (그래프)", st.get("title"));
 
 		            // ===== 2) 하단 타이틀 =====
-		            setCellStats(sheet, 21, 1, "불법주차 유형별 통계 (테이블)", st.get("title"));
+		            setCellStats(sheet, 21, 1, "주차단속 유형별 통계 (테이블)", st.get("title"));
 
 		            // ===== 3) statsByMonth -> months / series 구조로 변환 =====
 		            // months: ["2025.06", "2025.07", ...]

@@ -42,6 +42,35 @@
 		</if>
 	</select>
 
+	<!-- (36번 WP-C / 37 WP-N) 기본 정렬(sc_reg_date DESC, sc_id DESC)·동일 필터에서 해당 통화 로그의 순번(1부터).
+	     컨트롤러/서비스가 (순번-1)/페이지크기+1 로 그 행이 있는 페이지를 계산한다. 필터에 안 걸리면 결과 없음(null) -->
+	<select id="selectRankById" parameterType="map" resultType="int">
+		SELECT rn FROM (
+			SELECT sc_id, ROW_NUMBER() OVER (ORDER BY sc_reg_date DESC, sc_id DESC) AS rn
+			FROM tbl_sip_call
+			<include refid="whereClause" />
+		) ranked
+		WHERE sc_id = #{focusScId}
+	</select>
+
+	<!-- (36번 WP-C / 37 WP-N) 응급콜 알림(tbl_notification_log: noti_type='sip_call')에 해당하는 통화 로그 찾기.
+	     알림은 '통화 시작(call_start)' 시점에 Go(sipCallTrigger)가 만들고(noti_reg_date=서버시각, target id 없음),
+	     통화 로그(tbl_sip_call)는 통화 종료 뒤 /insertSipCallLog 가 넣는다(sc_reg_date=서버시각).
+	     따라서 같은 시리얼(noti_serial=sc_serial_number)이고 알림 시각 직후(-10초 ~ +30분)에 등록된 로그 중에서
+	     ① 디바이스가 보고한 통화 시작 시각(sc_start_date)이 알림 시각과 가장 가까운 것 → ② 먼저 등록된 것 순으로 1건을 고른다.
+	     (통화가 아직 끝나지 않았거나 로그가 없으면 결과 없음 → 화면은 첫 페이지 + 안내 문구) -->
+	<select id="selectScIdByNotification" parameterType="map" resultType="int">
+		SELECT sc_id
+		FROM tbl_sip_call
+		WHERE sc_serial_number = #{notiSerial}
+		  AND sc_reg_date <![CDATA[>=]]> DATE_SUB(STR_TO_DATE(#{notiTime}, '%Y-%m-%d %H:%i:%s'), INTERVAL 10 SECOND)
+		  AND sc_reg_date <![CDATA[<=]]> DATE_ADD(STR_TO_DATE(#{notiTime}, '%Y-%m-%d %H:%i:%s'), INTERVAL 30 MINUTE)
+		ORDER BY
+			COALESCE(ABS(TIMESTAMPDIFF(SECOND, STR_TO_DATE(sc_start_date, '%Y%m%d%H%i%s'), STR_TO_DATE(#{notiTime}, '%Y-%m-%d %H:%i:%s'))), 2147483647) ASC,
+			sc_reg_date ASC, sc_id ASC
+		LIMIT 1
+	</select>
+
 	<!-- 조회 총 갯수(동일 필터) -->
 	<select id="countList" parameterType="map" resultType="int">
 		SELECT COUNT(1)

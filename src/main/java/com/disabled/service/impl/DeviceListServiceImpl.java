@@ -84,6 +84,24 @@ public class DeviceListServiceImpl implements DeviceListService{
 	
 	
 	@Override
+	public Integer getDeviceRank(String startDate, String endDate, String searchKeyword, String sortCol, String sortDir, Integer dvId) {
+		try {
+			Map<String, Object> paramMap = new java.util.HashMap<String, Object>();
+			paramMap.put("startDate", startDate);
+			paramMap.put("endDate", endDate);
+			paramMap.put("searchKeyword", searchKeyword == null ? "" : searchKeyword);
+			paramMap.put("sortCol", sortCol);
+			paramMap.put("sortDir", sortDir);
+			paramMap.put("dvId", dvId);
+			return deviceListMapper.getDeviceRank(paramMap);
+		} catch (RuntimeException e) {
+			// 순번 조회 실패는 화면 이동을 막지 않는다(1페이지로 폴백)
+			logger.error("SQL문 수행 도중 오류 발생, deviceListMapper.getDeviceRank(dvId={}) : ", dvId, e);
+			return null;
+		}
+	}
+
+	@Override
 	public Integer getTotalRecordCount(String startDate, String endDate, String searchKeyword) {
 		
 		try {

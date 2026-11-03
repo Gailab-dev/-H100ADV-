@@ -376,7 +376,7 @@
 					stCd:'stCd'
 				},
 				responseType:'blob',
-				downloadFilename:'불법주차_월별_통계현황.xlsx'
+				downloadFilename:'주차단속_월별_통계현황.xlsx'
 			}).catch(function(e){alert(e.message);});
 		})
 	});
@@ -437,7 +437,7 @@
 			
 			
 				<div class="title-box">
-					<h1>월별 불법주차 현황(1년)</h1>
+					<h1>월별 주차단속 현황(1년)</h1>
 					<button id="btnExcel" type="button" class="excel-btn"
 						title="엑셀 다운로드">
 						<img
@@ -474,12 +474,12 @@
 				<div class="graph-group">
 					<!-- 장애인, 비장애인 별 이벤트 발생 현황(라인 그래프) -->
 					<div class="graph-table">
-						<p class="subTitle">불법주차 유형별 통계(그래프)</p>
+						<p class="subTitle">주차단속 유형별 통계(그래프)</p>
 						<div id="chart" ></div>
 					</div>
 
 					<div class="graph-table">
-						<p class="subTitle">불법주차 유형별 통계(테이블)</p>
+						<p class="subTitle">주차단속 유형별 통계(테이블)</p>
 						<!-- 불법주차 유형별 통계(테이블) -->
 						<table id="statsTable" class="stats-table">
 							<thead class="tableTitle"></thead>

@@ -87,12 +87,32 @@
 	.device-top { margin-bottom: 8px !important; }               /* 12 → 8 */
 	#deviceTable th, #deviceTable td { padding: 7px 0 !important; }  /* 9 → 7 (행당 -4px) */
 	.pagination { margin-top: 12px !important; }                 /* 20 → 12 */
+	/* ===== 36번 WP-C / WP-E: 고정 행 수 · 등록 버튼 위치 · 행 높이 고정 ===== */
+	/* (WP-E) 등록 버튼: 한 줄을 따로 차지하던 buttonBox 를 없애고 검색줄 오른쪽 끝(옛 '개수 선택' 자리)에 둔다.
+	   검색 폼의 아래 여백(20px)은 이 줄에서 버튼과 세로 정렬이 어긋나므로 0 으로 한다. */
+	.top-row .filter-form { margin-bottom: 0; }
+	.top-row .add-btn { min-width: 0; margin-left: auto; flex: 0 0 auto; }
+	/* (WP-C) 관리 열(이상탐지·ROI·수정·로그): 버튼을 2개씩 최대 2줄로 놓아 ROI 유무(권한)와 상관없이 모든 행 높이를 같게 한다.
+	   행 높이 ≈ 위·아래 패딩 8 + 2줄 × (버튼 28 + 여백 4) + 선 1 = 73px → 고정 8행 계산의 근거 */
+	#deviceTable td:nth-child(11) { font-size: 0; line-height: 0; padding: 4px 6px !important; }
+	#deviceTable td:nth-child(11) .edit-btn,
+	#deviceTable td:nth-child(11) .err-log-btn {
+		display: inline-block; width: calc(50% - 4px); min-width: 0; height: 28px; margin: 2px; padding: 0;
+		font-size: 13px; line-height: 26px; vertical-align: top; }
+	/* 행이 모자란 마지막 페이지의 빈 행(실제 행과 같은 높이) — 페이지네이션 위치가 흔들리지 않게 한다 */
+	#deviceTable .filler-row td { height: 73px; padding: 0 !important; border-bottom: 0 !important; }
+	/* 낮은 화면(HD 노트북 등, 브라우저 높이 800px 이하)에서는 버튼 높이를 줄여 8행이 스크롤 없이 들어가게 한다(소스 검토 기준, 미실측) */
+	@media (max-height: 800px) {
+		#deviceTable td:nth-child(11) .edit-btn,
+		#deviceTable td:nth-child(11) .err-log-btn { height: 24px; line-height: 22px; font-size: 12px; }
+		#deviceTable .filler-row td { height: 65px; }
+	}
 </style>
 <%-- patches 2026-07-07: Daum(Kakao) 우편번호 서비스(주소 검색) + Kakao 지도 SDK(services=주소→좌표 지오코딩) --%>
 <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapJsKey}&libraries=services"></script>
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/resources/css/pagination.css">
+	href="${pageContext.request.contextPath}/resources/css/pagination.css?v=20261103">
 <link rel="stylesheet"
 	href="${pageContext.request.contextPath}/resources/css/popup/deleteDevicePopup.css">
 <link rel="stylesheet"
@@ -108,6 +128,7 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 	<script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js?v=20261029"></script>
+	<script src="${pageContext.request.contextPath}/resources/js/common/pagination.js?v=20261103"></script>
 	<%-- 개인정보 수정 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
 	<script>
 	  <c:if test="${not empty errorMsg}">
@@ -178,93 +199,47 @@
 			});
 		});
 	 
+		// 목록 URL 생성 — 현재 URL(서버가 적용한 검색·정렬 조건)을 유지하고 overrides 만 바꾼다. 값이 비어 있으면 파라미터를 제거한다.
+		//  개수 선택이 없어졌으므로 pageSize 는 항상 제거(북마크 호환), 알림 도착용 일회성 파라미터(dvId/openErrorLog/triggerSerial)는 이동 때 버린다.
+		function buildListUrl(overrides){
+			const u = new URL(window.location.href);
+			['pageSize', 'dvId', 'openErrorLog', 'triggerSerial'].forEach(function(k){ u.searchParams.delete(k); });
+			Object.keys(overrides || {}).forEach(function(k){
+				const v = overrides[k];
+				if (v === null || v === undefined || v === '') u.searchParams.delete(k);
+				else u.searchParams.set(k, v);
+			});
+			return u.pathname + u.search;
+		}
+
 		// 디바이스 및 주소 검색
 		window.searchDeviceList = function(pageNo){
-			
+
 			let form = document.getElementById('deviceListSearchForm');
-		  	let val1 = form.elements['searchKeyword']?.value;
-		  	let searchKeyword = encodeURIComponent(val1);
-		  	let val2 = form.elements['startDate']?.value;
-		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elements['endDate']?.value;
-		  	let endDate = encodeURIComponent(val3);
-		  	let pageSize = document.getElementById('pageSize')?.value;
-		  	
-		  	if( searchKeyword.length >= 100 ){
+		  	const searchKeyword = form.elements['searchKeyword']?.value || '';
+		  	const startDate = form.elements['startDate']?.value || '';
+		  	const endDate = form.elements['endDate']?.value || '';
+
+		  	if( searchKeyword.length > 100 ){
 		  		alert("검색어는 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
 		  		return;
 		  	}
-		  	if(startDate > endDate){ 
+		  	if(startDate > endDate){
 				alert("날짜를 확인해주세요.");
 				return;
 		  	}
-		  	
+
 		  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 		  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
-			
-			location.href = "viewDeviceList.do?page=" + pageNo +"&startDate=" +startDate +"&endDate="+ endDate + "&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
-			
+
+			location.href = buildListUrl({ page: pageNo, startDate: startDate, endDate: endDate, searchKeyword: searchKeyword });
+
 		}
-		
-		// pagination 객체를 활용한 페이지 이동
+
+		// 공통 페이지네이션(common/pagination.js)에서 호출 — 검색·정렬 조건 유지, 페이지만 이동
 		window.goPage = function(pageNo){
-			let form = document.getElementById('deviceListSearchForm');
-		  	let val1 = form.elements['searchKeyword']?.value;
-		  	let searchKeyword = encodeURIComponent(val1);
-		  	let val2 = form.elements['startDate']?.value;
-		  	let startDate = encodeURIComponent(val2);
-		  	let val3 = form.elements['endDate']?.value;
-		  	let endDate = encodeURIComponent(val3);
-		  	let pageSize = document.getElementById('pageSize')?.value;
-
-			location.href = "viewDeviceList.do?page=" + pageNo + "&startDate=" +startDate+ "&endDate=" +endDate+"&searchKeyword=" + searchKeyword+"&pageSize="+pageSize;
+			location.href = buildListUrl({ page: pageNo });
 		}
-		
-		//  Pagination 
-		document.addEventListener('DOMContentLoaded', function () {
-			  const $wrap = document.querySelector('.pagination');
-			  if (!$wrap) return;
-
-			  const links = Array.from($wrap.querySelectorAll('a'));
-			  const current = $wrap.querySelector('strong'); 
-			  const curPage = current ? parseInt(current.textContent.trim(), 10) : NaN;
-
-			  // 유틸: goPage(숫자)에서 숫자만 뽑기
-			  const getPageFromHref = (a) => {
-			      const href = a.getAttribute('href') || '';
-			      const m = href.match(/goPage\(\s*'?(\d+)'?\s*\)/);
-			      return m ? parseInt(m[1], 10) : null;
-			  };
-
-			  // 이동 버튼 텍스트 치환 및 클래스 세팅
-			  links.forEach(a => {
-			    const txt = a.textContent.replace(/\s+/g,'').trim();
-			    const page = getPageFromHref(a);
-
-			    if (/\[처음\]/.test(txt)) {
-			      a.textContent = '«';
-			      a.classList.add('pg-first');
-			      if (curPage && curPage <= 1) a.classList.add('is-disabled');
-			    } else if (/\[이전\]/.test(txt)) {
-			      a.textContent = '‹';
-			      a.classList.add('pg-prev');
-			      if (curPage && curPage <= 1) a.classList.add('is-disabled');
-			    } else if (/\[다음\]/.test(txt)) {
-			      a.textContent = '›';
-			      a.classList.add('pg-next');
-			      // 다음이 마지막을 넘어가면 비활성
-			      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
-			    } else if (/\[마지막\]/.test(txt)) {
-			      a.textContent = '»';
-			      a.classList.add('pg-last');
-			      // 마지막 페이지 계산이 어려우니 “goPage(n)” 값이 현재와 같거나 작으면 비활성
-			      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
-			    } else {
-			      // 숫자 링크는 그대로 두되 불필요한 공백 제거
-			      if (/^\d+$/.test(txt)) a.textContent = txt;
-			    }
-			  });
-			});
 		
 		// -------------------------------- pagination 활용한 페이지 이동 ----------------------------
 		
@@ -1219,16 +1194,11 @@
 			
 			<!-- 메인 콘텐츠 -->
 			
-					<div class="buttonBox">
-						<!-- 첫 번째 줄: 등록 버튼 / 두 번째 줄 : 날짜, 검색, 조회버튼 - 10개씩 보기 -->
-						<button class="add-btn" onclick="viewDeviceInfoPopup()">+
-							디바이스 등록</button>
-					</div>
 					<div class="device-top">
 						<div class="top-row">
 
 							<form id="deviceListSearchForm" class="filter-form"
-								onsubmit="searchDeviceList('${page}'); return false;">
+								onsubmit="searchDeviceList(1); return false;">
 								<div class="filter-input-group">
 									<input type="date" name="startDate" value="${startDate}" />
 								</div>
@@ -1254,15 +1224,9 @@
 								<button type="submit" class="search-btn" title="검색">조회</button>
 							</form>
 							
-							<select id="pageSize" name="pageSize" class="select-box"
-								onChange="searchDeviceList()">
-								<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩
-									보기</option>
-								<option value="20" ${pageSize == 20 ? 'selected' : ''}>20개씩
-									보기</option>
-								<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩
-									보기</option>
-							</select>
+							<%-- (36번 WP-E) 디바이스 등록 버튼: 별도 한 줄(buttonBox)을 없애고 검색줄 오른쪽 끝(옛 '개수 선택' 자리)에 배치.
+							     행을 차지하지 않고 가장 단순한 변경이라 선택. 위치·모양은 디자인 시안 확인 필요 --%>
+							<button type="button" class="add-btn" onclick="viewDeviceInfoPopup()">+ 디바이스 등록</button>
 						</div>
 
 						<div class="bulk-actions">
@@ -1427,16 +1391,19 @@
 											</td>
 										</tr>
 									</c:forEach>
+									<%-- 마지막 페이지 등 행이 모자라면 빈 행으로 높이를 채워 페이지네이션 위치가 흔들리지 않게 한다 --%>
+									<c:forEach begin="${fn:length(deviceList) + 1}" end="${pageSize}">
+										<tr class="filler-row" aria-hidden="true"><td colspan="11">&nbsp;</td></tr>
+									</c:forEach>
 								</c:otherwise>
 							</c:choose>
 						</tbody>
 					</table>
 					</div><!-- /.device-table-scroll -->
 
-					<div class="pagination">
-						<ui:pagination paginationInfo="${paginationInfo}" type="text"
-							jsFunction="goPage" />
-					</div>
+					<%-- 공통 페이지네이션(총 건수 · 현재/전체 페이지 · 처음/이전/번호/다음/마지막) --%>
+					<div class="h100-pg" data-total="${paginationInfo.totalRecordCount}" data-page="${paginationInfo.currentPageNo}"
+						data-page-size="${pageSize}" data-handler="goPage"></div>
 
 					<!-- 팝업 placeholder -->
 					<div id="realTimeVideoPopup" style="display: none;"></div>
@@ -1605,7 +1572,16 @@
 	        var nameCell = row ? row.querySelector('.cell-ellipsis') : null;
 	        var dvName = nameCell ? nameCell.textContent.trim() : '';
 	        loadErrorLog(dvId, dvName);
-	        if(row){ row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+	        if(row){
+	          // (36번 WP-C / 37 WP-N) 이상 장비 행 강조 — 이벤트 목록의 알림 도착 강조와 같은 색(#fff6d6)·2.6초.
+	          //   서버(viewDeviceList)가 dvId 로 해당 장비가 있는 페이지를 계산해 내려 주므로 고정 page size 에서도 행이 현재 페이지에 있다.
+	          row.style.transition = 'background .4s';
+	          row.style.background = '#fff6d6';
+	          row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	          setTimeout(function(){ row.style.background = ''; }, 2600);
+	        } else {
+	          console.warn('dvId 에 해당하는 장비가 목록에 없습니다(삭제되었거나 검색 조건에서 제외):', dvId);
+	        }
 	      }
 	    }
 

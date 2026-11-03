@@ -25,9 +25,25 @@
 	.filter-form { margin-bottom: 12px !important; }             /* 20 → 12 */
 	.event-table th, .event-table td { padding: 9px 12px !important; }  /* 12 → 9 (행당 -6px) */
 	.pagination { margin-top: 12px !important; }                 /* 20 → 12 */
+
+	/* ===== 36번 WP-C/WP-P1: 고정 행 수 + 유형 카드 클릭 필터 ===== */
+	/* 유형 카드(클릭하면 해당 유형만 조회, 다시 클릭하면 해제). 선택된 카드는 .active 로 강조 */
+	.checkdown-state li.ev-card { cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease; }
+	.checkdown-state li.ev-card:hover { border-color: rgba(83, 117, 160, 0.55); }
+	.checkdown-state li.ev-card:focus-visible { outline: 2px solid #5375a0; outline-offset: 2px; }
+	.checkdown-state li.ev-card.active { border-color: #5375a0; background: #f3f7fc; box-shadow: 0 0 0 2px rgba(83, 117, 160, 0.35), 0 4px 12px rgba(0, 0, 0, 0.10); }
+	/* 마지막 페이지 등 행이 모자랄 때 채우는 빈 행 — 실제 행(패딩 9*2 + 버튼 30 + 선 1 = 49px)과 같은 높이로 두어 페이지네이션 위치가 흔들리지 않게 한다 */
+	.event-table .filler-row td { height: 49px; padding: 0 !important; border-bottom: 0 !important; }
+	/* 낮은 화면(HD 노트북 등, 브라우저 높이 800px 이하)에서는 카드·행 여백을 줄여 10행이 스크롤 없이 들어가게 한다(소스 검토 기준, 미실측) */
+	@media (max-height: 800px) {
+		.checkdown-state { height: 80px !important; margin-bottom: 12px !important; }
+		.checkdown-state li { padding: 8px 16px !important; }
+		.event-table th, .event-table td { padding: 6px 12px !important; }
+		.event-table .filler-row td { height: 43px; }
+	}
 </style>
 <link rel="stylesheet"
-	href="${pageContext.request.contextPath}/resources/css/pagination.css">
+	href="${pageContext.request.contextPath}/resources/css/pagination.css?v=20261103">
 <title>주차 단속 대상 내역</title>
 
 <%-- 상세 보기 버튼 클릭시 에러 발생하여 해당 페이지로 돌아왔을 때 에러 메시지 출력 --%>
@@ -59,6 +75,7 @@
 </script>
 <script src="${pageContext.request.contextPath}/resources/js/interceptor/sessionManager.js"></script>
 <script src="${pageContext.request.contextPath}/resources/js/common/excelDownload.js?v=20261029"></script>
+<script src="${pageContext.request.contextPath}/resources/js/common/pagination.js?v=20261103"></script>
 
 <%--  web.xml의 session time out 전역 변수, session time out 함수 --%>
 <script>
@@ -122,14 +139,24 @@
 		});
 	}
 
-	// pagination 객체를 활용한 페이지 이동
+	// 목록 URL 생성 — 현재 URL(서버가 적용한 검색·정렬 조건)을 유지하고 overrides 만 바꾼다.
+	//   값이 비어 있으면 파라미터를 제거한다. 개수 선택이 없어졌으므로 pageSize 는 항상 제거(북마크 호환),
+	//   evId 는 알림 도착 강조용 일회성 파라미터라 페이지 이동 때는 버린다.
+	function buildListUrl(overrides){
+		const u = new URL(window.location.href);
+		u.searchParams.delete('pageSize');
+		u.searchParams.delete('evId');
+		Object.keys(overrides || {}).forEach(function(k){
+			const v = overrides[k];
+			if (v === null || v === undefined || v === '') u.searchParams.delete(k);
+			else u.searchParams.set(k, v);
+		});
+		return u.pathname + u.search;
+	}
+
+	// 공통 페이지네이션(common/pagination.js)에서 호출 — 검색·정렬 조건 유지, 페이지만 이동
 	window.goPage = function(pageNo){
-		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
-    	let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
-    	let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
-		let pageSize = encodeURIComponent('${pageSize != null ? pageSize : ""}');
-		let evCd = encodeURIComponent('${evCd != null ? evCd : ""}');
-    	location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize+"&evCd="+evCd;
+		location.href = buildListUrl({ page: pageNo });
 	}
 		
 	// 상세보기 클릭시 불법주차 상세 화면으로 이동
@@ -137,7 +164,6 @@
 		let startDate = encodeURIComponent('${startDate != null ? startDate : ""}');
 	    let endDate   = encodeURIComponent('${endDate != null ? endDate : ""}');
 	    let searchKeyword   = encodeURIComponent('${searchKeyword != null ? searchKeyword : ""}');
-	    let pageSize = encodeURIComponent('${pageSize != null ? pageSize : ""}');
 
 	    // (패치 2026-09-30) 상세보기 이전/다음 탐색이 목록과 동일한 검색조건·정렬기준을 알아야 하므로
 	    // 현재 목록 URL의 쿼리스트링에서 그대로 읽어 상세보기 URL에 실어 보낸다.
@@ -148,7 +174,7 @@
 	    const sortDirParam = encodeURIComponent(_h100CurUrl.searchParams.get('sortDir') || 'DESC');
 
 	    // 결과가 '가능'일 때 이동할 상세 URL (파라미터는 목록이 보유)
-	    const detailUrl = 'eventListDetail?dvId='+dvId+'&evId='+ evId + "&page=${page}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&dvAddr="+dvAddr+"&pageSize="+pageSize
+	    const detailUrl = 'eventListDetail?dvId='+dvId+'&evId='+ evId + "&page=${paginationInfo.currentPageNo}&startDate=" + startDate + "&endDate=" + endDate + "&searchKeyword=" + searchKeyword +"&dvAddr="+dvAddr
 	        + "&evCd=" + evCdParam + "&evAction=" + evActionParam + "&sortCol=" + sortColParam + "&sortDir=" + sortDirParam;
 
 	    // (ADR-008) 즉시 로딩 오버레이 → 비동기 사전검증 → 가능 시 동기 이동, 아니면 "파일 없음" 표시
@@ -248,85 +274,66 @@
 
 	// 검색 조건에 따른 검색
 	window.searchEventList = function(pageNo){
-		
+
 		let form = document.getElementById('eventListSearchForm');
 	  	const startDate = form.elements['startDate']?.value; // 'yyyy-MM-dd'
 	  	const endDate   = form.elements['endDate']?.value;
 	  	const evCd = form.elements['evCd']?.value;
 	  	const evAction = form.elements['evAction']?.value;   // patches 13: 처리상태 필터
 	  	const searchKeyword   = form.elements['searchKeyword']?.value;
-	 	const pageSize = document.getElementById('pageSize')?.value;
-	  	
+
 	  	if( searchKeyword.length >= 100 ){
 	  		alert("검색어는 100자를 넘을 수 없습니다. \n 모든 문자 입력 가능합니다.");
 	  		return;
 	  	}
-		
+
 		if( startDate > endDate ){
 			alert("날짜를 확인해주세요.");
 			return;
 		}
-		
+
 		if(evCd !== ""){
 			if( evCd != null && (evCd >=7 || evCd <= 0)){
 				alert("유효하지 않은 유형입니다.");
 				return;
 			}
 		}
-		
 
-		
 	  	// 검색 파라미터 변경으로 인한 페이지 번호 1로 변경
 	  	pageNo = Math.max(1, Number.isFinite(+pageNo) ? Math.trunc(+pageNo) : 0);
-		
-		location.href = "viewEventList.do?page=" + pageNo + "&startDate=" + startDate + "&endDate=" + endDate + "&evCd=" + evCd + "&evAction=" + evAction + "&searchKeyword=" + searchKeyword +"&pageSize="+pageSize;
 
+		// 입력 조건은 모두 폼 값 기준(카드 클릭도 evCd 를 폼에 반영한 뒤 이 함수를 호출 → 다른 조건과 AND). 정렬 조건은 유지한다.
+		location.href = buildListUrl({
+			page: pageNo,
+			startDate: startDate,
+			endDate: endDate,
+			evCd: evCd,
+			evAction: evAction,
+			searchKeyword: searchKeyword
+		});
 	}
-	
-	//  Pagination 
+
+	// 상단 유형 카드 클릭 → 해당 유형만 조회(36번 WP-P1).
+	//  - 이미 선택된 카드를 다시 누르면 유형 필터 해제, 검색어·날짜·처리상태는 그대로 유지(AND), 페이지는 1 로 초기화.
+	//  - 유형은 기존 evCd 파라미터(1 미등록차량 / 4 위험상황 / 5 물건적재 / 6 이중주차)로 표현 → URL 로 공유·북마크 가능.
+	//  - 카드의 건수는 기존 의미(전체 기준 유형별 건수)를 그대로 유지한다(현재 조회 조건을 반영하지 않음).
 	document.addEventListener('DOMContentLoaded', function () {
-		  const $wrap = document.querySelector('.pagination');
-		  if (!$wrap) return;
-
-		  const links = Array.from($wrap.querySelectorAll('a'));
-		  const current = $wrap.querySelector('strong'); // 현재 페이지(예: <strong>3</strong>)
-		  const curPage = current ? parseInt(current.textContent.trim(), 10) : NaN;
-
-		  // 유틸: goPage(숫자)에서 숫자만 뽑기
-		  const getPageFromHref = (a) => {
-		    const m = a.getAttribute('href')?.match(/goPage\((\d+)\)/);
-		    return m ? parseInt(m[1], 10) : null;
-		  };
-
-		  // 이동 버튼 텍스트 치환 및 클래스 세팅
-		  links.forEach(a => {
-		    const txt = a.textContent.replace(/\s+/g,'').trim();
-		    const page = getPageFromHref(a);
-
-		    if (/\[처음\]/.test(txt)) {
-		      a.textContent = '«';
-		      a.classList.add('pg-first');
-		      if (curPage && curPage <= 1) a.classList.add('is-disabled');
-		    } else if (/\[이전\]/.test(txt)) {
-		      a.textContent = '‹';
-		      a.classList.add('pg-prev');
-		      if (curPage && curPage <= 1) a.classList.add('is-disabled');
-		    } else if (/\[다음\]/.test(txt)) {
-		      a.textContent = '›';
-		      a.classList.add('pg-next');
-		      // 다음이 마지막을 넘어가면 비활성
-		      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
-		    } else if (/\[마지막\]/.test(txt)) {
-		      a.textContent = '»';
-		      a.classList.add('pg-last');
-		      // 마지막 페이지 계산이 어려우니 “goPage(n)” 값이 현재와 같거나 작으면 비활성
-		      if (curPage && page && page <= curPage) a.classList.add('is-disabled');
-		    } else {
-		      // 숫자 링크는 그대로 두되 불필요한 공백 제거
-		      if (/^\d+$/.test(txt)) a.textContent = txt;
-		    }
-		  });
-	  });
+		const form = document.getElementById('eventListSearchForm');
+		const evCdSelect = form ? form.elements['evCd'] : null;
+		function pickCard(card){
+			if (!evCdSelect) return;
+			const cd = card.getAttribute('data-ev-cd');
+			evCdSelect.value = (evCdSelect.value === cd) ? '' : cd;
+			searchEventList(1);
+		}
+		document.querySelectorAll('.checkdown-state li.ev-card').forEach(function(card){
+			card.addEventListener('click', function(){ pickCard(card); });
+			card.addEventListener('keydown', function(e){
+				if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickCard(card); }
+			});
+		});
+	});
+	
 	
 	  // 각 컬럼별 정렬 버튼 클릭시 데이터 정렬
 	  document.addEventListener('DOMContentLoaded', function () {  
@@ -470,7 +477,7 @@
 						searchKeyword:'searchKeyword'
 					},
 					responseType:'blob',
-					downloadFilename:'불법주차_리스트.xlsx'
+					downloadFilename:'주차단속_리스트.xlsx'
 				}).catch(function(e){alert(e.message);});
 			})
 
@@ -532,7 +539,7 @@
 </script>
 
 	<ul class="checkdown-state">
-		<li>
+		<li class="ev-card${evCd == 1 ? ' active' : ''}" data-ev-cd="1" role="button" tabindex="0" aria-pressed="${evCd == 1}" title="클릭하면 이 유형만 조회합니다(다시 클릭하면 해제)">
 			<div class="ico-checkdown unregistered">
 				<svg viewBox="0 0 24 24" fill="currentColor">
 					<path d="M22.207 20.793L20.793 22.207L19.5859 21H16V17.4141L15 16.4141V21H9V10.4141L1.79297 3.20703L3.20703 1.79297L22.207 20.793ZM8 21H2V13H8V21ZM4 19H6V15H4V19ZM11 19H13V14.4141L11 12.4141V19ZM22 17.7578L20 15.7578V5H18V13.7578L16 11.7578V3H22V17.7578ZM15 10.7578L12.2422 8H15V10.7578Z"/>
@@ -572,7 +579,7 @@
 		<%--					<div class="value"><span id="eventCount3">0</span>건</div>--%>
 		<%--				</div>--%>
 		<%--			</li>--%>
-		<li>
+		<li class="ev-card${evCd == 4 ? ' active' : ''}" data-ev-cd="4" role="button" tabindex="0" aria-pressed="${evCd == 4}" title="클릭하면 이 유형만 조회합니다(다시 클릭하면 해제)">
 			<div class="ico-checkdown warning">
 				<svg viewBox="0 0 24 24" fill="currentColor">
 					<path d="M4.00001 20V14C4.00001 9.58172 7.58173 6 12 6C16.4183 6 20 9.58172 20 14V20H21V22H3.00001V20H4.00001ZM6.00001 14H8.00001C8.00001 11.7909 9.79087 10 12 10V8C8.6863 8 6.00001 10.6863 6.00001 14ZM11 2H13V5H11V2ZM19.7782 4.80761L21.1924 6.22183L19.0711 8.34315L17.6569 6.92893L19.7782 4.80761ZM2.80762 6.22183L4.22183 4.80761L6.34315 6.92893L4.92894 8.34315L2.80762 6.22183Z"/>
@@ -583,7 +590,7 @@
 				<div class="value"><span id="eventCount4">0</span>건</div>
 			</div>
 		</li>
-		<li>
+		<li class="ev-card${evCd == 5 ? ' active' : ''}" data-ev-cd="5" role="button" tabindex="0" aria-pressed="${evCd == 5}" title="클릭하면 이 유형만 조회합니다(다시 클릭하면 해제)">
 			<div class="ico-checkdown carrying">
 				<svg viewBox="0 0 24 24" fill="currentColor">
 					<path d="M12 1L21.5 6.5V17.5L12 23L2.5 17.5V6.5L12 1ZM6.49896 9.97089L11 12.5768V17.6252H13V12.5768L17.501 9.9709L16.499 8.24005L12 10.8447L7.50104 8.24004L6.49896 9.97089Z"/>
@@ -594,7 +601,7 @@
 				<div class="value"><span id="eventCount5">0</span>건</div>
 			</div>
 		</li>
-		<li>
+		<li class="ev-card${evCd == 6 ? ' active' : ''}" data-ev-cd="6" role="button" tabindex="0" aria-pressed="${evCd == 6}" title="클릭하면 이 유형만 조회합니다(다시 클릭하면 해제)">
 			<div class="ico-checkdown doubleParking">
 				<svg viewBox="0 0 24 24" viewBox="0 0 24 24" fill="currentColor">
 					<path d="M19 21H5V22C5 22.5523 4.55228 23 4 23H3C2.44772 23 2 22.5523 2 22V13L4.4174 8.97099C4.77884 8.36858 5.42986 7.99998 6.13238 7.99998H17.8676C18.5701 7.99998 19.2212 8.36858 19.5826 8.97099L22 13V22C22 22.5523 21.5523 23 21 23H20C19.4477 23 19 22.5523 19 22V21ZM4.33238 13H19.6676L17.8676 9.99998H6.13238L4.33238 13ZM6.5 18C7.32843 18 8 17.3284 8 16.5C8 15.6716 7.32843 15 6.5 15C5.67157 15 5 15.6716 5 16.5C5 17.3284 5.67157 18 6.5 18ZM17.5 18C18.3284 18 19 17.3284 19 16.5C19 15.6716 18.3284 15 17.5 15C16.6716 15 16 15.6716 16 16.5C16 17.3284 16.6716 18 17.5 18ZM5.43934 3.43932L6.5 2.37866L7.56066 3.43932C7.83211 3.71077 8 4.08577 8 4.49998C8 5.32841 7.32843 5.99998 6.5 5.99998C5.67157 5.99998 5 5.32841 5 4.49998C5 4.08577 5.16789 3.71077 5.43934 3.43932ZM10.9393 3.43932L12 2.37866L13.0607 3.43932C13.3321 3.71077 13.5 4.08577 13.5 4.49998C13.5 5.32841 12.8284 5.99998 12 5.99998C11.1716 5.99998 10.5 5.32841 10.5 4.49998C10.5 4.08577 10.6679 3.71077 10.9393 3.43932ZM16.4393 3.43932L17.5 2.37866L18.5607 3.43932C18.8321 3.71077 19 4.08577 19 4.49998C19 5.32841 18.3284 5.99998 17.5 5.99998C16.6716 5.99998 16 5.32841 16 4.49998C16 4.08577 16.1679 3.71077 16.4393 3.43932Z"/>
@@ -655,20 +662,9 @@
 									placeholder="디바이스명 및 주소 검색" maxlength="100" />
 							</div>
 							<button type="button" class="search-btn"
-								onclick="searchEventList('${paginationInfo.currentPageNo != null ? paginationInfo.currentPageNo : 1}')">조회</button>
+								onclick="searchEventList(1)">조회</button>
 						</form>
 
-						<div class="filter-input-group">
-							<select id="pageSize" name="pageSize"
-								onchange="searchEventList()" class="select-box">
-								<option value="10" ${pageSize == 10 ? 'selected' : ''}>10개씩
-									보기</option>
-								<option value="20" ${pageSize == 20 ? 'selected' : ''}>20개씩
-									보기</option>
-								<option value="30" ${pageSize == 30 ? 'selected' : ''}>30개씩
-									보기</option>
-							</select>
-						</div>
 					</div>
 
 					<div class="bulk-actions">
@@ -825,15 +821,19 @@
 												data-dv-addr="${fn:escapeXml(item.dv_addr)}">상세보기</button></td>
 									</tr>
 								</c:forEach>
+								<%-- 마지막 페이지 등 행이 모자라면 빈 행으로 높이를 채워 페이지네이션 위치가 흔들리지 않게 한다 --%>
+								<c:forEach begin="${fn:length(eventList) + 1}" end="${pageSize}">
+									<tr class="filler-row" aria-hidden="true"><td colspan="8">&nbsp;</td></tr>
+								</c:forEach>
 							</tbody>
 						</table>
 
-						<div class="pagination">
-							<ui:pagination paginationInfo="${paginationInfo}" type="text"
-								jsFunction="goPage" />
-						</div>
 					</c:otherwise>
 				</c:choose>
+
+					<%-- 공통 페이지네이션(총 건수 · 현재/전체 페이지 · 처음/이전/번호/다음/마지막). 결과가 없어도 같은 자리에 표시 --%>
+					<div class="h100-pg" data-total="${totalRecordCount}" data-page="${paginationInfo.currentPageNo}"
+						data-page-size="${pageSize}" data-handler="goPage"></div>
 			</div>
 		</div>
 

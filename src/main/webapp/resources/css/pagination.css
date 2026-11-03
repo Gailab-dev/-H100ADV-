@@ -55,3 +55,40 @@
   width: 36px;           /* 정사각형 버튼 */
   padding: 0;
 }
+
+/* ========== H100 공통 페이지네이션 (36번 WP-C, resources/js/common/pagination.js) ==========
+   총 건수 · 현재/전체 페이지 · 처음/이전/번호/다음/마지막. 3칸 그리드로 번호 줄을 항상 가운데에 둔다.
+   높이를 고정(36px)해 건수가 바뀌어도 레이아웃이 흔들리지 않는다. */
+.h100-pg {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  margin: 12px 0 8px;
+  user-select: none;
+  font-family: "Malgun Gothic", "맑은 고딕", sans-serif;
+}
+.h100-pg .h100-pg-info { justify-self: start; font-size: 13px; color: #666; white-space: nowrap; }
+.h100-pg .h100-pg-info b { color: #222; font-weight: 600; }
+.h100-pg .h100-pg-nav { display: inline-flex; align-items: center; gap: 4px; }
+.h100-pg .h100-pg-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #dbdbdb;
+  border-radius: 6px;
+  background: #fff;
+  color: #555;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.h100-pg .h100-pg-btn:hover:not(:disabled):not(.active) { background: #f3f6fa; border-color: #b8c4d6; }
+.h100-pg .h100-pg-btn.active { background: #5375a0; border-color: #5375a0; color: #fff; font-weight: 600; cursor: default; }
+.h100-pg .h100-pg-btn:disabled { opacity: .4; cursor: default; }
+@media (max-width: 900px) {
+  .h100-pg { grid-template-columns: 1fr; justify-items: center; }
+  .h100-pg .h100-pg-info { justify-self: center; }
+  .h100-pg .h100-pg-spacer { display: none; }
+}

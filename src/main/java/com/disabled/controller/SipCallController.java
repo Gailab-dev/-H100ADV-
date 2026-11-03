@@ -38,6 +38,14 @@ public class SipCallController {
 
 	private static final Logger logger = LoggerFactory.getLogger(SipCallController.class);
 
+	/**
+	 * 응급 연락망(통화 로그) 목록의 한 페이지 크기(서버 고정값, 36번 WP-C).
+	 * 개수 선택(listSize)을 없애고 이 상수만 쓴다. 요청의 listSize 파라미터는 받지 않고 무시한다.
+	 * 근거(소스 검토, 미실측): 행 약 49px, FHD 에서 제목·필터·표 머리·페이지네이션 약 260px 를 빼면 10행(약 490px)이 들어가고,
+	 * 행을 눌러 여는 인라인 오디오 행(약 70px)이 열려도 스크롤이 생기지 않는다.
+	 */
+	public static final int SIP_LIST_PAGE_SIZE = 10;
+
 	@Autowired
 	private SipCallService sipCallService;
 
@@ -79,10 +87,13 @@ public class SipCallController {
 	@ResponseBody
 	public Map<String, Object> getSipCallList(
 			@RequestParam(value = "keyword", required = false) String keyword,
-			@RequestParam(value = "listSize", defaultValue = "10") int listSize,
 			@RequestParam(value = "startDate", required = false) String startDate,
 			@RequestParam(value = "endDate", required = false) String endDate,
-			@RequestParam(value = "page", defaultValue = "1") int page) {
+			@RequestParam(value = "page", defaultValue = "1") int page,
+			// 알림 도착 강조용(37 WP-N): scId 를 직접 주거나, 응급콜 알림의 noti_serial + noti_reg_date 로 통화 로그를 찾는다
+			@RequestParam(value = "scId", required = false) Integer focusScId,
+			@RequestParam(value = "notiSerial", required = false) String notiSerial,
+			@RequestParam(value = "notiTime", required = false) String notiTime) {
 
 		// ====== 유효성 검증 [S] ======
 		if (keyword != null && !keyword.isEmpty()) {
@@ -99,12 +110,20 @@ public class SipCallController {
 			logger.warn("[SIP] 유효하지 않은 endDate: {}", endDate);
 			return errorResult("유효하지 않은 종료 날짜입니다.");
 		}
-		if (listSize < 1 || listSize > 100) listSize = 10;
 		if (page < 1 || page > 100000) page = 1;
+		if (focusScId != null && focusScId <= 0) focusScId = null;
+		if (notiSerial != null && !notiSerial.isEmpty() && !notiSerial.matches("^[0-9]{1,15}$")) {
+			logger.warn("[SIP] 유효하지 않은 notiSerial: {}", notiSerial);
+			return errorResult("유효하지 않은 시리얼입니다.");
+		}
+		if (notiTime != null && !notiTime.isEmpty() && !notiTime.matches("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$")) {
+			logger.warn("[SIP] 유효하지 않은 notiTime: {}", notiTime);
+			return errorResult("유효하지 않은 알림 시각입니다.");
+		}
 		// ====== 유효성 검증 [E] ======
 
 		try {
-			return sipCallService.getList(keyword, listSize, startDate, endDate, page);
+			return sipCallService.getList(keyword, SIP_LIST_PAGE_SIZE, startDate, endDate, page, focusScId, notiSerial, notiTime);
 		} catch (RuntimeException e) {
 			logger.error("[SIP] 통화 로그 조회 중 오류", e);
 			return errorResult("통화 로그 조회 중 오류가 발생했습니다.");
