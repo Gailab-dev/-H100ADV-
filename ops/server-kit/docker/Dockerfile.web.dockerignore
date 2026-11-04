@@ -1,0 +1,20 @@
+# Dockerfile.web 전용 제외 목록 (build context = 저장소 루트). Dockerfile.web 과 같은 폴더에 둔다.
+# web 빌드에 필요한 것은 pom.xml 과 src/ 등 Java 프로젝트 파일뿐이다.
+.git
+.gitignore
+.gitattributes
+.claude
+.idea
+.vscode
+.settings
+.classpath
+.project
+.metadata
+target
+build
+dist
+logs
+h100_module_c
+h100_module_d
+ops
+H100_system

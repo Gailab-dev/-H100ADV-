@@ -1,0 +1,35 @@
+# [예비] 미리 만든 WAR 로 web 이미지를 만드는 방식 — 평소에는 Dockerfile.web(소스 빌드)을 쓴다. h100-update.sh --war FILE 일 때만 사용.
+# build context = 임시 디렉터리 (app.war, h100-ca.crt 가 들어 있음; h100-update.sh 가 준비)
+# Tomcat 9 + JDK 17 (구/신 서버와 동일 계열). h100-ca 는 "공개 인증서"만 넣는다 (CA 개인키 절대 금지).
+FROM tomcat:9.0-jdk17-temurin
+ARG H100_UID=3100
+ARG H100_GID=3100
+
+# 엑셀(POI) 열 너비 자동조정·이미지 썸네일(imgscalr)용 폰트/그래픽 라이브러리 (구 서버와 동일 기능)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends fontconfig fonts-dejavu-core fonts-nanum libfreetype6 \
+ && fc-cache -f \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY h100-ca.crt /tmp/h100-ca.crt
+RUN keytool -importcert -noprompt -trustcacerts -alias h100-internal-ca \
+      -file /tmp/h100-ca.crt -cacerts -storepass changeit \
+ && rm -f /tmp/h100-ca.crt
+
+# 기본 webapps 제거, Shutdown 포트 비활성(-1), 이미지·영상 서빙 Context(B-05, G4) 추가
+# 구 서버 server.xml(webapps2 Host)에 /imgFile→output_images, /videoFile→output_videos Context 가 있어 동일하게 재현
+RUN rm -rf /usr/local/tomcat/webapps/* \
+ && sed -i 's#<Server port="8005" shutdown="SHUTDOWN">#<Server port="-1" shutdown="SHUTDOWN">#' /usr/local/tomcat/conf/server.xml \
+ && sed -i 's#</Host>#  <Context path="/imgFile" docBase="/media/output_images" reloadable="false"/>\n  <Context path="/videoFile" docBase="/media/output_videos" reloadable="false"/>\n      </Host>#' /usr/local/tomcat/conf/server.xml \
+ && grep -q 'path="/imgFile"' /usr/local/tomcat/conf/server.xml \
+ && grep -q 'path="/videoFile"' /usr/local/tomcat/conf/server.xml
+
+# 컨텍스트 경로: 구 서버와 동일하게 /gov-disabled-web-adv (excelDownload.js 기본값이 이 경로를 가정). ROOT 는 WEB_CONTEXT=ROOT
+ARG WEB_CONTEXT=gov-disabled-web-adv
+COPY app.war /usr/local/tomcat/webapps/${WEB_CONTEXT}.war
+RUN mkdir -p /usr/local/tomcat/conf/Catalina/localhost \
+ && chown -R ${H100_UID}:${H100_GID} /usr/local/tomcat/webapps /usr/local/tomcat/work \
+      /usr/local/tomcat/temp /usr/local/tomcat/logs /usr/local/tomcat/conf/Catalina 2>/dev/null || true
+
+# 오디오는 구 서버에도 Context 가 없음 → 앱(SipCallServiceImpl, audio.dec.path)이 서빙.
+EXPOSE 8080

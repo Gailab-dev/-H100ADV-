@@ -1,5 +1,29 @@
-# build context = 빌드 디렉터리 (app.war, h100-ca.crt 가 들어 있음; 10-build-images.sh 가 준비)
-# Tomcat 9 + JDK 17 (구/신 서버와 동일 계열). h100-ca 는 "공개 인증서"만 넣는다 (CA 개인키 절대 금지).
+# H100 web 이미지 — 소스에서 직접 빌드한다(관리자 PC 에서 WAR 를 만들어 올릴 필요 없음). 빌드는 h100-update.sh 가 호출한다.
+# build context = 저장소 루트(pom.xml, src/). 제외 목록은 같은 폴더의 Dockerfile.web.dockerignore.
+# 필요: BuildKit(DOCKER_BUILDKIT=1), 서버의 Maven 저장소·Docker Hub 접근. 내부 CA 는 --secret id=h100ca,src=/etc/h100/tls/h100-ca.crt 로 전달.
+# 미리 만든 WAR 로 만드는 예비 방식은 Dockerfile.web-war.
+
+# ---- 1단계: Maven 으로 WAR 빌드 (pom.xml: packaging war, java 17) ----
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /src
+COPY . .
+RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests package
+# 결과 WAR 는 정확히 1개여야 한다
+RUN set -e; n=$(ls target/*.war | wc -l); [ "$n" = 1 ] || { echo "target/*.war 가 ${n}개 — 1개여야 함"; exit 1; }; cp target/*.war /app.war
+
+# G0 게이트: 구 서버 값(192.168.0.15, /home/dsic)이 WAR 에 하드코딩돼 있으면 빌드 실패. 검사 대상 파일을 못 읽어도 실패. (SKIP_G0=1 은 비상용)
+ARG SKIP_G0=0
+RUN set -e; \
+    if [ "$SKIP_G0" = 1 ]; then echo "G0 생략(SKIP_G0=1)"; exit 0; fi; \
+    mkdir /chk; cd /chk; \
+    jar xf /app.war WEB-INF/spring/root-context.xml WEB-INF/classes/globals.properties; \
+    if [ ! -f WEB-INF/spring/root-context.xml ] || [ ! -f WEB-INF/classes/globals.properties ]; then \
+      echo "G0 FAIL: WAR 에서 root-context.xml / globals.properties 를 읽지 못함"; exit 1; fi; \
+    if grep -Eq '192\.168\.0\.15|/home/dsic' WEB-INF/spring/root-context.xml WEB-INF/classes/globals.properties; then \
+      echo "G0 FAIL: WAR 에 구 서버 값(192.168.0.15 또는 /home/dsic)이 하드코딩됨"; exit 1; fi; \
+    echo "G0 OK"
+
+# ---- 2단계: 런타임 ----
 FROM tomcat:9.0-jdk17-temurin
 ARG H100_UID=3100
 ARG H100_GID=3100
@@ -10,10 +34,10 @@ RUN apt-get update \
  && fc-cache -f \
  && rm -rf /var/lib/apt/lists/*
 
-COPY h100-ca.crt /tmp/h100-ca.crt
-RUN keytool -importcert -noprompt -trustcacerts -alias h100-internal-ca \
-      -file /tmp/h100-ca.crt -cacerts -storepass changeit \
- && rm -f /tmp/h100-ca.crt
+# 내부 CA(공개 인증서)를 BuildKit secret 으로 받아 JVM 신뢰저장소에 등록 (저장소에 *.crt 를 두지 않고, 이미지에 파일로 남기지 않음)
+RUN --mount=type=secret,id=h100ca \
+    keytool -importcert -noprompt -trustcacerts -alias h100-internal-ca \
+      -file /run/secrets/h100ca -cacerts -storepass changeit
 
 # 기본 webapps 제거, Shutdown 포트 비활성(-1), 이미지·영상 서빙 Context(B-05, G4) 추가
 # 구 서버 server.xml(webapps2 Host)에 /imgFile→output_images, /videoFile→output_videos Context 가 있어 동일하게 재현
@@ -25,7 +49,7 @@ RUN rm -rf /usr/local/tomcat/webapps/* \
 
 # 컨텍스트 경로: 구 서버와 동일하게 /gov-disabled-web-adv (excelDownload.js 기본값이 이 경로를 가정). ROOT 는 WEB_CONTEXT=ROOT
 ARG WEB_CONTEXT=gov-disabled-web-adv
-COPY app.war /usr/local/tomcat/webapps/${WEB_CONTEXT}.war
+COPY --from=build /app.war /usr/local/tomcat/webapps/${WEB_CONTEXT}.war
 RUN mkdir -p /usr/local/tomcat/conf/Catalina/localhost \
  && chown -R ${H100_UID}:${H100_GID} /usr/local/tomcat/webapps /usr/local/tomcat/work \
       /usr/local/tomcat/temp /usr/local/tomcat/logs /usr/local/tomcat/conf/Catalina 2>/dev/null || true

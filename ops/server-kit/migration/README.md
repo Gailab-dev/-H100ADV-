@@ -7,24 +7,26 @@
 
 | 파일 | 역할 | 언제 쓰나 |
 |---|---|---|
-| `h100-update.sh` | **이미지 빌드 → 컨테이너 교체 → 검증**, 이전 태그로 롤백, 상태 조회 | 소스 반영(일상), 문제 시 되돌리기 |
+| `h100-update.sh` | **소스에서 이미지 빌드(module-c·web) → 컨테이너 교체 → 검증**, 이전 태그로 롤백, 상태 조회 | 소스 반영(일상), 문제 시 되돌리기 |
 | `h100-deploy.sh` | 컨테이너 **준비·기동·정지** (이미지는 빌드하지 않음) | 최초 설치, 전체 정지/원복 |
 | `h100-verify.sh` | 읽기 전용 **검증**(`--ops` 추가 시 운영 점검) | 반영 직후(자동 실행), 정기 점검 |
 | `h100-web-env.sh` | `/etc/h100/web.env` 생성·키 추가(`--set`)·목록(`--list`) | 최초 설치, web 환경키(날씨 키 등) 추가 |
 | `lib.sh` | 공통 함수(직접 실행 금지) | 위 스크립트들이 자동으로 읽음 |
+| `../docker/` | `Dockerfile.module-c`(Go 빌드), `Dockerfile.web`(Maven 빌드 → Tomcat), `Dockerfile.web-war`(예비: 미리 만든 WAR), `*.dockerignore`(빌드 제외 목록), `compose.yml`(서버 구성 백업본) | 이미지 빌드가 사용. 직접 실행하지 않음 |
 | `h100-legacy-snapshot.sh` | **구 서버(192.168.0.15) 전용** 설정 사본 생성 | 구 서버에서 1회성. 이 키트와 별개 |
 
 ## 2. 상황별 사용법 (모두 `sudo`, `/opt/h100/migration` 에서)
 
-**소스 반영 (일상 업무)**
+**소스 반영 (일상 업무)** — 관리자 PC 에서 WAR 를 만들어 올릴 필요가 없습니다.
 ```
 # ① gailab-si 로:  cd /opt/h100/repo && git pull --ff-only
-# ② 관리자 PC 에서 같은 커밋으로 mvn package → WAR 를 서버로 복사 (web 변경이 없어도 WAR 필요)
-sudo ./h100-update.sh --war /opt/h100/war/<WAR파일>      # 계획 확인 후 yes → 빌드 → 교체 → 검증 자동
+sudo ./h100-update.sh            # 계획 확인 후 yes → 소스 빌드(module-c·web) → 컨테이너 교체 → 검증 자동
 ```
+- module-c(Go)와 web(Maven→WAR→Tomcat) 모두 **Docker 안에서 소스로 빌드**합니다. 서버가 Maven 저장소·Docker Hub 에 접근할 수 있어야 하고, 첫 빌드는 의존성을 내려받느라 수 분 걸립니다(이후 캐시).
 - 이미지 태그는 git 커밋 SHA(예: `45db37c8`)로 붙고, 같은 태그가 있으면 시각을 덧붙여 기존 이미지를 지키며, 반영 이력은 `/opt/h100/docker/deploy-history.log` 에 남습니다.
-- 빌드가 실패하면 `.env`·기존 컨테이너는 바뀌지 않습니다. DB 는 이 스크립트가 건드리지 않으므로 **DB 스키마 변경이 있으면 먼저 별도로 반영(백업 후)** 하세요.
-- WAR 에 구 서버 값(192.168.0.15, /home/dsic)이 남아 있으면 빌드 전에 중단합니다(G0).
+- 빌드가 실패하면 `.env`·기존 컨테이너는 바뀌지 않습니다(빌드 로그: `/root/h100-migration/<시각>/build-*.log`). DB 는 이 스크립트가 건드리지 않으므로 **DB 스키마 변경이 있으면 먼저 별도로 반영(백업 후)** 하세요.
+- 소스에 구 서버 값(192.168.0.15, /home/dsic)이 하드코딩돼 있으면 web 빌드 중에 실패합니다(G0).
+- (예비) Maven 빌드가 막힌 환경에서는 `--war FILE` 로 미리 만든 WAR 를 쓸 수 있습니다.
 
 **문제가 생겼을 때**
 ```
@@ -46,7 +48,7 @@ sudo ./h100-web-env.sh --list                     # 키 이름만 확인
 # web.env 는 컨테이너 생성 때 읽히므로 변경 후 web 재생성 필요(명령은 스크립트가 안내)
 ```
 
-**최초 설치(요약)**: `h100-deploy.sh --prepare` → `/etc/h100/*.env`·`tls/` 채움(`conf/env-templates.md`) → `h100-web-env.sh` → `h100-update.sh --war … --build-only` → `h100-deploy.sh --db-only` → DB 복원(런북, 서버의 이관용 스크립트) → `h100-deploy.sh --all` → `h100-verify.sh`
+**최초 설치(요약)**: `h100-deploy.sh --prepare` → `/etc/h100/*.env`·`tls/` 채움(`conf/env-templates.md`) → `h100-web-env.sh` → `h100-update.sh --build-only` → `h100-deploy.sh --db-only` → DB 복원(런북, 서버의 이관용 스크립트) → `h100-deploy.sh --all` → `h100-verify.sh`
 
 ## 3. 키트 자체를 서버에 갱신하는 법
 ```
@@ -60,12 +62,12 @@ root 로 실행되는 스크립트를 일반 사용자가 쓸 수 있는 저장�
 - 비밀값(비밀번호·키)은 `/etc/h100/*.env` 에만 둡니다. 스크립트는 값을 출력·로그에 남기지 않으며, git/문서에도 기록하지 않습니다.
 - 위험한 단계는 확인 입력(`yes`) 또는 `--yes` 가 필요합니다. 실행 로그·결과: `/root/h100-migration/<실행시각>/` (스크립트별 `.log`, `RESULT_*.txt`, 빌드 로그 `build-*.log`).
 - 이전 이미지는 롤백용이므로 최근 3개 태그는 지우지 마세요.
-- web 변경은 `git pull` 만으로 반영되지 않습니다 → 새 WAR 필요. module_d(디바이스)는 이 키트와 무관(디바이스에 별도 설치).
+- module-c·web 모두 `git pull` 후 `h100-update.sh` 한 번이면 반영됩니다. module_d(디바이스)는 이 키트와 무관(디바이스에 별도 설치).
 
 ## 5. 이름 변경·통합 내역 (2026-11-03)
 | 구 이름 | 현재 |
 |---|---|
-| `10-build-images.sh` | `h100-update.sh` 에 통합 (`--build-only` 로 빌드만 가능) |
+| `10-build-images.sh` | `h100-update.sh` 에 통합 (`--build-only` 로 빌드만 가능). web 은 WAR 업로드 없이 소스 빌드 |
 | `40-up.sh`, `h100-rollback.sh`(구 `90-rollback.sh`) | `h100-deploy.sh` 에 통합 (`--stop` 이 구 rollback) |
 | `50-verify.sh`, `65-ops-check.sh` | `h100-verify.sh` 에 통합 (`--ops`) |
 | `35-web-env.sh` | `h100-web-env.sh` (`--set`/`--list` 추가, `--force` 시 다른 키 보존) |

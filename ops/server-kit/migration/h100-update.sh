@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 # H100 이미지 빌드 → 컨테이너 교체 → 검증 → 롤백 (신 서버/개발서버). 소스 변경분을 서버에 반영하는 단일 진입점.
 # (구 이름: 10-build-images.sh 를 이 스크립트로 통합 — 2026-11-03)
-#   WAR 검사(G0) → 이미지 빌드(module-c + web) → 컨테이너 교체(h100-deploy.sh --all) → 검증(h100-verify.sh)
-#   DB 컨테이너·데이터는 건드리지 않는다. DB 복원·미디어 동기화는 이 스크립트의 범위가 아니다(런북).
+#   소스에서 이미지 빌드(module-c: Go, web: Maven→WAR→Tomcat — 둘 다 Docker 안에서 빌드, G0 검사 포함)
+#   → 컨테이너 교체(h100-deploy.sh --all) → 검증(h100-verify.sh)
+#   관리자 PC 에서 WAR 를 만들어 올릴 필요가 없다. DB 컨테이너·데이터는 건드리지 않는다(DB 복원·미디어 동기화는 런북).
 # 사용:
-#   sudo ./h100-update.sh --war FILE [--src /opt/h100/repo] [--tag NAME] [--yes]   # 빌드 + 교체 + 검증
-#   sudo ./h100-update.sh --war FILE --build-only [--tag NAME] [--yes]              # 이미지만 빌드(최초 설치·리허설), 컨테이너 교체 없음
-#   sudo ./h100-update.sh --rollback-to <태그> [--yes]                              # 이미 보유한 이미지 태그로 되돌림(DB 유지)
-#   sudo ./h100-update.sh --status                                                  # 현재 태그·실행 이미지·보유 태그·최근 이력(변경 없음)
+#   sudo ./h100-update.sh [--src /opt/h100/repo] [--tag NAME] [--yes]     # 소스 빌드 + 교체 + 검증
+#   sudo ./h100-update.sh --build-only [--tag NAME] [--yes]                # 이미지만 빌드(최초 설치·리허설), 컨테이너 교체 없음
+#   sudo ./h100-update.sh --rollback-to <태그> [--yes]                    # 이미 보유한 이미지 태그로 되돌림(DB 유지)
+#   sudo ./h100-update.sh --status                                        # 현재 태그·실행 이미지·보유 태그·최근 이력(변경 없음)
 # 옵션:
-#   --src DIR   저장소 체크아웃(h100_module_c/ 포함). 기본 /opt/h100/repo. 이미지 태그 = git 짧은 SHA(+미커밋 시 -dirty)
+#   --src DIR   저장소 체크아웃(pom.xml 과 h100_module_c/ 포함). 기본 /opt/h100/repo. 이미지 태그 = git 짧은 SHA(+미커밋 시 -dirty)
 #   --tag NAME  이미지 태그 직접 지정(git 정보가 없는 소스용). 같은 태그가 이미 있으면 -MMDDHHMM 을 덧붙여 기존 이미지를 보존
-#   --skip-g0   WAR 하드코딩 검사 생략(비상용)
+#   --war FILE  (예비) 미리 만든 WAR 로 web 이미지를 만든다(Dockerfile.web-war). Maven 빌드가 막힌 환경용
+#   --skip-g0   WAR 하드코딩 검사(G0) 생략(비상용)
 # 사전: gailab-si 로 `git pull --ff-only` 를 끝낸 상태(이 스크립트는 git pull 을 하지 않는다).
-#       WAR 는 관리자 PC 에서 같은 커밋으로 mvn package 한 결과를 서버로 복사해 둘 것.
+#       서버가 Maven 저장소·Docker Hub 에 접근할 수 있어야 한다(첫 빌드는 의존성을 내려받느라 오래 걸리고, 이후는 캐시).
 #       이번 반영에 DB 스키마 변경이 있으면 이 스크립트 실행 전에 별도로 반영(이 스크립트는 DB 를 변경하지 않음).
 set -uo pipefail
 HERE=$(dirname "$(readlink -f "$0")")
@@ -67,18 +69,29 @@ for n in ("WEB-INF/spring/root-context.xml","WEB-INF/classes/globals.properties"
 }
 
 # 이미지 빌드(module-c + web). .env·기존 컨테이너는 건드리지 않는다. 성공 0.
-build_images() {   # 사용: build_images TAG   (전역: SRC WAR KIT)
-  local tag="$1" rc=0 b img
-  [ -f "$KIT/docker/Dockerfile.module-c" ] && [ -f "$KIT/docker/Dockerfile.web" ] || { bad "Dockerfile 없음: $KIT/docker/ (키트의 docker/* 를 /opt/h100/docker/ 에 설치)"; return 1; }
+build_images() {   # 사용: build_images TAG   (전역: SRC WAR KIT SKIP_G0)
+  local tag="$1" rc=0 b img wdf=Dockerfile.web
+  [ -n "$WAR" ] && wdf=Dockerfile.web-war
+  [ -f "$KIT/docker/Dockerfile.module-c" ] && [ -f "$KIT/docker/$wdf" ] || { bad "Dockerfile 없음: $KIT/docker/ (Dockerfile.module-c, $wdf — 키트의 docker/Dockerfile.* 를 /opt/h100/docker/ 에 설치)"; return 1; }
   [ -f /etc/h100/tls/h100-ca.crt ] || { bad "/etc/h100/tls/h100-ca.crt 없음"; return 1; }
+  export DOCKER_BUILDKIT=1   # web 소스 빌드의 캐시 마운트·secret 에 필요
   docker build -f "$KIT/docker/Dockerfile.module-c" -t "h100/module-c:$tag" "$SRC" >"$WORK/build-module-c.log" 2>&1 \
     && ok "h100/module-c:$tag 빌드" || { bad "module-c 빌드 실패 — 마지막 줄($WORK/build-module-c.log):"; tail -n 12 "$WORK/build-module-c.log" | sed 's/^/    /'; rc=1; }
-  b=$(mktemp -d)
-  cp "$WAR" "$b/app.war" && cp /etc/h100/tls/h100-ca.crt "$b/h100-ca.crt"
-  docker build -f "$KIT/docker/Dockerfile.web" --build-arg H100_UID="$H100_UID" --build-arg H100_GID="$H100_GID" --build-arg WEB_CONTEXT="$WEB_CONTEXT" \
-    -t "h100/web:$tag" "$b" >"$WORK/build-web.log" 2>&1 \
-    && ok "h100/web:$tag 빌드" || { bad "web 빌드 실패 — 마지막 줄($WORK/build-web.log):"; tail -n 12 "$WORK/build-web.log" | sed 's/^/    /'; rc=1; }
-  rm -rf "$b"
+  if [ -n "$WAR" ]; then
+    # (예비) 미리 만든 WAR: 컨텍스트 = 임시 폴더(app.war, h100-ca.crt)
+    b=$(mktemp -d)
+    cp "$WAR" "$b/app.war" && cp /etc/h100/tls/h100-ca.crt "$b/h100-ca.crt"
+    docker build -f "$KIT/docker/Dockerfile.web-war" --build-arg H100_UID="$H100_UID" --build-arg H100_GID="$H100_GID" --build-arg WEB_CONTEXT="$WEB_CONTEXT" \
+      -t "h100/web:$tag" "$b" >"$WORK/build-web.log" 2>&1 \
+      && ok "h100/web:$tag 빌드(미리 만든 WAR)" || { bad "web 빌드 실패 — 마지막 줄($WORK/build-web.log):"; tail -n 12 "$WORK/build-web.log" | sed 's/^/    /'; rc=1; }
+    rm -rf "$b"
+  else
+    # 소스 빌드: 컨텍스트 = 저장소 루트(제외 목록 Dockerfile.web.dockerignore). Maven·G0 는 Docker 안에서 실행, 내부 CA 는 secret 으로 전달
+    docker build -f "$KIT/docker/Dockerfile.web" --secret id=h100ca,src=/etc/h100/tls/h100-ca.crt \
+      --build-arg H100_UID="$H100_UID" --build-arg H100_GID="$H100_GID" --build-arg WEB_CONTEXT="$WEB_CONTEXT" --build-arg SKIP_G0="$SKIP_G0" \
+      -t "h100/web:$tag" "$SRC" >"$WORK/build-web.log" 2>&1 \
+      && ok "h100/web:$tag 빌드(소스 Maven 빌드, $([ "$SKIP_G0" -eq 1 ] && echo 'G0 생략' || echo 'G0 통과'))" || { bad "web 빌드 실패 — 마지막 줄($WORK/build-web.log):"; tail -n 25 "$WORK/build-web.log" | sed 's/^/    /'; rc=1; }
+  fi
   # 이미지 안에 비밀·개인키가 없는지 간이 점검
   for img in module-c web; do
     img_ok "$img" "$tag" || continue
@@ -111,8 +124,9 @@ EOF
 # ---- 상태 보기 ----
 if [ "$STATUS" -eq 1 ]; then
   say "현재 H100_TAG: $(cur_tag)"
-  say "실행 중 컨테이너:"; docker ps --filter name=h100- --format '  {{.Names}}  {{.Image}}  {{.Status}}'
-  say "보유 이미지(h100/*):"; docker image ls --format '  {{.Repository}}:{{.Tag}}  {{.CreatedSince}}  {{.Size}}' | grep '^  h100/'
+  # docker --format 은 앞쪽 공백을 지우므로 들여쓰기는 sed 로 붙인다(실서버에서 이미지 목록이 비어 보이던 문제)
+  say "실행 중 컨테이너:"; docker ps --filter name=h100- --format '{{.Names}}  {{.Image}}  {{.Status}}' | sed 's/^/  /'
+  say "보유 이미지(h100/*):"; docker image ls --format '{{.Repository}}:{{.Tag}}  {{.CreatedSince}}  {{.Size}}' | grep '^h100/' | sed 's/^/  /'
   say "최근 반영 이력:"; tail -n 8 "$HIST" 2>/dev/null | sed 's/^/  /'
   exit 0
 fi
@@ -139,8 +153,12 @@ fi
 
 # ---- 빌드 + 교체 + 검증 ----
 [ -d "$SRC/h100_module_c" ] || { echo "--src($SRC)에 h100_module_c/ 가 없음"; exit 2; }
-[ -n "$WAR" ] && [ -f "$WAR" ] || { echo "--war 파일이 필요합니다(관리자 PC mvn package 결과). 예: --war /opt/h100/war/gov-disabled-web-adv-1.0.0.war"; exit 2; }
-WAR=$(readlink -f "$WAR")
+if [ -n "$WAR" ]; then
+  [ -f "$WAR" ] || { echo "--war 파일이 없습니다: $WAR"; exit 2; }
+  WAR=$(readlink -f "$WAR")
+else
+  [ -f "$SRC/pom.xml" ] || { echo "--src($SRC)에 pom.xml 이 없음 — 저장소 루트를 지정하세요(미리 만든 WAR 로 빌드하려면 --war)"; exit 2; }
+fi
 [ -z "$TAGARG" ] || [[ "$TAGARG" =~ $TAGRE ]] || { echo "--tag 형식 오류: $TAGARG"; exit 2; }
 [ "$HAD_ENV" -eq 1 ] || [ "$BUILD_ONLY" -eq 1 ] || { echo "$ENVF 없음 — 최초 설치입니다: --build-only 로 이미지를 만든 뒤 h100-deploy.sh 로 기동(런북 절차)"; exit 2; }
 
@@ -157,18 +175,22 @@ if [ "$DIRTY" -gt 0 ]; then
   warn "서버 작업본($SRC)에 미커밋 변경 $DIRTY 건 — 서버에서 소스를 수정하지 않는 것이 원칙"
   [ -n "$TAGARG" ] || TAG="${SHA}-dirty"
 fi
-# 같은 태그 이미지가 이미 있으면 덮어쓰지 않도록 접미사(같은 커밋에서 WAR 만 다시 빌드한 경우 등)
+# 같은 태그 이미지가 이미 있으면 덮어쓰지 않도록 접미사(같은 커밋을 다시 빌드한 경우 등)
 if img_ok module-c "$TAG" || img_ok web "$TAG"; then
   NEWTAG="${TAG}-$(date +%m%d%H%M)"; warn "태그 $TAG 이미지가 이미 있음 → $NEWTAG 로 빌드(기존 이미지 보존)"; TAG="$NEWTAG"
 fi
 PREV_SCHED=$(grep -E '^H100_EVENT_SCHEDULER=' "$ENVF" 2>/dev/null | head -1 | cut -d= -f2-); PREV_SCHED=${PREV_SCHED:-OFF}
 
-if [ "$SKIP_G0" -eq 1 ]; then warn "--skip-g0: WAR 하드코딩 검사 생략 (컷오버 전에는 반드시 통과해야 함)"
-else check_war_g0 "$WAR" || { say "→ WAR 를 수정해 다시 빌드하세요. 이 상태로는 이미지를 만들지 않습니다."; summary; exit 1; }; fi
+# G0: 소스 빌드는 Docker 안(Dockerfile.web)에서 검사하고, --war 로 미리 만든 WAR 는 여기서 검사한다.
+if [ "$SKIP_G0" -eq 1 ]; then warn "--skip-g0: WAR 하드코딩 검사(G0) 생략 (컷오버 전에는 반드시 통과해야 함)"
+elif [ -n "$WAR" ]; then
+  check_war_g0 "$WAR" || { say "→ WAR 를 수정해 다시 빌드하세요. 이 상태로는 이미지를 만들지 않습니다."; summary; exit 1; }
+fi
 
 if [ "$BUILD_ONLY" -eq 1 ]; then say "== 이미지 빌드 계획 =="; else say "== 이미지 재배포 계획 =="; fi
 say "  소스      : $SRC  ($BRANCH @ $SHA)  $SUBJ"
-say "  WAR       : $WAR ($(stat -c %s "$WAR" 2>/dev/null) bytes, $(date -r "$WAR" '+%F %T' 2>/dev/null))"
+if [ -n "$WAR" ]; then say "  web       : 미리 만든 WAR 사용 — $WAR ($(stat -c %s "$WAR" 2>/dev/null) bytes, $(date -r "$WAR" '+%F %T' 2>/dev/null))"
+else say "  web       : 소스에서 Maven 빌드(Docker 안, 첫 빌드는 수 분 소요) + G0 검사"; fi
 say "  새 태그   : $TAG   (이전 태그: ${PREV_TAG:-없음})"
 if [ "$BUILD_ONLY" -eq 1 ]; then say "  동작      : 이미지 빌드만 수행(컨테이너 교체 없음)"
 else say "  교체 대상 : h100-module-c, h100-web   (h100-db 유지, event_scheduler=$PREV_SCHED 유지, 롤백: --rollback-to ${PREV_TAG:-이전태그})"; fi
