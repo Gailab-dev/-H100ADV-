@@ -168,7 +168,7 @@ if [ -z "$SHA" ]; then
   SHA=nogit
 fi
 BRANCH=$(g rev-parse --abbrev-ref HEAD 2>/dev/null || echo "-")
-SUBJ=$(g log -1 --format='%s' 2>/dev/null | cut -c1-70)
+SUBJ=$(g log -1 --format='%s' 2>/dev/null | head -c 100 | iconv -f UTF-8 -t UTF-8 -c 2>/dev/null)  # 바이트 단위로 자르면 한글이 깨지므로 잘린 불완전 문자는 iconv -c 로 제거
 DIRTY=$(g status --porcelain 2>/dev/null | wc -l)
 TAG="${TAGARG:-$SHA}"
 if [ "$DIRTY" -gt 0 ]; then
