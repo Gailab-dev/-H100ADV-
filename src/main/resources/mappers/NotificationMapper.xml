@@ -34,7 +34,8 @@
 		최근 알림 목록.
 		noti_reg_date 는 DATETIME 이므로 화면 표시용 문자열로 변환해 내려준다
 		(JS 에서 Date 파싱 시 브라우저별 편차를 피하기 위함).
-		(37 WP-N) 안 읽은 알림을 먼저(noti_is_read ASC) 보여주고, 읽은 알림은 그 뒤에 읽음 표시로 남는다(물리 삭제 없음).
+		(2026-11-06 WP-A) 읽은 알림은 목록에서 제외한다(noti_is_read = 0만 조회, 배지 countUnread 와 같은 기준).
+		읽은 행은 DB 에 그대로 남는다(물리 삭제 없음). 최신순.
 	-->
 	<select id="selectRecent" parameterType="map" resultType="map">
 		SELECT
@@ -47,8 +48,9 @@
 			noti_is_read,
 			DATE_FORMAT(noti_reg_date, '%Y-%m-%d %H:%i:%s') AS noti_reg_date
 		FROM tbl_notification_log
-		WHERE <include refid="visibleNotification"/>
-		ORDER BY noti_is_read ASC, noti_reg_date DESC, noti_id DESC
+		WHERE noti_is_read = 0
+		  AND <include refid="visibleNotification"/>
+		ORDER BY noti_reg_date DESC, noti_id DESC
 		LIMIT #{limit}
 	</select>
 

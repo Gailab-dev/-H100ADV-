@@ -272,6 +272,8 @@
 		var badgeSeq = 0;        // 로컬에서 배지를 바꿀 때마다 증가 — 그 전에 시작한 폴링 응답은 버린다
 		var notiItems = {};      // 목록에 그린 알림(noti_id → 항목). 클릭 시 유형별 이동 판단에 사용
 		var navigating = false;  // event 알림 상세 이동 처리 중(중복 클릭 방지)
+		var readLocal = {};      // (2026-11-06 WP-A) 클릭해서 읽음 처리 중인 알림 id — 서버 반영 전 목록 재조회가 같은 카드를 다시 그리지 않게 한다
+		var EMPTY_HTML = '<div class="noti-empty">새 알림이 없습니다.</div>';
 
 		// noti_title 은 DB(디바이스명 포함) 에서 온 값이므로 HTML 로 넣기 전에 반드시 이스케이프한다(계획서 §8).
 		function escapeHtml(s) {
@@ -368,6 +370,8 @@
 					// 최초 로드(lastKnownUnread===null)는 이미 쌓여있던 개수일 뿐이므로 제외.
 					if (lastKnownUnread !== null && count > lastKnownUnread) {
 						triggerNotiBlink();
+						// (2026-11-06 WP-A) 팝업이 열려 있으면 새 알림이 맨 위에 보이도록 목록을 다시 불러온다
+						if ($('#notificationPopup').is(':visible')) loadList(false);
 					}
 					lastKnownUnread = count;
 				},
@@ -383,7 +387,9 @@
 			});
 		}
 
-		function openPopup() {
+		// 목록은 서버가 안 읽은 알림만 최신순으로 내려준다(최근 10건). showPopup=false 는 열려 있는 팝업의 갱신용.
+		function loadList(showPopup) {
+			if (!showPopup && pendingReads > 0) return; // 읽음 요청이 끝나기 전에는 목록을 갱신하지 않는다
 			$.ajax({
 				url: CTX + '/notification/list',
 				method: 'GET',
@@ -391,47 +397,80 @@
 				cache: false,
 				success: function(list) {
 					var html = '';
-					if (!list || list.length === 0) {
-						html = '<div class="noti-empty">새 알림이 없습니다.</div>';
-					} else {
-						notiItems = {};
-						$.each(list, function(i, item) { notiItems[item.noti_id] = item; html += buildNotificationCard(item); });
-					}
-					$('#notificationList').html(html);
-					$('#notificationPopup').show();
+					notiItems = {};
+					$.each(list || [], function(i, item) {
+						if (readLocal[item.noti_id]) return; // 방금 읽음 처리한 카드는 다시 그리지 않는다
+						notiItems[item.noti_id] = item;
+						html += buildNotificationCard(item);
+					});
+					$('#notificationList').html(html || EMPTY_HTML);
+					if (showPopup) $('#notificationPopup').show();
 				},
 				error: function() {
+					if (!showPopup) return; // 갱신 실패는 기존 목록을 그대로 둔다
 					$('#notificationList').html('<div class="noti-empty">알림을 불러오지 못했습니다.</div>');
 					$('#notificationPopup').show();
 				}
 			});
 		}
+		function openPopup() { loadList(true); }
 
-		// (37 WP-N) 클릭한 안읽은 알림 1건을 화면에서 바로 읽음 처리: 카드 강조 해제 + 배지 -1(폴링 대기 없음)
-		function markReadLocally($card) {
-			if (!$card.hasClass('unread')) return; // 이미 읽은 알림은 숫자를 줄이지 않는다
-			$card.removeClass('unread');
+		// (2026-11-06 WP-A) 클릭한 알림 1건을 목록에서 바로 없애고 배지 -1(폴링 대기 없음).
+		// 서버 반영에 실패하면 restoreCard 로 되돌리기 위해 카드 정보(snap)를 돌려준다.
+		// 카드는 <a> 링크라 먼저 숨기고 다음 틱에 제거한다(클릭 직후의 링크 기본 이동에 영향이 없게).
+		function removeCardLocally($card) {
+			if (!$card.hasClass('unread')) return null;
+			var snap = { id: String($card.data('noti-id')), html: $card.prop('outerHTML'), index: $card.index() };
+			readLocal[snap.id] = true;
+			$card.hide();
+			setTimeout(function() {
+				$card.remove();
+				if ($('#notificationList .noti-card').length === 0) $('#notificationList').html(EMPTY_HTML);
+			}, 0);
 			badgeSeq++;
 			currentUnread = Math.max(0, currentUnread - 1);
 			lastKnownUnread = currentUnread; // 감소를 "새 알림 도착(깜박임)" 판단에서 제외
+			renderBadge(currentUnread);
+			return snap;
+		}
+
+		// 읽음 요청이 실패했을 때 카드를 원래 자리로 되돌리고 배지를 +1 한다.
+		function restoreCard(snap) {
+			if (!snap) return;
+			delete readLocal[snap.id];
+			var $list = $('#notificationList');
+			$list.find('.noti-empty').remove();
+			var $cards = $list.children('.noti-card');
+			var $c = $(snap.html);
+			if (snap.index >= $cards.length) $list.append($c); else $cards.eq(snap.index).before($c);
+			badgeSeq++;
+			currentUnread++;
+			lastKnownUnread = currentUnread;
 			renderBadge(currentUnread);
 		}
 
 		// 서버에 읽음 반영. keepalive 로 보내 페이지 이동(링크 기본 동작)과 무관하게 전송을 보장한다(19번 이슈A).
 		// 진행 중에는 폴링이 서버의 (아직 줄지 않은) 값으로 배지를 되돌리지 않도록 pendingReads 로 막고,
 		// 끝나면 한 번 재조회해 서버 값과 맞춘다.
-		function sendRead(notiId) {
+		// 응답 본문의 success 가 true 가 아니면(네트워크 오류·세션 만료 포함) onFail 을 호출해 카드를 복구한다.
+		// 반환 Promise 는 성공·실패와 무관하게 항상 이행된다(상세 이동을 막지 않기 위해).
+		function sendRead(notiId, onFail) {
 			var readUrl = CTX + '/notification/read/' + notiId;
 			pendingReads++;
-			var done = function() {
+			var finish = function(ok) {
 				pendingReads = Math.max(0, pendingReads - 1);
+				if (!ok && onFail) onFail();
 				if (pendingReads === 0) loadUnreadCount();
 			};
 			if (window.fetch && window.Promise) {
-				return fetch(readUrl, { method: 'POST', keepalive: true, credentials: 'same-origin' }).then(done, done);
+				return fetch(readUrl, { method: 'POST', keepalive: true, credentials: 'same-origin' })
+					.then(function(r) { return r.ok ? r.json().catch(function() { return null; }) : null; })
+					.then(function(d) { finish(!!(d && d.success)); }, function() { finish(false); });
 			}
 			// keepalive 미지원 구형 브라우저 폴백
-			$.ajax({ url: readUrl, method: 'POST' }).always(done);
+			$.ajax({ url: readUrl, method: 'POST' })
+				.done(function(d) { finish(!!(d && d.success)); })
+				.fail(function() { finish(false); });
 			return null;
 		}
 
@@ -556,8 +595,8 @@
 				if (!notiId) return;
 				var item = notiItems[notiId];
 
-				markReadLocally($card);
-				var readReq = sendRead(notiId);
+				var snap = removeCardLocally($card);
+				var readReq = sendRead(notiId, function() { restoreCard(snap); });
 
 				// event 유형만 상세로 직접 이동(detail/check 선행). sip_call·device_error 는 링크 기본 이동에 맡긴다.
 				if (!item || item.noti_type !== 'event') return;
@@ -573,12 +612,14 @@
 				$.ajax({
 					url: CTX + '/notification/readAll',
 					method: 'POST',
-					success: function() {
+					success: function(data) {
+						if (!data || data.success !== true) return; // 서버 반영 실패 시 목록·배지를 그대로 둔다
 						badgeSeq++;
 						currentUnread = 0;
 						lastKnownUnread = 0;
+						notiItems = {};
 						$('#notificationBadge').hide();
-						$('.noti-card').removeClass('unread');
+						$('#notificationList').html(EMPTY_HTML); // 읽은 알림은 목록에서 보이지 않는다
 					}
 				});
 			});
