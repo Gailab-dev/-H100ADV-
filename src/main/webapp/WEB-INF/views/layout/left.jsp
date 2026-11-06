@@ -24,6 +24,7 @@
 <c:set var="onDevice"    value="${fn:contains(uri, '/deviceList')}" />
 <c:set var="onSip"       value="${fn:contains(uri, '/sipcall')}" />
 <c:set var="onMyInfo"    value="${fn:contains(uri, '/myInfo')}" />
+<c:set var="onUserManage" value="${fn:contains(uri, '/userManage')}" />
 
 <style>
 	/* 헤더 내 정보 아이콘 버튼 — left 메뉴와 동일 아이콘/색상(currentColor, 기본 #000) */
@@ -180,6 +181,19 @@
 				<path d="M5 3.5c-.8 0-1.5.7-1.4 1.5.4 6 5.4 11 11.4 11.4.8.1 1.5-.6 1.5-1.4v-2.1c0-.6-.4-1.1-1-1.3l-2-.5c-.5-.1-1 .1-1.3.5l-.6.8c-1.8-.9-3.3-2.4-4.2-4.2l.8-.6c.4-.3.6-.8.5-1.3l-.5-2c-.2-.6-.7-1-1.3-1H5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
 			</svg>응급 연락망
 		</a></li>
+
+		<%-- 사용자 정보 관리 (2026-11-06 WP-B): 최고 관리자(30)에게만 노출. 판정은 서버 인터셉터와 같은 UserManageAccessInterceptor.isAllowedGrade
+		     (LoginInterceptor 가 요청 속성 canManageUsers 로 내려 줌 — 여기서 등급 숫자를 직접 비교하지 않는다) --%>
+		<c:if test="${canManageUsers}">
+		<li><a class="${onUserManage ? 'active' : ''}" style="${linkPad}${onUserManage ? actSty : ''}" href="${cp}/userManage/viewUserManage.do">
+			<svg class="menu-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<circle cx="7.5" cy="7" r="2.6" stroke="currentColor" stroke-width="1.4"/>
+				<path d="M2.5 16c0-2.6 2.2-4.2 5-4.2s5 1.6 5 4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+				<circle cx="14" cy="7.6" r="2" stroke="currentColor" stroke-width="1.4"/>
+				<path d="M13.6 11.9c2.2 0 3.9 1.2 3.9 3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+			</svg>사용자 정보 관리
+		</a></li>
+		</c:if>
 
 		<%-- (요청 2026-07-16) '내 정보' 는 헤더(사용자명 왼쪽 사람아이콘) 모달로 이동 → 사이드바에서 제거 --%>
 	</ul>

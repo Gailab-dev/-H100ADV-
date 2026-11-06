@@ -65,6 +65,10 @@
   </definition>
 
   <!-- 내 정보 (patches 2026-07-06 — 운영 화면 순차 이관) -->
+  <definition name="userManage" extends="defaultLayout">
+    <put-attribute name="body" value="/WEB-INF/views/userManage/userManage.jsp" />
+  </definition>
+
   <definition name="myInfo" extends="defaultLayout">
     <put-attribute name="body" value="/WEB-INF/views/myInfo/myInfo.jsp" />
   </definition>

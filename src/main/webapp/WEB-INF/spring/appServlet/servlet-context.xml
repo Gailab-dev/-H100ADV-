@@ -44,6 +44,11 @@
 	        <mvc:mapping path="/deviceList/roi*" />
 	        <beans:bean class="com.disabled.interceptor.RoiAccessInterceptor" />
 	    </mvc:interceptor>
+	    <!-- (2026-11-06 WP-B) 사용자 정보 관리 화면·API 는 최고관리자(u_grade 30)만. LoginInterceptor 다음에 실행된다 -->
+	    <mvc:interceptor>
+	        <mvc:mapping path="/userManage/**" />
+	        <beans:bean class="com.disabled.interceptor.UserManageAccessInterceptor" />
+	    </mvc:interceptor>
 	</mvc:interceptors>
 	
 	

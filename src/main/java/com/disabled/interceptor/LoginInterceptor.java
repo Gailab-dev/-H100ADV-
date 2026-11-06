@@ -102,6 +102,10 @@ public class LoginInterceptor implements HandlerInterceptor{
             return false;
         }
         
+        // 메뉴 노출용: 사용자 정보 관리 접근 등급(30)인지 — 서버 인터셉터(UserManageAccessInterceptor)와 같은 판정을 쓴다
+        request.setAttribute(UserManageAccessInterceptor.REQUEST_ATTR_CAN_MANAGE,
+                UserManageAccessInterceptor.isAllowedGrade(session.getAttribute("uGrade")));
+        
         // 최초 비밀번호 미변경시 비밀번호 변경 관련 url 허용
         Boolean pwdChanged = (session == null) ? null : (Boolean) session.getAttribute("pwdChanged");
         boolean isPwdEndpoints =
