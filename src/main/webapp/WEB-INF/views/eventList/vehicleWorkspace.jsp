@@ -11,7 +11,7 @@
     </div>
 </div>
 <section class="vehicle-overview" aria-label="차량 정보">
-    <div class="vehicle-identity"><span class="vehicle-label">차량 번호</span><strong><c:out value="${eventListDetail.ev_car_num}" /></strong></div>
+    <div class="vehicle-identity"><span class="vehicle-label">차량 번호</span><strong><c:out value="${eventListDetail.ev_car_num_display}" /></strong></div>
     <c:if test="${vehicleContext.identified}">
         <dl><dt>전체 발생</dt><dd><c:out value="${vehicleContext.summary.total_count}" /><small>건</small></dd></dl>
         <dl><dt>발생 장비</dt><dd><c:out value="${vehicleContext.summary.location_count}" /><small>곳</small></dd></dl>
@@ -68,7 +68,7 @@
             <li><div class="value-area"><label>날짜</label><div class="value"><c:out value="${eventListDetail.ev_date_display}" /></div></div></li>
             <li><div class="value-area"><label>디바이스명</label><div class="value"><c:out value="${eventListDetail.ev_dv_name}" /></div></div></li>
             <li><div class="value-area"><label>디바이스 주소</label><div class="value"><c:out value="${eventListDetail.ev_dv_addr}" /></div></div></li>
-            <li><div class="value-area"><label>차량 번호</label><div class="value"><c:out value="${eventListDetail.ev_car_num}" /></div></div></li>
+            <li><div class="value-area"><label>차량 번호</label><div class="value"><c:out value="${eventListDetail.ev_car_num_display}" /></div></div></li>
             <li><div class="value-area"><label>비고</label><div class="value">-</div></div></li>
         </ul>
     </section>

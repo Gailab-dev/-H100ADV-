@@ -794,8 +794,8 @@
 													value="${item.ev_dv_addr}" escapeXml="true" />
 										</span></td>
 										<td><span class="cell-ellipsis"
-											title="${fn:escapeXml(item.ev_car_num)}"> <c:out
-													value="${item.ev_car_num}" escapeXml="true" />
+											title="${fn:escapeXml(item.ev_car_num_display)}"> <c:out
+													value="${item.ev_car_num_display}" escapeXml="true" />
 										</span></td>
 										<%-- patches 2026-07-09(8): 인라인 onclick 에 EL 직접 삽입 시 dv_id 가 null 이면
 										     eventListDetail(,82,'..') 형태로 JS SyntaxError, 주소에 따옴표 있으면 문자열 깨짐.

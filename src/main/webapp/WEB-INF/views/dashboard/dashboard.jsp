@@ -808,7 +808,7 @@ function loadRecentEvents() {
 			events.forEach(function(e) {
 				html += '<tr>'
 					+ '<td>' + esc(e.ev_dv_name) + '</td>'
-					+ '<td>' + esc(e.ev_car_num) + '</td>'
+					+ '<td>' + esc(e.ev_car_num_display != null ? e.ev_car_num_display : e.ev_car_num) + '</td>'
 					+ '<td class="' + actionClass(e.ev_action) + '">' + convertEvAction(e.ev_action) + '</td>'
 					+ '<td>' + formatEvDate(e) + '</td>'
 					+ '</tr>';

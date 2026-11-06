@@ -119,6 +119,8 @@ public class DashboardController {
 	@ResponseBody
 	public List<Map<String, Object>> getRecentEvents(
 			@org.springframework.web.bind.annotation.RequestParam(value = "limit", defaultValue = "5") int limit) {
-		return dashboardService.getRecentEvents(limit);
+		List<Map<String, Object>> events = dashboardService.getRecentEvents(limit);
+		com.disabled.common.PlateDisplay.applyAll(events); // 차량번호 표시값 키(ev_car_num_display) 추가, 기존 필드는 그대로
+		return events;
 	}
 }

@@ -34,6 +34,7 @@ import com.disabled.common.CommonValidation;
 import com.disabled.common.ExcelColumn;
 import com.disabled.common.ExcelSheetSpec;
 import com.disabled.common.ImageByteLoader;
+import com.disabled.common.PlateDisplay;
 import com.disabled.component.LogDiskManager;
 import com.disabled.mapper.LoginMapper;
 import com.disabled.model.FineAdvanceNoticeSpec;
@@ -276,6 +277,8 @@ public class EventListController {
 		    
 			// 검색 조건에 따른 이벤트 리스트 조회
 			eventList = eventListService.getEventList(paramMap);
+			// 차량번호 화면 표시값(해당없음 규칙). 원본 ev_car_num·검색·정렬은 그대로 둔다.
+			PlateDisplay.applyAll(eventList);
 
 			// date 타입 input태그에 날짜가 표시되도록 format 변환
 			// stringTypeInputTagFormat: 문자열을 날짜로 변환
@@ -505,6 +508,7 @@ public class EventListController {
 			model.addAttribute("uName", userService.getUNameBySession(uId));
 
 			// ====== mdoel add [S] ====== //
+			PlateDisplay.apply(eventListDetail); // 차량번호 화면 표시값(원본 ev_car_num 은 유지, 이력 조회는 원본 사용)
 			model.addAttribute("eventListDetail", eventListDetail);
 			model.addAttribute("vehicleContext", eventListService.getVehicleContext(eventListDetail));
 			model.addAttribute("kakaoMapJsKey", kakaoMapJsKey);
