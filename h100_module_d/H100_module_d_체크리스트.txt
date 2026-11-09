@@ -88,6 +88,8 @@ CA_CERT_FILE=/home/<계정>/H100/system/h100_module_d/ssl/h100-ca.crt
 ROI_FILE_PATH=/home/<계정>/H100/system/rois.json
 ROI_SNAPSHOT_DIR=/home/<계정>/H100/output/roi_snapshot
 # ROI_SNAPSHOT_URL 은 로컬 Python 이 스냅샷을 공급할 때만 추가(없으면 생략). 있으면 URL 이 DIR 보다 우선.
+# ROI_WRITE_NORMALIZED 는 평소 생략(기본: ROI 를 정본 형식 점 배열로 기록). 웹(Java)이 정본 형식으로 바뀌기 전에 장비만 먼저
+# 배포하는 전환기에만 ROI_WRITE_NORMALIZED=false 로 두면 입력 원문을 그대로 기록한다(웹이 저장 응답 해시를 보낸 내용과 비교하기 때문).
 
 
 [선택 키 — 실시간 영상 시청 정책 (38번). 모두 코드에 기본값이 있어 없어도 동작한다]

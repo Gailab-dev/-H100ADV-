@@ -191,7 +191,15 @@ func receiveHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, apiError{Code: "INVALID", Msg: "ROI 검증에 실패했습니다", Detail: detail})
 		return
 	}
-	newHash, conflict, current, err := saveReplacing(path, req.BaseHash, normalized)
+	// 전환기 안전장치: ROI_WRITE_NORMALIZED=false 이면 검증을 통과한 입력 원문을 그대로 쓴다(이전 동작).
+	// 기본(미설정·true)은 정본 형식. 웹(Java)은 저장 응답 해시가 보낸 내용의 SHA-256 과 같아야 성공으로 보므로,
+	// 웹이 정본 형식 바이트를 그대로 보내도록 바뀌기 전에 장비만 먼저 배포하면 이 값을 false 로 둔다.
+	toWrite := normalized
+	if !writeNormalized() {
+		toWrite = text
+		note(w, "legacyWrite=true")
+	}
+	newHash, conflict, current, err := saveReplacing(path, req.BaseHash, toWrite)
 	if err != nil {
 		note(w, "stage=write")
 		logger.Log.Error("[ROI_receive] 저장 실패", zap.Error(err))
@@ -205,8 +213,17 @@ func receiveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 저장한 바이트(정본 형식)의 해시를 돌려준다. 다음 ROI_get 의 해시와 같다.
-	note(w, "saved bytes=%d inputBytes=%d hash=%s", len(normalized), len(text), hash8(newHash))
+	note(w, "saved bytes=%d inputBytes=%d hash=%s", len(toWrite), len(text), hash8(newHash))
 	writeJSON(w, http.StatusOK, map[string]interface{}{"ok": true, "hash": newHash})
+}
+
+// writeNormalized 는 ROI_WRITE_NORMALIZED 가 false/0/no/off 가 아니면 true(기본: 정본 형식으로 기록).
+func writeNormalized() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("ROI_WRITE_NORMALIZED"))) {
+	case "false", "0", "no", "off":
+		return false
+	}
+	return true
 }
 
 // hash8 은 로그용 해시 앞 8자리.

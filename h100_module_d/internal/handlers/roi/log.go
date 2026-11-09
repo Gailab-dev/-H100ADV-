@@ -137,6 +137,12 @@ func LogStartupConfig() {
 	_, hmacErr := hmacKeyFromEnv()
 	logger.Log.Info(fmt.Sprintf("[ROI_config] DEVICE_SERIAL=%s DEVICE_HMAC_KEY=%s", setOrNot(serialSet), hmacState(hmacErr)))
 
+	if writeNormalized() {
+		logger.Log.Info("[ROI_config] ROI_WRITE_NORMALIZED=기본(정본 형식 점 배열로 기록)")
+	} else {
+		logger.Log.Warn("[ROI_config] ROI_WRITE_NORMALIZED=false — 입력 원문을 그대로 기록합니다(전환기 설정, 웹이 정본 형식으로 바뀌면 제거)")
+	}
+
 	if p := os.Getenv("ROI_FILE_PATH"); p == "" {
 		logger.Log.Warn("[ROI_config] ROI_FILE_PATH 미설정 — ROI_get/ROI_receive 는 NOT_CONFIGURED(503) 로 응답합니다")
 	} else {
