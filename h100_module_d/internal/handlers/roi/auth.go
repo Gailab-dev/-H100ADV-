@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -23,11 +24,23 @@ const (
 	maxClockSkew = 5 * time.Minute
 )
 
+// hmacKeyFromEnv 는 DEVICE_HMAC_KEY(64자리 16진수)를 읽는다. 값은 돌려주지만 로그에는 남기지 말 것.
+func hmacKeyFromEnv() ([]byte, error) {
+	key, err := hex.DecodeString(strings.TrimSpace(os.Getenv("DEVICE_HMAC_KEY")))
+	if err != nil {
+		return nil, err
+	}
+	if len(key) != 32 {
+		return nil, errors.New("DEVICE_HMAC_KEY 길이 오류")
+	}
+	return key, nil
+}
+
 // verifyHMAC 는 헤더의 시리얼·HMAC 이 이 디바이스의 것과 일치하는지 검증한다. 실패 사유는 응답에 키·HMAC 원문을 담지 않는다.
 func verifyHMAC(r *http.Request, body []byte) (ok bool, status int, msg string) {
 	serial := os.Getenv("DEVICE_SERIAL")
-	key, err := hex.DecodeString(strings.TrimSpace(os.Getenv("DEVICE_HMAC_KEY")))
-	if serial == "" || err != nil || len(key) != 32 {
+	key, err := hmacKeyFromEnv()
+	if serial == "" || err != nil {
 		return false, http.StatusServiceUnavailable, "디바이스 인증 설정이 없습니다"
 	}
 	gotSerial := r.Header.Get(headerSerial)

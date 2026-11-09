@@ -32,6 +32,9 @@ func main() {
 	}
 	// ===== [E] .env 파일 로딩 ====== //
 
+	// ROI 설정 진단(경로·설정 여부·파일 존재, 비밀값 제외). .env 로딩 뒤에 남겨야 실제 적용값이 보인다.
+	roi.LogStartupConfig()
+
 	// 영상 상태 관리자: .env 의 시청자 타임아웃·유예 값을 읽어야 하므로 .env 로딩 뒤에 만든다.
 	oCmdManager := video.CreateCmdManager()
 	oCmdManager.StartWatchdog() // 유휴 타임아웃·end 유예 만료 감시

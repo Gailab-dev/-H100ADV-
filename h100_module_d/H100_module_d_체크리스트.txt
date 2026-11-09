@@ -258,6 +258,18 @@ sudo systemctl start h100_module_d
 오늘             sudo journalctl -u h100_module_d --since today
 특정 시간        sudo journalctl -u h100_module_d --since "2026-07-22 09:00" --until "2026-07-22 18:00"
 
+[앱 로그 파일] (2026-11-09 변경)
+위치            <WorkingDirectory>/logs/log-YYYY-MM-DD.log  (예: ~/H100/system/h100_module_d/logs/)
+                · 한국 시간(KST) 자정에 새 날짜 파일로 바뀐다(이전에는 프로세스 시작일 파일에만 계속 기록되어 오늘자 파일이 안 생겼음).
+                · 파일 안에는 색상 코드가 없다. 같은 내용이 stdout 으로도 나가 journalctl / systemd.log 에도 남는다.
+                · 날짜가 30일 지난 log-YYYY-MM-DD*.log 는 날짜가 바뀔 때 자동 삭제된다.
+기동 직후 한 번  grep "로거 시작\|ROI_config" logs/log-$(date +%F).log
+                (작업 폴더, ROI_FILE_PATH·ROI_SNAPSHOT_DIR/URL 설정 여부와 파일 존재 여부. 환경변수는 .env 에 있어 systemctl cat 으로는 보이지 않는다)
+ROI 요청 추적   grep "ROI_get\|ROI_receive\|ROI_snapshot" logs/log-$(date +%F).log
+                한 줄 요약: serial / remote / status / code / took / 단계(stage)·사유. HMAC 키·이미지·좌표 전체는 남기지 않는다.
+스냅샷 실패 code SNAPSHOT_NOT_FOUND(파일 없음) / SNAPSHOT_TOO_LARGE(1장 8MB 초과) / SNAPSHOT_FORMAT(PNG·JPEG 아님) /
+                SNAPSHOT_SOURCE_ERROR(URL 호출 실패·권한 오류) / NOT_CONFIGURED(소스 미설정, 503)
+
 
 [서비스 파일 변경 후]
 
