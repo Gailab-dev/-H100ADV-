@@ -2,32 +2,12 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 
 <%-- Tiles body fragment. 공용 chrome(헤더·사이드바·푸터)은 defaultLayout 제공. 최고 관리자(u_grade 30)만 접근(서버 인터셉터).
-     작업계획서 2026-11-06 WP-B. 목록은 /userManage/list.do, 저장은 /userManage/update.do(세션 CSRF 헤더 X-H100-CSRF).
+     작업계획서 2026-11-06 WP-B. 스타일은 resources/css/userManage.css(모든 선택자가 .user-manage-page 아래, 2026-11-09 패치). 목록은 /userManage/list.do, 저장은 /userManage/update.do(세션 CSRF 헤더 X-H100-CSRF).
      사용자 값은 textContent/value 로만 넣는다(HTML 삽입 없음). 비밀번호 관련 값은 화면·응답 어디에도 없다. --%>
 <title>사용자 정보 관리</title>
-<style>
-	.content { padding: 32px 24px 29px 24px !important; }
-	.um-wrap { max-width: 1100px; }
-	.um-title { margin: 0 0 8px; font-size: 22px; font-weight: 700; color: #272343; }
-	.um-notice { margin: 0 0 14px; font-size: 13px; color: #6b6785; }
-	.um-msg { min-height: 20px; margin: 0 0 10px; font-size: 13px; }
-	.um-msg.ok { color: #1b7f3b; }
-	.um-msg.err { color: #c62828; }
-	.um-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; }
-	.um-table th, .um-table td { padding: 10px 12px; border-bottom: 1px solid #ebe8f5; text-align: left; vertical-align: middle; }
-	.um-table th { background: #f6f4fc; color: #4f4a85; font-weight: 600; white-space: nowrap; }
-	.um-table input[type=text], .um-table select { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #cfc6ea; border-radius: 4px; font-size: 13px; background: #fff; }
-	.um-table select:disabled { background: #f2f1f7; color: #7a7790; }
-	.um-table tr.um-dirty td { background: #fbf9ff; }
-	.um-badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 10px; font-size: 11px; background: #ece7fb; color: #4f4a85; }
-	.um-save { padding: 6px 14px; border: 1px solid #6955a2; background: #6955a2; color: #fff; border-radius: 4px; cursor: pointer; font-size: 13px; }
-	.um-save:disabled { background: #cfc6ea; border-color: #cfc6ea; cursor: default; }
-	.um-empty { padding: 28px 12px; text-align: center; color: #999; }
-	.um-col-id { width: 14%; } .um-col-name { width: 12%; } .um-col-email { width: 28%; }
-	.um-col-phone { width: 18%; } .um-col-grade { width: 17%; } .um-col-act { width: 11%; }
-</style>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/userManage.css?v=20261109">
 
-<div class="um-wrap" id="userManageRoot" data-ctx="<c:out value='${pageContext.request.contextPath}'/>" data-csrf="<c:out value='${userManageCsrf}'/>">
+<div class="user-manage-page" id="userManageRoot" data-ctx="<c:out value='${pageContext.request.contextPath}'/>" data-csrf="<c:out value='${userManageCsrf}'/>">
 	<h2 class="um-title">사용자 정보 관리</h2>
 	<p class="um-notice">변경한 권한은 해당 사용자의 <strong>다음 로그인부터</strong> 적용됩니다. 최고 관리자 계정의 권한과 본인의 권한은 변경할 수 없습니다.</p>
 	<div id="umMsg" class="um-msg" role="status" aria-live="polite"></div>
