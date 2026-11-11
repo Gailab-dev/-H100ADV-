@@ -90,6 +90,32 @@
         b.textContent = msg;
     }
 
+    // 스냅샷 전용 안내(크기·비율 경고, 실패 원인). 장비 ROI 안내(roiBanner)와 따로 둬서 서로 덮어쓰지 않는다.
+    function snapBanner(msg, level) {
+        var b = $('#roiSnapBanner');
+        if (!b) return;
+        if (!msg) { b.hidden = true; b.textContent = ''; return; }
+        b.hidden = false;
+        b.className = 'roi-banner ' + (level || 'warn');
+        b.textContent = msg;
+    }
+
+    // 스냅샷 크기·비율 경고 문구(없으면 ''). 좌표계는 항상 1920×1080 논리 좌표이고 이미지는 그 영역에 맞춰 늘려 그린다.
+    function snapshotWarning(d) {
+        if (!d || (d.sizeMatches !== false && d.aspectMatches !== false)) return '';
+        var parts = [];
+        var cams = d.cams || {};
+        var sizes = ['Cam1', 'Cam2'].filter(function (c) { return cams[c] && cams[c].width; })
+            .map(function (c) { return c + ' ' + cams[c].width + '×' + cams[c].height; });
+        if (d.sizeMatches === false) {
+            parts.push('스냅샷 크기' + (sizes.length ? '(' + sizes.join(', ') + ')' : '') + '가 ' + W + '×' + H + '이 아닙니다. ' + W + '×' + H + ' 기준으로 늘려 표시합니다.');
+        }
+        if (d.aspectMatches === false) {
+            parts.push('가로세로 비율이 16:9가 아니어서 이미지가 왜곡되고 ROI 좌표가 어긋나 보일 수 있습니다.');
+        }
+        return parts.join(' ');
+    }
+
     // 범용 확인 모달. buttons: [{id,label,primary}] → 누른 버튼 id 로 resolve (Esc/바깥 클릭 = 'cancel')
     function modal(title, lines, buttons) {
         return new Promise(function (resolve) {
@@ -171,6 +197,13 @@
         if (res.status === 0) return res.aborted ? '15초 안에 응답이 없었습니다.' : '서버와 통신할 수 없습니다.';
         var d = res.data || {};
         return d.msg || ('요청 처리 중 오류가 발생했습니다 (' + res.status + ')');
+    }
+
+    // 스냅샷 실패 문구: 원인 문구 + 구분 코드(SNAPSHOT_* 등)를 함께 보여 준다.
+    function snapshotErrorText(res) {
+        var d = res.data || {};
+        var code = typeof d.code === 'string' && /^[A-Z_]{3,40}$/.test(d.code) ? d.code : '';
+        return errorText(res) + (code ? ' [' + code + ']' : '');
     }
 
     // ------------------------------------------------------------------ 상태 갱신
@@ -684,6 +717,7 @@
 
     function loadSnapshot() {
         S.snapshotState = 'loading';
+        snapBanner('');
         drawImage();
         setBusy(true);
         showWait('장비에서 카메라 스냅샷을 가져오는 중입니다…', 15);
@@ -694,7 +728,9 @@
                 S.snapshotState = 'failed';
                 S.images = { Cam1: null, Cam2: null };
                 drawImage();
-                toast('스냅샷을 가져오지 못했습니다: ' + errorText(res), 'error');
+                var why = snapshotErrorText(res);
+                snapBanner('스냅샷을 가져오지 못했습니다: ' + why, 'error');
+                toast('스냅샷을 가져오지 못했습니다: ' + why, 'error');
                 return false;
             }
             var ts = res.data.ts || Date.now();
@@ -704,7 +740,12 @@
                 setBusy(false);
                 S.images = { Cam1: imgs[0], Cam2: imgs[1] };
                 S.snapshotState = (imgs[0] && imgs[1]) ? 'ok' : 'failed';
-                if (S.snapshotState === 'failed') toast('스냅샷 이미지를 불러오지 못했습니다', 'error');
+                if (S.snapshotState === 'failed') {
+                    snapBanner('스냅샷 이미지를 불러오지 못했습니다. [스냅샷 다시 받기]를 눌러 주세요.', 'error');
+                    toast('스냅샷 이미지를 불러오지 못했습니다', 'error');
+                } else {
+                    snapBanner(snapshotWarning(res.data), 'warn'); // 크기·비율이 다르면 경고(차단하지 않음), 정상이면 숨김
+                }
                 drawImage();
                 return true;
             });

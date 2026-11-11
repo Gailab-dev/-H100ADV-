@@ -30,6 +30,8 @@
 	</div>
 
 	<div id="roiBanner" class="roi-banner" hidden role="status"></div>
+	<%-- 스냅샷 크기·비율 경고, 스냅샷 실패 원인(SNAPSHOT_* code) 전용 안내 --%>
+	<div id="roiSnapBanner" class="roi-banner" hidden role="status"></div>
 
 	<div class="roi-toolbar">
 		<div class="roi-tabs" role="tablist" aria-label="카메라 선택">
@@ -106,4 +108,4 @@
 <script src="${pageContext.request.contextPath}/resources/js/vendor/konva/konva.min.js"></script>
 <script src="${pageContext.request.contextPath}/resources/js/roi/roiGeometry.js?v=20261020"></script>
 <script src="${pageContext.request.contextPath}/resources/js/roi/roiEditorCore.js?v=20261020"></script>
-<script src="${pageContext.request.contextPath}/resources/js/roi/roiEditor.js?v=20261103"></script>
+<script src="${pageContext.request.contextPath}/resources/js/roi/roiEditor.js?v=20261111"></script>
