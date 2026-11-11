@@ -181,6 +181,13 @@ public class RoiServiceImpl implements RoiService {
 
 	/** module_c 응답이 성공이 아닐 때 화면으로 보낼 오류로 바꾼다. 주소·내부 메시지는 싣지 않는다. */
 	private static RoiResult relayError(Reply r) {
+		// 어느 단계에서 실패했는지 서버 로그에 남긴다(요청 본문·토큰은 남기지 않는다). 화면에는 아래 code 로 전달한다.
+		String logCode = r.body == null ? "-" : safeLogCode(r.body.path("code").asText(""));
+		if (r.status == 400 || r.status == 409 || r.status == 422) {
+			logger.info("[ROI] module_c 응답 status={} code={}", r.status, logCode); // 검증 실패·충돌은 정상 흐름이라 Info
+		} else {
+			logger.warn("[ROI] module_c 오류 응답 failure={} status={} code={}", r.failure, r.status, logCode);
+		}
 		if (r.failure == Failure.TIMEOUT) return RoiResult.error(504, "TIMEOUT", "장비 응답 시간이 초과되었습니다.");
 		if (r.failure == Failure.UNREACHABLE) return RoiResult.error(503, "UNREACHABLE", "관제 서버와 통신할 수 없습니다.");
 		if (r.failure == Failure.NOT_CONFIGURED) return RoiResult.error(503, "NOT_CONFIGURED", "ROI 연동 설정이 없습니다. 관리자에게 문의하십시오.");
@@ -201,9 +208,26 @@ public class RoiServiceImpl implements RoiService {
 			return RoiResult.error(503, code.isEmpty() ? "UNREACHABLE" : code, msg.isEmpty() ? "장비와 통신할 수 없습니다." : msg);
 		case 504:
 			return RoiResult.error(504, "TIMEOUT", "장비 응답 시간이 초과되었습니다.");
+		case 502:
+			// 스냅샷 실패 원인(2026-11-11): module_c 가 알려 주는 SNAPSHOT_* code 는 화면까지 전달한다. 그 밖의 502 는 DEVICE_ERROR.
+			if (SNAPSHOT_CODES.contains(code)) {
+				return RoiResult.error(502, code, msg.isEmpty() ? "스냅샷을 가져오지 못했습니다." : clip(msg, 120));
+			}
+			return RoiResult.error(502, "DEVICE_ERROR", "장비가 요청을 처리하지 못했습니다.");
 		default:
 			return RoiResult.error(502, "DEVICE_ERROR", "장비가 요청을 처리하지 못했습니다.");
 		}
+	}
+
+	/** module_c 가 전달하는 스냅샷 실패 code(허용 목록). 그 밖의 값은 화면에 싣지 않는다. */
+	private static final java.util.Set<String> SNAPSHOT_CODES = new java.util.HashSet<>(java.util.Arrays.asList(
+			"SNAPSHOT_NOT_FOUND", "SNAPSHOT_TOO_LARGE", "SNAPSHOT_FORMAT", "SNAPSHOT_SOURCE_ERROR", "SNAPSHOT_INVALID"));
+
+	/** 로그에 남길 code 를 영숫자·_ 로 제한한다(응답이 로그 줄을 위조하지 못하게). */
+	private static String safeLogCode(String code) {
+		if (code == null || code.isEmpty()) return "-";
+		String s = code.replaceAll("[^A-Za-z0-9_]", "");
+		return s.isEmpty() ? "-" : (s.length() > 40 ? s.substring(0, 40) : s);
 	}
 
 	private static RoiResult withDetail(RoiResult res, JsonNode body) {
@@ -381,12 +405,40 @@ public class RoiServiceImpl implements RoiService {
 		}
 		if (d == null) return noDevice();
 		Reply reply = requestSnapshot(d.serial, actor);
-		if (!reply.ok()) return relayError(reply);
+		if (!reply.ok()) {
+			RoiResult err = relayError(reply);
+			logger.warn("[ROI] 스냅샷 요청 실패 deviceId={} status={} code={}", deviceId, err.status, err.body.get("code"));
+			return err;
+		}
 		Map<String, Object> body = new LinkedHashMap<>();
+		// width/height 는 ROI 논리 좌표계(1920x1080)다. 실제 이미지 크기·일치 여부는 sizeMatches/aspectMatches/cams 로 전달한다.
 		body.put("width", reply.body.path("width").asInt(SNAPSHOT_W));
 		body.put("height", reply.body.path("height").asInt(SNAPSHOT_H));
 		body.put("takenAt", reply.body.path("takenAt").asText(""));
 		body.put("ts", System.currentTimeMillis());
+		// 구버전 module_c 는 이 필드가 없다(항상 1920x1080 만 통과했으므로 일치로 본다).
+		boolean sizeMatches = reply.body.path("sizeMatches").asBoolean(true);
+		boolean aspectMatches = reply.body.path("aspectMatches").asBoolean(true);
+		body.put("sizeMatches", sizeMatches);
+		body.put("aspectMatches", aspectMatches);
+		JsonNode cams = reply.body.path("cams");
+		if (cams.isObject()) {
+			Map<String, Object> camMap = new LinkedHashMap<>();
+			for (String cam : RoiValidator.CAMERAS) {
+				JsonNode c = cams.path(cam);
+				if (!c.isObject()) continue;
+				Map<String, Object> m = new LinkedHashMap<>();
+				m.put("width", c.path("width").asInt(0));
+				m.put("height", c.path("height").asInt(0));
+				m.put("format", clip(c.path("format").asText(""), 10));
+				camMap.put(cam, m);
+			}
+			body.put("cams", camMap);
+		}
+		if (!sizeMatches || !aspectMatches) {
+			logger.warn("[ROI] 스냅샷 크기가 {}x{} 와 다릅니다 deviceId={} sizeMatches={} aspectMatches={} cams={}",
+					SNAPSHOT_W, SNAPSHOT_H, deviceId, sizeMatches, aspectMatches, body.get("cams"));
+		}
 		return RoiResult.ok(body);
 	}
 
@@ -486,9 +538,14 @@ public class RoiServiceImpl implements RoiService {
 			int[][] sizes = new int[cams.length][];
 			for (int i = 0; i < cams.length; i++) {
 				sizes[i] = readJpegSize(src[i]);
-				if (sizes[i] == null || sizes[i][0] != SNAPSHOT_W || sizes[i][1] != SNAPSHOT_H) {
-					logger.warn("[ROI] 임시 스냅샷이 1920x1080 JPEG 가 아닙니다 (rhId={}, camera={})", rhId, cams[i]);
+				if (sizes[i] == null) {
+					logger.warn("[ROI] 임시 스냅샷을 JPEG 로 읽을 수 없습니다 (rhId={}, camera={})", rhId, cams[i]);
 					return false;
+				}
+				if (sizes[i][0] != SNAPSHOT_W || sizes[i][1] != SNAPSHOT_H) {
+					// 크기가 달라도 기준 스냅샷으로 저장한다(실제 크기를 tbl_roi_snapshot 에 기록). ROI 적용 결과(SUCCESS)는 바꾸지 않는다.
+					logger.warn("[ROI] 임시 스냅샷 크기가 {}x{} 가 아닙니다 ({}x{}) — 실제 크기로 기준 스냅샷을 저장합니다 (rhId={}, camera={})",
+							SNAPSHOT_W, SNAPSHOT_H, sizes[i][0], sizes[i][1], rhId, cams[i]);
 				}
 			}
 			Path destDir = RoiPaths.resolveUnder(base, "roi/baseline/" + serial + "/" + rhId);
