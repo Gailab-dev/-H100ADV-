@@ -61,20 +61,17 @@ public class RoiServiceImpl implements RoiService {
 	private final RoiMapper roiMapper;
 	private final DeviceListMapper deviceMapper;
 	private final RoiModuleCClient client;
-	private final boolean includeName;
 	private final String mediaBaseConfig;
 	private final String imageDecPath;
 	private final ConcurrentHashMap<Integer, Object> deviceLocks = new ConcurrentHashMap<>();
 	private final SecureRandom random = new SecureRandom();
 
 	public RoiServiceImpl(RoiMapper roiMapper, DeviceListMapper deviceMapper, RoiModuleCClient client,
-			@Value("${roi.file.include-name:true}") boolean includeName,
 			@Value("${roi.media.base:}") String mediaBaseConfig,
 			@Value("${image.dec.path:}") String imageDecPath) {
 		this.roiMapper = roiMapper;
 		this.deviceMapper = deviceMapper;
 		this.client = client;
-		this.includeName = includeName;
 		this.mediaBaseConfig = mediaBaseConfig == null ? "" : mediaBaseConfig.trim();
 		this.imageDecPath = imageDecPath == null ? "" : imageDecPath.trim();
 	}
@@ -351,21 +348,9 @@ public class RoiServiceImpl implements RoiService {
 		return m;
 	}
 
-	/** 화면용 ROI 의 도형 이름 맵을 rh_meta_json 형식으로. */
+	/** 화면용 ROI 의 도형 이름 맵을 rh_meta_json 형식(위치 기준)으로. */
 	private static String namesMeta(ObjectNode rois) {
-		ObjectNode names = RoiCodec.mapper().createObjectNode();
-		for (String cam : RoiValidator.CAMERAS) {
-			for (String kind : RoiValidator.KINDS) {
-				for (JsonNode s : rois.path(cam).path(kind)) {
-					String id = s.path("id").asText("");
-					String name = s.path("name").asText("");
-					if (!id.isEmpty() && !name.isEmpty()) names.put(id, name);
-				}
-			}
-		}
-		ObjectNode meta = RoiCodec.mapper().createObjectNode();
-		meta.set("names", names);
-		return meta.toString();
+		return RoiCodec.namesMetaJson(rois);
 	}
 
 	/**
@@ -618,7 +603,7 @@ public class RoiServiceImpl implements RoiService {
 			if (!problems.isEmpty()) {
 				return RoiResult.error(400, "INVALID", "ROI 검증에 실패했습니다.").with("problems", problemList(problems));
 			}
-			n = RoiCodec.normalize(input, includeName);
+			n = RoiCodec.normalize(input);
 		} catch (RoiValidator.FormatException e) {
 			return RoiResult.error(400, "FORMAT", e.getMessage());
 		}

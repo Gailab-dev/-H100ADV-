@@ -799,8 +799,10 @@
         S.formatError = false;
         C.clearDraft(window.localStorage, draftKey());
         $('#roiDraftState').textContent = '';
-        banner(d.snapshotSaved === false ? '장비 적용은 완료되었습니다. 다만 기준 스냅샷을 저장하지 못해 이력 미리보기에는 이미지가 없습니다.' : '', 'warn');
-        toast('장비에 적용되었습니다' + (d.action === 'ROLLBACK' ? ' (되돌리기)' : ''), 'ok');
+        // 장비 프로그램은 파일 변경을 감지하면(감지 기능 적용 전에는 재시작 시) 새 ROI 를 적용한다 — 웹은 장비에 별도 반영 요청을 보내지 않는다.
+        var applyNote = '장비에 저장되었습니다. 장비 프로그램이 파일 변경을 감지하면(또는 재시작 시) 적용됩니다.';
+        banner(d.snapshotSaved === false ? applyNote + ' 다만 기준 스냅샷을 저장하지 못해 이력 미리보기에는 이미지가 없습니다.' : applyNote, d.snapshotSaved === false ? 'warn' : 'info');
+        toast('장비에 저장되었습니다' + (d.action === 'ROLLBACK' ? ' (되돌리기)' : ''), 'ok');
     }
 
     // 시간 초과(PENDING) 건을 장비 해시 비교로 확정한다. 서버가 장비에서 ROI 를 다시 읽어 비교한다.

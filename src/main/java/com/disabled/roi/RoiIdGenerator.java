@@ -1,5 +1,6 @@
 package com.disabled.roi;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -15,6 +16,14 @@ public final class RoiIdGenerator {
 
     public static String newId() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * 장비 파일에서 읽은 도형에 부여하는 ID. 장비 파일(점 배열 형식)에는 ID 가 없으므로 (카메라, 종류, 순번) 으로 정해 같은 파일을 다시 읽어도
+     * 같은 ID 가 나오게 한다(임시본 비교·선택 상태가 불필요하게 달라지지 않도록).
+     */
+    public static String positionalId(String camera, String kind, int index) {
+        return UUID.nameUUIDFromBytes(("h100-roi/" + camera + "/" + kind + "/" + index).getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     /** 클라이언트가 보낸 ID 를 유지해도 되는 형식인지. */
