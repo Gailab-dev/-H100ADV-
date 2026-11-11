@@ -73,8 +73,10 @@ func deviceTLSConfig() (*tls.Config, error) {
 	return cfg, nil
 }
 
-// callDevice 는 디바이스(module_d)의 path 로 서명된 POST 를 보내고 상태코드와 본문을 돌려준다.
-func callDevice(ctx context.Context, hostPort, path, serial string, payload map[string]interface{}) (int, []byte, error) {
+// callDevice 는 디바이스(module_d)의 path 로 서명된 POST 를 보내고 상태코드와 본문을 돌려준다. 테스트에서 교체한다.
+var callDevice = callDeviceImpl
+
+func callDeviceImpl(ctx context.Context, hostPort, path, serial string, payload map[string]interface{}) (int, []byte, error) {
 	cfg, err := deviceTLSConfig()
 	if err != nil {
 		return 0, nil, &relayError{relayNotConfigured, err}

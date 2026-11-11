@@ -59,6 +59,7 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 }
 
 func fail(w http.ResponseWriter, status int, code, msg string) {
+	setCode(w, code)
 	writeJSON(w, status, apiError{Code: code, Msg: msg})
 }
 
@@ -79,14 +80,17 @@ func authorize(w http.ResponseWriter, r *http.Request) bool {
 // decodeRequest 는 POST·인증·본문 크기·JSON 파싱을 공통 처리한다.
 func decodeRequest(w http.ResponseWriter, r *http.Request, into interface{}) bool {
 	if r.Method != http.MethodPost {
+		note(w, "stage=request reason=method")
 		fail(w, http.StatusMethodNotAllowed, "METHOD", "POST 만 허용됩니다")
 		return false
 	}
 	if !authorize(w, r) {
+		note(w, "stage=auth")
 		return false
 	}
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxRequestBody))
 	if err := dec.Decode(into); err != nil {
+		note(w, "stage=request reason=body_parse")
 		fail(w, http.StatusBadRequest, "BAD_REQUEST", "요청 형식이 올바르지 않습니다")
 		return false
 	}
@@ -96,17 +100,20 @@ func decodeRequest(w http.ResponseWriter, r *http.Request, into interface{}) boo
 // resolveDevice 는 시리얼을 검증하고 등록된 디바이스 주소(host:port)를 돌려준다.
 func resolveDevice(w http.ResponseWriter, serial string) (string, bool) {
 	if !serialPattern.MatchString(serial) {
+		note(w, "stage=resolve reason=bad_serial")
 		fail(w, http.StatusBadRequest, "BAD_SERIAL", "장비 시리얼이 올바르지 않습니다")
 		return "", false
 	}
 	host, err := lookupDeviceHost(serial)
 	if err != nil {
+		note(w, "stage=resolve reason=device_not_registered")
 		logger.Log.Warn("[ROI] 등록된 디바이스 조회 실패", zap.Error(err))
 		fail(w, http.StatusNotFound, "NO_DEVICE", "등록된 장비를 찾을 수 없습니다")
 		return "", false
 	}
 	host = strings.TrimSpace(host)
 	if !hostPattern.MatchString(host) {
+		note(w, "stage=resolve reason=bad_device_addr")
 		fail(w, http.StatusUnprocessableEntity, "BAD_DEVICE_ADDR", "장비 주소를 확인하십시오")
 		return "", false
 	}
