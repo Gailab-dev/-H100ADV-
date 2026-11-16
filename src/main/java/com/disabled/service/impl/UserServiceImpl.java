@@ -421,11 +421,13 @@ public class UserServiceImpl implements UserService {
 	/**
 	 * 인증번호로 인증
 	 * 2025.11.27. 인증번호 인증은 구현하지 않음, 추후 고도화시 논의
+	 * (2026-11-16 보안 수정) 구현이 없는 동안 항상 true 를 돌려주면 누구나 인증을 통과하므로 항상 false(거부)로 막는다.
+	 * 현재 비밀번호 찾기는 이메일 링크 인증(UserController.authPwd/resetPwd)으로 본인 확인을 하고 이 메서드를 쓰지 않는다.
 	 */
 	@Override
 	public boolean authWithAuthNumber(Map<String, Object> json) {
-		
-		return true;
+
+		return false;
 	}
 
 	/**

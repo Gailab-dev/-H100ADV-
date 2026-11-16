@@ -466,26 +466,36 @@ public class UserController {
 	@ResponseBody
 	@PostMapping("/updateNewPwd")
 	public Map<String,Object> updateNewPwd(@RequestBody Map<String,Object> body, HttpSession session ) {
-		
+
 		// ====== 변수 선언부 [S] ====== //
 		Map<String,Object> res = new HashMap<>();
+		Integer uId = null;
 		// ====== 변수 선언부 [E] ====== //
-		
+
 
 		try {
-			
-			// ====== 유효성 검사 [S] ====== //
-			// body 값 검증
-	        Integer uId = (body.get("uId") instanceof Number)
-	                ? ((Number) body.get("uId")).intValue()
-	                : Integer.valueOf(String.valueOf(body.get("uId")));
-            String newPwd = String.valueOf(body.get("newPwd"));
 
-            if (uId == null || newPwd == null || newPwd.trim().isEmpty()) {
+			// ====== 유효성 검사 [S] ====== //
+			// (2026-11-16 보안 수정) 변경 대상은 요청 본문의 uId 가 아니라 '로그인된 세션의 사용자'로만 정한다.
+			// 본문의 uId 를 믿으면 로그인하지 않은 채 다른 사용자의 비밀번호를 바꾸고 그 사용자로 세션을 만들 수 있었다.
+			// 최초 로그인 직후(pwdChanged=false) 세션에는 로그인 단계에서 이미 uId 가 들어 있다.
+			Object sessionUId = session.getAttribute("uId");
+			if (sessionUId == null) {
+				res.put("ok", false);
+				res.put("msg", "로그인이 필요합니다. 다시 로그인해주세요.");
+				return res;
+			}
+			uId = Integer.valueOf(String.valueOf(sessionUId));
+
+			Object newPwdObj = body.get("newPwd");
+			String newPwd = newPwdObj == null ? null : String.valueOf(newPwdObj);
+
+            if (newPwd == null || newPwd.trim().isEmpty()) {
                 res.put("ok", false);
                 res.put("msg", "새 비밀번호를 입력해주세요.");
                 return res;
             }
+
     		// ====== 유효성 검사 [E] ====== //
             
     		// ====== 서비스 [S] ====== //
@@ -524,9 +534,8 @@ public class UserController {
     		// ====== 서비스 [E] ====== //
 			
 			// ====== 세션에 값 추가 [S] ====== //
-			// session에 id값, 비밀번호 변경 추가
+			// 비밀번호 변경 완료 표시(uId 는 이미 로그인된 세션의 값이므로 다시 쓰지 않는다)
 			logger.info("{} 사용자가 {}에 로그인하였습니다.",uId,LocalDateTime.now());
-			session.setAttribute("uId", uId.toString());
 			session.setAttribute("pwdChanged", true);
 			// ====== 세션에 값 추가 [E] ====== //
 			
@@ -534,13 +543,13 @@ public class UserController {
 			return res;
 			
 		} catch(DataAccessException e2) {
-			logger.info("{}(" + loginMapper.getLoginId((int)body.get("uId")) + ") 사용자가 {}에 로그인 실패하였습니다.",body.get("uId"),LocalDateTime.now());
+			logger.info("{} 사용자가 {}에 로그인 실패하였습니다.",uId,LocalDateTime.now());
 			logger.error("DB 처리 중 오류(updateNewPwd): ", e2);
 	        res.put("ok", false);
 	        res.put("msg", "데이터베이스 처리 중 오류가 발생했습니다.");
 	        return res;
 		} catch (RuntimeException e) {
-			logger.info("{}(" + loginMapper.getLoginId((int)body.get("uId")) + ") 사용자가 {}에 로그인 실패하였습니다.",body.get("uId"),LocalDateTime.now());
+			logger.info("{} 사용자가 {}에 로그인 실패하였습니다.",uId,LocalDateTime.now());
 			logger.error("updateNewPwd에서 오류 발생 : ",e);
 	        res.put("ok", false);
 	        res.put("msg", "비밀번호 변경 중 오류가 발생했습니다.");
@@ -801,13 +810,25 @@ public class UserController {
 	@PostMapping(value = "/authPwd", produces = "application/json; charset=UTF-8")
 	public Map<String,Object> authPwd(
 			@RequestBody Map<String,Object> body
+			, HttpSession session
 			){
-		
+
 		Map<String,Object> resultMap = new HashMap<String, Object>();
 		Integer uId = null;
-		
+
 		try {
-			
+
+			// (2026-11-16 보안 수정) 입력한 이메일을 이 브라우저 세션에서 메일 링크로 인증했는지 서버가 확인한다.
+			// 이전에는 화면(JS)만 확인해서, 이름·아이디·이메일만 알면 인증 없이 다음 단계로 갈 수 있었다.
+			Object emailObj = body.get("u_email");
+			String inputEmail = emailObj == null ? "" : emailObj.toString().trim();
+			if (!isEmailVerifiedInSession(session, inputEmail)) {
+				clearPwdResetTicket(session);
+				resultMap.put("ok", false);
+				resultMap.put("msg", "이메일 인증이 필요합니다.");
+				return resultMap;
+			}
+
 			boolean isAuthPwd = userService.authPwd(body);
 			if(!isAuthPwd) {
 				resultMap.put("ok", false);
@@ -818,9 +839,14 @@ public class UserController {
 				if(uId == null) {
 					resultMap.put("ok", false);
 					resultMap.put("msg", "해당 정보에 맞는 회원을 찾을 수 없습니다. 이름 또는 아이디 또는 이메일을 다시 확인해주세요.");
+					return resultMap;
 				}
 			}
-			
+
+			// 비밀번호 재설정 허가(티켓)를 세션에 남긴다. /resetPwd 는 이 티켓의 사용자만, 10분 안에, 한 번만 바꿀 수 있다.
+			session.setAttribute(PWD_RESET_UID, uId);
+			session.setAttribute(PWD_RESET_EXPIRES, LocalDateTime.now().plusMinutes(PWD_RESET_TTL_MINUTES));
+
 			resultMap.put("uId", uId);
 			resultMap.put("ok", true);
 			return resultMap;
@@ -886,6 +912,39 @@ public class UserController {
 		return "/subpage/user/resetPwdSubpage";
 	}
 	
+	/** 비밀번호 찾기: 본인 확인을 마친 사용자 id(세션 키)와 만료 시각(세션 키), 유효 시간(분) */
+	private static final String PWD_RESET_UID = "PWD_RESET_UID";
+	private static final String PWD_RESET_EXPIRES = "PWD_RESET_EXPIRES";
+	private static final long PWD_RESET_TTL_MINUTES = 10;
+
+	/** 입력한 이메일이 이 세션에서 메일 링크로 인증된 이메일과 같은지 */
+	private boolean isEmailVerifiedInSession(HttpSession session, String email) {
+		Object verified = session.getAttribute("REG_AUTH_VERIFIED");
+		Object sEmail = session.getAttribute("REG_AUTH_EMAIL");
+		return Boolean.TRUE.equals(verified)
+				&& sEmail != null
+				&& email != null
+				&& !email.isEmpty()
+				&& sEmail.toString().trim().equalsIgnoreCase(email);
+	}
+
+	/** 유효한 재설정 허가가 있으면 그 사용자 id, 없거나 만료면 null(만료된 허가는 지운다) */
+	private Integer getValidPwdResetUId(HttpSession session) {
+		Object uIdObj = session.getAttribute(PWD_RESET_UID);
+		Object expObj = session.getAttribute(PWD_RESET_EXPIRES);
+		if (!(uIdObj instanceof Integer) || !(expObj instanceof LocalDateTime)
+				|| LocalDateTime.now().isAfter((LocalDateTime) expObj)) {
+			clearPwdResetTicket(session);
+			return null;
+		}
+		return (Integer) uIdObj;
+	}
+
+	private void clearPwdResetTicket(HttpSession session) {
+		session.removeAttribute(PWD_RESET_UID);
+		session.removeAttribute(PWD_RESET_EXPIRES);
+	}
+
 	/**
 	 * 비밀번호 재설정
 	 */
@@ -893,14 +952,32 @@ public class UserController {
 	@ResponseBody
 	public Map<String,Object> resetPwd(
 			@RequestBody Map<String, Object> body
+			, HttpSession session
 			){
-		
+
 		Map<String,Object> resultMap = new HashMap<String, Object>();
-		
+
 		try {
-			
+
+			// (2026-11-16 보안 수정) 변경 대상은 요청 본문의 u_id 가 아니라 /authPwd 가 세션에 남긴 재설정 허가(티켓)의 사용자다.
+			// 이전에는 로그인·인증 없이 본문의 u_id 만으로 누구의 비밀번호든 바꿀 수 있었다.
+			Integer ticketUId = getValidPwdResetUId(session);
+			if (ticketUId == null) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "본인 확인이 필요하거나 시간이 지났습니다. 비밀번호 찾기를 처음부터 다시 진행해주세요.");
+				return resultMap;
+			}
+
+			Object pwdObj = body.get("u_login_pwd");
+			if (pwdObj == null || pwdObj.toString().trim().isEmpty()) {
+				resultMap.put("ok", false);
+				resultMap.put("msg", "새 비밀번호를 입력해주세요.");
+				return resultMap;
+			}
+			body.put("u_id", ticketUId); // 본문 값은 버리고 티켓의 사용자로 고정
+
 			// 암호화
-			String uLoignPwd = body.get("u_login_pwd").toString();
+			String uLoignPwd = pwdObj.toString();
 			String encryptPwd = cryptoARIAService.encryptPassword(uLoignPwd);
 			if(encryptPwd == null || encryptPwd.isEmpty()) {
 				resultMap.put("ok", false); 
@@ -916,7 +993,15 @@ public class UserController {
 				resultMap.put("msg", "비밀번호 리셋 중 오류 발생");
 				return resultMap;
 			}
-			
+
+			// 한 번 쓴 허가·이메일 인증 상태는 지운다(같은 세션으로 다시 바꾸지 못하게)
+			clearPwdResetTicket(session);
+			session.removeAttribute("REG_AUTH_VERIFIED");
+			session.removeAttribute("REG_AUTH_EMAIL");
+			session.removeAttribute("AUTH_CODE");
+			session.removeAttribute("EXPIRED_TIME");
+			session.removeAttribute("REGISTER_USER");
+
 			resultMap.put("ok", true);
 			return resultMap;
 		} catch (RuntimeException e) {
