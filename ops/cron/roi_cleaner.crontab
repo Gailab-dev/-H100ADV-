@@ -1,0 +1,21 @@
+# ROI snapshot cleanup (plan 34, section 8). Install on the host that can read/write the shared media folder:
+#   crontab ops/cron/roi_cleaner.crontab        (or merge these lines into the existing crontab)
+# Replace the paths. FILE_UPLOAD_PATH must be an absolute path and must equal module_c's FILE_UPLOAD_PATH.
+# Always try --dry-run once by hand before enabling: it prints what would be removed and deletes nothing.
+#
+# The baseline mode reads tbl_roi_snapshot (SELECT only). Put the connection settings in an env file that is
+# readable only by the cron user (a read-only DB account is recommended), e.g. /etc/h100/roi_cleaner.env:
+#   H100_DB_HOST=...  H100_DB_USER=...  H100_DB_PASSWORD=...  H100_DB_NAME=able_park
+# (the same variable names module_c uses; never commit real values).
+#
+# When the stack moves to Docker, run the same command in the module-c image (it ships /usr/local/bin/roi-cleaner)
+# from the host cron or a container scheduler:  docker compose exec module-c roi-cleaner --mode temp --max-age 1h
+SHELL=/bin/sh
+FILE_UPLOAD_PATH=/media
+
+# Temporary snapshots (roi/snapshot/<account>/<serial>/Cam1.jpg, Cam2.jpg): every 10 minutes, older than 1 hour.
+*/10 * * * * /opt/h100/bin/roi_cleaner --mode temp --max-age 1h >> /var/log/h100/roi_cleaner.log 2>&1
+
+# Orphan baseline folders (roi/baseline/<serial>/<rh_id>/) whose rows evt_roi_history_purge (03:00) already deleted:
+# once a day at 04:00. --max-age is the grace period that protects folders created seconds ago.
+0 4 * * * set -a; . /etc/h100/roi_cleaner.env; set +a; /opt/h100/bin/roi_cleaner --mode baseline --max-age 1h >> /var/log/h100/roi_cleaner.log 2>&1

@@ -16,12 +16,27 @@ COMPOSE_DIR=${COMPOSE_DIR:-/opt/h100/docker}
 COMPOSE="docker compose -f $COMPOSE_DIR/compose.yml --env-file $COMPOSE_DIR/.env"
 
 STAMP=${STAMP:-$(date +%Y%m%d-%H%M%S)}
-WORK=${WORK:-/root/h100-migration/$STAMP}
+# 작업 폴더(백업·DB 덤프·.env 사본 등 민감 파일, root 전용 700)와 로그 폴더(LOG/RESULT, 관리자 그룹 읽기 허용)를 분리한다. (2026-11-10)
+# WORK_GROUP 은 migration.conf 에서 지정(예: gailab-si). 비어 있으면 로그도 root 전용(기존과 동일).
+WORK_BASE=${WORK_BASE:-/opt/h100/work}
+LOG_BASE=${LOG_BASE:-/opt/h100/work-logs}
+WORK_GROUP=${WORK_GROUP:-}
+WORK=${WORK:-$WORK_BASE/$STAMP}
+mkdir -p "$WORK_BASE" && chmod 700 "$WORK_BASE"
 mkdir -p "$WORK" && chmod 700 "$WORK"
+LOGDIR=${LOGDIR:-$LOG_BASE/$STAMP}
+mkdir -p "$LOG_BASE" "$LOGDIR"
+if [ -n "$WORK_GROUP" ] && getent group "$WORK_GROUP" >/dev/null 2>&1; then
+  chgrp "$WORK_GROUP" "$LOG_BASE" "$LOGDIR"; chmod 750 "$LOG_BASE" "$LOGDIR"; LOG_MODE=640
+else
+  chmod 700 "$LOG_BASE" "$LOGDIR"; LOG_MODE=600
+fi
 SCRIPT_NAME=$(basename "${0:-script}" .sh)
-LOG="$WORK/$SCRIPT_NAME.log"
-RESULT="$WORK/RESULT_$SCRIPT_NAME.txt"
-: > "$RESULT"
+LOG="$LOGDIR/$SCRIPT_NAME.log"
+RESULT="$LOGDIR/RESULT_$SCRIPT_NAME.txt"
+touch "$LOG"; : > "$RESULT"
+chmod "$LOG_MODE" "$LOG" "$RESULT"
+if [ "$LOG_MODE" = 640 ]; then chgrp "$WORK_GROUP" "$LOG" "$RESULT"; fi
 N_PASS=0; N_FAIL=0; N_WARN=0
 ASSUME_YES=0
 

@@ -1,0 +1,13 @@
+# Optional override for the edge module-d when the web ROI setting feature (plan 34) is enabled.
+# The base compose mounts /data read-only, so the ROI file needs its own writable location.
+# Usage: docker compose -f ops/compose.edge.yml -f ops/compose.edge-roi.yml up -d
+# H100_EDGE_ROI_DIR must be the existing directory that holds the ROI file the Python module reads
+# (path to be provided by the device team - plan 34 section 11.1 item 1). Also set ROI_FILE_PATH in edge.env
+# to the file's path inside the container, e.g. /roi/<file name>.
+services:
+  module-d:
+    volumes:
+      - type: bind
+        source: ${H100_EDGE_ROI_DIR:?Set the existing directory that holds the ROI file}
+        target: /roi
+        bind: {create_host_path: false}
